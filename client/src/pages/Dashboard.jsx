@@ -52,22 +52,41 @@ export default function Dashboard({ health, progress }) {
       <section className="panel start-panel">
         <h2>Start a practice paper</h2>
         <p className="sub">
-          Built from the bank of {health?.bankSize?.toLocaleString() ?? '1000+'} questions, weighted exactly like an AQA paper.
-          You&apos;ll get a predicted grade from averaged past boundaries, worked solutions and revision links for anything you miss.
+          All three AQA foundation papers — built from the bank of {health?.bankSize?.toLocaleString() ?? '1000+'} questions with
+          AQA&apos;s per-paper topic allocation, a difficulty ramp and stretch questions. Predicted grade
+          from averaged past boundaries, worked solutions and revision links for everything you miss.
         </p>
-        <div className="paper-cards">
-          <button className="paper-card full" onClick={() => navigate('/practice?type=full')}>
-            <div className="paper-type">FULL PAPER</div>
-            <div className="paper-meta">80 marks · 90 minutes</div>
-            <div className="paper-desc">One full AQA-style foundation paper. 1 mark a minute is the pace to beat.</div>
-            <span className="paper-go">Start →</span>
-          </button>
-          <button className="paper-card short" onClick={() => navigate('/practice?type=short')}>
-            <div className="paper-type">QUICK PAPER</div>
-            <div className="paper-meta">40 marks · 45 minutes</div>
-            <div className="paper-desc">A shorter hit of exam practice when you don&apos;t have a full 90 minutes.</div>
-            <span className="paper-go">Start →</span>
-          </button>
+        <div className="papers-grid">
+          {[
+            { id: 1, code: '8300/1F', name: 'Paper 1', calc: false, blurb: 'Non-calculator. Number, Algebra, Ratio, Probability & Statistics.' },
+            { id: 2, code: '8300/2F', name: 'Paper 2', calc: true, blurb: 'Calculator. Algebra, Ratio, Geometry, Probability & Statistics.' },
+            { id: 3, code: '8300/3F', name: 'Paper 3', calc: true, blurb: 'Calculator. Number, Ratio, Geometry, Probability & Statistics.' },
+          ].map((p) => (
+            <div key={p.id} className={`paper-card pick ${p.calc ? 'calc' : 'noncalc'}`}>
+              <div className="paper-top">
+                <span className="paper-type">{p.code}</span>
+                <span className={`calc-badge ${p.calc ? 'yes' : 'no'}`}>
+                  {p.calc ? '🧮 Calculator' : '🚫 No calculator'}
+                </span>
+              </div>
+              <div className="paper-desc">{p.blurb}</div>
+              <div className="paper-actions">
+                <button className="btn btn-primary" onClick={() => navigate(`/practice?paper=${p.id}&type=full`)}>
+                  Full · 80 marks
+                </button>
+                <button className="btn" onClick={() => navigate(`/practice?paper=${p.id}&type=short`)}>
+                  Quick · 40 marks
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="adhoc-cta">
+          <div>
+            <div className="adhoc-cta-title">🎲 Feeling random?</div>
+            <div className="sub">Ad-hoc questions mixed from all three papers — 10, 15 or 20 at a time.</div>
+          </div>
+          <button className="btn btn-primary" onClick={() => navigate('/practice#adhoc')}>Ad-hoc round →</button>
         </div>
       </section>
 

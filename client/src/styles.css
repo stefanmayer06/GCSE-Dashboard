@@ -322,6 +322,152 @@ h2 {
   gap: 16px;
 }
 
+/* ---------- Paper picker ---------- */
+.papers-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.paper-card.pick {
+  cursor: default;
+}
+
+.paper-card.pick.noncalc {
+  background: linear-gradient(135deg, rgba(255, 176, 32, 0.12), rgba(255, 176, 32, 0.03));
+}
+
+.paper-card.pick.calc {
+  background: linear-gradient(135deg, rgba(42, 212, 168, 0.12), rgba(42, 212, 168, 0.03));
+}
+
+.paper-card.pick:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.paper-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.calc-badge {
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.calc-badge.yes {
+  background: rgba(42, 212, 168, 0.14);
+  border: 1px solid rgba(42, 212, 168, 0.45);
+  color: var(--green);
+}
+
+.calc-badge.no {
+  background: rgba(255, 176, 32, 0.14);
+  border: 1px solid rgba(255, 176, 32, 0.45);
+  color: var(--amber);
+}
+
+.strand-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.strand-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.strand-chip i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.paper-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+.adhoc-cta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(53, 167, 255, 0.12), rgba(124, 92, 255, 0.08));
+  border: 1px solid rgba(53, 167, 255, 0.3);
+  border-radius: 14px;
+  flex-wrap: wrap;
+}
+
+.adhoc-cta-title {
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.adhoc-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.adhoc-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.adhoc-label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 700;
+  min-width: 100px;
+}
+
+.chip-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.suggest-chip.source.on {
+  color: #fff;
+  border-color: var(--accent);
+  background: rgba(124, 92, 255, 0.2);
+}
+
+.exam-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.exam-paper {
+  font-weight: 800;
+  font-size: 15px;
+}
+
 .how-list {
   margin-top: 10px;
   display: flex;
@@ -1583,7 +1729,8 @@ h2 {
   .stat-row,
   .two-col,
   .paper-cards,
-  .setup-grid {
+  .setup-grid,
+  .papers-grid {
     grid-template-columns: 1fr;
   }
 

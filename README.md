@@ -7,17 +7,22 @@ powered by a cheap DeepSeek model on OpenRouter.
 ## Features
 
 ### 🧪 Practice exams
-- **1,730-question bank**, procedurally generated across all 27 AQA foundation topics and mixed
-  with the exact strand weightings AQA uses (Number 25%, Algebra 20%, Ratio 25%, Geometry 15%,
-  Probability 7.5%, Statistics 7.5%). Every paper is different.
-- **Full paper** (80 marks / 90 minutes, like AQA 8300/1F) and **Quick paper** (40 marks / 45 min).
-- **Two timers**: a paper countdown plus a **1 mark-per-minute pace timer** with per-question time
-  targets.
-- **Stretch questions** (difficulty 3) are flagged ⚡, just to push you.
+- **1,730-question bank**, procedurally generated across all 27 AQA foundation topics.
+- **All three AQA papers**, each built with AQA's published per-paper topic allocation:
+  - **8300/1F · Paper 1** (non-calculator): Number 25%, Algebra 25%, Ratio 20%, Probability 14%, Statistics 16% — no geometry.
+  - **8300/2F · Paper 2** (calculator): Algebra 25%, Ratio 20%, Geometry 30%, Probability 12%, Statistics 13%.
+  - **8300/3F · Paper 3** (calculator): Number 25%, Ratio 20%, Geometry 30%, Probability 12%, Statistics 13%.
+- Every paper is **fresh each time**, has a **difficulty ramp** (easier questions first, stretch ⚡ at the
+  end) and comes in **Full** (80 marks / 90 min) and **Quick** (40 marks / 45 min) sizes.
+- **Two timers**: a paper countdown plus a **1 mark-per-minute pace timer** with per-question time targets.
 - **Instant marking** with a score, a **predicted grade** from averaged past AQA grade boundaries
   (2018–2024, shown on the results page), strand-by-strand breakdown, worked solutions for every
   missed question, and links to internal lessons + free external resources (Corbettmaths, Maths
   Genie, BBC Bitesize, Khan Academy) for your weakest topics.
+
+### 🎲 Ad-hoc questions
+- Mixed rounds of 10/15/20 questions drawn from **any combination of the three papers** (or all
+  three at once) — instant feedback per question with worked solutions and a score at the end.
 
 ### 📚 Learn
 - All 27 foundation topics grouped by strand, with bite-size revision notes, formula cards,
@@ -80,8 +85,12 @@ npm start            # production-style: serve everything on :3000
 Questions live in `server/src/bank/q/*.js` — 27 generator modules, one per AQA foundation topic.
 Each generator deterministically produces dozens of exam-style variants (numeric-entry and AQA-style
 multiple-choice) with marks, difficulty, hints and worked solutions. On startup the server expands
-them into a 1,730-question in-memory bank; papers sample from it using AQA's strand weightings and
-pin the mark total to exactly 80 (or 40).
+them into a 1,730-question in-memory bank.
+
+Papers are assembled in `server/src/bank/index.js`: each of the three papers samples the topics
+AQA assigns to it (Paper 1 = N/A/R/P/S, Paper 2 = A/R/G/P/S, Paper 3 = N/R/G/P/S) using the
+per-paper mark budgets above, reserves ~12% of marks for stretch questions, then orders the paper
+as a difficulty ramp (level 1 → 2 → 3). Ad-hoc rounds mix questions from any subset of the papers.
 
 Grade boundaries in `server/src/grades.js` are rounded averages of published AQA 8300F boundaries
 from 2018–2024 for a single 80-mark paper (foundation is capped at grade 5). Real boundaries drift

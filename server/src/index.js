@@ -10,9 +10,11 @@ import {
   questionsFor,
   buildPaper,
   buildPractice,
+  buildAdhoc,
   markAnswers,
   checkAnswer,
   getQuestionById,
+  paperList,
 } from './bank/index.js';
 import { TOPICS, STRANDS } from './bank/topics.js';
 import { predictGrade, gradeLabel, nextBoundaryGap, BOUNDARIES } from './grades.js';
@@ -91,16 +93,42 @@ app.get('/api/topics/:id', (req, res) => {
   });
 });
 
+app.get('/api/papers', (req, res) => {
+  res.json({ papers: paperList() });
+});
+
 app.post('/api/test/new', (req, res) => {
   const type = req.body?.type === 'short' ? 'short' : 'full';
-  const paper = buildPaper(type);
+  const paperId = [1, 2, 3].includes(req.body?.paper) ? req.body.paper : 1;
+  const paper = buildPaper(type, paperId);
   const id = crypto.randomUUID();
-  activeTests.set(id, { id, type, questions: paper.questions, startedAt: Date.now() });
+  activeTests.set(id, {
+    id,
+    type,
+    paperId: paper.paperId,
+    paperCode: paper.paperCode,
+    paperName: paper.paperName,
+    calculator: paper.calculator,
+    questions: paper.questions,
+    startedAt: Date.now(),
+  });
   if (activeTests.size > 50) {
     const first = activeTests.keys().next().value;
     activeTests.delete(first);
   }
-  res.json({ id, type, totalMarks: paper.totalMarks, minutes: paper.minutes, stretchCount: paper.stretchCount, questions: paper.questions });
+  res.json({
+    id,
+    type,
+    paperId: paper.paperId,
+    paperCode: paper.paperCode,
+    paperName: paper.paperName,
+    calculator: paper.calculator,
+    totalMarks: paper.totalMarks,
+    minutes: paper.minutes,
+    stretchCount: paper.stretchCount,
+    strandCoverage: paper.strandCoverage,
+    questions: paper.questions,
+  });
 });
 
 app.post('/api/test/:id/submit', (req, res) => {
@@ -162,6 +190,10 @@ app.post('/api/test/:id/submit', (req, res) => {
   const result = {
     id: test.id,
     type: test.type,
+    paperId: test.paperId,
+    paperCode: test.paperCode,
+    paperName: test.paperName,
+    calculator: test.calculator,
     totalMarks,
     correctMarks,
     percent,
@@ -206,6 +238,37 @@ app.post('/api/practice/submit', (req, res) => {
   addXp(marked.correctMarks);
   registerActivity();
   res.json({ correctMarks: marked.correctMarks, totalMarks: marked.totalMarks, perQ: marked.perQ });
+});
+
+app.post('/api/adhoc', (req, res) => {
+  const count = Math.min(30, Math.max(5, req.body?.count || 15));
+  const papers = Array.isArray(req.body?.papers) && req.body.papers.length
+    ? req.body.papers
+    : [1, 2, 3];
+  const set = buildAdhoc(count, papers);
+  res.json(set);
+});
+
+app.post('/api/adhoc/submit', (req, res) => {
+  const answers = req.body?.answers || [];
+  const results = { perQ: [], correctMarks: 0, totalMarks: 0 };
+  const topicTally = new Map();
+  for (const { qid, value } of answers) {
+    const q = getQuestionById(qid);
+    if (!q) continue;
+    const { correct, answerText } = checkAnswer(qid, value);
+    results.totalMarks += q.marks;
+    if (correct) results.correctMarks += q.marks;
+    results.perQ.push({ qid, marks: q.marks, correct, value: value ?? null, answerText, topicId: q.topicId, topic: q.topic });
+    if (!topicTally.has(q.topicId)) topicTally.set(q.topicId, { correct: 0, total: 0 });
+    const t = topicTally.get(q.topicId);
+    t.total += q.marks;
+    if (correct) t.correct += q.marks;
+  }
+  for (const [topicId, t] of topicTally) recordPractice({ topicId, correct: t.correct, total: t.total });
+  addXp(results.correctMarks);
+  registerActivity();
+  res.json(results);
 });
 
 app.get('/api/progress', (req, res) => {

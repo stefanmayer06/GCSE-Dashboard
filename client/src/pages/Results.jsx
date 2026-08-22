@@ -37,7 +37,8 @@ export default function Results() {
       <header className="page-head">
         <h1>Paper results</h1>
         <p className="sub">
-          {result.type === 'full' ? 'Full paper · 80 marks' : 'Quick paper · 40 marks'}
+          {result.paperCode ? `${result.paperCode} · ${result.paperName}${result.calculator === false ? ' · non-calculator' : ' · calculator'} · ` : ''}
+          {result.type === 'full' ? '80 marks' : '40 marks'}
           {mins ? ` · finished in ${mins}` : ''}
         </p>
       </header>
@@ -61,6 +62,7 @@ export default function Results() {
         <div className="actions-col">
           <button className="btn btn-primary" onClick={() => navigate('/practice')}>Try another paper</button>
           <Link className="btn" to="/learn">Study my weak topics</Link>
+          <Link className="btn" to="/practice#adhoc">Quick ad-hoc round</Link>
         </div>
       </div>
 

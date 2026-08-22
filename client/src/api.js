@@ -17,7 +17,8 @@ export const api = {
   health: () => req('/health'),
   topics: () => req('/topics'),
   topic: (id) => req(`/topics/${id}`),
-  newTest: (type) => req('/test/new', { method: 'POST', body: { type } }),
+  papers: () => req('/papers'),
+  newTest: (type, paper = 1) => req('/test/new', { method: 'POST', body: { type, paper } }),
   submitTest: (id, answers, durationSec) =>
     req(`/test/${id}/submit`, { method: 'POST', body: { answers, durationSec } }),
   practice: (topicId, count = 8) =>
@@ -25,6 +26,8 @@ export const api = {
   check: (qid, value) => req('/check', { method: 'POST', body: { qid, value } }),
   practiceSubmit: (topicId, answers) =>
     req('/practice/submit', { method: 'POST', body: { topicId, answers } }),
+  adhoc: (count, papers) => req('/adhoc', { method: 'POST', body: { count, papers } }),
+  adhocSubmit: (answers) => req('/adhoc/submit', { method: 'POST', body: { answers } }),
   progress: () => req('/progress'),
   chat: (messages) => req('/chat', { method: 'POST', body: { messages } }),
   clearChat: () => req('/chat', { method: 'DELETE' }),

@@ -1,0 +1,8 @@
+node_modules
+client/dist
+server/data
+.env
+.git
+.DS_Store
+*.log
+README.md

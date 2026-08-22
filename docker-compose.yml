@@ -1,0 +1,17 @@
+services:
+  maths-dashboard:
+    build: .
+    container_name: maths-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      OPENROUTER_MODEL: deepseek/deepseek-v4-flash-0731
+      # Get a free key at https://openrouter.ai/keys — without it the AI tutor runs in offline mode
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+    volumes:
+      - maths-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  maths-data:

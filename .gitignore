@@ -3,4 +3,4 @@ client/dist/
 server/data/
 .env
 .DS_Store
-*.log
+*.logtest-results/

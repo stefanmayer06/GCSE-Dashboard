@@ -197,7 +197,8 @@ export function authRoutes() {
 
   router.post('/login', (req, res) => {
     const { username = '', password = '' } = req.body || {};
-    const user = users[username];
+    const name = String(username).trim().toLowerCase();
+    const user = users[name];
     if (!user || user.oauth || !verifyPassword(password, user.password)) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }

@@ -138,6 +138,26 @@ test('signup rejects a taken username; the server rejects a weak password', asyn
   expect(await response.json()).toEqual({ error: 'Password must be at least 8 characters.' });
 });
 
+test('login lowercases the username so capitals work', async ({ page }) => {
+  const username = `CaseName${Date.now()}`;
+  const password = 'revision-pass-1';
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  await page.locator('.login-switch').click();
+  await page.locator('input[name="username"]').fill(username);
+  await page.locator('input[name="password"]').fill(password);
+  await page.locator('input[name="confirm"]').fill(password);
+  await page.locator('button[type="submit"]').click();
+  await expect(page.locator('.sidebar')).toBeVisible();
+
+  await page.locator('.sign-out').click();
+  await expect(page.locator('.login-card')).toBeVisible();
+  await page.locator('input[name="username"]').fill(username.toUpperCase());
+  await page.locator('input[name="password"]').fill(password);
+  await page.locator('button[type="submit"]').click();
+  await expect(page.locator('.sidebar')).toBeVisible();
+  await expect(page.locator('.sign-out')).toContainText(username.toLowerCase());
+});
+
 for (const [name, url] of [
   ['mobile-selector', '/'],
   ['mobile-maths', '/maths/'],

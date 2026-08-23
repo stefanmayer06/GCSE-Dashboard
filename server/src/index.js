@@ -52,6 +52,7 @@ mountSubject('english', englishDist);
 
 app.use(express.static(selector));
 app.get('/', (req, res) => res.sendFile(path.join(selector, 'index.html')));
+app.get('/subjects', (req, res) => res.sendFile(path.join(selector, 'subjects.html')));
 
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API route not found' });

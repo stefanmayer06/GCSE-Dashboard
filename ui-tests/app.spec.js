@@ -15,6 +15,7 @@ async function signIn(page) {
 
 const pages = [
   ['selector', '/', ['#page-title', '.maths-card', '.english-card']],
+  ['subjects-directory', '/subjects', ['.subject-directory', '.dir-maths', '.dir-english', '.dir-coming']],
   ['maths-dashboard', '/maths/', ['h1', '.subject-switch']],
   ['maths-practice', '/maths/practice', ['h1']],
   ['maths-exam', '/maths/practice?paper=1&type=short', ['.exam-bar', '.q-card']],
@@ -75,6 +76,20 @@ test('subject selector links and live status', async ({ page }) => {
   await expect(page.locator('#english-status')).toContainText('Ready');
   await expect(page.locator('a[href="/maths/"]')).toBeVisible();
   await expect(page.locator('a[href="/english/"]')).toBeVisible();
+  await expect(page.locator('a[href="/subjects"]')).toBeVisible();
+});
+
+test('subject directory links to both subjects and tolerates more rows', async ({ page }) => {
+  await page.goto(`${BASE}/subjects`, { waitUntil: 'networkidle' });
+  await expect(page.locator('a[href="/maths/"]')).toBeVisible();
+  await expect(page.locator('a[href="/english/"]')).toBeVisible();
+  await expect(page.locator('.dir-coming')).toContainText('Coming soon');
+  await expect(page.locator('#spec-subjects')).toContainText('02');
+  await expect(page.locator('.subjects-toggle')).toHaveClass(/is-current/);
+  await Promise.all([
+    page.waitForURL(/\/(maths|english)\/$/),
+    page.locator('.dir-maths .dir-open').click(),
+  ]);
 });
 
 test('subject themes share the desk system but keep distinct accents', async ({ page }) => {
@@ -160,6 +175,7 @@ test('login lowercases the username so capitals work', async ({ page }) => {
 
 for (const [name, url] of [
   ['mobile-selector', '/'],
+  ['mobile-subjects', '/subjects'],
   ['mobile-maths', '/maths/'],
   ['mobile-english', '/english/'],
 ]) {

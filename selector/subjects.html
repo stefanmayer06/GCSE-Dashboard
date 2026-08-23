@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Browse every GCSE subject available on the Study Desk, with more on the way." />
+    <title>Subjects — GCSE Study Desk</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 fill=%22%23161713%22/><text x=%225%22 y=%2221%22 font-size=%2212%22 fill=%22%23f3f0e8%22>SD</text></svg>" />
+    <link rel="stylesheet" href="/selector.css" />
+    <link rel="stylesheet" href="/subjects.css" />
+    <script>
+      try {
+        var t = localStorage.getItem('gcse-theme');
+        if (t === 'dark' || (t !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <main class="desk">
+      <header class="masthead">
+        <a class="brand" href="/" aria-label="GCSE Study Desk home">
+          <span class="brand-mark" aria-hidden="true">SD</span>
+          <span>GCSE Study Desk</span>
+        </a>
+        <div class="mast-actions">
+          <span class="board-tag">AQA exam practice</span>
+          <a class="theme-toggle subjects-toggle is-current" href="/subjects" aria-current="page">
+            <span class="theme-toggle-icon" aria-hidden="true">▤</span>
+            <span>Subjects</span>
+          </a>
+          <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch colour theme">
+            <span class="theme-toggle-icon" aria-hidden="true">◐</span>
+            <span>Dark</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="directory-intro" aria-labelledby="directory-title">
+        <p class="eyebrow">Study Desk · Subject directory</p>
+        <h1 id="directory-title">Your subjects</h1>
+        <p class="intro-copy">Every subject you can study here, in one place. Pick one to jump straight back into your papers, lessons and progress.</p>
+      </section>
+
+      <dl class="spec-strip">
+        <div><dt>Subjects live</dt><dd><span id="spec-subjects">02</span></dd></div>
+        <div><dt>Papers</dt><dd><span id="spec-papers">05</span></dd></div>
+        <div><dt>Question bank</dt><dd><span id="spec-bank">1,730+</span></dd></div>
+      </dl>
+
+      <section class="subject-directory" aria-label="Available subjects">
+        <article class="dir-row dir-maths">
+          <div class="dir-index" aria-hidden="true">01</div>
+          <div class="dir-mark" aria-hidden="true">M</div>
+          <div class="dir-main">
+            <div class="dir-head">
+              <span class="dir-name">Mathematics</span>
+              <span class="dir-code">AQA 8300 · Foundation</span>
+            </div>
+            <p class="dir-desc">Build reliable methods across Number, Algebra, Ratio, Geometry, Probability and Statistics, with three full papers exactly like exam day.</p>
+            <ul class="dir-facts">
+              <li>3 papers</li>
+              <li>Grades 1–5</li>
+              <li><span id="dir-maths-q">1,730</span> generated questions</li>
+              <li>AI tutor</li>
+            </ul>
+          </div>
+          <a class="dir-open" href="/maths/">Open MathsMate <span aria-hidden="true">→</span></a>
+        </article>
+
+        <article class="dir-row dir-english">
+          <div class="dir-index" aria-hidden="true">02</div>
+          <div class="dir-mark" aria-hidden="true">E</div>
+          <div class="dir-main">
+            <div class="dir-head">
+              <span class="dir-name">English Language</span>
+              <span class="dir-code">AQA 8700</span>
+            </div>
+            <p class="dir-desc">Read sources closely, shape stronger responses and practise both papers with examiner-style AI marking, rubrics and model answers.</p>
+            <ul class="dir-facts">
+              <li>2 papers</li>
+              <li>Grades 1–9</li>
+              <li><span id="dir-english-texts">10</span> source texts</li>
+              <li>AI marking</li>
+            </ul>
+          </div>
+          <a class="dir-open" href="/english/">Open EnglishMate <span aria-hidden="true">→</span></a>
+        </article>
+
+        <article class="dir-row dir-coming" aria-disabled="true">
+          <div class="dir-index" aria-hidden="true">03</div>
+          <div class="dir-mark" aria-hidden="true">+</div>
+          <div class="dir-main">
+            <div class="dir-head">
+              <span class="dir-name">More subjects</span>
+              <span class="dir-code">Coming soon</span>
+            </div>
+            <p class="dir-desc">Science, Geography, Computer Science and more are on the way. This directory is built to grow one row at a time — no redesign needed.</p>
+          </div>
+          <span class="dir-soon">In the lab</span>
+        </article>
+      </section>
+
+      <footer class="desk-note">
+        <strong>Two subjects today. A whole curriculum tomorrow.</strong>
+        <span>New rows drop into this directory as each subject goes live behind the Study Desk.</span>
+      </footer>
+    </main>
+    <script src="/subjects.js" defer></script>
+  </body>
+</html>

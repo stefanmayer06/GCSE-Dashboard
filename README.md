@@ -59,6 +59,7 @@ See `AGENTS.md` for architecture, educational goals and change invariants.
 | Route | Purpose |
 | --- | --- |
 | `/` | Subject selector |
+| `/subjects` | Subject directory (catalogue of available subjects) |
 | `/maths/*` | MathsMate client (sign-in gated) |
 | `/english/*` | EnglishMate client (sign-in gated) |
 | `/api/auth/*` | Sign-in, session and OAuth endpoints |

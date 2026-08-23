@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { api } from '../api.js';
 
 export default function Topic() {
+  const higherTier = window.location.pathname.startsWith('/maths-higher');
   const { topicId } = useParams();
   const [topic, setTopic] = useState(null);
   const [quiz, setQuiz] = useState(null);
@@ -61,7 +62,7 @@ export default function Topic() {
         <div>
           <h1>{topic.name}</h1>
           <p className="sub">
-            {topic.strandName} · roughly {topic.examWeight}% of your foundation paper
+             {topic.strandName} · roughly {topic.examWeight}% of your {higherTier ? 'Higher' : 'Foundation'} paper
             {topic.accuracy != null ? ` · your accuracy so far: ${topic.accuracy}%` : ''}
           </p>
         </div>

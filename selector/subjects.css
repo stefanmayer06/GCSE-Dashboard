@@ -83,6 +83,7 @@
 
 .dir-row { border-left: 6px solid transparent; }
 .dir-maths { border-left-color: var(--maths); }
+.dir-maths-higher { border-left-color: #287c68; }
 .dir-english { border-left-color: var(--english); }
 
 .dir-row:hover { background: rgba(251, 250, 246, 0.6); }
@@ -110,8 +111,10 @@
 }
 
 .dir-maths .dir-mark { color: #6849e8; }
+.dir-maths-higher .dir-mark { color: #287c68; }
 .dir-english .dir-mark { color: #ad7621; }
 :root[data-theme='dark'] .dir-maths .dir-mark { color: #a387f0; }
+:root[data-theme='dark'] .dir-maths-higher .dir-mark { color: #76c9b2; }
 :root[data-theme='dark'] .dir-english .dir-mark { color: #cf9a45; }
 
 .dir-head {

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 
 export default function Learn() {
+  const higherTier = window.location.pathname.startsWith('/maths-higher');
   const [data, setData] = useState(null);
   const [open, setOpen] = useState({ number: true });
 
@@ -16,7 +17,7 @@ export default function Learn() {
         <div>
           <h1>Learn</h1>
           <p className="sub">
-            Every AQA foundation topic: bite-size notes, worked examples, practice questions and
+             Every AQA {higherTier ? 'Higher' : 'Foundation'} topic: bite-size notes, worked examples, practice questions and
             free external resources.
           </p>
         </div>

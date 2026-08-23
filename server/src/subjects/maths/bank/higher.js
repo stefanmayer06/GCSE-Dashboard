@@ -1,0 +1,569 @@
+import { makeRand, pick, shuffle, ri, round } from '../util.js';
+import { STRANDS, TOPICS } from './topics.js';
+import { loadBank, questionsFor } from './index.js';
+
+/*
+ * Original AQA 8300H-aligned questions. These are not copies of AQA past
+ * papers: each generator creates fresh values, while the worked solution is
+ * the mark scheme shown to the learner after submission.
+ */
+
+const q = (topicId, fields) => ({
+  topicId,
+  marks: fields.marks,
+  difficulty: fields.difficulty ?? 2,
+  stretch: fields.difficulty === 3,
+  text: fields.text,
+  input: { type: 'number', ...(fields.input || {}) },
+  answer: fields.answer,
+  answerText: fields.answerText ?? String(fields.answer),
+  solution: fields.solution,
+  hint: fields.hint,
+});
+
+const higherMeta = [
+  { id: 'standard-form-higher', strand: 'number', name: 'Standard Form & Index Laws', blurb: 'Standard form calculations, negative and fractional indices.', examWeight: 7 },
+  { id: 'surds', strand: 'number', name: 'Surds & Exact Values', blurb: 'Simplifying, rationalising and using exact surd forms.', examWeight: 5 },
+  { id: 'bounds', strand: 'number', name: 'Bounds & Error Intervals', blurb: 'Upper and lower bounds, limits of accuracy and error.', examWeight: 5 },
+  { id: 'algebraic-fractions', strand: 'algebra', name: 'Algebraic Fractions', blurb: 'Simplify, solve and combine algebraic fractions.', examWeight: 5 },
+  { id: 'quadratics-higher', strand: 'algebra', name: 'Quadratics & Algebraic Methods', blurb: 'Completing the square, formulae, discriminants and iteration.', examWeight: 9 },
+  { id: 'simultaneous-higher', strand: 'algebra', name: 'Simultaneous & Inequality Regions', blurb: 'Linear/quadratic systems and graphical inequality regions.', examWeight: 7 },
+  { id: 'functions-higher', strand: 'algebra', name: 'Functions, Graphs & Sequences', blurb: 'Composite and inverse functions, iteration and quadratic sequences.', examWeight: 8 },
+  { id: 'ratio-growth-higher', strand: 'ratio', name: 'Growth, Decay & Proportion', blurb: 'Compound change, direct/inverse proportion and compound measures.', examWeight: 8 },
+  { id: 'similarity-vectors', strand: 'geometry', name: 'Similarity, Congruence & Vectors', blurb: 'Scale factors, vector proofs and geometric reasoning.', examWeight: 7 },
+  { id: 'circle-theorems', strand: 'geometry', name: 'Circle Theorems & Measures', blurb: 'Circle theorems, sectors, tangents and exact geometry.', examWeight: 7 },
+  { id: 'trigonometry-higher', strand: 'geometry', name: 'Advanced Trigonometry', blurb: 'Sine rule, cosine rule, area formula and 3D trigonometry.', examWeight: 9 },
+  { id: 'probability-conditional', strand: 'probability', name: 'Conditional Probability', blurb: 'Tree diagrams, conditional probability and distributions.', examWeight: 7 },
+  { id: 'statistics-higher', strand: 'statistics', name: 'Higher Statistics', blurb: 'Histograms, cumulative frequency, box plots and sampling.', examWeight: 8 },
+  { id: 'proof', strand: 'algebra', name: 'Mathematical Proof', blurb: 'Proof by deduction, exhaustion and contradiction.', examWeight: 4 },
+];
+
+const generators = {
+  'standard-form-higher': (v) => {
+    const r = makeRand('higher-standard-form', v);
+    const t = v % 8;
+    const a = [3.2, 4.5, 6.4, 7.2, 8.1, 2.4, 5.6, 9.3][Math.floor(v / 8) % 8];
+    const b = [2.5, 3, 1.5, 4, 2, 5, 3.5, 1.2][Math.floor(v / 64) % 8];
+    if (t < 4) {
+      const answer = t % 2 === 0 ? a * 10 ** (4 + t) * b * 10 ** (t + 2) : (a * 10 ** (5 + t)) / (b * 10 ** (t + 1));
+      const rounded = round(answer, 8);
+      return q('standard-form-higher', {
+        marks: 3, difficulty: 2, answer: rounded, answerText: rounded.toExponential().replace('e+', ' × 10^'),
+        text: t % 2 === 0 ? `Work out ${a} × 10^${4 + t} × ${b} × 10^${t + 2}. Give your answer in standard form.` : `Work out (${a} × 10^${5 + t}) ÷ (${b} × 10^${t + 1}). Give your answer in standard form.`,
+        solution: [['Multiply or divide the numbers and use the index laws for powers of 10.', `The value is ${rounded}; in standard form this is ${rounded.toExponential().replace('e+', ' × 10^')}.`]],
+        hint: 'Deal with the coefficients and powers of 10 separately. The coefficient must be between 1 and 10.',
+      });
+    }
+    const bases = [4, 9, 16, 25, 8, 27, 32, 81];
+    const n = bases[Math.floor(v / 8) % bases.length];
+    const exponent = t === 4 ? 0.5 : t === 5 ? 1 / 3 : t === 6 ? -1 : -2;
+    const answer = round(n ** exponent, 6);
+    return q('standard-form-higher', {
+      marks: 2, difficulty: 3, answer, answerText: String(answer),
+      text: `Work out ${n}^${exponent === 0.5 ? '1/2' : exponent === 1 / 3 ? '1/3' : exponent}. Give your answer as a decimal.`,
+      solution: [[`Use a fractional or negative index: ${n}^${exponent} = ${answer}.`, `Answer = ${answer}.`]],
+      hint: 'A power of 1/2 means square root. A negative power means the reciprocal.',
+    });
+  },
+  surds: (v) => {
+    const t = v % 8;
+    const n = [8, 12, 18, 20, 24, 27, 32, 45][Math.floor(v / 8) % 8];
+    if (t < 4) {
+      const factor = [4, 3, 2, 5][t];
+      const answer = round(Math.sqrt(n) * Math.sqrt(factor), 6);
+      const exact = `${Math.sqrt(n * factor)}`;
+      return q('surds', {
+        marks: 2, difficulty: 2, answer, answerText: exact,
+        text: `Simplify √${n} × √${factor}. Give your answer as a single surd.`,
+        solution: [[`Multiply inside the square root: √${n} × √${factor} = √${n * factor}.`, `The value is approximately ${answer}; exact answer = ${exact}.`]],
+        hint: 'Use √a × √b = √(ab), then look for square factors.',
+      });
+    }
+    const a = [3, 5, 7, 2][t - 4];
+    const b = [2, 3, 4, 5][t - 4];
+    const answer = round((a * Math.sqrt(2)) / b, 6);
+    return q('surds', {
+      marks: 3, difficulty: 3, answer, answerText: `${a}√2/${b}`,
+      text: `Rationalise the denominator and give ${a}/(${b}√2) in the form k√2.`,
+      solution: [[`Multiply top and bottom by √2: ${a}/(${b}√2) = ${a}√2/(${b} × 2).`, `Simplify to ${a}√2/${b * 2}; decimal check = ${answer}.`]],
+      hint: 'Multiply numerator and denominator by the surd in the denominator.',
+    });
+  },
+  bounds: (v) => {
+    const t = v % 8;
+    const x = [3.4, 7.2, 12.5, 0.86, 45, 120, 2.75, 18.6][Math.floor(v / 8) % 8];
+    const unit = t % 2 === 0 ? 0.1 : 1;
+    const lower = x - unit / 2;
+    const upper = x + unit / 2;
+    const answer = round((upper - lower) / 2, 6);
+    return q('bounds', {
+      marks: 2, difficulty: t > 4 ? 3 : 2, answer, answerText: `${answer}`,
+      text: `A length is recorded as ${x}${unit === 1 ? ' cm to the nearest centimetre' : ' cm to the nearest millimetre'}. What is the maximum possible error in the recorded length?`,
+      solution: [[`The error interval is ${lower} ≤ length < ${upper}.`, `Maximum error = half the unit = ${answer} cm.`]],
+      hint: 'The maximum error is half the unit used for rounding.',
+    });
+  },
+  'algebraic-fractions': (v) => {
+    const t = v % 8;
+    const a = [2, 3, 4, 5, 6, 7, 8, 9][Math.floor(v / 8) % 8];
+    const b = a + 2;
+    if (t < 4) {
+      const x = [2, 3, 4, 5][t];
+      const coefficient = 2 * x;
+      const numerator = 2 * (x + 1);
+      const answer = x;
+      return q('algebraic-fractions', {
+        marks: 3, difficulty: 2, answer, answerText: `x = ${answer}`,
+        text: `Solve  ${coefficient}/x = ${numerator}/(x + 1).`,
+        solution: [[`Cross multiply: ${coefficient}(x + 1) = ${numerator}x.`, `Rearrange to ${coefficient} = 2x, so x = ${answer}.`]],
+        hint: 'Cross multiply, then simplify before solving.',
+      });
+    }
+    const answer = round((a + b) / (a * b), 6);
+    return q('algebraic-fractions', {
+      marks: 3, difficulty: 3, answer, answerText: `1/${a} + 1/${b} = ${answer}`,
+      text: `Work out  1/${a} + 1/${b}  as a decimal.`,
+      solution: [[`Use the common denominator ${a * b}: 1/${a} + 1/${b} = ${b + a}/${a * b}.`, `Decimal answer = ${answer}.`]],
+      hint: 'Use the product of the denominators as a common denominator, then simplify.',
+    });
+  },
+  'quadratics-higher': (v) => {
+    const t = v % 8;
+    const roots = [[2, 5], [1, 6], [-2, 4], [-3, 2], [3, 7], [-4, 1], [2, 8], [-1, 5]][Math.floor(v / 8) % 8];
+    if (t < 4) {
+      const [a, b] = roots;
+      const sum = a + b;
+      const product = a * b;
+      const answer = a;
+      return q('quadratics-higher', {
+        marks: 3, difficulty: 2, answer, answerText: `x = ${a} or x = ${b}`,
+        text: `Solve  x² − ${sum}x + ${product} = 0. Give the smaller solution.`,
+        solution: [[`Factorise: (x − ${a})(x − ${b}) = 0.`, `So x = ${a} or x = ${b}; the smaller solution is ${answer}.`]],
+        hint: 'Find two numbers with product equal to the constant and sum equal to the coefficient of x.',
+      });
+    }
+    const p = [1, 2, 3, 4][t - 4];
+    const answer = round((-p + Math.sqrt(p * p + 24)) / 2, 6);
+    return q('quadratics-higher', {
+      marks: 4, difficulty: 3, answer, answerText: `x ≈ ${answer}`,
+      text: `Solve  x² + ${p}x − 6 = 0. Give the positive solution to 3 decimal places.`,
+      solution: [[`Use the quadratic formula with a = 1, b = ${p}, c = −6.`, `x = (−${p} + √(${p}² + 24)) / 2 = ${answer}.`]],
+      hint: 'If it does not factorise, use the quadratic formula and choose the positive root.',
+    });
+  },
+  'simultaneous-higher': (v) => {
+    const t = v % 8;
+    const x = [2, 3, 4, 5, 6, 7, 8, 9][Math.floor(v / 8) % 8];
+    const y = [3, 5, 2, 4, 6, 1, 7, 8][Math.floor(v / 64) % 8];
+    if (t < 4) {
+      const a = x + y;
+      const b = x - y;
+      return q('simultaneous-higher', {
+        marks: 3, difficulty: 2, answer: x, answerText: `x = ${x}, y = ${y}`,
+        text: `Solve simultaneously: x + y = ${a}; x − y = ${b}. Give the value of x.`,
+        solution: [[`Add the equations: 2x = ${a + b}.`, `x = ${x}; substituting gives y = ${y}.`]],
+        hint: 'Add the equations to eliminate y.',
+      });
+    }
+    const answer = y;
+    return q('simultaneous-higher', {
+      marks: 4, difficulty: 3, answer, answerText: `x = ${answer}`,
+      text: `The line y = ${x}x − ${y} intersects the curve y = x² − ${x + y}x + ${x * y}. One x-coordinate is ${x}. Find the other x-coordinate.`,
+      solution: [[`Set the equations equal and rearrange to get x² − ${x + y}x + ${x * y} = 0.`, `The roots are ${x} and ${y}; the other x-coordinate is ${y}.`]],
+      hint: 'At an intersection, the two expressions for y are equal. Substitute and solve the resulting quadratic.',
+    });
+  },
+  'functions-higher': (v) => {
+    const t = v % 8;
+    const a = [2, 3, 4, 5, 2, 3, 4, 5][Math.floor(v / 8) % 8];
+    const c = [1, 2, -1, 3, 4, -2, 5, 1][Math.floor(v / 64) % 8];
+    if (t < 4) {
+      const x = 3 + t;
+      const answer = a * x + c;
+      return q('functions-higher', {
+        marks: 2, difficulty: 2, answer, answerText: `f(${x}) = ${answer}`,
+        text: `f(x) = ${a}x ${c < 0 ? '−' : '+'} ${Math.abs(c)}. Work out f(${x}).`,
+        solution: [[`Substitute x = ${x}: f(${x}) = ${a}(${x}) ${c < 0 ? '−' : '+'} ${Math.abs(c)}.`, `f(${x}) = ${answer}.`]],
+        hint: 'Replace every x with the given value, using brackets if needed.',
+      });
+    }
+    const x = [2, 3, 4, 5][t - 4];
+    const answer = round((x - c) / a, 6);
+    return q('functions-higher', {
+      marks: 3, difficulty: 3, answer, answerText: `x = ${answer}`,
+      text: `f(x) = ${a}x ${c < 0 ? '−' : '+'} ${Math.abs(c)}. f(x) = ${x}. Work out x.`,
+      solution: [[`Set ${a}x ${c < 0 ? '−' : '+'} ${Math.abs(c)} = ${x}.`, `Rearrange and divide by ${a}: x = ${answer}.`]],
+      hint: 'Treat f(x) as the whole expression and solve the resulting linear equation.',
+    });
+  },
+  'ratio-growth-higher': (v) => {
+    const t = v % 8;
+    const start = [800, 1200, 2500, 640, 1500, 3000, 450, 2200][Math.floor(v / 8) % 8];
+    const rate = [1.05, 1.08, 0.92, 1.12, 0.85, 1.04, 1.15, 0.9][Math.floor(v / 64) % 8];
+    if (t < 4) {
+      const years = t + 2;
+      const answer = round(start * rate ** years, 2);
+      return q('ratio-growth-higher', {
+        marks: 3, difficulty: 2, answer, answerText: `${answer}`,
+        text: `An investment of £${start} changes by ${(rate - 1) * 100}% each year. Work out its value after ${years} years, to the nearest penny.`,
+        solution: [[`Use the multiplier ${rate}: value = ${start} × ${rate}^${years}.`, `Value = £${answer}.`]],
+        hint: 'Repeated percentage change uses a multiplier raised to the number of changes.',
+        input: { placeholder: '£' },
+      });
+    }
+    const answer = 2 * (t + 2);
+    return q('ratio-growth-higher', {
+      marks: 4, difficulty: 3, answer, answerText: `${answer}`,
+      text: `y is inversely proportional to x². When x = ${t + 2}, y = ${round(start / (t + 2) ** 2, 4)}. Find x when y = ${round(start / (t + 2) ** 2 / 4, 4)}.`,
+      solution: [[`For inverse proportion, y = k/x². A quarter of y requires x² to be four times as large.`, `x is doubled: x = ${answer}.`]],
+      hint: 'For inverse proportion to x², scaling x by a factor changes y by the square of that factor.',
+    });
+  },
+  'similarity-vectors': (v) => {
+    const t = v % 8;
+    const scale = [2, 3, 4, 0.5, 1.5, 2.5, 3.5, 0.75][Math.floor(v / 8) % 8];
+    if (t < 4) {
+      const length = [6, 8, 10, 12][t];
+      const answer = round((length / 2) * scale, 6);
+      return q('similarity-vectors', {
+        marks: 2, difficulty: 2, answer, answerText: `${answer} cm`,
+        text: `Two similar shapes have a scale factor of ${scale}. The smaller shape has a side of ${length / 2} cm. Find the corresponding side on the larger shape.`,
+        solution: [[`The scale factor is ${scale}.`, `Corresponding length = ${length / 2} × ${scale} = ${answer} cm.`]],
+        hint: 'Find the scale factor from a pair of corresponding sides, then multiply.',
+      });
+    }
+    const a = t - 3;
+    const b = t - 1;
+    const answer = round(Math.sqrt(a * a + b * b), 6);
+    return q('similarity-vectors', {
+      marks: 3, difficulty: 3, answer, answerText: `√${a * a + b * b} ≈ ${answer}`,
+      text: `A vector has components ${a} and ${b}. Work out its length to 3 decimal places.`,
+      solution: [[`Use Pythagoras on the vector components: length = √(${a}² + ${b}²).`, `Length = ${answer}.`]],
+      hint: 'The length of a vector (a,b) is √(a²+b²).',
+    });
+  },
+  'circle-theorems': (v) => {
+    const t = v % 8;
+    const angle = [34, 42, 56, 68, 27, 38, 49, 72][Math.floor(v / 8) % 8];
+    if (t < 4) {
+      const answer = angle * 2;
+      return q('circle-theorems', {
+        marks: 2, difficulty: 2, answer, answerText: `${answer}°`,
+        text: `An angle at the circumference of a circle is ${angle}°. The two angles stand on the same chord. Find the angle at the centre.`,
+        solution: [[`The angle at the centre is twice the angle at the circumference.`, `Centre angle = 2 × ${angle} = ${answer}°.`]],
+        hint: 'The angle at the centre is twice the angle at the circumference standing on the same arc.',
+        input: { placeholder: '°' },
+      });
+    }
+    const radius = [4, 5, 6, 7][t - 4];
+    const answer = round((angle / 360) * Math.PI * radius * radius, 2);
+    return q('circle-theorems', {
+      marks: 3, difficulty: 3, answer, answerText: `${answer} cm²`,
+      text: `A sector has radius ${radius} cm and angle ${angle}°. Work out its area to 2 decimal places.`,
+      solution: [[`Area of a sector = angle/360 × πr².`, `Area = ${angle}/360 × π × ${radius}² = ${answer} cm².`]],
+      hint: 'Use angle/360 × πr² for the area of a sector.',
+    });
+  },
+  'trigonometry-higher': (v) => {
+    const t = v % 8;
+    const side = [7, 9, 11, 13, 8, 10, 12, 14][Math.floor(v / 8) % 8];
+    if (t < 4) {
+      const angle = [30, 45, 60, 30][t];
+      const answer = round(0.5 * side * side * Math.sin(angle * Math.PI / 180), 3);
+      return q('trigonometry-higher', {
+        marks: 3, difficulty: 2, answer, answerText: `${answer}`,
+        text: `A triangle has two sides of ${side} cm with an included angle of ${angle}°. Work out its area to 3 decimal places.`,
+        solution: [[`Use area = 1/2 ab sin C.`, `Area = 1/2 × ${side} × ${side} × sin ${angle}° = ${answer} cm².`]],
+        hint: 'The non-right-angled triangle area formula is 1/2ab sin C.',
+      });
+    }
+    const a = [6, 8, 10, 12][t - 4];
+    const b = [8, 10, 12, 14][t - 4];
+    const angle = [60, 90, 120, 60][t - 4];
+    const answer = round(Math.sqrt(a * a + b * b - 2 * a * b * Math.cos(angle * Math.PI / 180)), 3);
+    return q('trigonometry-higher', {
+      marks: 4, difficulty: 3, answer, answerText: `${answer} cm`,
+      text: `Two sides of a triangle are ${a} cm and ${b} cm. The angle between them is ${angle}°. Work out the third side to 3 decimal places.`,
+      solution: [[`Use the cosine rule: c² = a² + b² − 2ab cos C.`, `c = √(${a}² + ${b}² − 2 × ${a} × ${b} × cos ${angle}°) = ${answer} cm.`]],
+      hint: 'Use the cosine rule when you know two sides and the included angle.',
+    });
+  },
+  'probability-conditional': (v) => {
+    const t = v % 8;
+    const red = 2 + (Math.floor(v / 8) % 4);
+    const blue = 3 + (Math.floor(v / 64) % 4);
+    const total = red + blue;
+    if (t < 4) {
+      const answer = round((red / total) * ((red - 1) / (total - 1)), 6);
+      return q('probability-conditional', {
+        marks: 3, difficulty: 2, answer, answerText: `${answer}`,
+        text: `A bag contains ${red} red counters and ${blue} blue counters. Two counters are taken without replacement. Find the probability that both are red.`,
+        solution: [[`P(first red) = ${red}/${total}; after a red, P(second red) = ${red - 1}/${total - 1}.`, `Multiply: ${red}/${total} × ${red - 1}/${total - 1} = ${answer}.`]],
+        hint: 'Without replacement, the total and the number of red counters change after the first draw.',
+      });
+    }
+    const p = [0.2, 0.3, 0.4, 0.25][t - 4];
+    const answer = round(p * (1 - p), 6);
+    return q('probability-conditional', {
+      marks: 3, difficulty: 3, answer, answerText: `${answer}`,
+      text: `Events A and B are independent. P(A) = ${p} and P(B) = ${1 - p}. Work out P(A and not B).`,
+      solution: [[`P(not B) = 1 − ${1 - p} = ${p}.`, `Independent events multiply: P(A and not B) = ${p} × ${p} = ${answer}.`]],
+      hint: 'Find the complement first, then multiply probabilities for independent events.',
+    });
+  },
+  'statistics-higher': (v) => {
+    const t = v % 8;
+    const freq = [4, 6, 8, 10, 12, 15, 18, 20][Math.floor(v / 8) % 8];
+    if (t < 4) {
+      const width = [5, 10, 20, 25][t];
+      const density = round(freq / width, 6);
+      return q('statistics-higher', {
+        marks: 2, difficulty: 2, answer: density, answerText: `${density}`,
+        text: `A histogram class has class width ${width} and frequency ${freq}. Work out the frequency density.`,
+        solution: [[`Frequency density = frequency ÷ class width.`, `Density = ${freq} ÷ ${width} = ${density}.`]],
+        hint: 'Frequency density is frequency divided by class width.',
+      });
+    }
+    const lower = [10, 20, 30, 40][t - 4];
+    const upper = lower + 10;
+    const cumulative = [12, 28, 45, 60][t - 4];
+    const answer = round(lower + ((cumulative - 1) / cumulative) * (upper - lower), 2);
+    return q('statistics-higher', {
+      marks: 3, difficulty: 3, answer, answerText: `approximately ${answer}`,
+      text: `A grouped table has a class ${lower}–${upper} with cumulative frequency ${cumulative}. Use linear interpolation to estimate the value at the ${cumulative - 1}th observation.`,
+      solution: [[`Assume values are evenly spread across the class.`, `Estimated value ≈ ${lower} + (${cumulative - 1}/${cumulative}) × ${upper - lower} = ${answer}.`]],
+      hint: 'For grouped data, interpolation assumes values are evenly distributed within a class.',
+    });
+  },
+  proof: (v) => {
+    const t = v % 8;
+    const n = [3, 5, 7, 9, 11, 13, 15, 17][Math.floor(v / 8) % 8];
+    if (t < 4) {
+      const answer = 2;
+      return q('proof', {
+        marks: 3, difficulty: 3, answer, answerText: '2',
+        text: 'For any two consecutive integers n and n + 1, their product is always divisible by what smallest positive integer? Use this fact to justify the proof.',
+        solution: [['One of any two consecutive integers is even.', 'Therefore their product always contains a factor of 2 and is divisible by 2.']],
+        hint: 'Consecutive integers alternate odd/even. A product containing an even factor is even.',
+      });
+    }
+    const answer = n + 1;
+    return q('proof', {
+      marks: 4, difficulty: 3, answer, answerText: `n = ${answer}`,
+      text: `The sum of three consecutive integers is 3${answer}. Find the middle integer.`,
+      solution: [[`Let the integers be n − 1, n and n + 1. Their sum is 3n.`, `3n = 3${answer}, so n = ${answer}.`]],
+      hint: 'Represent three consecutive integers as n−1, n and n+1, then simplify their sum.',
+    });
+  },
+};
+
+const higherCache = new Map();
+
+export async function loadHigherBank() {
+  if (higherCache.size) return higherCache;
+  await loadBank();
+  for (const meta of higherMeta) {
+    const generator = generators[meta.id];
+    const set = [];
+    for (let v = 0; v < 64; v++) {
+      const item = generator(v);
+      if (!item) break;
+      set.push({ ...item, id: `higher-${meta.id}-${v}`, topic: meta.name, strand: meta.strand, strandName: STRANDS[meta.strand].name, tier: 'higher' });
+    }
+    higherCache.set(meta.id, set);
+  }
+  // Foundation topics still have useful entry-level practice inside Higher.
+  for (const topic of TOPICS) {
+    const set = (questionsFor(topic.id) || []).map((item) => ({
+      ...item,
+      id: `higher-${item.id}`,
+      tier: 'higher',
+      difficulty: Math.min(3, item.difficulty + 1),
+      stretch: item.difficulty >= 2,
+    }));
+    higherCache.set(topic.id, set);
+  }
+  return higherCache;
+}
+
+export function higherBankSize() {
+  if (!higherCache.size) return null;
+  return [...higherCache.values()].reduce((n, set) => n + set.length, 0);
+}
+
+export function higherQuestionsFor(topicId) {
+  return higherCache.get(topicId) || [];
+}
+
+export function higherTopics() {
+  return [
+    ...TOPICS.map((t) => ({ ...t, tier: 'both' })),
+    ...higherMeta.map((t) => ({
+      ...t,
+      tier: 'higher',
+      notes: [
+        { t: 'p', text: `${t.name} is a Higher-tier focus in AQA 8300H. Work symbolically first, then use a calculator only when the method requires it.` },
+        { t: 'b', items: ['Write a clear method before substituting values.', 'Keep exact forms until the final line where the question asks for a decimal.', 'Check units, sensible size and the wording of the answer.'] },
+        { t: 'f', title: 'Exam habit', text: 'Method marks are available: show the formula, substitution and an accurate final answer.' },
+      ],
+      resources: [
+        { label: 'Corbettmaths', url: `https://corbettmaths.com/?s=${encodeURIComponent(t.name)}`, why: 'Free videos and practice.' },
+        { label: 'Maths Genie', url: 'https://www.mathsgenie.co.uk/gcse-revision.html', why: 'Free GCSE Higher revision resources.' },
+      ],
+    })),
+  ];
+}
+
+export const HIGHER_PAPERS = {
+  1: {
+    id: 1, code: '8300/1H', name: 'Paper 1', calculator: false, spec: 'Non-calculator',
+    blurb: 'Non-calculator. Number, Algebra, Proof and exact methods lead the paper.',
+    strands: { number: 22, algebra: 28, ratio: 12, geometry: 14, probability: 10, statistics: 14 },
+  },
+  2: {
+    id: 2, code: '8300/2H', name: 'Paper 2', calculator: true, spec: 'Calculator',
+    blurb: 'Calculator. Algebra, proportion, geometry and statistical interpretation.',
+    strands: { number: 14, algebra: 24, ratio: 18, geometry: 22, probability: 10, statistics: 12 },
+  },
+  3: {
+    id: 3, code: '8300/3H', name: 'Paper 3', calculator: true, spec: 'Calculator',
+    blurb: 'Calculator. A balanced Higher paper with advanced geometry, probability and proof.',
+    strands: { number: 16, algebra: 24, ratio: 16, geometry: 22, probability: 10, statistics: 12 },
+  },
+};
+
+export function higherPaperList() {
+  return Object.values(HIGHER_PAPERS).map((p) => ({
+    ...p,
+    strands: Object.entries(p.strands).map(([id, percent]) => ({ id, name: STRANDS[id].name, color: STRANDS[id].color, percent })),
+    marks: { full: 80, short: 40 },
+    minutes: { full: 90, short: 45 },
+    tier: 'higher',
+  }));
+}
+
+function strandPool(strand, exclude = new Set()) {
+  const high = [];
+  const foundation = [];
+  for (const set of higherCache.values()) {
+    for (const item of set) {
+      if (item.strand !== strand || exclude.has(item.id)) continue;
+      if (higherMeta.some((meta) => item.topicId === meta.id)) high.push(item);
+      else foundation.push(item);
+    }
+  }
+  return [...high, ...foundation];
+}
+
+function chooseForMarks(rng, pool, marks) {
+  const chosen = [];
+  let left = marks;
+  const high = pool.filter((item) => higherMeta.some((meta) => item.topicId === meta.id));
+  const foundation = pool.filter((item) => !higherMeta.some((meta) => item.topicId === meta.id));
+  const remaining = [...shuffle(rng, high), ...shuffle(rng, foundation)];
+  while (left > 0) {
+    const exact = remaining.filter((item) => item.marks === left);
+    const candidates = exact.length ? exact : remaining.filter((item) => item.marks <= left);
+    if (!candidates.length) return null;
+    const item = pick(rng, candidates.slice(0, Math.min(candidates.length, 20)));
+    chosen.push(item);
+    left -= item.marks;
+    const index = remaining.indexOf(item);
+    if (index >= 0) remaining.splice(index, 1);
+  }
+  return chosen;
+}
+
+function sanitize(item, { withHint = false } = {}) {
+  const out = {
+    id: item.id, topicId: item.topicId, topic: item.topic, strand: item.strand, strandName: item.strandName,
+    marks: item.marks, difficulty: item.difficulty, stretch: !!item.stretch, text: item.text, input: item.input,
+  };
+  if (withHint) out.hint = item.hint;
+  return out;
+}
+
+export function buildHigherPaper(type = 'full', paperId = 1) {
+  const paper = HIGHER_PAPERS[paperId] || HIGHER_PAPERS[1];
+  const total = type === 'full' ? 80 : 40;
+  const budgets = Object.fromEntries(Object.entries(paper.strands).map(([id, percent]) => [id, Math.round((total * percent) / 100)]));
+  const budgetDifference = total - Object.values(budgets).reduce((sum, value) => sum + value, 0);
+  budgets.algebra += budgetDifference;
+  const rng = makeRand('higher-paper', Math.floor(Math.random() * 2 ** 31));
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const picked = [];
+    const used = new Set();
+    let failed = false;
+    for (const strand of shuffle(rng, Object.keys(budgets))) {
+      const selection = chooseForMarks(rng, strandPool(strand, used), budgets[strand]);
+      if (!selection) { failed = true; break; }
+      selection.forEach((item) => { picked.push(item); used.add(item.id); });
+    }
+    if (failed || picked.reduce((sum, item) => sum + item.marks, 0) !== total || picked.length < (total === 80 ? 24 : 12) || picked.length > (total === 80 ? 38 : 22)) continue;
+    const ramp = [];
+    for (const difficulty of [1, 2, 3]) {
+      const band = picked.filter((item) => item.difficulty === difficulty);
+      ramp.push(...shuffle(makeRand('higher-paper-order', attempt * 97 + difficulty), band));
+    }
+    return {
+      tier: 'higher', paperId: paper.id, paperCode: paper.code, paperName: paper.name, calculator: paper.calculator,
+      questions: ramp.map((item, index) => ({ ...sanitize(item), qn: index + 1 })), totalMarks: total,
+      minutes: total === 80 ? 90 : 45, stretchCount: ramp.filter((item) => item.difficulty === 3).length,
+      strandCoverage: Object.keys(paper.strands).map((id) => STRANDS[id].name),
+    };
+  }
+  const all = Object.values(HIGHER_PAPERS[paperId].strands).length ? strandPool('algebra') : [];
+  return { tier: 'higher', paperId: paper.id, paperCode: paper.code, paperName: paper.name, calculator: paper.calculator, questions: all.slice(0, 12).map((item, index) => ({ ...sanitize(item), qn: index + 1 })), totalMarks: all.slice(0, 12).reduce((sum, item) => sum + item.marks, 0), minutes: 45, stretchCount: 0, strandCoverage: [] };
+}
+
+export function buildHigherPractice(topicId, count = 8) {
+  const set = higherQuestionsFor(topicId);
+  if (!set.length) return [];
+  return shuffle(makeRand('higher-practice', Date.now()), [...set]).slice(0, count).map((item, index) => ({ ...sanitize(item, { withHint: true }), qn: index + 1 }));
+}
+
+export function buildHigherAdhoc(count = 15, paperIds = [1, 2, 3]) {
+  const ids = paperIds.filter((id) => HIGHER_PAPERS[id]);
+  const strands = [...new Set(ids.flatMap((id) => Object.keys(HIGHER_PAPERS[id].strands)))];
+  const pool = strands.flatMap((strand) => strandPool(strand));
+  const rng = makeRand('higher-adhoc', Date.now());
+  const picked = shuffle(rng, pool).slice(0, count);
+  return { questions: picked.map((item, index) => ({ ...sanitize(item, { withHint: true }), qn: index + 1 })), papersIncluded: ids.map((id) => HIGHER_PAPERS[id].code), tier: 'higher' };
+}
+
+function mark(item, value) {
+  if (value === null || value === undefined || value === '') return false;
+  if (item.input.type === 'mcq') return String(value).trim().toUpperCase() === item.answer;
+  const answer = parseFloat(String(value).replace(/[£$,%\s]/g, ''));
+  if (Number.isNaN(answer)) return false;
+  return Math.abs(answer - item.answer) <= (item.input.tolerance ?? 1e-5);
+}
+
+export function higherMarkAnswers(pool, pairs) {
+  const results = { perQ: [], correctMarks: 0, totalMarks: 0 };
+  for (const { qid, value } of pairs) {
+    const item = pool.find((candidate) => candidate.id === qid);
+    if (!item) continue;
+    const correct = mark(item, value);
+    results.totalMarks += item.marks;
+    if (correct) results.correctMarks += item.marks;
+    results.perQ.push({ qid, qn: null, marks: item.marks, correct, value: value ?? null, answerText: item.answerText, solution: item.solution, text: item.text, stretch: !!item.stretch, topicId: item.topicId, topic: item.topic });
+  }
+  return results;
+}
+
+export function higherCheckAnswer(qid, value) {
+  for (const set of higherCache.values()) {
+    const item = set.find((candidate) => candidate.id === qid);
+    if (item) return { correct: mark(item, value), answerText: item.answerText, solution: item.solution };
+  }
+  return { correct: false, answerText: null, solution: ['Question not found.'] };
+}
+
+export function higherQuestionById(id) {
+  for (const set of higherCache.values()) {
+    const item = set.find((candidate) => candidate.id === id);
+    if (item) return item;
+  }
+  return null;
+}

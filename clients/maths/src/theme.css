@@ -22,6 +22,24 @@
     linear-gradient(90deg, rgba(196, 178, 255, 0.05) 1px, transparent 1px);
 }
 
+.app.higher-tier {
+  --accent: #287c68;
+  --accent-strong: #1b5b4b;
+  --accent2: #9a6b2f;
+  --accent-wash: #d8eee7;
+  --subject-tint: #d0e9df;
+  --subject-ink: #173b35;
+}
+
+:root[data-theme='dark'] .app.higher-tier {
+  --accent: #76c9b2;
+  --accent-strong: #b9eadb;
+  --accent2: #d9a65d;
+  --accent-wash: rgba(40, 124, 104, 0.2);
+  --subject-tint: rgba(40, 124, 104, 0.18);
+  --subject-ink: #b9eadb;
+}
+
 .formula-body,
 .answer-input,
 .timer-value,

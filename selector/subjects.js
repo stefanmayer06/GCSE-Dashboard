@@ -42,21 +42,29 @@ async function refreshStats() {
     }
   };
 
-  const [maths, english] = await Promise.all([
+  const [maths, higher, english] = await Promise.all([
     fetchJson('/api/maths/health'),
+    fetchJson('/api/maths-higher/health'),
     fetchJson('/api/english/health'),
   ]);
 
-  let subjects = 2;
-  let papers = 5;
-  let bank = '1,730+';
+  let subjects = 3;
+  let papers = 8;
+  let bank = '4,300+';
 
   if (maths && maths.bankSize) {
-    subjects = 2;
-    papers = 5;
-    bank = `${maths.bankSize.toLocaleString()}+`;
+     subjects = 3;
+     papers = 8;
+     bank = `${maths.bankSize.toLocaleString()}+`;
     const q = document.getElementById('dir-maths-q');
     if (q) q.textContent = maths.bankSize.toLocaleString();
+  }
+  if (higher && higher.bankSize) {
+    const q = document.getElementById('dir-maths-higher-q');
+    if (q) q.textContent = higher.bankSize.toLocaleString();
+    const card = document.getElementById('maths-higher-bank');
+    if (card) card.textContent = `${higher.bankSize.toLocaleString()}+ questions`;
+    if (bankEl && maths?.bankSize) bankEl.textContent = `${(maths.bankSize + higher.bankSize).toLocaleString()}+`;
   }
   if (english && english.texts) {
     const texts = document.getElementById('dir-english-texts');

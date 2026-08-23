@@ -9,7 +9,8 @@ export default function Results() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem('mathsmate-last-result');
+      const key = window.location.pathname.startsWith('/maths-higher') ? 'mathsmate-higher-last-result' : 'mathsmate-last-result';
+      const raw = localStorage.getItem(key);
       if (raw) setResult(JSON.parse(raw));
     } catch {
       /* noop */
@@ -31,6 +32,11 @@ export default function Results() {
   const mins = result.durationSec ? `${Math.floor(result.durationSec / 60)}m ${result.durationSec % 60}s` : null;
   const gradeColor =
     result.grade === null ? 'u' : result.grade >= 4 ? 'great' : result.grade === 3 ? 'ok' : 'bad';
+  const boundaries = result.boundaries || [
+    { grade: 5, boundary: 55 }, { grade: 4, boundary: 42 }, { grade: 3, boundary: 28 },
+    { grade: 2, boundary: 18 }, { grade: 1, boundary: 10 },
+  ];
+  const higherTier = result.tier === 'higher';
 
   return (
     <div className="page results">
@@ -56,7 +62,7 @@ export default function Results() {
               ? 'Below grade 1 this time — head to the topic fixes below and go again. You\u2019ve got this.'
               : result.nextBoundary
                 ? `Just ${result.nextBoundary.marksToGo} more mark${result.nextBoundary.marksToGo === 1 ? '' : 's'} to reach a grade ${result.nextBoundary.grade}.`
-                : 'Top of foundation tier — you can\u2019t do better than a 5 on this paper. 🏆'}
+                : higherTier ? 'Top of the predicted Higher range on this paper. 🏆' : 'Top of foundation tier — you can\u2019t do better than a 5 on this paper. 🏆'}
           </div>
         </div>
         <div className="actions-col">
@@ -74,8 +80,7 @@ export default function Results() {
               <tr><th>Grade</th><th>Marks needed (/80)</th><th>You</th></tr>
             </thead>
             <tbody>
-              {[5, 4, 3, 2, 1].map((g) => {
-                const boundary = [55, 42, 28, 18, 10][5 - g];
+              {boundaries.map(({ grade: g, boundary }) => {
                 const scaled = Math.round((result.correctMarks / result.totalMarks) * 80);
                 return (
                   <tr key={g} className={result.grade === g ? 'me' : ''}>
@@ -88,8 +93,8 @@ export default function Results() {
             </tbody>
           </table>
           <p className="sub small">
-            Averaged from published AQA 8300F boundaries (2018–2024). Real boundaries move a few
-            marks each year — this is a prediction, not a promise.
+            Rounded predicted boundaries for AQA 8300{higherTier ? 'H' : 'F'} practice. Real boundaries move each
+            exam series — this is a prediction, not a promise.
           </p>
         </div>
 

@@ -154,7 +154,7 @@ h1 {
 
 .subject-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   border-top: 1px solid var(--ink);
   border-bottom: 1px solid var(--ink);
 }
@@ -184,12 +184,15 @@ h1 {
 }
 
 .maths-card { color: #201a3d; background: #e2dcff; }
+.maths-higher-card { color: #173b35; background: #cfe9df; }
 .english-card { color: #3e2911; background: #ebddbd; }
 
 :root[data-theme='dark'] .maths-card { color: #d2c6ff; background: #241d3e; }
+:root[data-theme='dark'] .maths-higher-card { color: #b9eadb; background: #18352f; }
 :root[data-theme='dark'] .english-card { color: #e3c287; background: #352b1a; }
 :root[data-theme='dark'] .availability.ready i { background: #4fc08f; box-shadow: 0 0 0 3px rgba(79, 192, 143, 0.18); }
 :root[data-theme='dark'] .maths-card .enter-link:hover { background: #d5c6ff; }
+:root[data-theme='dark'] .maths-higher-card .enter-link:hover { background: #b9eadb; color: #173b35; }
 :root[data-theme='dark'] .english-card .enter-link:hover { background: #f0d9a8; }
 
 .card-topline {
@@ -279,6 +282,7 @@ dd { margin: 0; font-size: 14px; font-weight: 750; }
 .enter-link span { font-size: 20px; transition: transform 160ms ease; }
 .enter-link:hover { color: var(--paper); transform: translateY(-2px); }
 .maths-card .enter-link:hover { background: #201a3d; }
+.maths-higher-card .enter-link:hover { background: #173b35; }
 .english-card .enter-link:hover { background: #3e2911; }
 .enter-link:hover span { transform: translateX(4px); }
 .enter-link:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }

@@ -12,7 +12,7 @@ const STRAND_NAMES_LIST = [
   { id: 'statistics', name: 'Statistics' },
 ];
 
-export default function Dashboard({ health, progress }) {
+export default function Dashboard({ health, progress, higherTier = false }) {
   const navigate = useNavigate();
   const recent = progress?.history?.slice(0, 10).reverse() || [];
   const maxBar = Math.max(1, ...recent.map((h) => h.percent));
@@ -54,8 +54,8 @@ export default function Dashboard({ health, progress }) {
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>Your Maths revision</h1>
-          <p className="sub">AQA GCSE Maths Foundation — train like it&apos;s exam day.</p>
+           <h1>Your Maths revision</h1>
+           <p className="sub">AQA GCSE Maths {higherTier ? 'Higher' : 'Foundation'} — train like it&apos;s exam day.</p>
         </div>
         {health && (
           <div className="head-chip">
@@ -86,16 +86,20 @@ export default function Dashboard({ health, progress }) {
       <section className="panel start-panel">
         <h2>Start a practice paper</h2>
         <p className="sub">
-          All three AQA foundation papers — built from the bank of {health?.bankSize?.toLocaleString() ?? '1000+'} questions with
-          AQA&apos;s per-paper topic allocation, a difficulty ramp and stretch questions. Predicted grade
+           All three AQA {higherTier ? 'Higher' : 'Foundation'} papers — built from the bank of {health?.bankSize?.toLocaleString() ?? '1000+'} questions with
+           {higherTier ? 'balanced 8300H content coverage' : 'AQA\'s per-paper topic allocation'}, a difficulty ramp and stretch questions. Predicted grade
           from averaged past boundaries, worked solutions and revision links for everything you miss.
         </p>
         <div className="papers-grid">
-          {[
-            { id: 1, code: '8300/1F', name: 'Paper 1', calc: false, blurb: 'Non-calculator. Number, Algebra, Ratio, Probability & Statistics.' },
-            { id: 2, code: '8300/2F', name: 'Paper 2', calc: true, blurb: 'Calculator. Algebra, Ratio, Geometry, Probability & Statistics.' },
-            { id: 3, code: '8300/3F', name: 'Paper 3', calc: true, blurb: 'Calculator. Number, Ratio, Geometry, Probability & Statistics.' },
-          ].map((p) => (
+           {(higherTier ? [
+             { id: 1, code: '8300/1H', name: 'Paper 1', calc: false, blurb: 'Non-calculator. Exact methods, Number, Algebra and proof.' },
+             { id: 2, code: '8300/2H', name: 'Paper 2', calc: true, blurb: 'Calculator. Algebra, proportion, geometry and statistics.' },
+             { id: 3, code: '8300/3H', name: 'Paper 3', calc: true, blurb: 'Calculator. Advanced geometry, probability and balanced Higher coverage.' },
+           ] : [
+             { id: 1, code: '8300/1F', name: 'Paper 1', calc: false, blurb: 'Non-calculator. Number, Algebra, Ratio, Probability & Statistics.' },
+             { id: 2, code: '8300/2F', name: 'Paper 2', calc: true, blurb: 'Calculator. Algebra, Ratio, Geometry, Probability & Statistics.' },
+             { id: 3, code: '8300/3F', name: 'Paper 3', calc: true, blurb: 'Calculator. Number, Ratio, Geometry, Probability & Statistics.' },
+           ]).map((p) => (
             <div key={p.id} className={`paper-card pick ${p.calc ? 'calc' : 'noncalc'}`}>
               <div className="paper-top">
                 <span className="paper-type">{p.code}</span>

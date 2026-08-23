@@ -8,7 +8,7 @@ import './theme.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter basename="/maths">
+    <BrowserRouter basename={window.location.pathname.startsWith('/maths-higher') ? '/maths-higher' : '/maths'}>
       <App />
     </BrowserRouter>
   </React.StrictMode>

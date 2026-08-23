@@ -45,6 +45,10 @@ setSubjectStatus('maths', '/api/maths/health', (data) => {
   if (data.bankSize) document.getElementById('maths-bank').textContent = `${data.bankSize.toLocaleString()} questions`;
 });
 
+setSubjectStatus('maths-higher', '/api/maths-higher/health', (data) => {
+  if (data.bankSize) document.getElementById('maths-higher-bank').textContent = `${data.bankSize.toLocaleString()} questions`;
+});
+
 setSubjectStatus('english', '/api/english/health', (data) => {
   if (data.texts) document.getElementById('english-texts').textContent = `${data.texts} source texts`;
 });

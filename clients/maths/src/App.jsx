@@ -26,6 +26,7 @@ function initialTheme() {
 }
 
 export default function App() {
+  const higherTier = window.location.pathname.startsWith('/maths-higher');
   const [progress, setProgress] = useState(null);
   const [health, setHealth] = useState(null);
   const [theme, setTheme] = useState(initialTheme);
@@ -79,7 +80,7 @@ export default function App() {
     return (
       <LoginScreen
         subjectName="MathsMate"
-        tag="AQA GCSE Mathematics · Foundation"
+        tag={`AQA GCSE Mathematics · ${higherTier ? 'Higher' : 'Foundation'}`}
         letter="M"
         authApi={api.auth}
         onSignedIn={(user) => setAuth(user)}
@@ -88,13 +89,13 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app ${higherTier ? 'higher-tier' : 'foundation-tier'}`}>
       <aside className="sidebar">
         <div className="logo">
           <span className="logo-icon" aria-hidden="true">M</span>
           <div>
             <div className="logo-name">MathsMate</div>
-            <div className="logo-sub">AQA Foundation</div>
+             <div className="logo-sub">AQA {higherTier ? 'Higher' : 'Foundation'}</div>
           </div>
         </div>
         <a className="subject-switch" href="/" aria-label="Return to all subjects">
@@ -143,7 +144,7 @@ export default function App() {
       </aside>
       <main className="content">
         <Routes>
-          <Route path="/" element={<Dashboard health={health} progress={progress} />} />
+           <Route path="/" element={<Dashboard health={health} progress={progress} higherTier={higherTier} />} />
           <Route path="/practice" element={<Practice />} />
           <Route path="/results" element={<Results />} />
           <Route path="/learn" element={<Learn />} />

@@ -1,6 +1,6 @@
 # GCSE Study Desk
 
-One revision dashboard for AQA GCSE Maths and English Language. A clean subject selector opens two complete, isolated study tools while one Express server handles sign-in, APIs, deployment and persistent per-user progress.
+One revision dashboard for AQA GCSE Maths Foundation, Maths Higher and English Language. A clean subject selector opens three complete study routes while one Express server handles sign-in, APIs, deployment and persistent per-user progress.
 
 ## Sign In
 
@@ -12,10 +12,11 @@ One revision dashboard for AQA GCSE Maths and English Language. A clean subject 
 
 ## Subjects
 
-- **MathsMate**: AQA Mathematics 8300 Foundation, three papers, 1,730 generated questions, topic lessons, progress tracking and an AI tutor.
+- **MathsMate Foundation**: AQA Mathematics 8300 Foundation, three papers, 1,730 generated questions, topic lessons, progress tracking and an AI tutor.
+- **MathsMate Higher**: AQA Mathematics 8300H, three 80-mark papers, 896 original Higher generators plus supporting topic practice, deterministic mark schemes, grades 4-9 and a Higher-aware AI tutor.
 - **EnglishMate**: AQA English Language 8700, both papers, source-text library, skill lessons, AQA-style AI marking, progress tracking and an AI tutor.
 
-Open `http://localhost:3000`, choose Maths or English, then sign in. Your light or dark theme choice is remembered across the whole site.
+Open `http://localhost:3000`, choose Foundation Maths, Higher Maths or English, then sign in. Your light or dark theme choice is remembered across the whole site.
 
 ## Quick Start
 
@@ -61,10 +62,13 @@ See `AGENTS.md` for architecture, educational goals and change invariants.
 | `/` | Subject selector |
 | `/subjects` | Subject directory (catalogue of available subjects) |
 | `/maths/*` | MathsMate client (sign-in gated) |
+| `/maths-higher/*` | MathsMate Higher client (sign-in gated) |
 | `/english/*` | EnglishMate client (sign-in gated) |
 | `/api/auth/*` | Sign-in, session and OAuth endpoints |
 | `/api/maths/*` | Maths API (session required; health is public) |
+| `/api/maths-higher/*` | Higher Maths API (session required; health is public) |
 | `/api/english/*` | English API (session required; health is public) |
 
 User progress is stored locally at `${DATA_DIR}/users/<userId>/maths.json` and
+`${DATA_DIR}/users/<userId>/maths-higher.json` and
 `${DATA_DIR}/users/<userId>/english.json`. Docker persists everything beneath `/app/data`.

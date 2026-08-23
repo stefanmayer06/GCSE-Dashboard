@@ -15,6 +15,19 @@ import {
 } from './bank/index.js';
 import { TOPICS, STRANDS } from './bank/topics.js';
 import { predictGrade, gradeLabel, nextBoundaryGap, BOUNDARIES } from './grades.js';
+import {
+  loadHigherBank,
+  higherBankSize,
+  higherQuestionsFor,
+  higherPaperList,
+  buildHigherPaper,
+  buildHigherPractice,
+  buildHigherAdhoc,
+  higherMarkAnswers,
+  higherCheckAnswer,
+  higherQuestionById,
+  higherTopics,
+} from './bank/higher.js';
 import { createDb } from '../../db.js';
 import { askTutor } from './chat.js';
 
@@ -24,8 +37,14 @@ const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'google/gemma-4-26b-a4b
 const app = express.Router();
 app.use(express.json({ limit: '1mb' }));
 
+const isHigher = (req) => req.baseUrl === '/api/maths-higher' || req.originalUrl.startsWith('/api/maths-higher');
+const tierKey = (req) => (isHigher(req) ? 'maths-higher' : 'maths');
+const tierFns = (req) => isHigher(req)
+  ? { topics: higherTopics(), size: higherBankSize, questionsFor: higherQuestionsFor, papers: higherPaperList, buildPaper: buildHigherPaper, buildPractice: buildHigherPractice, buildAdhoc: buildHigherAdhoc, markAnswers: higherMarkAnswers, checkAnswer: higherCheckAnswer, questionById: higherQuestionById }
+  : { topics: TOPICS, size: bankSize, questionsFor, papers: paperList, buildPaper, buildPractice, buildAdhoc, markAnswers, checkAnswer, questionById: getQuestionById };
+
 app.use((req, res, next) => {
-  if (req.user) req.db = createDb(req.user.id, 'maths');
+  if (req.user) req.db = createDb(req.user.id, tierKey(req));
   next();
 });
 
@@ -40,22 +59,26 @@ const publicTopic = (t) => ({
 });
 
 app.get('/health', (req, res) => {
+  const fns = tierFns(req);
   res.json({
     ok: true,
-    bankSize: bankSize(),
+    bankSize: fns.size(),
+    tier: isHigher(req) ? 'higher' : 'foundation',
+    tierLabel: isHigher(req) ? 'Higher' : 'Foundation',
     model: OPENROUTER_MODEL,
     chatReady: !!OPENROUTER_API_KEY,
-    boundaries: BOUNDARIES,
+    boundaries: isHigher(req) ? BOUNDARIES.higher : BOUNDARIES.foundation,
   });
 });
 
 app.get('/topics', (req, res) => {
+  const fns = tierFns(req);
   const p = req.db.progress();
   const byStrand = {};
   for (const s of Object.values(STRANDS)) {
     byStrand[s.id] = {
       ...s,
-      topics: TOPICS.filter((t) => t.strand === s.id).map((t) => {
+      topics: fns.topics.filter((t) => t.strand === s.id).map((t) => {
         const stats = p.topicStats[t.id];
         return {
           ...publicTopic(t),
@@ -69,7 +92,8 @@ app.get('/topics', (req, res) => {
 });
 
 app.get('/topics/:id', (req, res) => {
-  const t = TOPICS.find((x) => x.id === req.params.id);
+  const fns = tierFns(req);
+  const t = fns.topics.find((x) => x.id === req.params.id);
   if (!t) return res.status(404).json({ error: 'Topic not found' });
   const p = req.db.progress();
   const stats = p.topicStats[t.id];
@@ -85,13 +109,14 @@ app.get('/topics/:id', (req, res) => {
 });
 
 app.get('/papers', (req, res) => {
-  res.json({ papers: paperList() });
+  res.json({ papers: tierFns(req).papers() });
 });
 
 app.post('/test/new', (req, res) => {
+  const fns = tierFns(req);
   const type = req.body?.type === 'short' ? 'short' : 'full';
   const paperId = [1, 2, 3].includes(req.body?.paper) ? req.body.paper : 1;
-  const paper = buildPaper(type, paperId);
+  const paper = fns.buildPaper(type, paperId);
   const id = crypto.randomUUID();
   activeTests.set(id, {
     id,
@@ -99,6 +124,7 @@ app.post('/test/new', (req, res) => {
     paperId: paper.paperId,
     paperCode: paper.paperCode,
     paperName: paper.paperName,
+    tier: isHigher(req) ? 'higher' : 'foundation',
     calculator: paper.calculator,
     questions: paper.questions,
     startedAt: Date.now(),
@@ -128,8 +154,11 @@ app.post('/test/:id/submit', (req, res) => {
   const answers = req.body?.answers || [];
   const durationSec = req.body?.durationSec || null;
 
-  const pool = test.questions.map((q) => getQuestionById(q.id)).filter(Boolean);
-  const marked = markAnswers(pool, answers);
+  const higher = test.tier === 'higher';
+  const questionById = higher ? higherQuestionById : getQuestionById;
+  const marker = higher ? higherMarkAnswers : markAnswers;
+  const pool = test.questions.map((q) => questionById(q.id)).filter(Boolean);
+  const marked = marker(pool, answers);
   for (const row of marked.perQ) {
     const qn = test.questions.findIndex((q) => q.id === row.qid);
     row.qn = qn + 1;
@@ -137,14 +166,14 @@ app.post('/test/:id/submit', (req, res) => {
   const totalMarks = test.totalMarks || marked.totalMarks;
   const correctMarks = marked.correctMarks;
   const percent = Math.round((100 * correctMarks) / totalMarks);
-  const grade = predictGrade(correctMarks, totalMarks);
-  const gap = nextBoundaryGap(correctMarks, totalMarks);
+   const grade = predictGrade(correctMarks, totalMarks, test.tier);
+   const gap = nextBoundaryGap(correctMarks, totalMarks, test.tier);
 
   // Strand & topic breakdown
   const strandMap = new Map();
   const topicMap = new Map();
   for (const row of marked.perQ) {
-    const q = getQuestionById(row.qid);
+    const q = questionById(row.qid);
     if (!q) continue;
     const sk = q.strandName;
     if (!strandMap.has(sk)) strandMap.set(sk, { name: sk, marks: 0, got: 0, color: STRANDS[q.strand].color });
@@ -167,7 +196,8 @@ app.post('/test/:id/submit', (req, res) => {
   const strongTopics = topics.filter((t) => t.percent >= 80).sort((a, b) => b.percent - a.percent);
 
   const weakDetail = weakTopics.map((t) => {
-    const meta = TOPICS.find((x) => x.id === t.id);
+    const meta = tierFns(req).topics.find((x) => x.id === t.id);
+    if (!meta) return null;
     return {
       id: t.id,
       name: t.name,
@@ -176,15 +206,17 @@ app.post('/test/:id/submit', (req, res) => {
       internal: `/learn/${t.id}`,
       resources: meta.resources,
     };
-  });
+  }).filter(Boolean);
 
   const result = {
     id: test.id,
     type: test.type,
     paperId: test.paperId,
     paperCode: test.paperCode,
-    paperName: test.paperName,
-    calculator: test.calculator,
+     paperName: test.paperName,
+     tier: test.tier,
+     calculator: test.calculator,
+     boundaries: higher ? BOUNDARIES.higher : BOUNDARIES.foundation,
     totalMarks,
     correctMarks,
     percent,
@@ -206,25 +238,28 @@ app.post('/test/:id/submit', (req, res) => {
 });
 
 app.post('/practice', (req, res) => {
+  const fns = tierFns(req);
   const topicId = req.body?.topicId;
   const count = Math.min(20, Math.max(4, req.body?.count || 8));
-  const questions = buildPractice(topicId, count);
+  const questions = fns.buildPractice(topicId, count);
   if (!questions.length) return res.status(404).json({ error: 'Topic not found' });
   res.json({ topicId, questions });
 });
 
 app.post('/check', (req, res) => {
+  const fns = tierFns(req);
   const { qid, value } = req.body || {};
   if (!qid) return res.status(400).json({ error: 'qid required' });
-  const out = checkAnswer(qid, value);
+  const out = fns.checkAnswer(qid, value);
   res.json(out);
 });
 
 app.post('/practice/submit', (req, res) => {
+  const fns = tierFns(req);
   const { topicId, answers } = req.body || {};
   if (!topicId) return res.status(400).json({ error: 'topicId required' });
-  const pool = questionsFor(topicId);
-  const marked = markAnswers(pool, answers);
+  const pool = fns.questionsFor(topicId);
+  const marked = fns.markAnswers(pool, answers);
   req.db.recordPractice({ topicId, correct: marked.correctMarks, total: marked.totalMarks });
   req.db.addXp(marked.correctMarks);
   req.db.registerActivity();
@@ -232,22 +267,24 @@ app.post('/practice/submit', (req, res) => {
 });
 
 app.post('/adhoc', (req, res) => {
+  const fns = tierFns(req);
   const count = Math.min(30, Math.max(5, req.body?.count || 15));
   const papers = Array.isArray(req.body?.papers) && req.body.papers.length
     ? req.body.papers
-    : [1, 2, 3];
-  const set = buildAdhoc(count, papers);
+     : [1, 2, 3];
+  const set = fns.buildAdhoc(count, papers);
   res.json(set);
 });
 
 app.post('/adhoc/submit', (req, res) => {
+  const fns = tierFns(req);
   const answers = req.body?.answers || [];
   const results = { perQ: [], correctMarks: 0, totalMarks: 0 };
   const topicTally = new Map();
   for (const { qid, value } of answers) {
-    const q = getQuestionById(qid);
+     const q = fns.questionById(qid);
     if (!q) continue;
-    const { correct, answerText } = checkAnswer(qid, value);
+     const { correct, answerText } = fns.checkAnswer(qid, value);
     results.totalMarks += q.marks;
     if (correct) results.correctMarks += q.marks;
     results.perQ.push({ qid, marks: q.marks, correct, value: value ?? null, answerText, topicId: q.topicId, topic: q.topic });
@@ -274,7 +311,7 @@ app.post('/chat', async (req, res) => {
   req.db.registerActivity();
   req.db.pushChat('user', messages[messages.length - 1].content);
   try {
-    const out = await askTutor(messages, { model: OPENROUTER_MODEL, apiKey: OPENROUTER_API_KEY });
+     const out = await askTutor(messages, { model: OPENROUTER_MODEL, apiKey: OPENROUTER_API_KEY, tier: isHigher(req) ? 'higher' : 'foundation' });
     req.db.pushChat('assistant', out.reply);
     res.json(out);
   } catch (e) {
@@ -292,5 +329,6 @@ app.get('/chat/history', (req, res) => {
 });
 
 await loadBank();
+await loadHigherBank();
 console.log(`[bank] ${bankSize()} questions loaded across ${TOPICS.length} topics`);
 export default app;

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { STRAND_COLORS } from '../colors.js';
 
-const LS_KEY = 'mathsmate-active-test';
+const LS_KEY = window.location.pathname.startsWith('/maths-higher') ? 'mathsmate-higher-active-test' : 'mathsmate-active-test';
 
 function fmtTime(total) {
   const m = Math.floor(total / 60);
@@ -24,6 +24,7 @@ function loadSaved() {
 }
 
 export default function Practice() {
+  const higherTier = window.location.pathname.startsWith('/maths-higher');
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [papers, setPapers] = useState(null);
@@ -134,7 +135,7 @@ export default function Practice() {
       }));
       const result = await api.submitTest(test.id, list, dur ?? elapsed);
       localStorage.removeItem(LS_KEY);
-      localStorage.setItem('mathsmate-last-result', JSON.stringify(result));
+       localStorage.setItem(window.location.pathname.startsWith('/maths-higher') ? 'mathsmate-higher-last-result' : 'mathsmate-last-result', JSON.stringify(result));
       navigate('/results');
     } catch (e) {
       setError(e.message);
@@ -172,8 +173,8 @@ export default function Practice() {
         <div>
           <h1>Practice exam</h1>
           <p className="sub">
-            All three AQA foundation papers — 8300/1F (non-calculator), 8300/2F and 8300/3F
-            (calculator) — built fresh from the question bank every time.
+             All three AQA {higherTier ? 'Higher' : 'Foundation'} papers — 8300/{higherTier ? '1H' : '1F'} (non-calculator),
+             8300/{higherTier ? '2H' : '2F'} and 8300/{higherTier ? '3H' : '3F'} (calculator) — built fresh from the question bank every time.
           </p>
         </div>
       </header>
@@ -219,14 +220,14 @@ export default function Practice() {
         {error && <div className="error-banner">{error}</div>}
       </section>
 
-      <AdhocSection />
+       <AdhocSection higherTier={higherTier} />
     </div>
   );
 }
 
 /* ---------------- Ad-hoc: mixed questions from any papers ---------------- */
 
-function AdhocSection() {
+function AdhocSection({ higherTier = false }) {
   const [sources, setSources] = useState([1, 2, 3]);
   const [count, setCount] = useState(15);
   const [running, setRunning] = useState(null);
@@ -262,7 +263,7 @@ function AdhocSection() {
         <div>
           <h2>🎲 Ad-hoc questions</h2>
           <p className="sub">
-            A quick mixed bag drawn from any combination of the three papers — great for keeping
+             A quick mixed bag drawn from any combination of the three {higherTier ? 'Higher' : 'Foundation'} papers — great for keeping
             every topic sharp between full mocks.
           </p>
         </div>
@@ -277,7 +278,7 @@ function AdhocSection() {
                 className={`suggest-chip source ${sources.includes(id) ? 'on' : ''}`}
                 onClick={() => toggleSource(id)}
               >
-                {id === 1 ? '8300/1F' : id === 2 ? '8300/2F' : '8300/3F'}
+                 {id === 1 ? `8300/1${higherTier ? 'H' : 'F'}` : id === 2 ? `8300/2${higherTier ? 'H' : 'F'}` : `8300/3${higherTier ? 'H' : 'F'}`}
               </button>
             ))}
           </div>

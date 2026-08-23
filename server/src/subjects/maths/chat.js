@@ -18,7 +18,7 @@ const KEYWORDS = [
   { re: /sequence|nth/i, msg: 'Sequences: nth term = dn + (a − d), where d is the common difference and a is the first term.' },
 ];
 
-export async function askTutor(messages, { model, apiKey }) {
+export async function askTutor(messages, { model, apiKey, tier = 'foundation' }) {
   if (!apiKey) {
     const last = [...messages].reverse().find((m) => m.role === 'user');
     const text = last?.content || '';
@@ -30,13 +30,14 @@ export async function askTutor(messages, { model, apiKey }) {
       model: 'offline-tutor (no OPENROUTER_API_KEY set)',
     };
   }
-  const system = `You are a patient, encouraging GCSE maths tutor for a student taking AQA GCSE Maths FOUNDATION tier (grades 1-5).
+  const higher = tier === 'higher';
+  const system = `You are a patient, encouraging GCSE maths tutor for a student taking AQA GCSE Maths ${higher ? 'HIGHER tier (grades 4-9)' : 'FOUNDATION tier (grades 1-5)'}.
 Rules:
 - Explain step by step, in simple language, with a small worked example where helpful.
 - Never give full answers away immediately: guide the student to work it out (Socratic style). If they are stuck, give one hint at a time.
 - Keep answers short (under ~200 words) unless asked for detail.
 - Use plain text maths (e.g. x^2, sqrt, 3/4) — no LaTeX.
-- If a topic is higher-tier only (e.g. vectors with magnitudes, quadratic formula, sine rule), say so and focus on foundation-level skills.
+- ${higher ? 'Use Higher content confidently: surds, quadratic formula, functions, vectors, sine/cosine rule, conditional probability and histograms.' : 'If a topic is higher-tier only (e.g. vectors with magnitudes, quadratic formula, sine rule), say so and focus on foundation-level skills.'}
 - Be warm and motivating.`;
   const body = {
     model: model || 'google/gemma-4-26b-a4b',

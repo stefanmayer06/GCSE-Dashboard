@@ -1,4 +1,4 @@
-const base = '/api/maths';
+const base = window.location.pathname.startsWith('/maths-higher') ? '/api/maths-higher' : '/api/maths';
 const authBase = '/api/auth';
 
 async function req(path, opts = {}) {

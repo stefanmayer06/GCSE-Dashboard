@@ -13,6 +13,7 @@ const SUGGESTIONS = [
 ];
 
 export default function Chat({ health }) {
+  const higherTier = window.location.pathname.startsWith('/maths-higher');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -33,6 +34,7 @@ export default function Chat({ health }) {
                 "Hey! I'm your AI maths tutor, tuned for AQA GCSE Foundation.\n\nAsk me to explain any topic, walk you through a question, or check your method — I'll guide you step by step without just giving answers away. 💪",
             },
           ]);
+          if (higherTier) setMessages((current) => current.map((message) => ({ ...message, content: message.content.replace('Foundation', 'Higher') })));
         }
         setLoaded(true);
       })

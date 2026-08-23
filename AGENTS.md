@@ -2,7 +2,7 @@
 
 ## Product Goal
 
-GCSE Study Desk helps teenagers prepare confidently for their AQA GCSE exams. It combines MathsMate for AQA GCSE Mathematics (8300, Foundation tier) and EnglishMate for AQA GCSE English Language (8700) in one focused revision product.
+GCSE Study Desk helps teenagers prepare confidently for their AQA GCSE exams. It combines MathsMate for AQA GCSE Mathematics (8300 Foundation and 8300H Higher tiers) and EnglishMate for AQA GCSE English Language (8700) in one focused revision product.
 
 The app should help a learner answer three questions quickly:
 
@@ -18,8 +18,10 @@ This is one repository and one deployable Express process with two intentionally
 
 - `/` serves the subject selector in `selector/`.
 - `/maths/*` serves the MathsMate React client from `clients/maths/`.
+- `/maths-higher/*` serves the same MathsMate client in Higher-tier mode.
 - `/english/*` serves the EnglishMate React client from `clients/english/`.
 - `/api/maths/*` mounts the Maths API router.
+- `/api/maths-higher/*` mounts the same API in Higher-tier mode with separate progress storage.
 - `/api/english/*` mounts the English API router.
 
 The clients remain separate because their question formats, grading logic and global visual themes differ. Do not combine their CSS into one bundle without first scoping every global rule.
@@ -39,7 +41,7 @@ The clients remain separate because their question formats, grading logic and gl
 
 ## Accounts And Sign-In
 
-Every request to `/api/maths/*` and `/api/english/*` requires a valid session except the two public health endpoints. The selector uses those health endpoints, so it can show availability before sign-in.
+Every request to `/api/maths/*`, `/api/maths-higher/*` and `/api/english/*` requires a valid session except the three public health endpoints. The selector uses those health endpoints, so it can show availability before sign-in.
 
 - `POST /api/auth/login` accepts a username and password.
 - `POST /api/auth/signup` creates a new local account (3-32 character username, 8+ character password) and signs it in.
@@ -59,6 +61,7 @@ A provider identity maps to a username (email or preferred_username), created on
 Each user has separate stores per subject. Progress is never mixed between users or subjects.
 
 - `${DATA_DIR}/users/<userId>/maths.json`
+- `${DATA_DIR}/users/<userId>/maths-higher.json`
 - `${DATA_DIR}/users/<userId>/english.json`
 
 Accounts live in `${DATA_DIR}/users.json`, sessions in `${DATA_DIR}/sessions.json`.
@@ -76,12 +79,20 @@ session, so a user may need to start a paper again after a restart.
 
 ## Subject Rules
 
-### Maths
+### Maths Foundation
 
 - Course: AQA GCSE Mathematics 8300, Foundation tier, grades 1-5.
 - Preserve all three papers and calculator rules.
 - Automatic marking must use the existing generated question metadata.
 - Higher-tier-only techniques should not be presented as Foundation requirements.
+
+### Maths Higher
+
+- Course: AQA GCSE Mathematics 8300H, grades 4-9, three 80-mark papers.
+- Paper 1 is non-calculator; Papers 2 and 3 allow calculators; all papers are 90 minutes.
+- Higher questions are original AQA 8300H-aligned generators, not copied past-paper text.
+- Keep Higher-only practice and grade predictions separate from Foundation progress.
+- Every generated question must include an exact answer, worked solution and deterministic marking metadata.
 
 ### English
 
@@ -111,13 +122,13 @@ docker compose up --build
 
 - Keep API routes namespaced by subject.
 - Keep subject databases and browser storage keys separate.
-- Keep `BrowserRouter` basenames and Vite bases aligned with `/maths` and `/english`.
+- Keep `BrowserRouter` basenames and Vite bases aligned with `/maths`, `/maths-higher` and `/english`.
 - Preserve direct refreshes on nested routes such as `/maths/learn/fractions` and `/english/texts/p1-great-expectations`.
-- Test desktop and 390px mobile layouts for the selector and both dashboards.
+- Test desktop and 390px mobile layouts for the selector and all three subject routes.
 - Do not claim official AQA endorsement. AQA course structures can be represented accurately, but the product is an independent revision tool.
 - Prefer small, testable changes over cross-subject abstractions that obscure exam-specific behavior.
 - Subject data is always scoped to the signed-in user. Never write progress, chat or history to a shared file.
-- New sign-in-facing API routes belong under `/api/auth`; new subject routes stay namespaced under `/api/maths` and `/api/english` and must keep working with the session gate.
+- New sign-in-facing API routes belong under `/api/auth`; new subject routes stay namespaced under `/api/maths`, `/api/maths-higher` and `/api/english` and must keep working with the session gate.
 - The `admin` account (admin / admin) must always exist after a fresh start, and users/sessions must persist under `DATA_DIR`.
 - Themes (light and dark) are driven by the shared design tokens in `clients/shared/study-desk.css` and each subject's `theme.css`. The `data-theme` attribute is set on `<html>` and persisted under the `gcse-theme` localStorage key so the choice survives across the selector and both subjects. New UI should consume these tokens rather than hardcoding colors.
 - Every colour, border and surface should stay legible in both themes. Dark mode is not a shadow of the light design; it uses its own warm ink, muted text and brighter semantic colours on the same grid and typography.

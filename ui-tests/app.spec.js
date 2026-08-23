@@ -19,6 +19,10 @@ const pages = [
   ['maths-dashboard', '/maths/', ['h1', '.subject-switch']],
   ['maths-practice', '/maths/practice', ['h1']],
   ['maths-exam', '/maths/practice?paper=1&type=short', ['.exam-bar', '.q-card']],
+  ['maths-higher-dashboard', '/maths-higher/', ['h1', '.subject-switch']],
+  ['maths-higher-practice', '/maths-higher/practice', ['h1']],
+  ['maths-higher-exam', '/maths-higher/practice?paper=1&type=short', ['.exam-bar', '.q-card']],
+  ['maths-higher-learn', '/maths-higher/learn/surds', ['.notes']],
   ['maths-learn', '/maths/learn', ['.strand-panel']],
   ['maths-topic', '/maths/learn/fractions', ['.notes']],
   ['maths-chat', '/maths/chat', ['.chat-box']],
@@ -73,8 +77,10 @@ test('signing out returns to the login gate', async ({ page }) => {
 test('subject selector links and live status', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' });
   await expect(page.locator('#maths-status')).toContainText('Ready');
+  await expect(page.locator('#maths-higher-status')).toContainText('Ready');
   await expect(page.locator('#english-status')).toContainText('Ready');
   await expect(page.locator('a[href="/maths/"]')).toBeVisible();
+  await expect(page.locator('a[href="/maths-higher/"]')).toBeVisible();
   await expect(page.locator('a[href="/english/"]')).toBeVisible();
   await expect(page.locator('a[href="/subjects"]')).toBeVisible();
 });
@@ -84,7 +90,8 @@ test('subject directory links to both subjects and tolerates more rows', async (
   await expect(page.locator('a[href="/maths/"]')).toBeVisible();
   await expect(page.locator('a[href="/english/"]')).toBeVisible();
   await expect(page.locator('.dir-coming')).toContainText('Coming soon');
-  await expect(page.locator('#spec-subjects')).toContainText('02');
+  await expect(page.locator('#spec-subjects')).toContainText('03');
+  await expect(page.locator('a[href="/maths-higher/"]')).toBeVisible();
   await expect(page.locator('.subjects-toggle')).toHaveClass(/is-current/);
   await Promise.all([
     page.waitForURL(/\/(maths|english)\/$/),
@@ -103,6 +110,25 @@ test('subject themes share the desk system but keep distinct accents', async ({ 
   const english = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
   await expect(page.locator('h1')).toHaveCSS('font-family', /Georgia/);
   expect(maths).not.toEqual(english);
+});
+
+test('Higher Maths exposes three 8300H papers with Higher grade boundaries', async ({ page }) => {
+  await signIn(page);
+  const response = await page.request.post(`${BASE}/api/maths-higher/test/new`, { data: { type: 'full', paper: 1 } });
+  expect(response.ok()).toBeTruthy();
+  const paper = await response.json();
+  expect(paper.paperCode).toBe('8300/1H');
+  expect(paper.totalMarks).toBe(80);
+  expect(paper.questions.reduce((sum, q) => sum + q.marks, 0)).toBe(80);
+  expect(paper.questions.some((q) => /surds|function|quadratic|proof/i.test(`${q.topic} ${q.text}`))).toBeTruthy();
+
+  const submit = await page.request.post(`${BASE}/api/maths-higher/test/${paper.id}/submit`, {
+    data: { answers: paper.questions.map((q) => ({ qid: q.id, value: null })), durationSec: 5 },
+  });
+  const result = await submit.json();
+  expect(result.tier).toBe('higher');
+  expect(result.boundaries[0].grade).toBe(9);
+  expect(result.strandAnalysis.length).toBeGreaterThan(0);
 });
 
 test('dark mode toggles, persists and reaches every surface', async ({ page }) => {
@@ -191,6 +217,7 @@ for (const [name, url] of [
   ['mobile-selector', '/'],
   ['mobile-subjects', '/subjects'],
   ['mobile-maths', '/maths/'],
+  ['mobile-maths-higher', '/maths-higher/'],
   ['mobile-english', '/english/'],
 ]) {
   test(name, async ({ page }) => {

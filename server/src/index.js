@@ -23,18 +23,19 @@ app.use(express.json({ limit: '2mb' }));
 app.use('/api/auth', authRoutes());
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, subjects: ['maths', 'english'] });
+  res.json({ ok: true, subjects: ['maths', 'maths-higher', 'english'] });
 });
 
 // Subject data requires a session; health endpoints stay public so the
 // selector can show live availability before anyone signs in.
 const gate = (req, res, next) => {
   const pathname = (req.originalUrl || req.url || '').split('?')[0];
-  if (pathname === '/api/maths/health' || pathname === '/api/english/health') return next();
+  if (pathname === '/api/maths/health' || pathname === '/api/maths-higher/health' || pathname === '/api/english/health') return next();
   requireAuth(req, res, next);
 };
 
 app.use('/api/maths', gate, mathsRouter);
+app.use('/api/maths-higher', gate, mathsRouter);
 app.use('/api/english', gate, englishRouter);
 
 function mountSubject(subject, dist) {
@@ -48,6 +49,7 @@ function mountSubject(subject, dist) {
 }
 
 mountSubject('maths', mathsDist);
+mountSubject('maths-higher', mathsDist);
 mountSubject('english', englishDist);
 
 app.use(express.static(selector));
@@ -61,6 +63,6 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
   console.log(`[server] GCSE Study Desk on http://localhost:${PORT}`);
-  console.log('[subjects] MathsMate at /maths/ · EnglishMate at /english/');
+  console.log('[subjects] MathsMate Foundation at /maths/ · MathsMate Higher at /maths-higher/ · EnglishMate at /english/');
   console.log(`[auth] login ready · OAuth ${oauthConfigured() ? 'configured' : 'not configured (password login only)'}`);
 });

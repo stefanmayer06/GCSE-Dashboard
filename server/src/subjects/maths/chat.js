@@ -39,7 +39,7 @@ Rules:
 - If a topic is higher-tier only (e.g. vectors with magnitudes, quadratic formula, sine rule), say so and focus on foundation-level skills.
 - Be warm and motivating.`;
   const body = {
-    model: model || 'deepseek/deepseek-v4-flash-0731',
+    model: model || 'google/gemma-4-26b-a4b',
     messages: [{ role: 'system', content: system }, ...messages.slice(-12)],
     temperature: 0.4,
     max_tokens: 700,
@@ -70,5 +70,5 @@ Rules:
   }
   const data = await res.json();
   const reply = data.choices?.[0]?.message?.content || 'Hmm, I got an empty reply. Try again!';
-  return { reply, model: data.model || (model || 'deepseek/deepseek-v4-flash-0731') };
+  return { reply, model: data.model || (model || 'google/gemma-4-26b-a4b') };
 }

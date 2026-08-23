@@ -122,6 +122,16 @@ function baseQ(entryId, qn, type, marks, targetMins, title, text, skillIds, extr
   };
 }
 
+function q5ImageFor(entry) {
+  if (!entry.q5Image) return null;
+  const file = encodeURIComponent(entry.q5Image.file);
+  return {
+    url: `https://commons.wikimedia.org/wiki/Special:FilePath/${file}`,
+    alt: entry.q5Image.alt || '',
+    credit: entry.q5Image.credit || 'Wikimedia Commons',
+  };
+}
+
 function p1QuestionSet(entry) {
   const ex = exemplarsFor(entry.id);
   const qs = [];
@@ -166,6 +176,7 @@ function p1QuestionSet(entry) {
         { id: 'a', label: 'Description', text: entry.q5a },
         { id: 'b', label: 'Story', text: entry.q5b },
       ],
+      image: q5ImageFor(entry),
       input: { kind: 'textarea', rows: 18, hint: '5 minutes planning, 35 writing, 5 checking. New paragraph per idea!' },
       markType: 'ai',
       rubricKey: 'p1q5',
@@ -245,6 +256,7 @@ function sanitize(q) {
     options: q.options || [],
     worth: q.worth,
     statement: q.statement || null,
+    image: q.image || null,
   };
   if (q.type === 'truefalse') {
     out.input = { ...q.input, statements: q.input.statements.map((s) => ({ text: s.text })) };
@@ -418,6 +430,7 @@ function buildPracticeQ(topicId, entry, paperId, idx) {
   if (topicId === 'creative-writing') {
     const e = P1_TEXTS.find((t) => t.id === entry.id);
     return baseQ(entry.id, idx, 'essay', 40, 30, 'Practice · Creative writing', `Choose ONE:\n\nDescription: ${e.q5a}\n\nStory: ${e.q5b}\n\nWrite your response (aim for 3-4 paragraphs).`, ['creative-writing', 'accuracy'], {
+      image: q5ImageFor(e),
       input: { kind: 'textarea', rows: 14 },
       markType: 'ai',
       rubricKey: 'p1q5',

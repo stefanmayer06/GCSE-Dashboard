@@ -19,7 +19,7 @@ import { createDb } from '../../db.js';
 import { askTutor } from './chat.js';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-v4-flash-0731';
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'google/gemma-4-26b-a4b';
 
 const app = express.Router();
 app.use(express.json({ limit: '1mb' }));

@@ -90,10 +90,11 @@ session, so a user may need to start a paper again after a restart.
 - List and true/false questions are marked deterministically.
 - Extended responses use AQA-style rubric prompts through OpenRouter when configured.
 - Without an API key, learners must still receive rubrics and model answers for self-marking.
+- Paper 1 Q5 description tasks show a free image from Wikimedia Commons (`q5Image` on each text in `server/src/subjects/english/texts/p1.js`; URLs are resolved via `Special:FilePath`). Images must stay appropriate for 14+ students, and the client hides them gracefully if a URL ever fails.
 
 ## AI Configuration
 
-`OPENROUTER_API_KEY` enables both tutors and English extended-answer marking. `OPENROUTER_MODEL` defaults to `deepseek/deepseek-v4-flash-0731`. Never commit keys or log them. Both subjects must retain useful offline behavior when no key is configured.
+`OPENROUTER_API_KEY` enables both tutors and English extended-answer marking. `OPENROUTER_MODEL` defaults to `google/gemma-4-26b-a4b` (Google Gemma 4 26B A4B, free tier). Never commit keys or log them. Both subjects must retain useful offline behavior when no key is configured.
 
 ## Development
 

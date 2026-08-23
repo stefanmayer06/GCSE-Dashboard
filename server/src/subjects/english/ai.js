@@ -1,6 +1,6 @@
 import { rubricFor } from './marking.js';
 
-const DEFAULT_MODEL = 'deepseek/deepseek-v4-flash-0731';
+const DEFAULT_MODEL = 'google/gemma-4-26b-a4b';
 
 export function aiConfig() {
   return {

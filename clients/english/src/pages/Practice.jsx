@@ -541,6 +541,8 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
       </div>
       <div className="quiz-q-text">{q.text.split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
 
+      <ImagePrompt image={q.image} />
+
       {showSource && q.sourceRef && <SourceBox ref_={q.sourceRef} />}
 
       {q.type === 'text' && !q.sourceRef && q.input?.hint && (
@@ -565,6 +567,17 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
         feedbackBlock()
       )}
     </div>
+  );
+}
+
+export function ImagePrompt({ image }) {
+  const [failed, setFailed] = useState(false);
+  if (!image || failed) return null;
+  return (
+    <figure className="q-image">
+      <img src={image.url} alt={image.alt || ''} loading="lazy" onError={() => setFailed(true)} />
+      {image.credit && <figcaption className="q-image-cap">{image.credit}</figcaption>}
+    </figure>
   );
 }
 
@@ -707,6 +720,8 @@ function TestScreen(props) {
               {q.markType === 'auto' && <span className="q-tag">auto-marked</span>}
             </div>
             <div className="q-text">{q.text.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>
+
+            <ImagePrompt image={q.image} />
 
             {q.type === 'list' && (
               <>

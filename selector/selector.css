@@ -80,6 +80,8 @@ a { color: inherit; }
 .theme-toggle:hover { color: var(--paper); background: var(--ink); }
 .theme-toggle:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 
+.subjects-toggle .subjects-icon { flex: 0 0 auto; }
+
 .brand {
   display: inline-flex;
   align-items: center;

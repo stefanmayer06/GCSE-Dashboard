@@ -173,6 +173,20 @@ test('login lowercases the username so capitals work', async ({ page }) => {
   await expect(page.locator('.sign-out')).toContainText(username.toLowerCase());
 });
 
+test('english exam shows a 14+ appropriate picture for the Q5 description task', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/english/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.q-dot');
+  await page.locator('.q-dot').nth(1).click();
+  await page.waitForSelector('.q-card');
+  await page.waitForSelector('.q-image img');
+  const alt = await page.locator('.q-image img').getAttribute('alt');
+  expect(alt && alt.length > 10).toBeTruthy();
+  await expect(page.locator('.q-image-cap')).toContainText('Wikimedia Commons');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
 for (const [name, url] of [
   ['mobile-selector', '/'],
   ['mobile-subjects', '/subjects'],

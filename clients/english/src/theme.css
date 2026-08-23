@@ -87,6 +87,31 @@ body { background-size: 100% 28px; }
 .exam-with-source { grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.35fr); }
 .exam-source-col { border-color: var(--line-strong); }
 
+.q-image {
+  margin: 16px 0;
+  border: 1px solid var(--line-strong);
+  background: var(--paper-muted);
+}
+
+.q-image img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  object-position: center;
+}
+
+.q-image-cap {
+  padding: 8px 12px;
+  color: var(--quiet);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+:root[data-theme='dark'] .q-image { background: var(--paper-muted); }
+
 @media (max-width: 1100px) {
   .exam-with-source { grid-template-columns: 1fr; }
 }

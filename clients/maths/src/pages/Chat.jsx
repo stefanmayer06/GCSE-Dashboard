@@ -75,7 +75,7 @@ export default function Chat({ health }) {
     ]);
   }
 
-  const modelName = health?.model || 'deepseek/deepseek-v4-flash-0731';
+  const modelName = health?.model || 'google/gemma-4-26b-a4b';
 
   return (
     <div className="page chat-page">

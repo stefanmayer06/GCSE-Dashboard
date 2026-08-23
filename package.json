@@ -1,0 +1,21 @@
+{
+  "name": "gcse-dashboard",
+  "private": true,
+  "version": "1.0.0",
+  "description": "One revision dashboard for AQA GCSE Maths and English Language",
+  "workspaces": [
+    "server",
+    "clients/maths",
+    "clients/english"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,maths,english -c blue,magenta,yellow \"npm run dev -w server\" \"npm run dev -w clients/maths\" \"npm run dev -w clients/english\"",
+    "build": "npm run build -w clients/maths && npm run build -w clients/english",
+    "start": "npm run start -w server",
+    "test:ui": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "concurrently": "^9.1.0"
+  }
+}

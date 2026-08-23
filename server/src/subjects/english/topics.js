@@ -1,0 +1,258 @@
+export const SECTIONS = {
+  reading: {
+    id: 'reading',
+    name: 'Reading skills',
+    blurb: 'The skills behind Papers 1 and 2 reading questions.',
+    color: '#7c5cff',
+  },
+  writing: {
+    id: 'writing',
+    name: 'Writing skills',
+    blurb: 'Everything you need for the two 40-mark writing questions.',
+    color: '#ffb020',
+  },
+};
+
+const RES = {
+  bbc: {
+    label: 'BBC Bitesize — AQA English Language',
+    url: 'https://www.bbc.co.uk/bitesize/examspecs/zcbchv4',
+    why: 'Free guides for every question type on the 8700 papers.',
+  },
+  seneca: {
+    label: 'Seneca Learning',
+    url: 'https://senecalearning.com/en-GB/',
+    why: 'Free interactive English Language revision courses.',
+  },
+  mrbruff: {
+    label: 'Mr Bruff (YouTube)',
+    url: 'https://www.youtube.com/@mrbruff',
+    why: 'The classic free video walkthroughs of every AQA question.',
+  },
+  englishbiz: {
+    label: 'Englishbiz',
+    url: 'https://www.englishbiz.co.uk/',
+    why: 'Straight-talking guides to writing and analysis.',
+  },
+  revisionworld: {
+    label: 'Revision World',
+    url: 'https://revisionworld.com/gcse-revision/english',
+    why: 'Free past questions and essay guidance.',
+  },
+};
+
+const P = (text) => ({ t: 'p', text });
+const B = (items) => ({ t: 'b', items });
+const F = (title, text) => ({ t: 'f', title, text });
+const E = (q, a) => ({ t: 'e', q, a });
+
+export const TOPICS = [
+  {
+    id: 'listing',
+    section: 'reading',
+    name: 'Finding Information (Paper 1 Q1)',
+    blurb: 'Fast, precise retrieval — 4 easy marks.',
+    examWeight: 4,
+    notes: [
+      P('Paper 1 Q1 asks you to list four things from one part of the source. Four marks, five minutes. No inference needed — just find and copy.'),
+      B([
+        'Only use information from the SECTION the question points to — lines are given.',
+        'Copy short phrases or your own simple words; never whole sentences.',
+        'Do NOT analyse or explain — "the man was wet" is a mark, "this shows he was poor" is wasted ink.',
+        'Each listed thing must be clearly different from the others.',
+        'Watch the number of marks: list FOUR things for 4 marks.',
+      ]),
+      F('The rule', 'One clear fact per point. No explanation. No opinion.'),
+      E('"List four things about the stranger from this part of the source." (Great Expectations)', '"He was soaked in water", "he had a great iron on his leg", "he had no hat", "he seized Pip by the chin".'),
+    ],
+    resources: [RES.bbc, RES.seneca, RES.mrbruff, RES.revisionworld],
+  },
+  {
+    id: 'language',
+    section: 'reading',
+    name: 'Analysing Language (P1 Q2 & P2 Q3)',
+    blurb: 'Word choices, imagery and effects — the classic 8/12-marker.',
+    examWeight: 20,
+    notes: [
+      P('These questions ask HOW the writer uses language. Always quote, name the technique clearly, and explain the EFFECT on the reader.'),
+      B([
+        'Formula: quote → technique → effect → link back to the question focus.',
+        'Word classes: vivid verbs, precise adjectives, adverbs, nouns.',
+        'Imagery: simile, metaphor, personification — what do they make you SEE or FEEL?',
+        'Sentence forms: short sentences for shock, long lists to overwhelm, questions to involve.',
+        'Sound effects: alliteration, sibilance, onomatopoeia.',
+        'Aim for 2-3 developed points, each with its own quotation, not a list of twenty devices.',
+      ]),
+      F('The paragraph frame', 'The writer uses [technique]: "[quote]". The word "..." suggests..., making the reader [feel/see]..., which emphasises [the question focus].'),
+      E('How does the writer use language to describe the stranger?', 'The list of verbs — "limped", "shivered", "glared and growled" — sounds almost animal, suggesting a man broken by cold and hunger. The participles "soaked", "smothered", "torn" pile up the damage he has suffered, making the reader pity as well as fear him.'),
+    ],
+    resources: [RES.bbc, RES.mrbruff, RES.englishbiz, RES.seneca],
+  },
+  {
+    id: 'structure',
+    section: 'reading',
+    name: 'Analysing Structure (Paper 1 Q3)',
+    blurb: 'Openings, shifts, tension and endings.',
+    examWeight: 8,
+    notes: [
+      P('Structure = the order of events and how the writer directs your attention. It is never "it starts, then, next". You must comment on the EFFECT of the choices.'),
+      B([
+        'Openings: does it start in the middle of action? With a setting? A question?',
+        'Focus shifts: where does the writer move your attention, and why?',
+        'Perspective changes: wide view → close-up → inside a character\u2019s head.',
+        'Time: flashbacks, slowing down, speeding up.',
+        'Tension: how the writer builds, releases and re-builds it.',
+        'Endings: what feeling or question is the reader left with?',
+        'Use the structure vocabulary: focus, shift, juxtaposition, climax, cyclical ending.',
+      ]),
+      F('Structure vocabulary', 'opening · focus shift · sentence pace · tension · cyclical return · cliffhanger'),
+      E('How has the writer structured the extract to interest you as a reader?', 'The extract begins with a calm, wide description of the marshes before the violent interruption of dialogue, a contrast that makes the threat feel sudden. The writer then zooms in on the stranger in one long sentence of piled-up details, trapping the reader\u2019s attention exactly where Pip\u2019s is, and ends by extending the danger into the future — the boy will never be safe — which leaves the reader desperate to continue.'),
+    ],
+    resources: [RES.bbc, RES.mrbruff, RES.englishbiz, RES.revisionworld],
+  },
+  {
+    id: 'evaluation',
+    section: 'reading',
+    name: 'Evaluating a Statement (Paper 1 Q4)',
+    blurb: '"To what extent do you agree?" — 20 marks.',
+    examWeight: 20,
+    notes: [
+      P('This is the big reading question: you are a critic. You must BUILD an argument about the statement, using the text as evidence, not just list things you noticed.'),
+      B([
+        'State your position: agree fully, mostly, partly, or disagree — and stick to it.',
+        'Select the best evidence (2-4 moments) and write a developed comment on each.',
+        'Use evaluative language: effective, convincing, memorable, powerful, surprising, ironic.',
+        'Be critical: mention the limits of the statement too — "however…".',
+        'Never retell the story. Every sentence should weigh the statement.',
+        'Structure: mini-argument per paragraph — point, evidence, evaluation, link back to the statement.',
+      ]),
+      F('Evaluative bank', 'most effective · deliberately · ironic · manipulates the reader · creates sympathy · undermines'),
+      E('"The writer makes the reader feel sympathy for Victor." — To what extent do you agree?', 'I partly agree. Sympathy is created through Victor\u2019s genuine collapse — he calls his success a "catastrophe" and has "deprived myself of rest and health" — and his honesty makes him pitiable. However, the writer undermines that sympathy: the creature is never called "he", only "the wretch" and "it", which hints at Victor\u2019s real failure — abandoning what he made. The passage persuades us less than it complicates us.'),
+    ],
+    resources: [RES.bbc, RES.mrbruff, RES.englishbiz, RES.seneca],
+  },
+  {
+    id: 'summarising',
+    section: 'reading',
+    name: 'Summarising (Paper 2 Q2)',
+    blurb: 'Comparing what two texts tell you — 8 marks.',
+    examWeight: 8,
+    notes: [
+      B([
+        'Read the question focus carefully (e.g. the differences between the two schools).',
+        'Summaries are about IDEAS and details, not language techniques — no analysis here.',
+        'Use details from BOTH texts, in the same paragraph where possible: "whereas Source A…, Source B…".',
+        'Quote briefly, or paraphrase precisely — either is fine, but be accurate.',
+        'Two or three developed comparative points are enough; quality over quantity.',
+        'Use connecting words: however, whereas, in contrast, similarly, but.',
+      ]),
+      F('The frame', 'In Source A… [detail]. In Source B, however… [contrasting detail]. This shows one system… while the other…'),
+      E('Summarise the differences between the two schools (Hard Times / modern feature)', 'In Source A learning is mechanical — children are "vessels" to be "filled" with facts — whereas in Source B classes come alive through conversation, with students arguing happily in the dining hall. Gradgrind even strips Sissy of her nickname, showing a school that erases individuality, while the modern school\u2019s phone ban lets pupils remember "the world is bigger than a screen".'),
+    ],
+    resources: [RES.bbc, RES.seneca, RES.revisionworld, RES.englishbiz],
+  },
+  {
+    id: 'comparing',
+    section: 'reading',
+    name: 'Comparing Viewpoints (Paper 2 Q4)',
+    blurb: 'Compare what writers think AND how they say it — 16 marks.',
+    examWeight: 16,
+    notes: [
+      P('The examiner wants both halves: WHAT each writer believes (their viewpoint) and HOW they put it across (their methods). Balance the two.'),
+      B([
+        'Start each paragraph with the viewpoint difference: "Dickens condemns… whereas the modern writer celebrates…".',
+        'Then name a method each uses: irony, anecdote, humour, statistics, structure, tone.',
+        'Use comparative connectives throughout: both, whereas, in contrast, similarly.',
+        'Quote briefly from both texts in the same paragraph.',
+        'Aim for 3 well-developed comparative paragraphs, or 2 + a short conclusion on the big idea.',
+      ]),
+      F('The frame', 'Both writers…, but while [A] uses [method] to [effect], [B] chooses [method], which… This matters because…'),
+      E('Compare how the writers convey their viewpoints on city life.', 'Both writers distrust the city, but their tones differ. Gaskell\u2019s narrator observes from outside, using the "lead-coloured cloud" and the "tapping and hammering" looms to judge the city coldly, while the modern blogger argues from inside experience, using jokes — a neighbour named only from his post — to make her point. Where Gaskell mourns the hollow-eyed workers, the blogger simply leaves, and that difference — protest versus escape — is really what separates their viewpoints.'),
+    ],
+    resources: [RES.bbc, RES.mrbruff, RES.englishbiz, RES.revisionworld],
+  },
+  {
+    id: 'reading-19c',
+    section: 'reading',
+    name: 'Decoding 19th-Century Texts',
+    blurb: 'The Paper 2 Source A survival kit.',
+    examWeight: 8,
+    notes: [
+      P('Paper 2 Source A is always 19th century. The language looks harder than it is: slow down, read twice, and most of the difficulty disappears.'),
+      B([
+        'Long sentences: find the MAIN clause first; the rest is decoration.',
+        'Unfamiliar words: guess from context; you usually only need the gist.',
+        'Look for the writer\u2019s STANCE first — mocking, pitying, admiring — everything else follows.',
+        'You do not need to understand every word to score. Examiners reward sensible gist.',
+        'Expect: dashes, semicolon floods, archaic words (hitherto, whereupon), and heavy irony.',
+        'Practise by reading one of the extracts in this app every few days without stopping.',
+      ]),
+      F('First-read strategy', 'Read the blurb → skim first and last lines → read once for gist → read question → hunt for evidence.'),
+      E('"He was a fat, healthy man; but he turned very pale." (Oliver Twist)', 'The contrast is the point: the ONE healthy person in the room reacts with terror to a hungry boy\u2019s request — Dickens\u2019 irony exposes who the system truly fattens and who it starves.'),
+    ],
+    resources: [RES.bbc, RES.englishbiz, { label: 'Project Gutenberg', url: 'https://www.gutenberg.org/', why: 'Free full texts of every Victorian classic.' }, RES.revisionworld],
+  },
+  {
+    id: 'creative-writing',
+    section: 'writing',
+    name: 'Creative Writing (Paper 1 Q5)',
+    blurb: 'Description or narrative — 40 marks.',
+    examWeight: 40,
+    notes: [
+      P('24 marks for content & organisation (AO5), 16 for technical accuracy (AO6). Plan for 5 minutes, write for 35, check for 5. Choose description if you love imagery, narrative if you love events — NEVER switch halfway.'),
+      B([
+        'Open with intention: a striking image, a moment of action, a single telling detail. Avoid "It was a dark and stormy night".',
+        'Structure: 4-5 paragraphs, each doing one job (establish → develop → tension/high point → shift → ending).',
+        'Show, don\u2019t tell: "the gate coughed shut" beats "the gate was old".',
+        'Vary sentences: short sentences land punches; long ones build mood.',
+        'End deliberately — an image, a change, a held breath. No "and then I woke up."',
+        'AO6: check capitals, full stops, apostrophes, paragraphing. Accuracy IS 16 marks.',
+      ]),
+      F('Planning in 5 minutes', 'Who/what → Where → Sensory detail bank (5 words per sense) → High point → Ending image.'),
+      E('Opening line exercise', 'Weak: "It was raining and I felt scared."  Strong: "The rain had been practising all night, and by morning the lane had learned to swim."'),
+    ],
+    resources: [RES.bbc, RES.mrbruff, RES.englishbiz, RES.seneca],
+  },
+  {
+    id: 'argument-writing',
+    section: 'writing',
+    name: 'Writing to Argue & Persuade (Paper 2 Q5)',
+    blurb: 'Articles, letters and speeches — 40 marks.',
+    examWeight: 40,
+    notes: [
+      P('You are given a statement and a FORM (article, letter, speech, leaflet). Argue = build a case with reasons and counter-arguments. Persuade = win the reader over with feeling. The best answers do both.'),
+      B([
+        'Match the form: article → headline + engaging opening; letter → "Dear…" + sign-off; speech → address the audience directly.',
+        'Open with an anecdote, a striking fact or a direct question — never "In this article I will…".',
+        'Use persuasive devices WITH purpose: rule of three, rhetorical questions, emotive language, statistics, direct address.',
+        'Concede then rebut: "Some say… However…" — it makes you sound fair and smart.',
+        'One idea per paragraph; link paragraphs ("And this matters because…").',
+        'End with a memorable final line — a call to action or a sharp image.',
+      ]),
+      F('Persuasive kit', 'anecdote · rhetorical question · triples ("clear, calm and fair") · counter-argument · direct address · emotive verbs'),
+      E('Opening a speech against phones in school', '"Hands up if you have ever checked your phone in a lesson. Now keep them up if you remember what the lesson was about. Exactly."'),
+    ],
+    resources: [RES.bbc, RES.englishbiz, RES.mrbruff, RES.seneca],
+  },
+  {
+    id: 'accuracy',
+    section: 'writing',
+    name: 'Spelling, Punctuation & Grammar (AO6)',
+    blurb: '16 marks are hiding in your SPAG — claim them.',
+    examWeight: 16,
+    notes: [
+      B([
+        'Paragraph every time the idea, time, place or speaker changes.',
+        'Full stops: if you can hear a natural long pause, it is probably a new sentence.',
+        'Apostrophes only for possession (the dog\u2019s bowl) and omission (do not → don\u2019t). NEVER for plurals.',
+        'Commas before but/which/who clauses; no comma splices (no joining two sentences with just a comma).',
+        'Vary sentence starts: "Slowly, she…", "Behind the door…", "However…".',
+        'The classic killer list: there/their/they\u2019re, your/you\u2019re, its/it\u2019s, to/too/two, were/where/we\u2019re.',
+        'Leave 5 minutes at the end to proofread ONE more time — it genuinely gains marks.',
+      ]),
+      F('Proofread routine', 'Read your answer aloud inside your head, one sentence at a time. Your ear catches what your eye misses.'),
+      E('Find all 3 errors: "your going to there house to get you\u2019re books"', '"Your" → "you\u2019re" · "there" → "their" · "you\u2019re" → "your" — three different homophone errors in one short clause!'),
+    ],
+    resources: [RES.bbc, RES.englishbiz, RES.seneca, { label: 'Grammar Monster', url: 'https://www.grammar-monster.com/', why: 'Plain-English explanations of every grammar point.' }],
+  },
+];

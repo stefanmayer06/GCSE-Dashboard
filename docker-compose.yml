@@ -1,0 +1,17 @@
+services:
+  gcse-dashboard:
+    build: .
+    container_name: gcse-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DATA_DIR: /app/data
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-deepseek/deepseek-v4-flash-0731}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+    volumes:
+      - gcse-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  gcse-data:

@@ -11,11 +11,11 @@ import Chat from './pages/Chat.jsx';
 import { api } from './api.js';
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: '▦' },
-  { to: '/practice', label: 'Practice Papers', icon: '⏱' },
-  { to: '/learn', label: 'Learn', icon: '📚' },
-  { to: '/texts', label: 'The Texts', icon: '📜' },
-  { to: '/chat', label: 'AI Tutor', icon: '🤖' },
+  { to: '/', label: 'Dashboard', icon: '01' },
+  { to: '/practice', label: 'Practice Papers', icon: '02' },
+  { to: '/learn', label: 'Learn', icon: '03' },
+  { to: '/texts', label: 'The Texts', icon: '04' },
+  { to: '/chat', label: 'AI Tutor', icon: '05' },
 ];
 
 export default function App() {
@@ -34,18 +34,20 @@ export default function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="logo">
-          <span className="logo-icon">✍️</span>
+          <span className="logo-icon" aria-hidden="true">E</span>
           <div>
             <div className="logo-name">EnglishMate</div>
             <div className="logo-sub">AQA English Language</div>
           </div>
         </div>
-        <a className="subject-switch" href="/">← All subjects</a>
+        <a className="subject-switch" href="/" aria-label="Return to all subjects">
+          <span aria-hidden="true">←</span><span className="subject-switch-label">All subjects</span>
+        </a>
         <nav>
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <span className="nav-icon">{n.icon}</span>
-              {n.label}
+              <span className="nav-icon" aria-hidden="true">{n.icon}</span>
+              <span className="nav-label">{n.label}</span>
             </NavLink>
           ))}
         </nav>

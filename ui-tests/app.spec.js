@@ -4,11 +4,14 @@ const pages = [
   ['selector', '/', ['#page-title', '.maths-card', '.english-card']],
   ['maths-dashboard', '/maths/', ['h1', '.subject-switch']],
   ['maths-practice', '/maths/practice', ['h1']],
+  ['maths-exam', '/maths/practice?paper=1&type=short', ['.exam-bar', '.q-card']],
   ['maths-learn', '/maths/learn', ['.strand-panel']],
   ['maths-topic', '/maths/learn/fractions', ['.notes']],
   ['maths-chat', '/maths/chat', ['.chat-box']],
   ['english-dashboard', '/english/', ['h1', '.subject-switch']],
   ['english-practice', '/english/practice', ['h1']],
+  ['english-exam-paper-1', '/english/practice?paper=1&type=short', ['.exam-bar', '.q-card', '.source-panel']],
+  ['english-exam-paper-2', '/english/practice?paper=2&type=short', ['.exam-bar', '.source-tabs']],
   ['english-learn', '/english/learn', ['.strand-panel']],
   ['english-topic', '/english/learn/language', ['.notes']],
   ['english-texts', '/english/texts', ['.text-card']],
@@ -35,6 +38,18 @@ test('subject selector links and live status', async ({ page }) => {
   await expect(page.locator('#english-status')).toContainText('Ready');
   await expect(page.locator('a[href="/maths/"]')).toBeVisible();
   await expect(page.locator('a[href="/english/"]')).toBeVisible();
+});
+
+test('subject themes share the desk system but keep distinct accents', async ({ page }) => {
+  await page.goto('/maths/', { waitUntil: 'networkidle' });
+  const maths = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
+  await expect(page.locator('h1')).toHaveCSS('font-family', /Georgia/);
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(243, 240, 232)');
+
+  await page.goto('/english/', { waitUntil: 'networkidle' });
+  const english = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
+  await expect(page.locator('h1')).toHaveCSS('font-family', /Georgia/);
+  expect(maths).not.toEqual(english);
 });
 
 for (const [name, url] of [

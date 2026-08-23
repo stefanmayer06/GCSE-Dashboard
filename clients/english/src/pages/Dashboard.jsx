@@ -43,7 +43,7 @@ export default function Dashboard({ health, progress }) {
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>Welcome back, writer ✍️</h1>
+          <h1>Your English revision</h1>
           <p className="sub">AQA GCSE English Language (8700) — both papers, real timings, real mark schemes.</p>
         </div>
         {health && (
@@ -67,7 +67,7 @@ export default function Dashboard({ health, progress }) {
           <div className="stat-label">Questions attempted</div>
         </div>
         <div className="stat-card">
-          <div className="stat-num">🔥 {progress?.streak ?? '—'}</div>
+          <div className="stat-num">{progress?.streak ?? '—'}</div>
           <div className="stat-label">Day streak</div>
         </div>
       </section>
@@ -83,7 +83,7 @@ export default function Dashboard({ health, progress }) {
           <div className="paper-card pick">
             <div className="paper-top">
               <span className="paper-type">8700/1</span>
-              <span className="calc-badge yes">📖 Fiction extract</span>
+              <span className="calc-badge yes">Fiction extract</span>
             </div>
             <div className="paper-desc">
               Explorations in Creative Reading and Writing. Q1 list (4) · Q2 language (8) ·
@@ -101,7 +101,7 @@ export default function Dashboard({ health, progress }) {
           <div className="paper-card pick">
             <div className="paper-top">
               <span className="paper-type">8700/2</span>
-              <span className="calc-badge yes">📰 Two sources</span>
+              <span className="calc-badge yes">Two sources</span>
             </div>
             <div className="paper-desc">
               Writers&apos; Viewpoints and Perspectives. Q1 true/false (4) · Q2 summary (8) ·
@@ -119,7 +119,7 @@ export default function Dashboard({ health, progress }) {
         </div>
         <div className="adhoc-cta">
           <div>
-            <div className="adhoc-cta-title">🎲 Feeling random?</div>
+            <div className="adhoc-cta-title">Quick-fire practice</div>
             <div className="sub">Quick-fire rounds: list four things, true/false and language analysis from any text in the bank.</div>
           </div>
           <button className="btn btn-primary" onClick={() => navigate('/practice#adhoc')}>Quick-fire round →</button>
@@ -176,7 +176,7 @@ export default function Dashboard({ health, progress }) {
               ))}
               <p className="sub small">
                 Built from every question you answer. Drill a weak skill in{' '}
-                <a className="link" onClick={() => navigate('/learn')}>Learn</a>.
+                <button type="button" className="link link-button" onClick={() => navigate('/learn')}>Learn</button>.
               </p>
             </div>
           )}

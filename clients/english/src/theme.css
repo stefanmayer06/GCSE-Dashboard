@@ -1,0 +1,79 @@
+:root {
+  --accent: #ad7621;
+  --accent-strong: #835713;
+  --accent2: #6849e8;
+  --accent-wash: #f3e8ce;
+  --subject-tint: #ebddbd;
+  --subject-ink: #3e2911;
+}
+
+body {
+  --desk-pattern:
+    linear-gradient(rgba(62, 41, 17, 0.045) 1px, transparent 1px);
+  background-size: 100% 28px;
+}
+
+.papers-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.source-panel,
+.text-detail-source,
+.model-answer {
+  border-color: #9d8a68;
+  color: #34291d;
+  background: #fffaf0;
+}
+
+.source-text,
+.source-text p,
+.text-detail-source,
+.model-answer,
+.text-card-excerpt {
+  color: #34291d;
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.78;
+}
+
+.source-title,
+.text-card-title {
+  color: var(--subject-ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+}
+
+.source-meta,
+.source-byline,
+.text-card-author { color: var(--quiet); }
+
+.source-tabs { border-color: #9d8a68; background: #f5ead4; }
+.source-tab { border-radius: 0; color: var(--quiet); }
+.source-tab.on { color: #fff; background: var(--accent); box-shadow: none; }
+
+.mark-chip.auto { color: var(--positive); background: var(--positive-wash); }
+.mark-chip.ai { color: var(--subject-ink); background: var(--accent-wash); }
+.mark-chip.off { color: var(--warning); background: var(--warning-wash); }
+.fb-marks { color: var(--subject-ink); }
+.fb-level { color: var(--warning); background: var(--warning-wash); }
+.rubric-band { border-color: var(--line-strong); background: var(--paper-raised); }
+.rubric-band.me { border-color: var(--accent); background: var(--subject-tint); }
+.rubric-band .lvl { color: var(--subject-ink); }
+
+.tf-btn.on-true,
+.tf-btn.on-false {
+  border-color: var(--subject-ink);
+  color: var(--subject-ink);
+  background: var(--subject-tint);
+}
+
+.option-card.selected { border-color: var(--subject-ink); background: var(--subject-tint); box-shadow: none; }
+.word-watch, .input-hint, .marking-note { color: var(--quiet); }
+
+.exam-with-source { grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.35fr); }
+.exam-source-col { border-color: var(--line-strong); }
+
+@media (max-width: 1100px) {
+  .exam-with-source { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .papers-grid.two { grid-template-columns: 1fr; }
+}

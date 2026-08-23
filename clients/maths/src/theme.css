@@ -1,0 +1,38 @@
+:root {
+  --accent: #6849e8;
+  --accent-strong: #4d34bd;
+  --accent2: #9b3d63;
+  --accent-wash: #ece8ff;
+  --subject-tint: #e2dcff;
+  --subject-ink: #201a3d;
+}
+
+body {
+  --desk-pattern:
+    linear-gradient(rgba(32, 26, 61, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(32, 26, 61, 0.04) 1px, transparent 1px);
+}
+
+.formula-body,
+.answer-input,
+.timer-value,
+.q-num,
+.score-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.paper-card.pick.calc::before { background: var(--accent); }
+
+.q-card { position: relative; }
+
+.q-card::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(104, 73, 232, 0.18);
+  border-radius: 50%;
+  pointer-events: none;
+}

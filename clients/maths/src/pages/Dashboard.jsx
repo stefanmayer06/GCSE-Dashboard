@@ -54,7 +54,7 @@ export default function Dashboard({ health, progress }) {
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>Welcome back, champ 💪</h1>
+          <h1>Your Maths revision</h1>
           <p className="sub">AQA GCSE Maths Foundation — train like it&apos;s exam day.</p>
         </div>
         {health && (
@@ -78,7 +78,7 @@ export default function Dashboard({ health, progress }) {
           <div className="stat-label">Topic questions answered</div>
         </div>
         <div className="stat-card">
-          <div className="stat-num">🔥 {progress?.streak ?? '—'}</div>
+          <div className="stat-num">{progress?.streak ?? '—'}</div>
           <div className="stat-label">Day streak</div>
         </div>
       </section>
@@ -100,7 +100,7 @@ export default function Dashboard({ health, progress }) {
               <div className="paper-top">
                 <span className="paper-type">{p.code}</span>
                 <span className={`calc-badge ${p.calc ? 'yes' : 'no'}`}>
-                  {p.calc ? '🧮 Calculator' : '🚫 No calculator'}
+                  {p.calc ? 'Calculator' : 'No calculator'}
                 </span>
               </div>
               <div className="paper-desc">{p.blurb}</div>
@@ -117,7 +117,7 @@ export default function Dashboard({ health, progress }) {
         </div>
         <div className="adhoc-cta">
           <div>
-            <div className="adhoc-cta-title">🎲 Feeling random?</div>
+            <div className="adhoc-cta-title">Mixed practice</div>
             <div className="sub">Ad-hoc questions mixed from all three papers — 10, 15 or 20 at a time.</div>
           </div>
           <button className="btn btn-primary" onClick={() => navigate('/practice#adhoc')}>Ad-hoc round →</button>
@@ -174,7 +174,7 @@ export default function Dashboard({ health, progress }) {
               ))}
               <p className="sub small">
                 Built from your answers across papers, topic practice and ad-hoc rounds. Drill a
-                weak strand in <a className="link" onClick={() => navigate('/learn')}>Learn</a>.
+                weak strand in <button type="button" className="link link-button" onClick={() => navigate('/learn')}>Learn</button>.
               </p>
             </div>
           )}

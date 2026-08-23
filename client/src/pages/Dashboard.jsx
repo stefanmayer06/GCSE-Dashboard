@@ -1,4 +1,6 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../api.js';
 import { STRAND_COLORS } from '../colors.js';
 
 const STRAND_NAMES_LIST = [
@@ -15,6 +17,38 @@ export default function Dashboard({ health, progress }) {
   const recent = progress?.history?.slice(0, 10).reverse() || [];
   const maxBar = Math.max(1, ...recent.map((h) => h.percent));
   const overall = progress?.overallPercent;
+  const [topics, setTopics] = useState(null);
+
+  useEffect(() => {
+    api.topics().then(setTopics).catch(() => {});
+  }, []);
+
+  const mastery = useMemo(() => {
+    if (!topics || !progress) return null;
+    const stats = progress.topicStats || {};
+    const out = [];
+    for (const s of STRAND_NAMES_LIST) {
+      let correct = 0;
+      let total = 0;
+      for (const t of topics.strands[s.id]?.topics || []) {
+        const st = stats[t.id];
+        if (st) {
+          correct += st.correct;
+          total += st.total;
+        }
+      }
+      out.push({
+        id: s.id,
+        name: s.name,
+        color: STRAND_COLORS[s.id],
+        percent: total ? Math.round((100 * correct) / total) : null,
+        answered: total,
+      });
+    }
+    return out;
+  }, [topics, progress]);
+
+  const anyMastery = mastery?.some((m) => m.answered > 0);
 
   return (
     <div className="page">
@@ -112,18 +146,38 @@ export default function Dashboard({ health, progress }) {
           )}
         </div>
         <div className="panel">
-          <h2>Topic mastery</h2>
-          {STRAND_NAMES_LIST.map((s) => (
-            <div key={s.id} className="strand-row">
-              <span className="strand-dot" style={{ background: STRAND_COLORS[s.id] }} />
-              <span className="strand-name">{s.name}</span>
-              <span className="strand-hint">mastery unlocks as you practise</span>
+          <h2>Topic mastery by strand</h2>
+          {!mastery ? (
+            <div className="loading">Loading mastery…</div>
+          ) : !anyMastery ? (
+            <>
+              <p className="empty">No mastery data yet — accuracy appears here once you answer questions in papers, practice or ad-hoc rounds.</p>
+              <button className="btn btn-primary" onClick={() => navigate('/practice')}>Start a paper</button>
+            </>
+          ) : (
+            <div>
+              {mastery.map((m) => (
+                <div key={m.id} className="mastery-row">
+                  <span className="strand-dot" style={{ background: m.color }} />
+                  <span className="mastery-name">{m.name}</span>
+                  <div className="mastery-bar">
+                    <div
+                      className="mastery-fill"
+                      style={{
+                        width: `${m.percent ?? 0}%`,
+                        background: m.percent != null && m.percent >= 70 ? 'var(--green)' : m.percent != null && m.percent >= 40 ? 'var(--amber)' : 'var(--red)',
+                      }}
+                    />
+                  </div>
+                  <span className="mastery-pct">{m.percent != null ? `${m.percent}%` : '—'}</span>
+                </div>
+              ))}
+              <p className="sub small">
+                Built from your answers across papers, topic practice and ad-hoc rounds. Drill a
+                weak strand in <a className="link" onClick={() => navigate('/learn')}>Learn</a>.
+              </p>
             </div>
-          ))}
-          <p className="sub small">
-            Mastery builds from topic practice and paper questions. Head to{' '}
-            <a className="link" onClick={() => navigate('/learn')}>Learn</a> to study and drill each topic.
-          </p>
+          )}
         </div>
       </section>
     </div>

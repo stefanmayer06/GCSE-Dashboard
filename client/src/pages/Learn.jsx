@@ -4,7 +4,7 @@ import { api } from '../api.js';
 
 export default function Learn() {
   const [data, setData] = useState(null);
-  const [open, setOpen] = useState({});
+  const [open, setOpen] = useState({ number: true });
 
   useEffect(() => {
     api.topics().then(setData).catch(() => {});

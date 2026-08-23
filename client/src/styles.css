@@ -5,7 +5,7 @@
   --panel2: #1a2131;
   --border: rgba(255, 255, 255, 0.08);
   --text: #e8ecf4;
-  --muted: #8b94a7;
+  --muted: #98a1b3;
   --accent: #7c5cff;
   --accent2: #ff5c8a;
   --green: #2ad4a8;
@@ -539,12 +539,101 @@ h2 {
   color: var(--accent);
   cursor: pointer;
   font-weight: 600;
+  padding: 3px 5px;
+  margin: -3px -5px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+/* ---------- Focus & motion ---------- */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[role='button']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.skeleton {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-height: 180px;
+  animation: skel-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skel-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ---------- Mastery rows ---------- */
+.mastery-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.mastery-row:last-of-type {
+  border-bottom: none;
+}
+
+.mastery-name {
+  width: 168px;
+  flex-shrink: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.mastery-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mastery-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s;
+}
+
+.mastery-pct {
+  width: 56px;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.mastery-none {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 6px 0;
 }
 
 .back-link {
   color: var(--muted);
   text-decoration: none;
   font-size: 13.5px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 6px;
 }
 
 .back-link:hover {
@@ -1636,6 +1725,29 @@ h2 {
   color: var(--muted);
   font-size: 14px;
   padding: 20px 0;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.loading::before {
+  content: '';
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: skel-spin 0.8s linear infinite;
+}
+
+@keyframes skel-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ---------- Chart ---------- */

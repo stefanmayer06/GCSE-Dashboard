@@ -185,32 +185,36 @@ export default function Practice() {
           (easier questions first) and stretch questions ⚡ at the end.
         </p>
         <div className="papers-grid">
-          {(papers || []).map((p) => (
-            <div key={p.id} className={`paper-card pick ${p.calculator ? 'calc' : 'noncalc'}`}>
-              <div className="paper-top">
-                <span className="paper-type">{p.code}</span>
-                <span className={`calc-badge ${p.calculator ? 'yes' : 'no'}`}>
-                  {p.calculator ? '🧮 Calculator' : '🚫 No calculator'}
-                </span>
-              </div>
-              <div className="paper-desc">{p.blurb}</div>
-              <div className="strand-chips">
-                {p.strands.map((s) => (
-                  <span key={s.id} className="strand-chip" style={{ borderColor: s.color }}>
-                    <i style={{ background: s.color }} /> {s.name} {s.percent}%
+          {(papers || [1, 2, 3]).map((p) =>
+            papers ? (
+              <div key={p.id} className={`paper-card pick ${p.calculator ? 'calc' : 'noncalc'}`}>
+                <div className="paper-top">
+                  <span className="paper-type">{p.code}</span>
+                  <span className={`calc-badge ${p.calculator ? 'yes' : 'no'}`}>
+                    {p.calculator ? '🧮 Calculator' : '🚫 No calculator'}
                   </span>
-                ))}
+                </div>
+                <div className="paper-desc">{p.blurb}</div>
+                <div className="strand-chips">
+                  {p.strands.map((s) => (
+                    <span key={s.id} className="strand-chip" style={{ borderColor: s.color }}>
+                      <i style={{ background: s.color }} /> {s.name} {s.percent}%
+                    </span>
+                  ))}
+                </div>
+                <div className="paper-actions">
+                  <button className="btn btn-primary" onClick={() => start('full', p.id)}>
+                    Full · 80 marks · 90 min
+                  </button>
+                  <button className="btn" onClick={() => start('short', p.id)}>
+                    Quick · 40 marks
+                  </button>
+                </div>
               </div>
-              <div className="paper-actions">
-                <button className="btn btn-primary" onClick={() => start('full', p.id)}>
-                  Full · 80 marks · 90 min
-                </button>
-                <button className="btn" onClick={() => start('short', p.id)}>
-                  Quick · 40 marks
-                </button>
-              </div>
-            </div>
-          ))}
+            ) : (
+              <div key={p} className="skeleton" aria-hidden="true" />
+            )
+          )}
         </div>
         {error && <div className="error-banner">{error}</div>}
       </section>
@@ -472,7 +476,14 @@ function TestScreen(props) {
             if (i === current) cls += ' current';
             else if (done) cls += ' done';
             return (
-              <button key={x.id} className={cls} onClick={() => onGo(i)}>
+              <button
+                key={x.id}
+                className={cls}
+                onClick={() => onGo(i)}
+                title={`Question ${i + 1} · ${x.marks} mark${x.marks > 1 ? 's' : ''}${x.stretch ? ' · stretch' : ''}`}
+                aria-label={`Go to question ${i + 1}`}
+                aria-current={i === current ? 'true' : undefined}
+              >
                 <span className="q-num">{i + 1}</span>
                 <span className="q-marks">{x.marks}m</span>
                 {x.stretch && <span className="q-stretch">⚡</span>}

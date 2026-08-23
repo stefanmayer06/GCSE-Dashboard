@@ -77,7 +77,7 @@ export default function Chat({ health }) {
     ]);
   }
 
-  const modelName = health?.model || 'google/gemma-4-26b-a4b';
+  const modelName = health?.model || 'google/gemma-4-26b-a4b-it:free';
 
   return (
     <div className="page chat-page">

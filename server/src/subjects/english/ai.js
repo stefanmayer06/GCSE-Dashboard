@@ -1,6 +1,6 @@
 import { rubricFor } from './marking.js';
 
-const DEFAULT_MODEL = 'google/gemma-4-26b-a4b';
+const DEFAULT_MODEL = 'google/gemma-4-26b-a4b-it:free';
 
 export function aiConfig() {
   return {

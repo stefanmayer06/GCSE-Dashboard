@@ -105,7 +105,7 @@ session, so a user may need to start a paper again after a restart.
 
 ## AI Configuration
 
-`OPENROUTER_API_KEY` enables both tutors and English extended-answer marking. `OPENROUTER_MODEL` defaults to `google/gemma-4-26b-a4b` (Google Gemma 4 26B A4B, free tier). Never commit keys or log them. Both subjects must retain useful offline behavior when no key is configured.
+`OPENROUTER_API_KEY` enables both tutors and English extended-answer marking. `OPENROUTER_MODEL` defaults to `google/gemma-4-26b-a4b-it:free` (Google Gemma 4 26B A4B IT, free tier). Never commit keys or log them. Both subjects must retain useful offline behavior when no key is configured.
 
 ## Development
 

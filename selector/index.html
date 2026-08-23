@@ -7,6 +7,14 @@
     <title>GCSE Study Desk | Maths and English</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 fill=%22%23161713%22/><text x=%225%22 y=%2221%22 font-size=%2212%22 fill=%22%23f3f0e8%22>SD</text></svg>" />
     <link rel="stylesheet" href="/selector.css" />
+    <script>
+      try {
+        var t = localStorage.getItem('gcse-theme');
+        if (t === 'dark' || (t !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <main class="desk">
@@ -15,7 +23,13 @@
           <span class="brand-mark" aria-hidden="true">SD</span>
           <span>GCSE Study Desk</span>
         </a>
-        <span class="board-tag">AQA exam practice</span>
+        <div class="mast-actions">
+          <span class="board-tag">AQA exam practice</span>
+          <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch colour theme">
+            <span class="theme-toggle-icon" aria-hidden="true">◐</span>
+            <span>Dark</span>
+          </button>
+        </div>
       </header>
 
       <section class="intro" aria-labelledby="page-title">

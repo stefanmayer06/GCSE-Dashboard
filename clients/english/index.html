@@ -6,6 +6,14 @@
     <meta name="theme-color" content="#f3f0e8" />
     <title>EnglishMate — AQA GCSE English Language</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23ad7621'/><text x='10' y='23' font-size='20' fill='white'>E</text></svg>" />
+    <script>
+      try {
+        var t = localStorage.getItem('gcse-theme');
+        if (t === 'dark' || (t !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

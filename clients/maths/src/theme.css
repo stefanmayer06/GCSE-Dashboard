@@ -5,12 +5,21 @@
   --accent-wash: #ece8ff;
   --subject-tint: #e2dcff;
   --subject-ink: #201a3d;
-}
-
-body {
   --desk-pattern:
     linear-gradient(rgba(32, 26, 61, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(32, 26, 61, 0.04) 1px, transparent 1px);
+}
+
+:root[data-theme='dark'] {
+  --accent: #8c5cf0;
+  --accent-strong: #c4b2ff;
+  --accent2: #d07aa5;
+  --accent-wash: rgba(140, 92, 240, 0.18);
+  --subject-tint: rgba(140, 92, 240, 0.16);
+  --subject-ink: #c4b2ff;
+  --desk-pattern:
+    linear-gradient(rgba(196, 178, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 178, 255, 0.05) 1px, transparent 1px);
 }
 
 .formula-body,

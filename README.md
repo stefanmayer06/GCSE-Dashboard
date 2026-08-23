@@ -7,7 +7,7 @@ One revision dashboard for AQA GCSE Maths and English Language. A clean subject 
 - **MathsMate**: AQA Mathematics 8300 Foundation, three papers, 1,730 generated questions, topic lessons, progress tracking and an AI tutor.
 - **EnglishMate**: AQA English Language 8700, both papers, source-text library, skill lessons, AQA-style AI marking, progress tracking and an AI tutor.
 
-Open `http://localhost:3000`, then choose Maths or English. Subject progress is stored separately.
+Open `http://localhost:3000`, then choose Maths or English. Subject progress is stored separately, and your light or dark theme choice is remembered across the whole site.
 
 ## Quick Start
 

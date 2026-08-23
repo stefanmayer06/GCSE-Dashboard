@@ -15,10 +15,30 @@ const NAV = [
   { to: '/chat', label: 'AI Tutor', icon: '04' },
 ];
 
+function initialTheme() {
+  try {
+    const stored = localStorage.getItem('gcse-theme');
+    if (stored === 'dark' || stored === 'light') return stored;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+  } catch {}
+  return 'light';
+}
+
 export default function App() {
   const [progress, setProgress] = useState(null);
   const [health, setHealth] = useState(null);
+  const [theme, setTheme] = useState(initialTheme);
   const location = useLocation();
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('gcse-theme', next);
+    setTheme(next);
+  };
 
   useEffect(() => {
     Promise.allSettled([api.progress(), api.health()]).then(([p, h]) => {
@@ -49,6 +69,16 @@ export default function App() {
           ))}
         </nav>
         <div className="sidebar-foot">
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-pressed={theme === 'dark'}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            <span className="theme-toggle-icon" aria-hidden="true">{theme === 'dark' ? '◑' : '◐'}</span>
+            <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+          </button>
           {progress && (
             <div className="level-card">
               <div className="level-row">

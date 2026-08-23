@@ -86,3 +86,5 @@ docker compose up --build
 - Test desktop and 390px mobile layouts for the selector and both dashboards.
 - Do not claim official AQA endorsement. AQA course structures can be represented accurately, but the product is an independent revision tool.
 - Prefer small, testable changes over cross-subject abstractions that obscure exam-specific behavior.
+- Themes (light and dark) are driven by the shared design tokens in `clients/shared/study-desk.css` and each subject's `theme.css`. The `data-theme` attribute is set on `<html>` and persisted under the `gcse-theme` localStorage key so the choice survives across the selector and both subjects. New UI should consume these tokens rather than hardcoding colors.
+- Every colour, border and surface should stay legible in both themes. Dark mode is not a shadow of the light design; it uses its own warm ink, muted text and brighter semantic colours on the same grid and typography.

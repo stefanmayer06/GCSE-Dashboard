@@ -52,6 +52,21 @@ test('subject themes share the desk system but keep distinct accents', async ({ 
   expect(maths).not.toEqual(english);
 });
 
+test('dark mode toggles, persists and reaches every surface', async ({ page }) => {
+  await page.goto('/maths/', { waitUntil: 'networkidle' });
+  const lightBackground = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
+  await page.locator('.theme-toggle').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  const darkBackground = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
+  expect(darkBackground).not.toEqual(lightBackground);
+
+  await page.goto('/english/', { waitUntil: 'networkidle' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
 for (const [name, url] of [
   ['mobile-selector', '/'],
   ['mobile-maths', '/maths/'],

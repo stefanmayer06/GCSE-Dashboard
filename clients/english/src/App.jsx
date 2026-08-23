@@ -9,6 +9,7 @@ import Texts from './pages/Texts.jsx';
 import TextDetail from './pages/TextDetail.jsx';
 import Chat from './pages/Chat.jsx';
 import { api } from './api.js';
+import LoginScreen from '../../shared/login.jsx';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: '01' },
@@ -31,11 +32,27 @@ export default function App() {
   const [progress, setProgress] = useState(null);
   const [health, setHealth] = useState(null);
   const [theme, setTheme] = useState(initialTheme);
+  const [auth, setAuth] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    api.auth
+      .me()
+      .then((data) => setAuth(data.user))
+      .catch(() => setAuth(false));
+  }, []);
+
+  useEffect(() => {
+    if (!auth) return;
+    Promise.allSettled([api.progress(), api.health()]).then(([p, h]) => {
+      if (p.status === 'fulfilled') setProgress(p.value);
+      if (h.status === 'fulfilled') setHealth(h.value);
+    });
+  }, [location.pathname, auth]);
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
@@ -43,12 +60,35 @@ export default function App() {
     setTheme(next);
   };
 
-  useEffect(() => {
-    Promise.allSettled([api.progress(), api.health()]).then(([p, h]) => {
-      if (p.status === 'fulfilled') setProgress(p.value);
-      if (h.status === 'fulfilled') setHealth(h.value);
-    });
-  }, [location.pathname]);
+  const signOut = async () => {
+    try {
+      await api.auth.logout();
+    } catch {}
+    setProgress(null);
+    setHealth(null);
+    setAuth(false);
+  };
+
+  if (auth === null) {
+    return (
+      <div className="login-loading">
+        <div className="loading-mark" aria-hidden="true">E</div>
+        <p className="login-loading-text">Loading Study Desk…</p>
+      </div>
+    );
+  }
+
+  if (!auth) {
+    return (
+      <LoginScreen
+        subjectName="EnglishMate"
+        tag="AQA GCSE English Language"
+        letter="E"
+        authApi={api.auth}
+        onSignedIn={(user) => setAuth(user)}
+      />
+    );
+  }
 
   return (
     <div className="app">
@@ -81,6 +121,9 @@ export default function App() {
           >
             <span className="theme-toggle-icon" aria-hidden="true">{theme === 'dark' ? '◑' : '◐'}</span>
             <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+          </button>
+          <button type="button" className="sign-out" onClick={signOut}>
+            Sign out · {auth.username}
           </button>
           {progress && (
             <div className="level-card">

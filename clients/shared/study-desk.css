@@ -233,6 +233,215 @@ body {
 
 .theme-toggle .theme-toggle-icon { font-size: 14px; }
 
+.sign-out {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  color: var(--quiet);
+  background: transparent;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.sign-out:hover {
+  border-color: var(--negative);
+  color: var(--negative);
+  background: var(--negative-wash);
+}
+
+/* Sign-in gate */
+.login-screen {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 24px;
+}
+
+.login-card {
+  width: min(440px, 100%);
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: var(--paper-raised);
+  padding: 36px 32px;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.login-letter {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--ink);
+  color: var(--on-accent);
+  background: var(--accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.login-brand-name {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+}
+
+.login-brand-tag {
+  color: var(--quiet);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.login-card h1 {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 36px;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+.login-sub {
+  margin: 4px 0 0;
+  color: var(--quiet);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.login-error {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--negative);
+  border-radius: 0;
+  color: var(--negative);
+  background: var(--negative-wash);
+  font-size: 13px;
+}
+
+.login-field {
+  display: block;
+  margin-top: 18px;
+}
+
+.login-field span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--quiet);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.login-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  color: var(--ink);
+  background: var(--input-bg);
+  font-size: 15px;
+}
+
+.login-field input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-color: var(--accent);
+}
+
+.login-submit {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 22px;
+  border: 1px solid var(--subject-ink);
+  border-radius: 0;
+  color: var(--on-accent);
+  background: var(--accent);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.login-submit:hover:not(:disabled) {
+  border-color: var(--subject-ink);
+  background: var(--accent);
+  transform: translateY(-1px);
+}
+
+.login-submit:disabled { opacity: 0.55; }
+
+.login-oauth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  color: var(--ink);
+  background: var(--paper-raised);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.login-oauth:hover {
+  border-color: var(--ink);
+  background: var(--paper-muted);
+}
+
+.login-local {
+  margin-top: 14px;
+  color: var(--quiet);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.login-loading {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 24px;
+}
+
+.loading-mark {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid var(--ink);
+  color: var(--on-accent);
+  background: var(--accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 30px;
+}
+
+.login-loading-text {
+  margin-top: 14px;
+  color: var(--quiet);
+  font-size: 13px;
+}
+
 .level-card {
   padding: 14px;
   border: 1px solid var(--line-strong);
@@ -683,9 +892,19 @@ textarea:focus-visible,
     grid-column: 1 / -1;
     display: flex;
     justify-content: center;
+    gap: 8px;
     margin: 0;
   }
   .level-card, .bank-note { display: none; }
+  .theme-toggle { width: 40px; justify-content: center; padding: 0; }
+  .theme-toggle span:last-child { display: none; }
+  .sign-out {
+    max-width: 44%;
+    overflow: hidden;
+    padding: 0 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .content { padding: 28px 16px 64px; }
   .page-head { align-items: start; gap: 18px; }
   h1, .page-head h1 { font-size: clamp(42px, 13vw, 58px); }

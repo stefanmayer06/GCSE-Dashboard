@@ -15,16 +15,7 @@ import {
 } from './bank/index.js';
 import { TOPICS, STRANDS } from './bank/topics.js';
 import { predictGrade, gradeLabel, nextBoundaryGap, BOUNDARIES } from './grades.js';
-import {
-  progress,
-  recordTest,
-  recordPractice,
-  registerActivity,
-  addXp,
-  getChatHistory,
-  pushChat,
-  clearChat,
-} from './db.js';
+import { createDb } from '../../db.js';
 import { askTutor } from './chat.js';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
@@ -32,6 +23,11 @@ const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-v4-f
 
 const app = express.Router();
 app.use(express.json({ limit: '1mb' }));
+
+app.use((req, res, next) => {
+  if (req.user) req.db = createDb(req.user.id, 'maths');
+  next();
+});
 
 const activeTests = new Map();
 
@@ -54,7 +50,7 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/topics', (req, res) => {
-  const p = progress();
+  const p = req.db.progress();
   const byStrand = {};
   for (const s of Object.values(STRANDS)) {
     byStrand[s.id] = {
@@ -75,7 +71,7 @@ app.get('/topics', (req, res) => {
 app.get('/topics/:id', (req, res) => {
   const t = TOPICS.find((x) => x.id === req.params.id);
   if (!t) return res.status(404).json({ error: 'Topic not found' });
-  const p = progress();
+  const p = req.db.progress();
   const stats = p.topicStats[t.id];
   res.json({
     ...publicTopic(t),
@@ -202,9 +198,9 @@ app.post('/test/:id/submit', (req, res) => {
     perQuestion: marked.perQ,
   };
 
-  recordTest({ ...result, topicAccuracy: topics.map((t) => ({ id: t.id, percent: t.percent })) });
-  addXp(correctMarks * 2);
-  registerActivity();
+  req.db.recordTest({ ...result, topicAccuracy: topics.map((t) => ({ id: t.id, percent: t.percent })) });
+  req.db.addXp(correctMarks * 2);
+  req.db.registerActivity();
   activeTests.delete(test.id);
   res.json(result);
 });
@@ -229,9 +225,9 @@ app.post('/practice/submit', (req, res) => {
   if (!topicId) return res.status(400).json({ error: 'topicId required' });
   const pool = questionsFor(topicId);
   const marked = markAnswers(pool, answers);
-  recordPractice({ topicId, correct: marked.correctMarks, total: marked.totalMarks });
-  addXp(marked.correctMarks);
-  registerActivity();
+  req.db.recordPractice({ topicId, correct: marked.correctMarks, total: marked.totalMarks });
+  req.db.addXp(marked.correctMarks);
+  req.db.registerActivity();
   res.json({ correctMarks: marked.correctMarks, totalMarks: marked.totalMarks, perQ: marked.perQ });
 });
 
@@ -260,14 +256,14 @@ app.post('/adhoc/submit', (req, res) => {
     t.total += q.marks;
     if (correct) t.correct += q.marks;
   }
-  for (const [topicId, t] of topicTally) recordPractice({ topicId, correct: t.correct, total: t.total });
-  addXp(results.correctMarks);
-  registerActivity();
+  for (const [topicId, t] of topicTally) req.db.recordPractice({ topicId, correct: t.correct, total: t.total });
+  req.db.addXp(results.correctMarks);
+  req.db.registerActivity();
   res.json(results);
 });
 
 app.get('/progress', (req, res) => {
-  res.json(progress());
+  res.json(req.db.progress());
 });
 
 app.post('/chat', async (req, res) => {
@@ -275,11 +271,11 @@ app.post('/chat', async (req, res) => {
   if (!Array.isArray(messages) || !messages.length) {
     return res.status(400).json({ error: 'messages required' });
   }
-  registerActivity();
-  pushChat('user', messages[messages.length - 1].content);
+  req.db.registerActivity();
+  req.db.pushChat('user', messages[messages.length - 1].content);
   try {
     const out = await askTutor(messages, { model: OPENROUTER_MODEL, apiKey: OPENROUTER_API_KEY });
-    pushChat('assistant', out.reply);
+    req.db.pushChat('assistant', out.reply);
     res.json(out);
   } catch (e) {
     res.json({ reply: 'Something went wrong talking to the AI. Try again in a moment.', model: 'error', error: true });
@@ -287,12 +283,12 @@ app.post('/chat', async (req, res) => {
 });
 
 app.delete('/chat', (req, res) => {
-  clearChat();
+  req.db.clearChat();
   res.json({ ok: true });
 });
 
 app.get('/chat/history', (req, res) => {
-  res.json({ messages: getChatHistory() });
+  res.json({ messages: req.db.getChatHistory() });
 });
 
 await loadBank();

@@ -1,7 +1,21 @@
 const base = '/api/english';
+const authBase = '/api/auth';
 
 async function req(path, opts = {}) {
   const res = await fetch(base + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+
+async function authReq(path, opts = {}) {
+  const res = await fetch(authBase + path, {
     headers: { 'Content-Type': 'application/json' },
     ...opts,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
@@ -38,4 +52,10 @@ export const api = {
   chat: (messages) => req('/chat', { method: 'POST', body: { messages } }),
   clearChat: () => req('/chat', { method: 'DELETE' }),
   chatHistory: () => req('/chat/history'),
+  auth: {
+    me: () => authReq('/me'),
+    login: (username, password) => authReq('/login', { method: 'POST', body: { username, password } }),
+    logout: () => authReq('/logout', { method: 'POST' }),
+    config: () => authReq('/config'),
+  },
 };

@@ -26,24 +26,52 @@ The clients remain separate because their question formats, grading logic and gl
 
 ## Source Map
 
-- `server/src/index.js`: combined host server, API mounts and static routing.
+- `server/src/index.js`: combined host server, auth wiring, API mounts and static routing.
+- `server/src/auth.js`: user accounts, sessions and OAuth2 sign-in; seeds the local admin account.
+- `server/src/db.js`: per-user, per-subject JSON store factory.
 - `server/src/subjects/maths/`: generated question bank, exact marking, grades, progress and Maths tutor.
 - `server/src/subjects/english/`: source texts, question assembly, rubric marking, grades, progress and English tutor.
 - `clients/maths/src/pages/`: Maths dashboard, papers, results, topic lessons and tutor.
 - `clients/english/src/pages/`: English dashboard, papers, results, lessons, text library and tutor.
+- `clients/shared/login.jsx`: shared sign-in gate used by both clients.
 - `selector/`: dependency-free root subject selector.
 - `ui-tests/`: Playwright route, responsive and browser-error checks.
 
+## Accounts And Sign-In
+
+Every request to `/api/maths/*` and `/api/english/*` requires a valid session except the two public health endpoints. The selector uses those health endpoints, so it can show availability before sign-in.
+
+- `POST /api/auth/login` accepts a username and password.
+- `GET /api/auth/me` returns the signed-in user.
+- `POST /api/auth/logout` ends the session.
+- `GET /api/auth/config` reports whether OAuth is configured.
+
+The local `admin` account (username `admin`, password `admin`) is seeded automatically on first boot when `users.json` does not already contain it. It is always recreated if missing. Passwords are stored as `scrypt` hashes, never in plain text.
+
+OAuth2 is optional and configured entirely by environment variables. When `OAUTH_CLIENT_ID`,
+`OAUTH_CLIENT_SECRET`, `OAUTH_AUTHORIZE_URL`, `OAUTH_TOKEN_URL` and `OAUTH_USERINFO_URL` are all set,
+the sign-in screens show "Continue with <provider>" and the server runs the authorization-code flow.
+A provider identity maps to a username (email or preferred_username), created on first sign-in.
+
 ## Data And Progress
 
-Maths and English progress must never be mixed. The JSON stores are created under:
+Each user has separate stores per subject. Progress is never mixed between users or subjects.
 
-- `${DATA_DIR}/maths/db.json`
-- `${DATA_DIR}/english/db.json`
+- `${DATA_DIR}/users/<userId>/maths.json`
+- `${DATA_DIR}/users/<userId>/english.json`
 
-Each store tracks XP, streak, paper history, topic accuracy and tutor chat for its own subject. Docker sets `DATA_DIR=/app/data` and persists that directory in the `gcse-data` volume.
+Accounts live in `${DATA_DIR}/users.json`, sessions in `${DATA_DIR}/sessions.json`.
+`DATA_DIR` is a single environment variable; Docker sets it to `/app/data`, which is persisted in
+the `gcse-data` volume and survives container recreation and redeploys.
 
-Active paper and practice sessions are held in memory. Restarting the server expires an active session. The app currently assumes one learner/profile and one Node process; authentication and multi-user storage are outside the current scope.
+On startup, legacy single-file progress from `${DATA_DIR}/maths/db.json` and
+`${DATA_DIR}/english/db.json` is migrated into the `admin` account when no user store exists yet,
+so upgrading to logins never loses existing progress.
+
+Each store tracks XP, streak, paper history, topic accuracy and tutor chat for its own subject.
+
+Active paper and practice sessions are held in memory. Restarting the server expires an active
+session, so a user may need to start a paper again after a restart.
 
 ## Subject Rules
 
@@ -86,5 +114,8 @@ docker compose up --build
 - Test desktop and 390px mobile layouts for the selector and both dashboards.
 - Do not claim official AQA endorsement. AQA course structures can be represented accurately, but the product is an independent revision tool.
 - Prefer small, testable changes over cross-subject abstractions that obscure exam-specific behavior.
+- Subject data is always scoped to the signed-in user. Never write progress, chat or history to a shared file.
+- New sign-in-facing API routes belong under `/api/auth`; new subject routes stay namespaced under `/api/maths` and `/api/english` and must keep working with the session gate.
+- The `admin` account (admin / admin) must always exist after a fresh start, and users/sessions must persist under `DATA_DIR`.
 - Themes (light and dark) are driven by the shared design tokens in `clients/shared/study-desk.css` and each subject's `theme.css`. The `data-theme` attribute is set on `<html>` and persisted under the `gcse-theme` localStorage key so the choice survives across the selector and both subjects. New UI should consume these tokens rather than hardcoding colors.
 - Every colour, border and surface should stay legible in both themes. Dark mode is not a shadow of the light design; it uses its own warm ink, muted text and brighter semantic colours on the same grid and typography.

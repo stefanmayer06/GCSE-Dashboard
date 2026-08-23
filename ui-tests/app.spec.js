@@ -1,5 +1,18 @@
 const { test, expect } = require('@playwright/test');
 
+const BASE = process.env.UI_BASE || 'http://localhost:3000';
+
+async function signIn(page) {
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  const username = page.locator('input[name="username"]');
+  if (await username.count()) {
+    await username.fill('admin');
+    await page.locator('input[name="password"]').fill('admin');
+    await page.locator('button[type="submit"]').click();
+    await expect(page.locator('.sidebar')).toBeVisible();
+  }
+}
+
 const pages = [
   ['selector', '/', ['#page-title', '.maths-card', '.english-card']],
   ['maths-dashboard', '/maths/', ['h1', '.subject-switch']],
@@ -22,15 +35,39 @@ const pages = [
 for (const [name, url, selectors] of pages) {
   test(name, async ({ page }) => {
     const errors = [];
-    page.on('console', (message) => message.type() === 'error' && errors.push(message.text()));
+    page.on('console', (message) => {
+      if (message.type() !== 'error') return;
+      if (message.text().includes('401')) return;
+      errors.push(message.text());
+    });
     page.on('pageerror', (error) => errors.push(String(error)));
-    await page.goto(url, { waitUntil: 'networkidle' });
+    if (url.startsWith('/maths') || url.startsWith('/english')) await signIn(page);
+    await page.goto(BASE + url, { waitUntil: 'networkidle' });
     for (const selector of selectors) await expect(page.locator(selector).first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `${name} has horizontal overflow`).toBeLessThanOrEqual(0);
     expect(errors, `${name} has browser errors`).toEqual([]);
   });
 }
+
+test('login gate accepts the admin account and rejects a bad password', async ({ page }) => {
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.login-card')).toBeVisible();
+  await page.locator('input[name="username"]').fill('admin');
+  await page.locator('input[name="password"]').fill('wrong-password');
+  await page.locator('button[type="submit"]').click();
+  await expect(page.locator('.login-error')).toBeVisible();
+  await page.locator('input[name="password"]').fill('admin');
+  await page.locator('button[type="submit"]').click();
+  await expect(page.locator('.sidebar')).toBeVisible();
+  await expect(page.locator('.sign-out')).toContainText('admin');
+});
+
+test('signing out returns to the login gate', async ({ page }) => {
+  await signIn(page);
+  await page.locator('.sign-out').click();
+  await expect(page.locator('.login-card')).toBeVisible();
+});
 
 test('subject selector links and live status', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' });
@@ -41,29 +78,31 @@ test('subject selector links and live status', async ({ page }) => {
 });
 
 test('subject themes share the desk system but keep distinct accents', async ({ page }) => {
-  await page.goto('/maths/', { waitUntil: 'networkidle' });
+  await signIn(page);
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
   const maths = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
   await expect(page.locator('h1')).toHaveCSS('font-family', /Georgia/);
   await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(243, 240, 232)');
 
-  await page.goto('/english/', { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/english/`, { waitUntil: 'networkidle' });
   const english = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
   await expect(page.locator('h1')).toHaveCSS('font-family', /Georgia/);
   expect(maths).not.toEqual(english);
 });
 
 test('dark mode toggles, persists and reaches every surface', async ({ page }) => {
-  await page.goto('/maths/', { waitUntil: 'networkidle' });
+  await signIn(page);
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
   const lightBackground = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
   await page.locator('.theme-toggle').click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   const darkBackground = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
   expect(darkBackground).not.toEqual(lightBackground);
 
-  await page.goto('/english/', { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/english/`, { waitUntil: 'networkidle' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
-  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
@@ -74,7 +113,8 @@ for (const [name, url] of [
 ]) {
   test(name, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(url, { waitUntil: 'networkidle' });
+    if (url.startsWith('/maths') || url.startsWith('/english')) await signIn(page);
+    await page.goto(BASE + url, { waitUntil: 'networkidle' });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `${name} has horizontal overflow`).toBeLessThanOrEqual(0);
   });

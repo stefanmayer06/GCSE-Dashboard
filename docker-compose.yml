@@ -9,6 +9,13 @@ services:
       DATA_DIR: /app/data
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-deepseek/deepseek-v4-flash-0731}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-}
+      OAUTH_AUTHORIZE_URL: ${OAUTH_AUTHORIZE_URL:-}
+      OAUTH_TOKEN_URL: ${OAUTH_TOKEN_URL:-}
+      OAUTH_USERINFO_URL: ${OAUTH_USERINFO_URL:-}
+      OAUTH_SCOPE: ${OAUTH_SCOPE:-openid profile email}
+      OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME:-OAuth}
     volumes:
       - gcse-data:/app/data
     restart: unless-stopped

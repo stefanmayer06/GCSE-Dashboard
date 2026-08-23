@@ -14,21 +14,17 @@ import { TOPICS, SECTIONS } from './topics.js';
 import { BOUNDARIES, predictGrade, gradeLabel, nextBoundaryGap } from './grades.js';
 import { markList, markTrueFalse } from './marker.js';
 import { markAnswer, askTutor, aiConfig } from './ai.js';
-import {
-  progress,
-  recordTest,
-  recordPractice,
-  registerActivity,
-  addXp,
-  getChatHistory,
-  pushChat,
-  clearChat,
-} from './db.js';
+import { createDb } from '../../db.js';
 
 const { apiKey, model } = aiConfig();
 
 const app = express.Router();
 app.use(express.json({ limit: '2mb' }));
+
+app.use((req, res, next) => {
+  if (req.user) req.db = createDb(req.user.id, 'english');
+  next();
+});
 
 const activeTests = new Map();
 const sessions = new Map();
@@ -81,7 +77,7 @@ app.get('/texts/:id', (req, res) => {
 /* ---------------- learning topics ---------------- */
 
 app.get('/topics', (req, res) => {
-  const p = progress();
+  const p = req.db.progress();
   const out = {};
   for (const s of Object.values(SECTIONS)) {
     out[s.id] = {
@@ -106,7 +102,7 @@ app.get('/topics', (req, res) => {
 app.get('/topics/:id', (req, res) => {
   const t = TOPICS.find((x) => x.id === req.params.id);
   if (!t) return res.status(404).json({ error: 'Topic not found' });
-  const p = progress();
+  const p = req.db.progress();
   const stats = p.topicStats[t.id];
   res.json({
     id: t.id,
@@ -250,9 +246,9 @@ app.post('/test/:id/submit', async (req, res) => {
     perQuestion,
   };
 
-  recordTest({ ...result, topicAccuracy: skills.map((s) => ({ id: s.id, percent: s.percent })) });
-  addXp(Math.round(scored * 2));
-  registerActivity();
+  req.db.recordTest({ ...result, topicAccuracy: skills.map((s) => ({ id: s.id, percent: s.percent })) });
+  req.db.addXp(Math.round(scored * 2));
+  req.db.registerActivity();
   activeTests.delete(test.id);
   res.json(result);
 });
@@ -319,10 +315,10 @@ app.post('/practice/submit', (req, res) => {
     const qs = s.questions.filter((q) => q.skillIds.includes(skill));
     const max = qs.reduce((a, q) => a + q.marks, 0);
     const gotSum = qs.reduce((a, q) => a + (perQ.find((p) => p.qid === q.id)?.got || 0), 0);
-    recordPractice({ topicId: skill, correct: gotSum, total: max });
+    req.db.recordPractice({ topicId: skill, correct: gotSum, total: max });
   }
-  addXp(Math.round(correct * 2));
-  registerActivity();
+  req.db.addXp(Math.round(correct * 2));
+  req.db.registerActivity();
   sessions.delete(sessionId);
   res.json({ correctMarks: Math.round(correct * 10) / 10, totalMarks: total, perQ });
 });
@@ -347,10 +343,10 @@ app.post('/adhoc/submit', (req, res) => {
   }
   for (const skill of new Set(s.questions.flatMap((q) => q.skillIds))) {
     const qs = s.questions.filter((q) => q.skillIds.includes(skill));
-    recordPractice({ topicId: skill, correct: qs.reduce((a, q) => a + (perQ.find((p) => p.qid === q.id)?.got || 0), 0), total: qs.reduce((a, q) => a + q.marks, 0) });
+    req.db.recordPractice({ topicId: skill, correct: qs.reduce((a, q) => a + (perQ.find((p) => p.qid === q.id)?.got || 0), 0), total: qs.reduce((a, q) => a + q.marks, 0) });
   }
-  addXp(Math.round(correct * 2));
-  registerActivity();
+  req.db.addXp(Math.round(correct * 2));
+  req.db.registerActivity();
   sessions.delete(sessionId);
   res.json({ correctMarks: Math.round(correct * 10) / 10, totalMarks: total, perQ });
 });
@@ -366,7 +362,7 @@ app.post('/mark', async (req, res) => {
 /* ---------------- progress & chat ---------------- */
 
 app.get('/progress', (req, res) => {
-  res.json(progress());
+  res.json(req.db.progress());
 });
 
 app.post('/chat', async (req, res) => {
@@ -374,11 +370,11 @@ app.post('/chat', async (req, res) => {
   if (!Array.isArray(messages) || !messages.length) {
     return res.status(400).json({ error: 'messages required' });
   }
-  registerActivity();
-  pushChat('user', messages[messages.length - 1].content);
+  req.db.registerActivity();
+  req.db.pushChat('user', messages[messages.length - 1].content);
   try {
     const out = await askTutor(messages, { model, apiKey });
-    pushChat('assistant', out.reply);
+    req.db.pushChat('assistant', out.reply);
     res.json(out);
   } catch {
     res.json({ reply: 'Something went wrong talking to the AI. Try again in a moment.', model: 'error', error: true });
@@ -386,12 +382,12 @@ app.post('/chat', async (req, res) => {
 });
 
 app.delete('/chat', (req, res) => {
-  clearChat();
+  req.db.clearChat();
   res.json({ ok: true });
 });
 
 app.get('/chat/history', (req, res) => {
-  res.json({ messages: getChatHistory() });
+  res.json({ messages: req.db.getChatHistory() });
 });
 
 export default app;

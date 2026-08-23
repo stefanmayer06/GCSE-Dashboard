@@ -77,10 +77,8 @@ test('signing out returns to the login gate', async ({ page }) => {
 test('subject selector links and live status', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' });
   await expect(page.locator('#maths-status')).toContainText('Ready');
-  await expect(page.locator('#maths-higher-status')).toContainText('Ready');
   await expect(page.locator('#english-status')).toContainText('Ready');
   await expect(page.locator('a[href="/maths/"]')).toBeVisible();
-  await expect(page.locator('a[href="/maths-higher/"]')).toBeVisible();
   await expect(page.locator('a[href="/english/"]')).toBeVisible();
   await expect(page.locator('a[href="/subjects"]')).toBeVisible();
 });

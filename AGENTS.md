@@ -42,6 +42,7 @@ The clients remain separate because their question formats, grading logic and gl
 Every request to `/api/maths/*` and `/api/english/*` requires a valid session except the two public health endpoints. The selector uses those health endpoints, so it can show availability before sign-in.
 
 - `POST /api/auth/login` accepts a username and password.
+- `POST /api/auth/signup` creates a new local account (3-32 character username, 8+ character password) and signs it in.
 - `GET /api/auth/me` returns the signed-in user.
 - `POST /api/auth/logout` ends the session.
 - `GET /api/auth/config` reports whether OAuth is configured.

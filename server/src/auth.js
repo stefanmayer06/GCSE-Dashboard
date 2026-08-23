@@ -205,6 +205,31 @@ export function authRoutes() {
     res.json({ user: { username: user.username } });
   });
 
+  router.post('/signup', (req, res) => {
+    const { username = '', password = '' } = req.body || {};
+    const name = String(username).trim().toLowerCase();
+    if (!/^[a-z0-9_.-]{3,32}$/.test(name)) {
+      return res.status(400).json({
+        error: 'Usernames must be 3-32 characters and may only use letters, numbers, dots, dashes and underscores.',
+      });
+    }
+    if (String(password).length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    }
+    if (users[name]) {
+      return res.status(409).json({ error: 'That username is already taken.' });
+    }
+    users[name] = {
+      username: name,
+      password: hashPassword(password),
+      oauth: false,
+      createdAt: new Date().toISOString(),
+    };
+    writeUsers();
+    setSessionCookie(res, issueSession(name));
+    res.status(201).json({ user: { username: name } });
+  });
+
   router.post('/logout', requireAuth, (req, res) => {
     const token = sessionTokenFrom(req);
     if (token && sessions[token]) {

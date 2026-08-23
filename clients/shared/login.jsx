@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 
 export default function LoginScreen({ subjectName, tag, letter, authApi, onSignedIn }) {
+  const [mode, setMode] = useState('signin');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [oauth, setOauth] = useState(false);
@@ -18,25 +20,46 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
       .catch(() => {});
   }, [authApi]);
 
+  const switchMode = (next) => {
+    setMode(next);
+    setError('');
+    setPassword('');
+    setConfirm('');
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     if (!username || !password) {
       setError('Enter your username and password.');
       return;
     }
+    if (mode === 'signup') {
+      if (password !== confirm) {
+        setError('Passwords do not match.');
+        return;
+      }
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters.');
+        return;
+      }
+    }
     setBusy(true);
     setError('');
     try {
-      const data = await authApi.login(username, password);
+      const data =
+        mode === 'signup'
+          ? await authApi.signup(username, password)
+          : await authApi.login(username, password);
       onSignedIn(data.user);
     } catch (err) {
-      setError(err.message || 'Sign in failed.');
+      setError(err.message || (mode === 'signup' ? 'Sign up failed.' : 'Sign in failed.'));
     } finally {
       setBusy(false);
     }
   };
 
   const next = `${window.location.pathname}${window.location.search}`;
+  const isSignup = mode === 'signup';
 
   return (
     <div className="login-screen">
@@ -48,8 +71,12 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
             <div className="login-brand-tag">{tag}</div>
           </div>
         </div>
-        <h1>Sign in</h1>
-        <p className="login-sub">Your progress, papers and tutor history are stored locally and follow this account.</p>
+        <h1>{isSignup ? 'Create an account' : 'Sign in'}</h1>
+        <p className="login-sub">
+          {isSignup
+            ? 'Make a local account to keep your progress, papers and tutor history on this device.'
+            : 'Your progress, papers and tutor history are stored locally and follow this account.'}
+        </p>
         {error && (
           <div className="login-error" role="alert">{error}</div>
         )}
@@ -61,6 +88,8 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
+              minLength={3}
+              maxLength={32}
               required
             />
           </label>
@@ -71,12 +100,27 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
+              autoComplete={isSignup ? 'new-password' : 'current-password'}
+              minLength={isSignup ? 8 : undefined}
               required
             />
           </label>
+          {isSignup && (
+            <label className="login-field">
+              <span>Confirm password</span>
+              <input
+                name="confirm"
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            </label>
+          )}
           <button className="login-submit" type="submit" disabled={busy}>
-            {busy ? 'Signing in…' : 'Sign in'}
+            {busy ? (isSignup ? 'Creating account…' : 'Signing in…') : isSignup ? 'Create account' : 'Sign in'}
           </button>
         </form>
         {oauth && (
@@ -84,6 +128,9 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
             Continue with {provider}
           </a>
         )}
+        <button type="button" className="login-switch" onClick={() => switchMode(isSignup ? 'signin' : 'signup')}>
+          {isSignup ? 'Already have an account? Sign in' : 'New here? Create an account'}
+        </button>
         <p className="login-local">Local account · data stored on this device</p>
       </div>
     </div>

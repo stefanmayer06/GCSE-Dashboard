@@ -407,6 +407,23 @@ body {
   background: var(--paper-muted);
 }
 
+.login-switch {
+  display: block;
+  margin: 16px auto 0;
+  padding: 6px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.login-switch:hover { color: var(--accent); }
+.login-switch:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
 .login-local {
   margin-top: 14px;
   color: var(--quiet);

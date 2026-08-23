@@ -106,6 +106,38 @@ test('dark mode toggles, persists and reaches every surface', async ({ page }) =
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
+test('a new visitor can create an account and sign in with it', async ({ page }) => {
+  const username = `student${Date.now()}`;
+  const password = 'revision-pass-1';
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.login-card')).toBeVisible();
+  await page.locator('.login-switch').click();
+  await expect(page.locator('h1')).toContainText('Create an account');
+  await page.locator('input[name="username"]').fill(username);
+  await page.locator('input[name="password"]').fill(password);
+  await page.locator('input[name="confirm"]').fill(password);
+  await page.locator('button[type="submit"]').click();
+  await expect(page.locator('.sidebar')).toBeVisible();
+  await expect(page.locator('.sign-out')).toContainText(username);
+});
+
+test('signup rejects a taken username; the server rejects a weak password', async ({ page }) => {
+  await page.goto(`${BASE}/english/`, { waitUntil: 'networkidle' });
+  await page.locator('.login-switch').click();
+
+  await page.locator('input[name="username"]').fill('admin');
+  await page.locator('input[name="password"]').fill('admin-pass-123');
+  await page.locator('input[name="confirm"]').fill('admin-pass-123');
+  await page.locator('button[type="submit"]').click();
+  await expect(page.locator('.login-error')).toContainText('already taken');
+
+  const response = await page.request.post(`${BASE}/api/auth/signup`, {
+    data: { username: 'bob', password: 'short' },
+  });
+  expect(response.status()).toBe(400);
+  expect(await response.json()).toEqual({ error: 'Password must be at least 8 characters.' });
+});
+
 for (const [name, url] of [
   ['mobile-selector', '/'],
   ['mobile-maths', '/maths/'],

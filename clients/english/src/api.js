@@ -55,6 +55,7 @@ export const api = {
   auth: {
     me: () => authReq('/me'),
     login: (username, password) => authReq('/login', { method: 'POST', body: { username, password } }),
+    signup: (username, password) => authReq('/signup', { method: 'POST', body: { username, password } }),
     logout: () => authReq('/logout', { method: 'POST' }),
     config: () => authReq('/config'),
   },

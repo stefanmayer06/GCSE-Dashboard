@@ -4,9 +4,9 @@ One revision dashboard for AQA GCSE Maths and English Language. A clean subject 
 
 ## Sign In
 
-- Open Maths or English and sign in. A local `admin` account is created automatically on first run:
-  - **Username:** `admin`
-  - **Password:** `admin`
+- Open Maths or English. Sign in with the local `admin` account (auto-created on first run), or create your own account from the sign-in screen:
+  - **Username:** `admin` / **Password:** `admin` (built-in)
+  - **New users:** choose "New here? Create an account" — usernames are 3-32 characters, passwords 8+.
 - Progress, streaks, paper history and tutor chat are stored per user and survive server restarts and Docker redeploys (they live in the `gcse-data` volume).
 - Optional OAuth2 sign-in: set the `OAUTH_*` variables in `.env` (see `.env.example`) to enable "Continue with {provider}" on the sign-in screens. OAuth identities create their own account on first sign-in.
 

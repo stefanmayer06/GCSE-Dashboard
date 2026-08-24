@@ -46,11 +46,11 @@ export default function gen(v) {
     const cases = [
       { red: 5, blue: 3, ask: 'both red', a: '25/64', w: ['5/8', '25/56', '10/64'] },
       { red: 4, blue: 6, ask: 'both blue', a: '9/25', w: ['3/5', '6/10', '9/20'] },
-      { red: 6, blue: 4, ask: 'both red', a: '9/25', w: ['3/5', '9/20', '36/100'] },
+      { red: 6, blue: 4, ask: 'both red', a: '9/25', w: ['3/5', '9/20', '6/25'] },
       { red: 3, blue: 7, ask: 'both red', a: '9/100', w: ['3/10', '3/20', '6/100'] },
       { red: 7, blue: 5, ask: 'both blue', a: '25/144', w: ['5/12', '5/24', '25/132'] },
       { red: 8, blue: 4, ask: 'both red', a: '4/9', w: ['2/3', '16/24', '1/2'] },
-      { red: 2, blue: 8, ask: 'both blue', a: '16/25', w: ['4/5', '8/10', '64/100'] },
+      { red: 2, blue: 8, ask: 'both blue', a: '16/25', w: ['4/5', '8/25', '18/25'] },
       { red: 5, blue: 5, ask: 'both red', a: '1/4', w: ['1/2', '1/5', '25/90'] },
     ];
     const c = cases[p % 8];

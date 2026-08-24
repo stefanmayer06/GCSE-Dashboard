@@ -8,10 +8,8 @@ powered by a cheap DeepSeek model on OpenRouter.
 
 ### 🧪 Practice exams
 - **1,730-question bank**, procedurally generated across all 27 AQA foundation topics.
-- **All three AQA papers**, each built with AQA's published per-paper topic allocation:
-  - **8300/1F · Paper 1** (non-calculator): Number 25%, Algebra 25%, Ratio 20%, Probability 14%, Statistics 16% — no geometry.
-  - **8300/2F · Paper 2** (calculator): Algebra 25%, Ratio 20%, Geometry 30%, Probability 12%, Statistics 13%.
-  - **8300/3F · Paper 3** (calculator): Number 25%, Ratio 20%, Geometry 30%, Probability 12%, Statistics 13%.
+- **All three AQA papers**: **8300/1F** is non-calculator; **8300/2F** and **8300/3F** allow a calculator. Any Foundation specification content can appear on any paper, with the tier-level strand balance applied across generated papers.
+- Responsive, accessible diagrams are generated from the same values as each question: coordinate graphs, geometry, transformations, charts, probability trees, sample spaces, tables and more. Full papers contain an exam-realistic 8–13 visual questions.
 - Every paper is **fresh each time**, has a **difficulty ramp** (easier questions first, stretch ⚡ at the
   end) and comes in **Full** (80 marks / 90 min) and **Quick** (40 marks / 45 min) sizes.
 - **Two timers**: a paper countdown plus a **1 mark-per-minute pace timer** with per-question time targets.
@@ -26,7 +24,7 @@ powered by a cheap DeepSeek model on OpenRouter.
 
 ### 📚 Learn
 - All 27 foundation topics grouped by strand, with bite-size revision notes, formula cards,
-  worked examples, and quick 5-question drills with instant feedback.
+  interactive visual models, worked examples, and quick 5-question drills with instant feedback.
 - Per-topic accuracy tracked from your practice and papers.
 - Free external resources for every topic.
 
@@ -87,10 +85,11 @@ Each generator deterministically produces dozens of exam-style variants (numeric
 multiple-choice) with marks, difficulty, hints and worked solutions. On startup the server expands
 them into a 1,730-question in-memory bank.
 
-Papers are assembled in `server/src/bank/index.js`: each of the three papers samples the topics
-AQA assigns to it (Paper 1 = N/A/R/P/S, Paper 2 = A/R/G/P/S, Paper 3 = N/R/G/P/S) using the
-per-paper mark budgets above, reserves ~12% of marks for stretch questions, then orders the paper
-as a difficulty ramp (level 1 → 2 → 3). Ad-hoc rounds mix questions from any subset of the papers.
+Papers are assembled in `server/src/bank/index.js`. All six strands can appear on all three papers,
+using the Foundation tier balance of Number 25%, Algebra 20%, Ratio 25%, Geometry 15%, Probability
+8% and Statistics 7%. The builder reserves about 12% of marks for stretch questions, enforces a
+realistic visual-question density, then orders each paper as a difficulty ramp (level 1 → 2 → 3).
+Ad-hoc rounds mix questions from any subset of the papers.
 
 Grade boundaries in `server/src/grades.js` are rounded averages of published AQA 8300F boundaries
 from 2018–2024 for a single 80-mark paper (foundation is capped at grade 5). Real boundaries drift

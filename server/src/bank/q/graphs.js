@@ -90,7 +90,7 @@ const c = cases[p % 8];
     const m_ = [2, 3, 4, 5][p % 4];
     const corr = `y = ${m_}x`;
     text = `Which line is parallel to  y = ${m_}x + ${3 + p % 4}?`;
-    m = mcq(r, corr, [`y = ${m_}x + 5`, `y = ${m_ + 1}x`, `y = −${m_}x`].map((x) => (x === `y = ${m_}x + 5` && `y = ${m_}x + 5` === `y = ${m_}x + ${3 + p % 4}` ? `y = ${m_}x − 7` : x)).filter((x) => x !== corr));
+    m = mcq(r, corr, [`y = ${m_ + 2}x + 5`, `y = ${m_ + 1}x`, `y = −${m_}x`]);
     input = m.input;
     sol = [[`Parallel lines have the SAME gradient.`, `The gradient of y = ${m_}x + ${3 + p % 4} is ${m_}, so a parallel line is ${corr} (gradient ${m_}, passing through the origin).`]];
     hint = 'Parallel lines never meet — they have the same gradient (m value).';

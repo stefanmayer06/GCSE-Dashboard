@@ -30,7 +30,7 @@ export default function gen(v) {
       { x: 'height of a hill', y: 'temperature at the top', a: 'negative correlation', w: ['positive correlation', 'no correlation', 'a curve'] },
     ];
     const c = cases[p % 8];
-    text = `On a scatter graph, ${c.x} is plotted against ${c.y}.\nThe points rise from bottom-left to top-right.\nWhat type of correlation does the graph show?`;
+    text = `The scatter graph plots ${c.x} against ${c.y}.\nWhat type of correlation does the graph show?`;
     m = mcq(r, c.a, c.w);
     input = m.input;
     sol = [[`Points going UP as you move right = positive. Down = negative.`, `Answer: ${c.a}.`]];

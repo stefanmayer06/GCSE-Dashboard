@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
+import MathsVisual from '../components/MathsVisual.jsx';
 
 export default function Results() {
   const navigate = useNavigate();
@@ -149,6 +150,7 @@ export default function Results() {
             {open[q.qid] && (
               <div className="review-body">
                 <div className="review-q">{q.text.split('\n').map((l, i) => <p key={i}>{l}</p>)}</div>
+                <MathsVisual stimulus={q.stimulus} compact />
                 {!q.correct && (
                   <>
                     <div className="review-you">Your answer: <b>{q.value ?? '(blank)'}</b></div>

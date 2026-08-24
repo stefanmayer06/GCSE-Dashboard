@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api.js';
+import LessonVisual from '../components/LessonVisual.jsx';
+import MathsVisual from '../components/MathsVisual.jsx';
 
 export default function Topic() {
   const { topicId } = useParams();
@@ -69,6 +71,7 @@ export default function Topic() {
 
       <section className="panel">
         <h2>Notes</h2>
+        <LessonVisual topicId={topicId} />
         <div className="notes">
           {topic.notes.map((n, i) => {
             if (n.t === 'p') return <p key={i} className="note-p">{n.text}</p>;
@@ -120,7 +123,8 @@ export default function Topic() {
                     <span>Q{i + 1}</span>
                     <span>{q.marks} mark{q.marks > 1 ? 's' : ''}</span>
                   </div>
-                  <div className="quiz-q-text">{q.text.split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
+                   <div className="quiz-q-text">{q.text.split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
+                  <MathsVisual stimulus={q.stimulus} compact />
 
                   {q.input.type === 'mcq' ? (
                     <div className="choices">

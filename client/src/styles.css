@@ -1450,6 +1450,566 @@ textarea:focus-visible,
   margin-top: 4px;
 }
 
+/* ---------- Maths diagrams ---------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.maths-visual {
+  width: min(100%, 650px);
+  margin: 18px 0 4px;
+  border: 1px solid rgba(152, 161, 179, 0.28);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #101620;
+  transition: width 0.2s, box-shadow 0.2s;
+}
+
+.maths-visual.expanded {
+  width: 100%;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.32);
+}
+
+.maths-visual.compact {
+  width: min(100%, 520px);
+}
+
+.visual-stage {
+  min-height: 230px;
+  display: grid;
+  place-items: center;
+  padding: 10px 14px 2px;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.maths-visual svg {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+  overflow: visible;
+}
+
+.maths-visual figcaption {
+  min-height: 43px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 7px 10px 7px 14px;
+}
+
+.visual-readout {
+  margin-right: auto;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.visual-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.visual-control {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #182131;
+  color: var(--muted);
+  font: 700 11px/1 inherit;
+  padding: 6px 9px;
+  cursor: pointer;
+}
+
+.visual-control:hover,
+.visual-control.on {
+  color: var(--text);
+  border-color: rgba(124, 92, 255, 0.6);
+}
+
+.visual-grid {
+  stroke: rgba(152, 161, 179, 0.16);
+  stroke-width: 1;
+}
+
+.visual-axis,
+.number-axis {
+  stroke: #8995aa;
+  stroke-width: 1.6;
+}
+
+.visual-axis.emphasis {
+  stroke: var(--amber);
+  stroke-width: 3;
+}
+
+.visual-tick {
+  fill: #8995aa;
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+.visual-line,
+.visual-vector {
+  stroke: var(--green);
+  stroke-width: 3;
+  fill: none;
+}
+
+.visual-line.best-fit {
+  stroke: var(--accent2);
+}
+
+.visual-query {
+  stroke: var(--amber);
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+}
+
+.visual-vector {
+  stroke: var(--blue);
+  stroke-dasharray: 7 4;
+}
+
+.visual-vector-head {
+  fill: var(--blue);
+}
+
+.visual-point {
+  cursor: pointer;
+  outline: none;
+}
+
+.visual-point circle {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 2;
+  transition: r 0.12s, fill 0.12s;
+}
+
+.visual-point:hover circle,
+.visual-point:focus circle,
+.visual-point.active circle {
+  r: 9px;
+  fill: var(--amber);
+}
+
+.visual-point text,
+.visual-operation,
+.visual-axis-label,
+.tree-label {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.visual-operation,
+.visual-axis-label {
+  fill: var(--muted);
+  text-anchor: end;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.visual-axis-label.y {
+  text-anchor: start;
+}
+
+.visual-shape-lines > :not(text),
+.pie-base {
+  fill: rgba(42, 212, 168, 0.055);
+  stroke: #c2cad8;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  transition: stroke 0.18s, fill 0.18s;
+}
+
+.visual-shape.highlighted .visual-shape-lines > :not(text),
+.highlighted .pie-base {
+  stroke: var(--green);
+  fill: rgba(42, 212, 168, 0.09);
+}
+
+.visual-helper,
+.visual-shape-lines .visual-helper {
+  fill: none;
+  stroke: #8995aa;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.visual-helper.strong,
+.visual-shape-lines .visual-helper.strong {
+  stroke: var(--amber);
+  stroke-width: 2.3;
+  stroke-dasharray: none;
+}
+
+.visual-shape-lines .visual-inner {
+  fill: rgba(124, 92, 255, 0.12);
+  stroke: var(--accent);
+}
+
+.visual-shape-lines .visual-mark,
+.visual-shape-lines .visual-tick-mark,
+.visual-shape-lines .visual-arrow-mark,
+.visual-shape-lines .visual-door,
+.visual-shape-lines .visual-arc {
+  fill: none;
+  stroke: var(--amber);
+  stroke-width: 2;
+}
+
+.visual-shape-lines .visual-ladder,
+.visual-shape-lines .visual-bearing {
+  fill: none;
+  stroke: var(--accent2);
+  stroke-width: 5;
+}
+
+.visual-shape-lines .visual-map {
+  fill: none;
+  stroke: #59677e;
+  stroke-width: 7;
+}
+
+.visual-node {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.visual-measure {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: #101620;
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+
+.visual-measure.secondary {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.visual-notscale {
+  fill: #68758a;
+  font-size: 9px;
+  text-anchor: end;
+  font-style: italic;
+}
+
+.pie-sector {
+  fill: rgba(124, 92, 255, 0.42);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.data-bars {
+  width: min(100%, 390px);
+  height: 220px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(18px, 8%, 48px);
+  padding: 28px 22px 20px;
+  border-bottom: 2px solid #8995aa;
+}
+
+.data-bar-column {
+  height: 100%;
+  min-width: 70px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+  font: 700 11px inherit;
+  cursor: pointer;
+}
+
+.data-bar {
+  width: 52px;
+  border-radius: 5px 5px 0 0;
+  background: #59677e;
+  transition: filter 0.15s, background 0.15s;
+}
+
+.data-bars.highlighted .data-bar,
+.data-bar-column:hover .data-bar,
+.data-bar-column:focus-visible .data-bar {
+  background: linear-gradient(var(--accent), #513dc0);
+}
+
+.data-bar-value {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.visual-table {
+  width: min(100%, 430px);
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.visual-table th,
+.visual-table td {
+  border: 1px solid #4c586d;
+  padding: 13px 16px;
+  text-align: center;
+}
+
+.visual-table th {
+  background: rgba(124, 92, 255, 0.13);
+}
+
+.tally-group line {
+  stroke: var(--text);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.highlighted .tally-group line:nth-child(5) {
+  stroke: var(--accent2);
+}
+
+.pictogram {
+  width: min(100%, 420px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pictogram div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 29px;
+  color: #8995aa;
+}
+
+.pictogram.highlighted div {
+  color: var(--amber);
+}
+
+.number-tick {
+  stroke: #8995aa;
+  stroke-width: 1.5;
+}
+
+.number-range {
+  stroke: var(--accent);
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.number-end {
+  fill: #101620;
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+
+.number-end.closed,
+.number-arrow {
+  fill: var(--accent);
+}
+
+.counter-bag {
+  width: min(100%, 430px);
+  min-height: 200px;
+  border: 2px solid #59677e;
+  border-top: 0;
+  border-radius: 12px 12px 90px 90px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 35px 28px 25px;
+}
+
+.counter-group {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 700 12px inherit;
+  cursor: pointer;
+}
+
+.counter-dots {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.counter-dots i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+}
+
+.dice-row {
+  display: grid;
+  grid-template-columns: repeat(3, 58px);
+  gap: 14px;
+}
+
+.dice-row span {
+  aspect-ratio: 1;
+  border: 2px solid #8995aa;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.probability-scale {
+  width: min(100%, 430px);
+}
+
+.probability-track {
+  height: 12px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--red), var(--amber), var(--green));
+  position: relative;
+}
+
+.probability-track i {
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  width: 2px;
+  height: 24px;
+  background: #fff;
+}
+
+.probability-scale > div:last-child {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.venn-circle {
+  fill: rgba(53, 167, 255, 0.08);
+  stroke: #59677e;
+  stroke-width: 2;
+}
+
+.highlighted .venn-circle {
+  fill: rgba(53, 167, 255, 0.18);
+  stroke: var(--blue);
+}
+
+.tree-line {
+  stroke: #8995aa;
+  stroke-width: 2;
+}
+
+.highlighted .tree-line {
+  stroke: var(--accent);
+}
+
+.tree-line.second {
+  stroke-dasharray: 5 3;
+}
+
+.sample-space {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(34px, 54px));
+  border: 1px solid #4c586d;
+}
+
+.sample-space button {
+  aspect-ratio: 1.35;
+  border: 1px solid #4c586d;
+  background: transparent;
+  color: var(--muted);
+  font: 650 11px inherit;
+  cursor: pointer;
+}
+
+.sample-space.highlighted button:hover,
+.sample-space button:focus-visible {
+  color: #fff;
+  background: rgba(124, 92, 255, 0.22);
+}
+
+.dot-pattern circle {
+  fill: #8995aa;
+  stroke: #c2cad8;
+  stroke-width: 1.5;
+}
+
+.highlighted .dot-pattern circle {
+  fill: var(--accent);
+  stroke: #fff;
+}
+
+.dot-pattern text {
+  fill: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  text-anchor: middle;
+}
+
+.lesson-visual {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.65fr) minmax(300px, 1.35fr);
+  gap: 22px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid rgba(53, 167, 255, 0.25);
+  border-radius: 14px;
+  background: linear-gradient(120deg, rgba(53, 167, 255, 0.09), rgba(124, 92, 255, 0.04));
+}
+
+.lesson-visual .maths-visual {
+  margin: 0;
+}
+
+.lesson-visual-copy > span {
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.lesson-visual-copy h3 {
+  margin: 4px 0 6px;
+  font-size: 17px;
+}
+
+.lesson-visual-copy p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .quiz-head {
   display: flex;
   justify-content: space-between;
@@ -1865,5 +2425,42 @@ textarea:focus-visible,
   .exam-bar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .lesson-visual {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .visual-stage {
+    min-height: 200px;
+    padding-inline: 4px;
+  }
+
+  .maths-visual figcaption {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .visual-controls {
+    width: 100%;
+  }
+
+  .visual-control {
+    flex: 1;
+  }
+
+  .sample-space {
+    width: 100%;
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .sample-space button {
+    font-size: 9px;
+  }
+
+  .counter-bag {
+    padding-inline: 14px;
   }
 }

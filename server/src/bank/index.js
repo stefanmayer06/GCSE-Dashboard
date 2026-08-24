@@ -1,5 +1,6 @@
 import { makeRand, shuffle } from '../util.js';
 import { TOPICS, STRANDS } from './topics.js';
+import { buildStimulus } from './visuals.js';
 
 const genMods = {
   'place-value': () => import('./q/place-value.js'),
@@ -47,6 +48,8 @@ export async function loadBank() {
         q.topic = t.name;
         q.strand = t.strand;
         q.strandName = STRANDS[t.strand].name;
+        q.calculatorOnly = t.id === 'trigonometry' && v % 6 === 3;
+        q.stimulus = q.stimulus || buildStimulus(t.id, v, q);
         set.push(q);
       }
       bankCache.set(t.id, set);
@@ -80,6 +83,7 @@ export function sanitize(q, { withHint = false } = {}) {
     text: q.text,
     input: q.input,
   };
+  if (q.stimulus) out.stimulus = q.stimulus;
   if (withHint) out.hint = q.hint;
   return out;
 }
@@ -115,6 +119,7 @@ export function markAnswers(pool, pairs) {
       stretch: !!q.stretch,
       topicId: q.topicId,
       topic: q.topic,
+      stimulus: q.stimulus || null,
     });
   }
   return results;
@@ -144,10 +149,8 @@ export function buildPractice(topicId, count = 8) {
 
 /**
  * The three AQA GCSE Foundation papers.
- * Topic allocation mirrors AQA's published per-paper weightings:
- *  - Paper 1 (8300/1F, non-calculator): Number, Algebra, Ratio, Probability & Statistics
- *  - Paper 2 (8300/2F, calculator): Algebra, Ratio, Geometry, Probability & Statistics
- *  - Paper 3 (8300/3F, calculator): Number, Ratio, Geometry, Probability & Statistics
+ * All content can appear on each AQA paper. These tier-level weightings are
+ * balanced across generated papers; Paper 1 differs only by calculator access.
  */
 export const PAPERS = {
   1: {
@@ -156,8 +159,8 @@ export const PAPERS = {
     name: 'Paper 1',
     calculator: false,
     spec: 'Non-calculator',
-    blurb: 'Number, Algebra, Ratio, Probability & Statistics. No geometry, no calculator.',
-    strands: { number: 25, algebra: 25, ratio: 20, probability: 14, statistics: 16 },
+    blurb: 'Any Foundation topic can appear. Arithmetic is selected to be manageable without a calculator.',
+    strands: { number: 25, algebra: 20, ratio: 25, geometry: 15, probability: 8, statistics: 7 },
   },
   2: {
     id: 2,
@@ -165,8 +168,8 @@ export const PAPERS = {
     name: 'Paper 2',
     calculator: true,
     spec: 'Calculator',
-    blurb: 'Algebra, Ratio, Geometry & Measures, Probability & Statistics.',
-    strands: { algebra: 25, ratio: 20, geometry: 30, probability: 12, statistics: 13 },
+    blurb: 'Any Foundation topic can appear. Calculator allowed.',
+    strands: { number: 25, algebra: 20, ratio: 25, geometry: 15, probability: 8, statistics: 7 },
   },
   3: {
     id: 3,
@@ -174,8 +177,8 @@ export const PAPERS = {
     name: 'Paper 3',
     calculator: true,
     spec: 'Calculator',
-    blurb: 'Number, Ratio, Geometry & Measures, Probability & Statistics.',
-    strands: { number: 25, ratio:20, geometry: 30, probability: 12, statistics: 13 },
+    blurb: 'Any Foundation topic can appear. Calculator allowed.',
+    strands: { number: 25, algebra: 20, ratio: 25, geometry: 15, probability: 8, statistics: 7 },
   },
 };
 
@@ -206,11 +209,12 @@ function strandBudgets(paper, total) {
   return out;
 }
 
-function strandPool(sid, exclude = new Set()) {
+function strandPool(sid, exclude = new Set(), paperId = null) {
   const out = [];
   for (const topic of TOPICS) {
     if (topic.strand !== sid) continue;
     for (const q of bankCache.get(topic.id) || []) {
+      if (paperId === 1 && q.calculatorOnly) continue;
       if (!exclude.has(q.id)) out.push(q);
     }
   }
@@ -248,7 +252,7 @@ export function buildPaper(type = 'full', paperId = 1) {
     // Pass 1: stretch questions first (highest-demand marks).
     for (const sid of shuffled(rng, strandIds)) {
       const budget = budgets.get(sid);
-      const stretchPool = bigFirst(rng, strandPool(sid).filter((q) => q.difficulty === 3));
+      const stretchPool = bigFirst(rng, strandPool(sid, new Set(), paperId).filter((q) => q.difficulty === 3));
       let used = 0;
       for (const q of stretchPool) {
         if (used >= Math.min(stretchBudget, budget * 0.45)) break;
@@ -264,7 +268,7 @@ export function buildPaper(type = 'full', paperId = 1) {
     for (const sid of shuffled(rng, strandIds)) {
       let budget = budgets.get(sid);
       let easyTarget = Math.floor(budget * 0.55);
-      const easy = bigFirst(rng, strandPool(sid, new Set(picked.map((q) => q.id))).filter((q) => q.difficulty === 1));
+      const easy = bigFirst(rng, strandPool(sid, new Set(picked.map((q) => q.id)), paperId).filter((q) => q.difficulty === 1));
       for (const q of easy) {
         if (budget <= 0 || easyTarget <= 0) break;
         if (q.marks > easyTarget) continue;
@@ -278,7 +282,7 @@ export function buildPaper(type = 'full', paperId = 1) {
     // Pass 3: fill whatever is left with any non-stretch questions.
     for (const sid of shuffled(rng, strandIds)) {
       let budget = budgets.get(sid);
-      const fill = bigFirst(rng, strandPool(sid, new Set(picked.map((q) => q.id))).filter((q) => q.difficulty !== 3));
+      const fill = bigFirst(rng, strandPool(sid, new Set(picked.map((q) => q.id)), paperId).filter((q) => q.difficulty !== 3));
       for (const q of fill) {
         if (budget <= 0) break;
         if (q.marks > budget) continue;
@@ -290,6 +294,8 @@ export function buildPaper(type = 'full', paperId = 1) {
 
     const sum = picked.reduce((a, q) => a + q.marks, 0);
     if (sum !== total || picked.length < minQ(total) || picked.length > maxQ(total)) continue;
+    const visualCount = picked.filter((q) => q.stimulus).length;
+    if (visualCount < (total === 80 ? 8 : 4) || visualCount > (total === 80 ? 13 : 7)) continue;
 
     // Order as a difficulty ramp: level 1 first, level 2 middle, stretch at the end.
     const ramp = [];
@@ -313,7 +319,7 @@ export function buildPaper(type = 'full', paperId = 1) {
 
   // Practically unreachable given the bank size; graceful fallback anyway.
   const all = [];
-  for (const sid of strandIds) all.push(...strandPool(sid));
+  for (const sid of strandIds) all.push(...strandPool(sid, new Set(), paperId));
   const any = shuffled(rng, all);
   const fallback = [];
   let left = total;

@@ -154,11 +154,12 @@ export default function gen(v) {
     const { n, d } = cases[p % 6];
     const w = Math.floor(n / d);
     const rem = n % d;
-    const corr = rem === 0 ? `${w}` : `${w} ${rem}/${d}`;
+    const proper = fracStr(rem, d);
+    const corr = rem === 0 ? `${w}` : `${w} ${proper}`;
     text = `Write  ${n}/${d}  as a mixed number in its simplest form.`;
     const wrongs = [`${w + 1} ${rem}/${d}`, `${w} ${d - rem}/${d}`, `${w + 1} ${(rem + d) / d}/${d}`].filter((x) => x !== corr && x.length > 0).slice(0, 3);
     m = mcq(r, corr, wrongs);
-    sol = [`How many whole ${d}s fit into ${n}? ${n} ÷ ${d} = ${w} remainder ${rem}.`, `So ${n}/${d} = ${corr}`];
+    sol = [`How many whole ${d}s fit into ${n}? ${n} ÷ ${d} = ${w} remainder ${rem}.`, `Simplify the remaining ${rem}/${d} to ${proper}.`, `So ${n}/${d} = ${corr}`];
     hint = 'Divide the top by the bottom: the answer is the whole part, the remainder is the new top.';
     return { marks: 1, difficulty: 1, stretch: false, text, input: m.input, answer: m.answer, answerText: corr, solution: sol, hint };
   }

@@ -127,7 +127,8 @@ export default function gen(v) {
     const flat = [];
     for (const [x, f] of c.table) for (let i = 0; i < f; i++) flat.push(x);
     flat.sort((a, b) => a - b);
-    ans = c.a;
+    const middle = Math.floor(flat.length / 2);
+    ans = flat.length % 2 ? flat[middle] : (flat[middle - 1] + flat[middle]) / 2;
     text = `The table shows the number of pets owned by ${totalF} students.\nNumber of pets (x): frequency\n${rows.join('   ')}\nWork out the median number of pets.`;
     input = { type: 'number', tolerance: 1e-9 };
     const pos = (totalF + 1) / 2;

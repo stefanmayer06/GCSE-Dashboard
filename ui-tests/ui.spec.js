@@ -59,3 +59,25 @@ for (const [name, path] of [['mobile-dashboard', '/'], ['mobile-exam', '/practic
     if (errors.length) throw new Error(`${name}: page errors ${errors.slice(0, 2).join(' | ')}`);
   });
 }
+
+test('interactive lesson visual', async ({ page }) => {
+  await page.goto('http://localhost:3000/learn/graphs', { waitUntil: 'networkidle' });
+  const visual = page.locator('.lesson-visual .maths-visual');
+  await visual.waitFor();
+  await visual.locator('.visual-point').first().focus();
+  await visual.locator('.visual-point').first().press('Enter');
+  await page.locator('.visual-readout').filter({ hasText: 'A (1, 2)' }).waitFor();
+  await visual.getByRole('button', { name: 'Enlarge' }).click();
+  await visual.getByRole('button', { name: 'Fit' }).waitFor();
+});
+
+test('interactive visual fits mobile viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('http://localhost:3000/learn/charts', { waitUntil: 'networkidle' });
+  const visual = page.locator('.lesson-visual .maths-visual');
+  await visual.waitFor();
+  await visual.locator('.data-bar-column').first().click();
+  await page.locator('.visual-readout').filter({ hasText: 'Mon: 23' }).waitFor();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  if (overflow > 0) throw new Error(`visual page has ${overflow}px horizontal overflow`);
+});

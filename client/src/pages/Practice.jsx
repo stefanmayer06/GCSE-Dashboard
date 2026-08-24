@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { STRAND_COLORS } from '../colors.js';
+import MathsVisual from '../components/MathsVisual.jsx';
 
 const LS_KEY = 'mathsmate-active-test';
 
@@ -350,7 +351,8 @@ function AdhocRunner({ set, onExit, onNew }) {
                 <span>{q.topic}</span>
                 {q.stretch && <span className="q-tag stretch">⚡ Stretch</span>}
               </div>
-              <div className="quiz-q-text">{q.text.split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
+               <div className="quiz-q-text">{q.text.split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
+              <MathsVisual stimulus={q.stimulus} compact />
 
               {q.input.type === 'mcq' ? (
                 <div className="choices">
@@ -506,6 +508,7 @@ function TestScreen(props) {
               {q.stretch && <span className="q-tag stretch">⚡ Stretch</span>}
             </div>
             <div className="q-text">{q.text.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>
+            <MathsVisual stimulus={q.stimulus} />
 
             {q.input.type === 'mcq' ? (
               <div className="choices">

@@ -105,7 +105,7 @@ export default function gen(v) {
       { shape: 'rectangle (not a square)', a: 2, w: [4, 1, 3] },
       { shape: 'regular hexagon', a: 6, w: [3, 2, 12] },
       { shape: 'isosceles triangle', a: 1, w: [2, 3, 4] },
-      { shape: 'circle', a: 4, w: [1, 2, 3] },
+      { shape: 'circle', a: 'infinitely many', w: [1, 2, 4] },
       { shape: 'regular pentagon', a: 5, w: [1, 10, 2] },
       { shape: 'parallelogram (not a rectangle or rhombus)', a: 0, w: [2, 1, 4] },
     ];
@@ -113,7 +113,7 @@ export default function gen(v) {
     text = `How many lines of symmetry does a ${c.shape} have?`;
     m = mcq(r, String(c.a), c.w.map(String).filter((x) => x !== String(c.a)));
     input = m.input;
-    sol = [[`Fold the shape in half — each fold that matches perfectly is a line of symmetry.`, `A ${c.shape} has ${c.a} line(s) of symmetry.`]];
+    sol = [[`Fold the shape in half — each fold that matches perfectly is a line of symmetry.`, `A ${c.shape} has ${c.a}${c.shape === 'circle' ? '' : ' line(s) of symmetry'}.`]];
     hint = 'A line of symmetry is a mirror line — both halves must match exactly.';
     return { marks: 1, difficulty: 1, stretch: false, text, input, answer: m.answer, answerText: String(c.a), solution: sol, hint };
   }

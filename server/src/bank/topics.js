@@ -257,7 +257,7 @@ export const TOPICS = [
     notes: [
       B([
         '> greater than   ·   < less than   ·   ≥ greater than or equal to   ·   ≤ less than or equal to.',
-        'Solve them exactly like equations.',
+        'Solve them like equations, but reverse the inequality sign when multiplying or dividing by a negative number.',
         'Open circle ○ for < and >, filled circle ● for ≤ and ≥ on a number line.',
         '"x is at most 7" means x ≤ 7. "x is at least 7" means x ≥ 7.',
       ]),
@@ -370,8 +370,8 @@ export const TOPICS = [
       B([
         'Angles on a straight line add to 180°. Angles around a point add to 360°.',
         'Triangle = 180°. Quadrilateral = 360°.',
-        'Alternate angles (Z-shape) are equal. Corresponding angles (F-shape) are equal.',
-        'Co-interior angles (C-shape) add to 180°.',
+        'Alternate angles are equal. Corresponding angles are equal.',
+        'Co-interior angles add to 180°.',
         'Interior angle of a regular n-gon: 180 × (n − 2) ÷ n. Exterior angles add to 360°.',
         'Vertically opposite angles are equal.',
       ]),
@@ -469,7 +469,7 @@ export const TOPICS = [
       B([
         'Sin θ = O/H   ·   Cos θ = A/H   ·   Tan θ = O/A.',
         'Know your special angles: sin 30° = 1/2, cos 60° = 1/2, tan 45° = 1.',
-        'Finding a side: side = (sin/cos/tan of angle) × known side as needed.',
+        'Finding a side: choose the correct ratio, substitute the known values, then rearrange for the unknown side.',
         'Finding an angle: use the inverse button on your calculator (sin⁻¹).',
       ]),
       F('SOH CAH TOA', 'sin = O/H · cos = A/H · tan = O/A'),
@@ -545,7 +545,7 @@ export const TOPICS = [
         'Mean = sum of all values ÷ how many there are.',
         'Median = middle value when ordered (mean of the two middle values if even count).',
         'Mode = most common value. Range = biggest − smallest.',
-        'From a frequency table: total = Σ(fx) ÷ Σf for the mean; median position = (n+1)/2.',
+        'From a frequency table: mean = Σ(fx) ÷ Σf; median position = (n+1)/2.',
         'Outliers (extreme values) push the mean around — median is more robust.',
       ]),
       F('Mean', 'Mean = total ÷ count   ·   Range = max − min'),

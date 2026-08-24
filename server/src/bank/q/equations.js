@@ -47,13 +47,14 @@ export default function gen(v) {
 
   if (t === 3) {
     const a = [2, 3, 4, 5, 6, 7, 8, 9][p % 8];
-    const x = ri(r, 2, 10);
+    const quotient = ri(r, 2, 10);
+    const x = a * quotient;
     const b = ri(r, 1, 12);
-    const c = x + b;
+    const c = quotient + b;
     ans = x;
     text = `Solve  x/${a} + ${b} = ${c}`;
     input = { type: 'number' };
-    sol = [[`Subtract ${b} from both sides: x/${a} = ${x}.`, `Multiply both sides by ${a}: x = ${ans}.`]];
+    sol = [[`Subtract ${b} from both sides: x/${a} = ${quotient}.`, `Multiply both sides by ${a}: x = ${ans}.`]];
     hint = 'Undo in reverse order: subtract first, then multiply by the denominator.';
     return { marks: 2, difficulty: 2, stretch: false, text, input, answer: ans, answerText: `x = ${ans}`, solution: sol, hint };
   }
@@ -77,7 +78,7 @@ export default function gen(v) {
     const b = [1, 2, 3, 4, 2, 3, 1, 2][p % 8];
     const cx = a - 1;
     ans = x;
-    const total = cx * x;
+    const total = x + b;
     text = `Solve  ${a}x + ${b} = ${cx}x + ${total}`;
     input = { type: 'number' };
     sol = [[`Get the x terms on one side: subtract ${cx}x from both sides → x + ${b} = ${total}.`, `x = ${total} − ${b} = ${ans}.`]];

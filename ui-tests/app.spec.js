@@ -13,6 +13,20 @@ async function signIn(page) {
   }
 }
 
+async function completeMathsLessonQuiz(page) {
+  await page.getByRole('button', { name: 'Start 5 questions' }).click();
+  const questions = page.locator('.quiz-q');
+  await expect(questions).toHaveCount(5);
+  for (let index = 0; index < 5; index += 1) {
+    const question = questions.nth(index);
+    const choices = question.locator('.choice');
+    if (await choices.count()) await choices.first().click();
+    else await question.locator('.answer-input').fill('1');
+    await question.getByRole('button', { name: 'Check answer' }).click();
+  }
+  await page.getByRole('button', { name: 'Finish & score' }).click();
+}
+
 const pages = [
   ['selector', '/', ['#page-title', '.maths-card', '.english-card']],
   ['subjects-directory', '/subjects', ['.subject-directory', '.dir-maths', '.dir-english', '.dir-coming']],
@@ -376,6 +390,104 @@ test('english exam shows a 14+ appropriate picture for the Q5 description task',
   await expect(page.locator('.q-image-cap')).toContainText('Wikimedia Commons');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('lesson rewards persist, update levels live and cannot be claimed twice', async ({ page }) => {
+  const username = `reward${Date.now()}`;
+  const signup = await page.request.post(`${BASE}/api/auth/signup`, {
+    data: { username, password: 'revision-pass-1' },
+  });
+  expect(signup.ok()).toBeTruthy();
+
+  const issuedResponse = await page.request.post(`${BASE}/api/maths/practice`, {
+    data: { topicId: 'fractions', count: 5 },
+  });
+  const issued = await issuedResponse.json();
+  const incompleteResponse = await page.request.post(`${BASE}/api/maths/practice/submit`, {
+    data: {
+      sessionId: issued.sessionId,
+      topicId: 'fractions',
+      answers: issued.questions.slice(0, 4).map((question) => ({ qid: question.id, value: '1' })),
+    },
+  });
+  const incomplete = await incompleteResponse.json();
+  expect(incomplete.reward).toMatchObject({ firstCompletion: false, completionXp: 0 });
+  const replay = await page.request.post(`${BASE}/api/maths/practice/submit`, {
+    data: { sessionId: issued.sessionId, topicId: 'fractions', answers: [] },
+  });
+  expect(replay.status()).toBe(404);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${BASE}/maths/learn/fractions`, { waitUntil: 'networkidle' });
+  await completeMathsLessonQuiz(page);
+
+  await expect(page.locator('.reward-dialog')).toBeVisible();
+  await expect(page.locator('.reward-dialog')).toContainText('Lesson stamp earned');
+  await expect(page.locator('.reward-dialog')).toContainText('first-completion XP');
+  await expect(page.locator('.reward-close')).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(page.getByRole('button', { name: 'Choose another lesson' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('.reward-close')).toBeFocused();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Another 5' })).toBeFocused();
+  await expect(page.locator('.topic-complete-stamp')).toBeVisible();
+
+  const firstProgress = await (await page.request.get(`${BASE}/api/maths/progress`)).json();
+  expect(firstProgress.lessonsCompleted).toBe(1);
+  expect(firstProgress.xp).toBeGreaterThanOrEqual(20);
+
+  await page.getByRole('button', { name: 'Another 5' }).click();
+  const questions = page.locator('.quiz-q');
+  await expect(questions.first().getByRole('button', { name: 'Check answer' })).toBeVisible();
+  for (let index = 0; index < 5; index += 1) {
+    const question = questions.nth(index);
+    const choices = question.locator('.choice');
+    if (await choices.count()) await choices.first().click();
+    else await question.locator('.answer-input').fill('1');
+    await question.getByRole('button', { name: 'Check answer' }).click();
+  }
+  const repeatResponse = page.waitForResponse((response) => response.url().endsWith('/api/maths/practice/submit'));
+  await page.getByRole('button', { name: 'Finish & score' }).click();
+  const repeat = await (await repeatResponse).json();
+  expect(repeat.reward.firstCompletion).toBeFalsy();
+  expect(repeat.reward.completionXp).toBe(0);
+  await expect(page.locator('.reward-dialog')).toHaveCount(0);
+
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.expertise-path')).toContainText('1 lesson completed');
+  await page.getByRole('button', { name: 'View badge collection' }).click();
+  await expect(page.locator('.badge-collection')).toBeVisible();
+});
+
+test('English offline lesson completion earns the same first-completion reward', async ({ page }) => {
+  const username = `engreward${Date.now()}`;
+  const signup = await page.request.post(`${BASE}/api/auth/signup`, {
+    data: { username, password: 'revision-pass-1' },
+  });
+  expect(signup.ok()).toBeTruthy();
+
+  const practiceResponse = await page.request.post(`${BASE}/api/english/practice`, {
+    data: { topicId: 'creative-writing', count: 1 },
+  });
+  const practice = await practiceResponse.json();
+  const submitResponse = await page.request.post(`${BASE}/api/english/practice/submit`, {
+    data: {
+      sessionId: practice.sessionId,
+      answers: practice.questions.map((question) => ({ qid: question.id, value: { text: 'A cold wind moved through the empty street.' } })),
+      aiResults: Object.fromEntries(practice.questions.map((question) => [question.id, { ai: true, marks: question.marks }])),
+    },
+  });
+  expect(submitResponse.ok()).toBeTruthy();
+  const result = await submitResponse.json();
+  expect(result.reward).toMatchObject({ firstCompletion: true, completionXp: 20 });
+  expect(result.reward.scoreXp).toBe(0);
+  expect(result.progress.lessonsCompleted).toBe(1);
+
+  const topic = await (await page.request.get(`${BASE}/api/english/topics/creative-writing`)).json();
+  expect(topic.completed).toBeTruthy();
 });
 
 for (const [name, url] of [

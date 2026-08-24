@@ -838,6 +838,227 @@ textarea:focus-visible,
 .quiz-q.wrong { border-color: var(--negative); background: var(--negative-wash); }
 .hint-inline { border-color: var(--warning); color: var(--warning); background: var(--warning-wash); }
 
+/* Expertise rewards */
+.expertise-path {
+  position: relative;
+  display: grid;
+  gap: 22px;
+  overflow: hidden;
+  border-left: 6px solid var(--accent);
+}
+
+.expertise-path::after {
+  position: absolute;
+  top: -48px;
+  right: -42px;
+  width: 180px;
+  height: 180px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.expertise-head,
+.expertise-progress-copy,
+.expertise-actions,
+.reward-summary > div:first-child,
+.reward-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.expertise-head { position: relative; z-index: 1; align-items: start; }
+
+.eyebrow,
+.reward-summary-label,
+.lesson-stamp {
+  color: var(--quiet);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.expertise-head h2 { margin: 4px 0 3px; font-size: clamp(30px, 4vw, 46px); }
+
+.expertise-seal,
+.reward-stamp {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 82px;
+  height: 82px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  color: var(--subject-ink);
+  background: var(--accent-wash);
+  outline: 1px dashed var(--accent);
+  outline-offset: -7px;
+}
+
+.expertise-seal span,
+.reward-stamp span { font-size: 8px; font-weight: 800; letter-spacing: 0.14em; }
+.expertise-seal strong,
+.reward-stamp strong { font-family: Georgia, "Times New Roman", serif; font-size: 32px; font-weight: 400; line-height: 0.9; }
+
+.expertise-progress { display: grid; gap: 8px; }
+.expertise-progress-copy { color: var(--quiet); font-size: 11px; }
+.expertise-progress-copy span:first-child { color: var(--ink); font-weight: 700; }
+
+.expertise-track {
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  background: var(--paper-muted);
+}
+
+.expertise-track span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 500ms ease;
+}
+
+.expertise-actions { justify-content: flex-start; }
+
+.badge-collection {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  border: 1px solid var(--line-strong);
+  background: var(--line-strong);
+}
+
+.expertise-badge {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 72px;
+  gap: 12px;
+  padding: 12px;
+  background: var(--paper-raised);
+}
+
+.expertise-badge.locked { color: var(--quiet); background: var(--paper-muted); }
+.expertise-badge.unlocked { color: var(--ink); }
+
+.expertise-badge-number {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line-strong);
+  color: var(--quiet);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px;
+}
+
+.expertise-badge.unlocked .expertise-badge-number {
+  border-color: var(--accent);
+  color: var(--subject-ink);
+  background: var(--accent-wash);
+}
+
+.expertise-badge strong,
+.expertise-badge small { display: block; }
+.expertise-badge strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.expertise-badge small { margin-top: 3px; color: var(--quiet); font-size: 9px; }
+
+.lesson-stamp {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 9px;
+  padding: 5px 7px;
+  border: 1px solid var(--positive);
+  color: var(--positive);
+  background: var(--positive-wash);
+}
+
+.topic-card .lesson-stamp { margin-top: 12px; }
+
+.reward-summary {
+  display: grid;
+  gap: 5px;
+  padding: 14px 16px;
+  border: 1px solid var(--positive);
+  color: var(--ink);
+  background: var(--positive-wash);
+}
+
+.reward-xp {
+  color: var(--positive);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 400;
+}
+
+.reward-summary-detail,
+.reward-summary-rank { color: var(--quiet); font-size: 10px; }
+.reward-summary-rank { color: var(--ink); font-weight: 700; }
+.quiz-done .reward-summary { flex: 1 1 280px; }
+
+.reward-backdrop {
+  position: fixed;
+  z-index: 220;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px;
+  background: var(--overlay);
+}
+
+.reward-dialog {
+  position: relative;
+  display: grid;
+  width: min(100%, 540px);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  gap: 16px;
+  padding: 34px;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  background: var(--paper-raised);
+  animation: reward-rise 220ms ease-out;
+}
+
+.reward-dialog h2 { margin: -8px 0 0; font-size: clamp(32px, 7vw, 48px); }
+.reward-dialog > p { margin: 0; color: var(--quiet); line-height: 1.65; }
+.reward-dialog .reward-stamp { margin-bottom: 5px; animation: reward-stamp-in 420ms ease-out; }
+
+.reward-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  background: var(--paper-raised);
+  cursor: pointer;
+  font: inherit;
+}
+
+.reward-close:hover { border-color: var(--ink); background: var(--paper-muted); }
+.reward-dialog-actions { justify-content: flex-start; flex-wrap: wrap; }
+
+@keyframes reward-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes reward-stamp-in {
+  from { opacity: 0; transform: rotate(-8deg) scale(0.82); }
+  to { opacity: 1; transform: rotate(0) scale(1); }
+}
+
 /* Tutor */
 .chat-box { border-color: var(--ink); }
 .chat-scroll { background: var(--chat-scroll-bg); }
@@ -938,6 +1159,16 @@ textarea:focus-visible,
   .exam-timers, .source-tabs, .tf-row { flex-wrap: wrap; }
   .chat-box { height: calc(100dvh - 190px); min-height: 500px; }
   .review-body { padding-left: 18px; }
+  .expertise-path { gap: 18px; }
+  .expertise-path::after { display: none; }
+  .expertise-head { align-items: center; }
+  .expertise-seal { width: 68px; height: 68px; }
+  .expertise-seal strong { font-size: 27px; }
+  .expertise-actions, .reward-dialog-actions { align-items: stretch; flex-direction: column; }
+  .expertise-actions .btn, .reward-dialog-actions .btn { width: 100%; }
+  .badge-collection { grid-template-columns: minmax(0, 1fr); }
+  .reward-backdrop { align-items: end; padding: 12px; }
+  .reward-dialog { max-height: calc(100dvh - 24px); padding: 28px 20px 20px; }
 }
 
 @media (max-width: 420px) {

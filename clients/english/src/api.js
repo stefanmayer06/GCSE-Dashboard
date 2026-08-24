@@ -51,8 +51,8 @@ export const api = {
   adhoc: (count, kinds) => req('/adhoc', { method: 'POST', body: { count, kinds } }),
   adhocSubmit: (sessionId, answers, aiResults) =>
     req('/adhoc/submit', { method: 'POST', body: { sessionId, answers, aiResults } }),
-  mark: (rubricKey, questionText, sourceText, answer) =>
-    req('/mark', { method: 'POST', body: { rubricKey, questionText, sourceText, answer } }),
+  mark: (sessionId, qid, answer) =>
+    req('/mark', { method: 'POST', body: { sessionId, qid, answer } }),
   progress: () => req('/progress'),
   chat: (messages) => req('/chat', { method: 'POST', body: { messages } }),
   clearChat: () => req('/chat', { method: 'DELETE' }),

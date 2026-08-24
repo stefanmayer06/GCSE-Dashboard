@@ -148,10 +148,10 @@ export default function App() {
       <main className="content">
         <Routes>
            <Route path="/" element={<Dashboard health={health} progress={progress} higherTier={higherTier} />} />
-          <Route path="/practice" element={<Practice />} />
+          <Route path="/practice" element={<Practice onProgress={setProgress} />} />
           <Route path="/results" element={<Results />} />
           <Route path="/learn" element={<Learn />} />
-          <Route path="/learn/:topicId" element={<Topic />} />
+          <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} />} />
           <Route path="/chat" element={<Chat health={health} />} />
         </Routes>
       </main>

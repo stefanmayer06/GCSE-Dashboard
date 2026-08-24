@@ -49,6 +49,21 @@ app.use((req, res, next) => {
 });
 
 const activeTests = new Map();
+const practiceSessions = new Map();
+
+function uniqueAnswersByQid(answers) {
+  const byQid = new Map();
+  if (!Array.isArray(answers)) return [];
+  for (const answer of answers) {
+    if (answer && answer.qid != null) byQid.set(answer.qid, answer);
+  }
+  return [...byQid.values()];
+}
+
+function isNonblank(value) {
+  if (value === null || value === undefined) return false;
+  return typeof value !== 'string' || value.trim().length > 0;
+}
 
 function activeTestFor(req) {
   const test = activeTests.get(req.params.id);
@@ -87,6 +102,7 @@ app.get('/health', (req, res) => {
 app.get('/topics', (req, res) => {
   const fns = tierFns(req);
   const p = req.db.progress();
+  const completed = new Set(p.completedLessonIds);
   const byStrand = {};
   for (const s of Object.values(STRANDS)) {
     byStrand[s.id] = {
@@ -97,6 +113,7 @@ app.get('/topics', (req, res) => {
           ...publicTopic(t),
           accuracy: stats && stats.total ? Math.round((100 * stats.correct) / stats.total) : null,
           answered: stats ? stats.total : 0,
+          completed: completed.has(t.id),
         };
       }),
     };
@@ -118,6 +135,7 @@ app.get('/topics/:id', (req, res) => {
     resources: t.resources,
     accuracy: stats && stats.total ? Math.round((100 * stats.correct) / stats.total) : null,
     answered: stats ? stats.total : 0,
+    completed: p.completedLessonIds.includes(t.id),
   });
 });
 
@@ -180,7 +198,7 @@ app.delete('/test/:id', (req, res) => {
 app.post('/test/:id/submit', (req, res) => {
   const test = activeTestFor(req);
   if (!test) return expiredTest(res);
-  const answers = req.body?.answers || [];
+  const answers = uniqueAnswersByQid(req.body?.answers);
   const durationSec = req.body?.durationSec || null;
 
   const higher = test.tier === 'higher';
@@ -260,10 +278,10 @@ app.post('/test/:id/submit', (req, res) => {
   };
 
   req.db.recordTest({ ...result, topicAccuracy: topics.map((t) => ({ id: t.id, percent: t.percent })) });
-  req.db.addXp(correctMarks * 2);
-  req.db.registerActivity();
+  const rewardResult = req.db.rewardActivity({ scoreXp: correctMarks * 2 });
+  const { progress, ...reward } = rewardResult;
   activeTests.delete(test.id);
-  res.json(result);
+  res.json({ ...result, reward, progress });
 });
 
 app.post('/practice', (req, res) => {
@@ -272,7 +290,15 @@ app.post('/practice', (req, res) => {
   const count = Math.min(20, Math.max(4, req.body?.count || 8));
   const questions = fns.buildPractice(topicId, count);
   if (!questions.length) return res.status(404).json({ error: 'Topic not found' });
-  res.json({ topicId, questions });
+  const sessionId = crypto.randomUUID();
+  practiceSessions.set(sessionId, {
+    userId: String(req.user.id),
+    tier: isHigher(req) ? 'higher' : 'foundation',
+    topicId,
+    questionIds: questions.map((question) => question.id),
+  });
+  if (practiceSessions.size > 100) practiceSessions.delete(practiceSessions.keys().next().value);
+  res.json({ sessionId, topicId, questions });
 });
 
 app.post('/check', (req, res) => {
@@ -285,14 +311,28 @@ app.post('/check', (req, res) => {
 
 app.post('/practice/submit', (req, res) => {
   const fns = tierFns(req);
-  const { topicId, answers } = req.body || {};
-  if (!topicId) return res.status(400).json({ error: 'topicId required' });
+  const { sessionId, topicId } = req.body || {};
+  const session = practiceSessions.get(sessionId);
+  const tier = isHigher(req) ? 'higher' : 'foundation';
+  if (!session || session.userId !== String(req.user.id) || session.tier !== tier) {
+    return res.status(404).json({ error: 'Practice session expired.' });
+  }
+  if (topicId !== session.topicId) return res.status(400).json({ error: 'Practice topic does not match session.' });
+  const submittedAnswers = Array.isArray(req.body?.answers) ? req.body.answers : [];
+  const issuedIds = new Set(session.questionIds);
+  const answers = uniqueAnswersByQid(submittedAnswers).filter((answer) => issuedIds.has(answer.qid));
   const pool = fns.questionsFor(topicId);
   const marked = fns.markAnswers(pool, answers);
   req.db.recordPractice({ topicId, correct: marked.correctMarks, total: marked.totalMarks });
-  req.db.addXp(marked.correctMarks);
-  req.db.registerActivity();
-  res.json({ correctMarks: marked.correctMarks, totalMarks: marked.totalMarks, perQ: marked.perQ });
+  const qualifies = answers.length === session.questionIds.length
+    && answers.every((answer) => isNonblank(answer.value));
+  const rewardResult = req.db.rewardActivity({
+    scoreXp: marked.correctMarks,
+    lessonId: qualifies ? topicId : null,
+  });
+  const { progress, ...reward } = rewardResult;
+  practiceSessions.delete(sessionId);
+  res.json({ correctMarks: marked.correctMarks, totalMarks: marked.totalMarks, perQ: marked.perQ, reward, progress });
 });
 
 app.post('/adhoc', (req, res) => {
@@ -302,12 +342,12 @@ app.post('/adhoc', (req, res) => {
     ? req.body.papers
      : [1, 2, 3];
   const set = fns.buildAdhoc(count, papers);
-  res.json(set);
+  res.json({ ...set, roundId: crypto.randomUUID() });
 });
 
 app.post('/adhoc/submit', (req, res) => {
   const fns = tierFns(req);
-  const answers = req.body?.answers || [];
+  const answers = uniqueAnswersByQid(req.body?.answers);
   const results = { perQ: [], correctMarks: 0, totalMarks: 0 };
   const topicTally = new Map();
   for (const { qid, value } of answers) {
@@ -323,9 +363,9 @@ app.post('/adhoc/submit', (req, res) => {
     if (correct) t.correct += q.marks;
   }
   for (const [topicId, t] of topicTally) req.db.recordPractice({ topicId, correct: t.correct, total: t.total });
-  req.db.addXp(results.correctMarks);
-  req.db.registerActivity();
-  res.json(results);
+  const rewardResult = req.db.rewardActivity({ scoreXp: results.correctMarks });
+  const { progress, ...reward } = rewardResult;
+  res.json({ ...results, reward, progress });
 });
 
 app.get('/progress', (req, res) => {

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { STRAND_COLORS } from '../colors.js';
 import MathsVisual from '../components/MathsVisual.jsx';
+import { RewardSummary } from '../../../shared/rewards.jsx';
 
 const LS_KEY = window.location.pathname.startsWith('/maths-higher') ? 'mathsmate-higher-active-test' : 'mathsmate-active-test';
 
@@ -28,7 +29,7 @@ function loadSaved() {
   }
 }
 
-export default function Practice() {
+export default function Practice({ onProgress }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -182,6 +183,7 @@ export default function Practice() {
         value: ansOverride[q.id] ?? answers[q.id] ?? null,
       }));
       const result = await api.submitTest(test.id, list, dur ?? elapsed);
+      onProgress?.(result.progress);
       localStorage.removeItem(LS_KEY);
        localStorage.setItem(window.location.pathname.startsWith('/maths-higher') ? 'mathsmate-higher-last-result' : 'mathsmate-last-result', JSON.stringify(result));
       navigate('/results');
@@ -312,14 +314,14 @@ export default function Practice() {
         )}
       </section>
 
-       <AdhocSection higherTier={higherTier} />
+       <AdhocSection higherTier={higherTier} onProgress={onProgress} />
     </div>
   );
 }
 
 /* ---------------- Ad-hoc: mixed questions from any papers ---------------- */
 
-function AdhocSection({ higherTier = false }) {
+function AdhocSection({ higherTier = false, onProgress }) {
   const [sources, setSources] = useState([1, 2, 3]);
   const [count, setCount] = useState(15);
   const [running, setRunning] = useState(null);
@@ -346,7 +348,7 @@ function AdhocSection({ higherTier = false }) {
   }
 
   if (running) {
-    return <AdhocRunner set={running} onExit={() => setRunning(null)} onNew={startAdhoc} />;
+    return <AdhocRunner key={running.roundId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} />;
   }
 
   return (
@@ -397,7 +399,7 @@ function AdhocSection({ higherTier = false }) {
   );
 }
 
-function AdhocRunner({ set, onExit, onNew }) {
+function AdhocRunner({ set, onExit, onNew, onProgress }) {
   const [answers, setAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
   const [done, setDone] = useState(null);
@@ -411,6 +413,7 @@ function AdhocRunner({ set, onExit, onNew }) {
     const res = await api.adhocSubmit(
       set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }))
     );
+    onProgress?.(res.progress);
     setFeedback((f) => {
       const out = { ...f };
       for (const row of res.perQ) {
@@ -418,7 +421,7 @@ function AdhocRunner({ set, onExit, onNew }) {
       }
       return out;
     });
-    setDone({ correct: res.correctMarks, total: res.totalMarks });
+    setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
   }
 
   const allChecked = Object.keys(feedback).length >= set.questions.length;
@@ -502,7 +505,8 @@ function AdhocRunner({ set, onExit, onNew }) {
 
         {done ? (
           <div className="quiz-done">
-            <h3>You scored {done.correct}/{done.total} 🎉</h3>
+            <h3>You scored {done.correct}/{done.total}</h3>
+            <RewardSummary reward={done.reward} progress={done.progress} />
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <button className="btn btn-primary" onClick={onNew}>Another round</button>
               <button className="btn" onClick={onExit}>Back to setup</button>

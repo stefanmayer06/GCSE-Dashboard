@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { QuestionCard } from './Practice.jsx';
+import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
 
-export default function Topic() {
+export default function Topic({ onProgress }) {
   const { topicId } = useParams();
+  const navigate = useNavigate();
   const [topic, setTopic] = useState(null);
   const [session, setSession] = useState(null);
   const [answers, setAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
   const [aiResults, setAiResults] = useState({});
   const [done, setDone] = useState(null);
+  const [celebration, setCelebration] = useState(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -20,6 +23,7 @@ export default function Topic() {
     setFeedback({});
     setAiResults({});
     setDone(null);
+    setCelebration(null);
     api.topic(topicId).then(setTopic).catch(() => {});
   }, [topicId]);
 
@@ -32,6 +36,7 @@ export default function Topic() {
       setFeedback({});
       setAiResults({});
       setDone(null);
+      setCelebration(null);
     } finally {
       setBusy(false);
     }
@@ -48,12 +53,7 @@ export default function Topic() {
       return;
     }
     const answer = typeof value === 'object' ? value?.text ?? '' : value;
-    const sourceText = q.sourceRef
-      ? q.sourceRef.paperId === 2
-        ? `${q.sourceRef.textA || ''}\n\n${q.sourceRef.textB || ''}`.slice(0, 7000)
-        : q.sourceRef.text
-      : '';
-    const res = await api.mark(q.rubricKey, q.text, sourceText, answer);
+    const res = await api.mark(session.sessionId, q.id, answer);
     setFeedback((f) => ({ ...f, [q.id]: res }));
     if (res.ai) setAiResults((a) => ({ ...a, [q.id]: res }));
   }
@@ -61,7 +61,12 @@ export default function Topic() {
   async function finishQuiz() {
     const list = (session?.questions || []).map((q) => ({ qid: q.id, value: answers[q.id] ?? null }));
     const res = await api.practiceSubmit(session.sessionId, list, aiResults);
-    setDone({ correct: res.correctMarks, total: res.totalMarks });
+    setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
+    onProgress?.(res.progress);
+    if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
+    if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
+      setCelebration(res.reward);
+    }
   }
 
   if (!topic) return <div className="page"><div className="loading">Loading…</div></div>;
@@ -76,6 +81,7 @@ export default function Topic() {
             {topic.sectionName} · worth roughly {topic.examWeight} marks across the two papers
             {topic.accuracy != null ? ` · your accuracy so far: ${topic.accuracy}%` : ''}
           </p>
+          {topic.completed && <div className="lesson-stamp topic-complete-stamp">Lesson completed</div>}
         </div>
       </header>
 
@@ -140,7 +146,8 @@ export default function Topic() {
             ))}
             {done ? (
               <div className="quiz-done">
-                <h3>You scored {done.correct}/{done.total} 🎉</h3>
+                <h3>You scored {done.correct}/{done.total}</h3>
+                <RewardSummary reward={done.reward} progress={done.progress} />
                 <button className="btn btn-primary" onClick={startQuiz}>Another 3</button>
               </div>
             ) : (
@@ -174,6 +181,19 @@ export default function Topic() {
         <p className="sub">Ask the AI tutor to walk you through {topic.name.toLowerCase()} step by step.</p>
         <Link className="btn btn-primary" to="/chat">Open AI tutor →</Link>
       </section>
+
+      {celebration && (
+        <RewardCelebration
+          reward={celebration}
+          lessonName={topic.name}
+          onClose={() => setCelebration(null)}
+          onPracticeAgain={() => {
+            setCelebration(null);
+            startQuiz();
+          }}
+          onChooseLesson={() => navigate('/learn')}
+        />
+      )}
     </div>
   );
 }

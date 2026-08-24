@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { RubricBands } from './Practice.jsx';
+import { RewardSummary } from '../../../shared/rewards.jsx';
 
 export default function Results() {
   const navigate = useNavigate();
@@ -67,6 +68,8 @@ export default function Results() {
           <Link className="btn" to="/practice#adhoc">Quick-fire round</Link>
         </div>
       </div>
+
+      <RewardSummary reward={result.reward} progress={result.progress} label="Paper XP earned" />
 
       <section className="two-col">
         <div className="panel">

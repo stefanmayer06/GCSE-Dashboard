@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { STRAND_COLORS } from '../colors.js';
+import { ExpertisePath } from '../../../shared/rewards.jsx';
 
 const STRAND_NAMES_LIST = [
   { id: 'number', name: 'Number' },
@@ -82,6 +83,8 @@ export default function Dashboard({ health, progress, higherTier = false }) {
           <div className="stat-label">Day streak</div>
         </div>
       </section>
+
+      <ExpertisePath progress={progress} onChooseLesson={() => navigate('/learn')} />
 
       <section className="panel start-panel">
         <h2>Start a practice paper</h2>

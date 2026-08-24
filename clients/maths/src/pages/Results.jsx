@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import MathsVisual from '../components/MathsVisual.jsx';
+import { RewardSummary } from '../../../shared/rewards.jsx';
 
 export default function Results() {
   const navigate = useNavigate();
@@ -72,6 +73,8 @@ export default function Results() {
           <Link className="btn" to="/practice#adhoc">Quick ad-hoc round</Link>
         </div>
       </div>
+
+      <RewardSummary reward={result.reward} progress={result.progress} label="Paper XP earned" />
 
       <section className="two-col">
         <div className="panel">

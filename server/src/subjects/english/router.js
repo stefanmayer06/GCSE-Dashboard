@@ -42,17 +42,42 @@ function expiredTest(res) {
   });
 }
 
-function newSession(req, kind, fullQuestions) {
+function newSession(kind, fullQuestions, userId, topicId = null) {
   const id = crypto.randomUUID();
-  sessions.set(id, { userId: req.user.id, kind, questions: fullQuestions, at: Date.now() });
+  sessions.set(id, { kind, questions: fullQuestions, userId: String(userId), topicId, aiMarks: {}, at: Date.now() });
   if (sessions.size > 100) sessions.delete(sessions.keys().next().value);
   return id;
 }
 
-function sessionFor(req, id) {
+function sessionFor(id, userId, kind = null) {
   const s = sessions.get(id);
-  if (!s || s.userId !== req.user.id) return null;
+  if (!s || s.userId !== String(userId) || (kind && s.kind !== kind)) return null;
   return s;
+}
+
+function answersByQid(answers) {
+  const out = new Map();
+  if (!Array.isArray(answers)) return out;
+  for (const answer of answers) {
+    if (answer && answer.qid != null) out.set(answer.qid, answer.value);
+  }
+  return out;
+}
+
+function isNonblank(value) {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.some(isNonblank);
+  if (typeof value === 'object') return Object.values(value).some(isNonblank);
+  return true;
+}
+
+function sourceTextForQuestion(q) {
+  if (!q.sourceRef) return '';
+  if (q.sourceRef.paperId === 2) {
+    return `${q.sourceRef.textA || ''}\n\n${q.sourceRef.textB || ''}`.slice(0, 7000);
+  }
+  return q.sourceRef.text || '';
 }
 
 const stripMarkCtx = (q) => {
@@ -91,6 +116,7 @@ app.get('/texts/:id', (req, res) => {
 
 app.get('/topics', (req, res) => {
   const p = req.db.progress();
+  const completed = new Set(p.completedLessonIds);
   const out = {};
   for (const s of Object.values(SECTIONS)) {
     out[s.id] = {
@@ -105,6 +131,7 @@ app.get('/topics', (req, res) => {
           examWeight: t.examWeight,
           accuracy: stats && stats.total ? Math.round((100 * stats.correct) / stats.total) : null,
           answered: stats ? stats.total : 0,
+          completed: completed.has(t.id),
         };
       }),
     };
@@ -129,6 +156,7 @@ app.get('/topics/:id', (req, res) => {
     resources: t.resources,
     accuracy: stats && stats.total ? Math.round((100 * stats.correct) / stats.total) : null,
     answered: stats ? stats.total : 0,
+    completed: p.completedLessonIds.includes(t.id),
   });
 });
 
@@ -272,10 +300,10 @@ app.post('/test/:id/submit', async (req, res) => {
   };
 
   req.db.recordTest({ ...result, topicAccuracy: skills.map((s) => ({ id: s.id, percent: s.percent })) });
-  req.db.addXp(Math.round(scored * 2));
-  req.db.registerActivity();
+  const rewardResult = req.db.rewardActivity({ scoreXp: Math.round(scored * 2) });
+  const { progress, ...reward } = rewardResult;
   activeTests.delete(test.id);
-  res.json(result);
+  res.json({ ...result, reward, progress });
 });
 
 /* ---------------- practice & ad-hoc ---------------- */
@@ -285,7 +313,7 @@ app.post('/practice', (req, res) => {
   const count = Math.min(4, Math.max(1, req.body?.count || 3));
   const full = buildPractice(topicId, count);
   if (!full.length) return res.status(404).json({ error: 'Topic not found' });
-  const sessionId = newSession(req, 'practice', full);
+  const sessionId = newSession('practice', full, req.user.id, topicId);
   res.json({ sessionId, topicId, questions: full.map(stripMarkCtx) });
 });
 
@@ -295,13 +323,13 @@ app.post('/adhoc', (req, res) => {
     ? req.body.kinds.filter((k) => ['listing', 'truefalse', 'analysis'].includes(k))
     : ['listing', 'truefalse', 'analysis'];
   const full = buildAdhoc(count, kinds);
-  const sessionId = newSession(req, 'adhoc', full);
+  const sessionId = newSession('adhoc', full, req.user.id);
   res.json({ sessionId, questions: full.map(stripMarkCtx) });
 });
 
 app.post('/check', (req, res) => {
   const { sessionId, qid, value } = req.body || {};
-  const s = sessionFor(req, sessionId);
+  const s = sessionFor(sessionId, req.user.id);
   if (!s) return res.status(404).json({ error: 'Session expired — start again.' });
   const q = s.questions.find((x) => x.id === qid);
   if (!q) return res.status(404).json({ error: 'Question not found.' });
@@ -317,20 +345,20 @@ app.post('/check', (req, res) => {
 });
 
 app.post('/practice/submit', (req, res) => {
-  const { sessionId, answers, aiResults } = req.body || {};
-  const s = sessionFor(req, sessionId);
+  const { sessionId, answers } = req.body || {};
+  const s = sessionFor(sessionId, req.user.id, 'practice');
   if (!s) return res.status(404).json({ error: 'Session expired.' });
-  const aiMap = aiResults || {};
+  const answerMap = answersByQid(answers);
   let correct = 0;
   let total = 0;
   const perQ = [];
   for (const q of s.questions) {
-    const ans = (answers.find((a) => a.qid === q.id) || {}).value ?? null;
+    const ans = answerMap.get(q.id) ?? null;
     let got = 0;
     if (q.type === 'list') got = markList(ans, q.markCtx.points).marks;
     else if (q.type === 'truefalse') got = markTrueFalse(ans, q.markCtx.answers).marks;
     else if (q.markType === 'self') got = 0;
-    else got = Math.min(q.marks, Number(aiMap[q.id]?.marks) || 0);
+    else got = Math.min(q.marks, Number(s.aiMarks[q.id]) || 0);
     total += q.marks;
     correct += got;
     perQ.push({ qid: q.id, got, marks: q.marks, skillIds: q.skillIds });
@@ -342,26 +370,30 @@ app.post('/practice/submit', (req, res) => {
     const gotSum = qs.reduce((a, q) => a + (perQ.find((p) => p.qid === q.id)?.got || 0), 0);
     req.db.recordPractice({ topicId: skill, correct: gotSum, total: max });
   }
-  req.db.addXp(Math.round(correct * 2));
-  req.db.registerActivity();
+  const qualifies = s.questions.length > 0 && s.questions.every((question) => isNonblank(answerMap.get(question.id)));
+  const rewardResult = req.db.rewardActivity({
+    scoreXp: Math.round(correct * 2),
+    lessonId: qualifies ? s.topicId : null,
+  });
+  const { progress, ...reward } = rewardResult;
   sessions.delete(sessionId);
-  res.json({ correctMarks: Math.round(correct * 10) / 10, totalMarks: total, perQ });
+  res.json({ correctMarks: Math.round(correct * 10) / 10, totalMarks: total, perQ, reward, progress });
 });
 
 app.post('/adhoc/submit', (req, res) => {
-  const { sessionId, answers, aiResults } = req.body || {};
-  const s = sessionFor(req, sessionId);
+  const { sessionId, answers } = req.body || {};
+  const s = sessionFor(sessionId, req.user.id, 'adhoc');
   if (!s) return res.status(404).json({ error: 'Session expired.' });
-  const aiMap = aiResults || {};
+  const answerMap = answersByQid(answers);
   let correct = 0;
   let total = 0;
   const perQ = [];
   for (const q of s.questions) {
-    const ans = (answers.find((a) => a.qid === q.id) || {}).value ?? null;
+    const ans = answerMap.get(q.id) ?? null;
     let got = 0;
     if (q.type === 'list') got = markList(ans, q.markCtx.points).marks;
     else if (q.type === 'truefalse') got = markTrueFalse(ans, q.markCtx.answers).marks;
-    else got = Math.min(q.marks, Number(aiMap[q.id]?.marks) || 0);
+    else got = Math.min(q.marks, Number(s.aiMarks[q.id]) || 0);
     total += q.marks;
     correct += got;
     perQ.push({ qid: q.id, got, marks: q.marks, skillIds: q.skillIds });
@@ -370,17 +402,30 @@ app.post('/adhoc/submit', (req, res) => {
     const qs = s.questions.filter((q) => q.skillIds.includes(skill));
     req.db.recordPractice({ topicId: skill, correct: qs.reduce((a, q) => a + (perQ.find((p) => p.qid === q.id)?.got || 0), 0), total: qs.reduce((a, q) => a + q.marks, 0) });
   }
-  req.db.addXp(Math.round(correct * 2));
-  req.db.registerActivity();
+  const rewardResult = req.db.rewardActivity({ scoreXp: Math.round(correct * 2) });
+  const { progress, ...reward } = rewardResult;
   sessions.delete(sessionId);
-  res.json({ correctMarks: Math.round(correct * 10) / 10, totalMarks: total, perQ });
+  res.json({ correctMarks: Math.round(correct * 10) / 10, totalMarks: total, perQ, reward, progress });
 });
 
 /** Generic AI marking for practice / ad-hoc text questions. */
 app.post('/mark', async (req, res) => {
-  const { rubricKey, questionText, sourceText, answer } = req.body || {};
-  if (!rubricKey) return res.status(400).json({ error: 'rubricKey required' });
-  const out = await markAnswer({ rubricKey, questionText, sourceText, answer, apiKey, model });
+  const { sessionId, qid, answer } = req.body || {};
+  const s = sessionFor(sessionId, req.user.id);
+  if (!s) return res.status(404).json({ error: 'Session expired.' });
+  const q = s.questions.find((question) => question.id === qid);
+  if (!q?.rubricKey || q.markType === 'self') return res.status(400).json({ error: 'Question is not AI-marked.' });
+  const out = await markAnswer({
+    rubricKey: q.rubricKey,
+    questionText: q.text,
+    sourceText: sourceTextForQuestion(q),
+    answer,
+    apiKey,
+    model,
+  });
+  if (out.ai && Number.isFinite(Number(out.marks))) {
+    s.aiMarks[q.id] = Math.min(q.marks, Math.max(0, Number(out.marks)));
+  }
   res.json(out);
 });
 

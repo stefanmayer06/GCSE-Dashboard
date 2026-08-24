@@ -15,9 +15,36 @@ const defaultState = () => ({
   totalTestMarks: 0,
   totalTestCorrect: 0,
   topicStats: {},
+  completedLessons: [],
   history: [],
   chat: [],
 });
+
+const levelForXp = (xp) => Math.floor(Math.sqrt(xp / 50)) + 1;
+
+function normalizeCompletedLessons(completedLessons, topicStats) {
+  let values = [];
+  if (Array.isArray(completedLessons)) {
+    values = completedLessons;
+  } else if (completedLessons && typeof completedLessons === 'object') {
+    values = Object.entries(completedLessons)
+      .filter(([, completed]) => completed === true)
+      .map(([lessonId]) => lessonId);
+  }
+
+  const normalized = new Set(
+    values
+      .filter((lessonId) => typeof lessonId === 'string')
+      .map((lessonId) => lessonId.trim())
+      .filter(Boolean),
+  );
+  if (topicStats && typeof topicStats === 'object' && !Array.isArray(topicStats)) {
+    for (const [topicId, stats] of Object.entries(topicStats)) {
+      if (stats && Number(stats.total) > 0) normalized.add(topicId);
+    }
+  }
+  return [...normalized];
+}
 
 /**
  * Per-user, per-subject JSON store.
@@ -32,8 +59,18 @@ export function createDb(userId, subject) {
   function loadDb() {
     if (state) return state;
     try {
-      state = JSON.parse(fs.readFileSync(file, 'utf8'));
-      state = { ...defaultState(), ...state };
+      const stored = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const storedCompletions = stored.completedLessons;
+      const hasCompletedLessons = Array.isArray(storedCompletions)
+        || (storedCompletions
+          && typeof storedCompletions === 'object'
+          && !Array.isArray(storedCompletions)
+          && Object.values(storedCompletions).every((value) => typeof value === 'boolean'));
+      state = { ...defaultState(), ...stored };
+      state.completedLessons = normalizeCompletedLessons(
+        state.completedLessons,
+        hasCompletedLessons ? null : state.topicStats,
+      );
     } catch {
       state = defaultState();
     }
@@ -66,6 +103,37 @@ export function createDb(userId, subject) {
     const s = loadDb();
     s.xp += amount;
     saveDb();
+  }
+
+  function rewardActivity({ scoreXp = 0, lessonId = null } = {}) {
+    const s = loadDb();
+    const safeScoreXp = Number.isFinite(Number(scoreXp)) ? Math.max(0, Number(scoreXp)) : 0;
+    const normalizedLessonId = typeof lessonId === 'string' ? lessonId.trim() : '';
+    const levelBefore = levelForXp(s.xp);
+    const firstCompletion = Boolean(normalizedLessonId && !s.completedLessons.includes(normalizedLessonId));
+    const completionXp = firstCompletion ? 20 : 0;
+    const xpAwarded = safeScoreXp + completionXp;
+
+    if (firstCompletion) s.completedLessons.push(normalizedLessonId);
+    s.xp += xpAwarded;
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (s.lastActiveDate !== today) {
+      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      s.streak = s.lastActiveDate === yesterday ? s.streak + 1 : 1;
+      s.lastActiveDate = today;
+    }
+
+    saveDb();
+    return {
+      scoreXp: safeScoreXp,
+      completionXp,
+      xpAwarded,
+      firstCompletion,
+      levelBefore,
+      levelAfter: levelForXp(s.xp),
+      progress: progress(),
+    };
   }
 
   function recordTest(result) {
@@ -101,9 +169,10 @@ export function createDb(userId, subject) {
 
   function progress() {
     const s = loadDb();
-    const level = Math.floor(Math.sqrt(s.xp / 50)) + 1;
+    const level = levelForXp(s.xp);
     const xpInto = s.xp - (level - 1) ** 2 * 50;
     const xpNeeded = (level ** 2 - (level - 1) ** 2) * 50;
+    const completedLessonIds = [...s.completedLessons];
     return {
       xp: s.xp,
       level,
@@ -117,6 +186,8 @@ export function createDb(userId, subject) {
         : null,
       history: s.history.slice(0, 20),
       topicStats: s.topicStats,
+      completedLessonIds,
+      lessonsCompleted: completedLessonIds.length,
     };
   }
 
@@ -142,6 +213,7 @@ export function createDb(userId, subject) {
     saveDb,
     registerActivity,
     addXp,
+    rewardActivity,
     recordTest,
     recordPractice,
     progress,

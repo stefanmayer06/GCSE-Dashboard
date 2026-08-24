@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { SECTION_NAMES } from '../colors.js';
+import { ExpertisePath } from '../../../shared/rewards.jsx';
 
 export default function Dashboard({ health, progress }) {
   const navigate = useNavigate();
@@ -71,6 +72,8 @@ export default function Dashboard({ health, progress }) {
           <div className="stat-label">Day streak</div>
         </div>
       </section>
+
+      <ExpertisePath progress={progress} onChooseLesson={() => navigate('/learn')} />
 
       <section className="panel start-panel">
         <h2>Start a practice paper</h2>

@@ -37,6 +37,7 @@ export default function Learn() {
                   <Link key={t.id} to={`/learn/${t.id}`} className="topic-card">
                     <div className="topic-name">{t.name}</div>
                     <div className="topic-blurb">{t.blurb}</div>
+                    {t.completed && <div className="lesson-stamp">Lesson completed</div>}
                     <div className="topic-foot">
                       <span className="topic-acc">
                         {t.accuracy != null ? (
@@ -44,7 +45,7 @@ export default function Learn() {
                             {t.accuracy}%
                           </span>
                         ) : (
-                          <span className="acc-pill new">not started</span>
+                          <span className="acc-pill new">not practised</span>
                         )}
                       </span>
                       <span className="topic-go">Study →</span>

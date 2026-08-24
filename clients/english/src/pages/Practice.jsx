@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
+import { RewardSummary } from '../../../shared/rewards.jsx';
 
 const LS_KEY = 'englishmate-active-test';
 
@@ -26,7 +27,7 @@ function loadSaved() {
   }
 }
 
-export default function Practice({ health }) {
+export default function Practice({ health, onProgress }) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const saved = useRef(loadSaved());
@@ -167,6 +168,7 @@ export default function Practice({ health }) {
         value: ansOverride[q.id] ?? answers[q.id] ?? null,
       }));
       const result = await api.submitTest(test.id, list, dur ?? elapsed);
+      onProgress?.(result.progress);
       localStorage.removeItem(LS_KEY);
       localStorage.setItem('englishmate-last-result', JSON.stringify(result));
       navigate('/results');
@@ -288,14 +290,14 @@ export default function Practice({ health }) {
         )}
       </section>
 
-      <AdhocSection />
+      <AdhocSection onProgress={onProgress} />
     </div>
   );
 }
 
 /* ---------------- ad-hoc quick fire ---------------- */
 
-function AdhocSection() {
+function AdhocSection({ onProgress }) {
   const [kinds, setKinds] = useState(['listing', 'truefalse', 'analysis']);
   const [count, setCount] = useState(10);
   const [running, setRunning] = useState(null);
@@ -322,7 +324,7 @@ function AdhocSection() {
   }
 
   if (running) {
-    return <AdhocRunner set={running} onExit={() => setRunning(null)} onNew={startAdhoc} />;
+    return <AdhocRunner key={running.sessionId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} />;
   }
 
   const labels = { listing: 'List four things', truefalse: 'True or false', analysis: 'Language analysis' };
@@ -368,18 +370,13 @@ function AdhocSection() {
 }
 
 /* Shared extended-answer checking for ad-hoc and topic practice */
-export function useExtendedCheck() {
+export function useExtendedCheck(sessionId) {
   const [feedback, setFeedback] = useState({});
   const [aiResults, setAiResults] = useState({});
 
   async function checkText(q, value) {
     const answer = typeof value === 'object' ? value?.text ?? '' : value;
-    const sourceText = q.sourceRef
-      ? q.sourceRef.paperId === 2
-        ? `${q.sourceRef.textA || ''}\n\n${q.sourceRef.textB || ''}`.slice(0, 7000)
-        : q.sourceRef.text
-      : '';
-    const res = await api.mark(q.rubricKey, q.text, sourceText, answer);
+    const res = await api.mark(sessionId, q.id, answer);
     setFeedback((f) => ({ ...f, [q.id]: res }));
     if (res.ai) setAiResults((a) => ({ ...a, [q.id]: res }));
     return res;
@@ -394,10 +391,10 @@ export function useExtendedCheck() {
   return { feedback, setFeedback, aiResults, checkText, checkAuto };
 }
 
-function AdhocRunner({ set, onExit, onNew }) {
+function AdhocRunner({ set, onExit, onNew, onProgress }) {
   const [answers, setAnswers] = useState({});
   const [done, setDone] = useState(null);
-  const { feedback, aiResults, checkText, checkAuto } = useExtendedCheck();
+  const { feedback, aiResults, checkText, checkAuto } = useExtendedCheck(set.sessionId);
   const sessionId = set.sessionId;
 
   async function checkOne(q, value) {
@@ -407,7 +404,8 @@ function AdhocRunner({ set, onExit, onNew }) {
 
   async function finish() {
     const res = await api.adhocSubmit(sessionId, set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null })), aiResults);
-    setDone({ correct: res.correctMarks, total: res.totalMarks });
+    onProgress?.(res.progress);
+    setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
   }
 
   const allDone = set.questions.every((q) => feedback[q.id]);
@@ -435,7 +433,8 @@ function AdhocRunner({ set, onExit, onNew }) {
         ))}
         {done ? (
           <div className="quiz-done">
-            <h3>You scored {done.correct}/{done.total} 🎉</h3>
+            <h3>You scored {done.correct}/{done.total}</h3>
+            <RewardSummary reward={done.reward} progress={done.progress} />
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <button className="btn btn-primary" onClick={onNew}>Another round</button>
               <button className="btn" onClick={onExit}>Back to setup</button>

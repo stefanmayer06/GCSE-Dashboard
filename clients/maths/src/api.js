@@ -43,8 +43,8 @@ export const api = {
   practice: (topicId, count = 8) =>
     req('/practice', { method: 'POST', body: { topicId, count } }),
   check: (qid, value) => req('/check', { method: 'POST', body: { qid, value } }),
-  practiceSubmit: (topicId, answers) =>
-    req('/practice/submit', { method: 'POST', body: { topicId, answers } }),
+  practiceSubmit: (sessionId, topicId, answers) =>
+    req('/practice/submit', { method: 'POST', body: { sessionId, topicId, answers } }),
   adhoc: (count, papers) => req('/adhoc', { method: 'POST', body: { count, papers } }),
   adhocSubmit: (answers) => req('/adhoc/submit', { method: 'POST', body: { answers } }),
   progress: () => req('/progress'),

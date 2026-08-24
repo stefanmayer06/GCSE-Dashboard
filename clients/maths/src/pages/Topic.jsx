@@ -1,25 +1,31 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import LessonVisual from '../components/LessonVisual.jsx';
 import MathsVisual from '../components/MathsVisual.jsx';
+import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
 
-export default function Topic() {
+export default function Topic({ onProgress }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const { topicId } = useParams();
+  const navigate = useNavigate();
   const [topic, setTopic] = useState(null);
   const [quiz, setQuiz] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
   const [answers, setAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
   const [done, setDone] = useState(null);
+  const [celebration, setCelebration] = useState(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setTopic(null);
     setQuiz(null);
+    setSessionId(null);
     setAnswers({});
     setFeedback({});
     setDone(null);
+    setCelebration(null);
     api.topic(topicId).then(setTopic).catch(() => {});
   }, [topicId]);
 
@@ -28,9 +34,11 @@ export default function Topic() {
     try {
       const q = await api.practice(topicId, 5);
       setQuiz(q.questions);
+      setSessionId(q.sessionId);
       setAnswers({});
       setFeedback({});
       setDone(null);
+      setCelebration(null);
     } finally {
       setBusy(false);
     }
@@ -44,8 +52,13 @@ export default function Topic() {
 
   async function finishQuiz() {
     const list = quiz.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }));
-    const res = await api.practiceSubmit(topicId, list);
-    setDone({ correct: res.correctMarks, total: res.totalMarks });
+    const res = await api.practiceSubmit(sessionId, topicId, list);
+    setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
+    onProgress?.(res.progress);
+    if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
+    if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
+      setCelebration(res.reward);
+    }
     setFeedback((f) => {
       const out = { ...f };
       for (const row of res.perQ) {
@@ -67,6 +80,7 @@ export default function Topic() {
              {topic.strandName} · roughly {topic.examWeight}% of your {higherTier ? 'Higher' : 'Foundation'} paper
             {topic.accuracy != null ? ` · your accuracy so far: ${topic.accuracy}%` : ''}
           </p>
+          {topic.completed && <div className="lesson-stamp topic-complete-stamp">Lesson completed</div>}
         </div>
       </header>
 
@@ -178,7 +192,8 @@ export default function Topic() {
 
             {done ? (
               <div className="quiz-done">
-                <h3>You scored {done.correct}/{done.total} 🎉</h3>
+                <h3>You scored {done.correct}/{done.total}</h3>
+                <RewardSummary reward={done.reward} progress={done.progress} />
                 <button className="btn btn-primary" onClick={startQuiz}>Another 5</button>
               </div>
             ) : (
@@ -212,6 +227,19 @@ export default function Topic() {
         <p className="sub">Ask the AI tutor to explain {topic.name} your way.</p>
         <Link className="btn btn-primary" to="/chat">Open AI tutor →</Link>
       </section>
+
+      {celebration && (
+        <RewardCelebration
+          reward={celebration}
+          lessonName={topic.name}
+          onClose={() => setCelebration(null)}
+          onPracticeAgain={() => {
+            setCelebration(null);
+            startQuiz();
+          }}
+          onChooseLesson={() => navigate('/learn')}
+        />
+      )}
     </div>
   );
 }

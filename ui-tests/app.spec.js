@@ -119,6 +119,8 @@ test('Higher Maths exposes three 8300H papers with Higher grade boundaries', asy
   expect(paper.totalMarks).toBe(80);
   expect(paper.questions.reduce((sum, q) => sum + q.marks, 0)).toBe(80);
   expect(paper.questions.some((q) => /surds|function|quadratic|proof/i.test(`${q.topic} ${q.text}`))).toBeTruthy();
+  expect(paper.questions.filter((q) => q.exceptional).length).toBe(1);
+  expect(paper.questions.some((q) => q.stimulus?.type === 'cartesian' || q.stimulus?.type === 'histogram')).toBeTruthy();
 
   const submit = await page.request.post(`${BASE}/api/maths-higher/test/${paper.id}/submit`, {
     data: { answers: paper.questions.map((q) => ({ qid: q.id, value: null })), durationSec: 5 },
@@ -127,6 +129,21 @@ test('Higher Maths exposes three 8300H papers with Higher grade boundaries', asy
   expect(result.tier).toBe('higher');
   expect(result.boundaries[0].grade).toBe(9);
   expect(result.strandAnalysis.length).toBeGreaterThan(0);
+});
+
+test('Higher Maths renders an accessible graph question in the exam runner', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/maths-higher/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
+  const graphIndex = await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem('mathsmate-higher-active-test'));
+    return saved.test.questions.findIndex((question) => question.stimulus);
+  });
+  expect(graphIndex).toBeGreaterThanOrEqual(0);
+  await page.locator('.q-dot').nth(graphIndex).click();
+  await expect(page.locator('.graph-stimulus svg')).toBeVisible();
+  await expect(page.locator('.graph-stimulus svg')).toHaveAttribute('role', 'img');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
 });
 
 test('dark mode toggles, persists and reaches every surface', async ({ page }) => {

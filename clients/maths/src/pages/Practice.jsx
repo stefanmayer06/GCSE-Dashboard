@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { STRAND_COLORS } from '../colors.js';
+import GraphStimulus from '../components/GraphStimulus.jsx';
 
 const LS_KEY = window.location.pathname.startsWith('/maths-higher') ? 'mathsmate-higher-active-test' : 'mathsmate-active-test';
 
@@ -182,8 +183,8 @@ export default function Practice() {
       <section className="panel">
         <h2>Pick your paper</h2>
         <p className="sub">
-          Each paper follows AQA&apos;s published topic allocation, with a difficulty ramp
-          (easier questions first) and stretch questions ⚡ at the end.
+          Higher papers use AQA&apos;s approximate weighting across the qualification; any specification
+          topic can appear on any paper. Each generated paper includes graphical work and one synoptic challenge.
         </p>
         <div className="papers-grid">
           {(papers || [1, 2, 3]).map((p) =>
@@ -349,9 +350,11 @@ function AdhocRunner({ set, onExit, onNew }) {
                 <span>Q{i + 1}</span>
                 <span>{q.marks} mark{q.marks > 1 ? 's' : ''}</span>
                 <span>{q.topic}</span>
-                {q.stretch && <span className="q-tag stretch">⚡ Stretch</span>}
+                {q.stretch && !q.exceptional && <span className="q-tag stretch">⚡ Stretch</span>}
+                {q.exceptional && <span className="q-tag stretch">Synoptic challenge</span>}
               </div>
               <div className="quiz-q-text">{q.text.split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
+              <GraphStimulus stimulus={q.stimulus} />
 
               {q.input.type === 'mcq' ? (
                 <div className="choices">
@@ -371,7 +374,7 @@ function AdhocRunner({ set, onExit, onNew }) {
                 <input
                   className="answer-input"
                   type="text"
-                  inputMode="decimal"
+                  inputMode={q.input.type === 'number' ? 'decimal' : 'text'}
                   disabled={!!fb}
                   placeholder={q.input.placeholder || 'Your answer'}
                   value={answers[q.id] ?? ''}
@@ -504,9 +507,11 @@ function TestScreen(props) {
               <span className="q-tag">Q{current + 1}</span>
               <span className="q-tag marks">{q.marks} mark{q.marks > 1 ? 's' : ''}</span>
               <span className="q-tag topic">{q.topic}</span>
-              {q.stretch && <span className="q-tag stretch">⚡ Stretch</span>}
+              {q.stretch && !q.exceptional && <span className="q-tag stretch">⚡ Stretch</span>}
+              {q.exceptional && <span className="q-tag stretch">Synoptic challenge</span>}
             </div>
             <div className="q-text">{q.text.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>
+            <GraphStimulus stimulus={q.stimulus} />
 
             {q.input.type === 'mcq' ? (
               <div className="choices">
@@ -525,7 +530,7 @@ function TestScreen(props) {
               <input
                 className="answer-input"
                 type="text"
-                inputMode="decimal"
+                inputMode={q.input.type === 'number' ? 'decimal' : 'text'}
                 placeholder={q.input.placeholder || 'Your answer'}
                 value={answers[q.id] ?? ''}
                 onChange={(e) => onAnswer(q.id, e.target.value)}

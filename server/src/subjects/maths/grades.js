@@ -7,7 +7,7 @@ export const BOUNDARIES = {
   higher: [
     { grade: 9, boundary: 64 }, { grade: 8, boundary: 56 }, { grade: 7, boundary: 48 },
     { grade: 6, boundary: 40 }, { grade: 5, boundary: 32 }, { grade: 4, boundary: 24 },
-    { grade: 3, boundary: 16 }, { grade: 2, boundary: 10 }, { grade: 1, boundary: 6 },
+    { grade: 3, boundary: 16 },
   ],
 };
 

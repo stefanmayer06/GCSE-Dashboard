@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api.js';
+import GraphStimulus from '../components/GraphStimulus.jsx';
 
 export default function Topic() {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
@@ -122,6 +123,7 @@ export default function Topic() {
                     <span>{q.marks} mark{q.marks > 1 ? 's' : ''}</span>
                   </div>
                   <div className="quiz-q-text">{q.text.split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
+                  <GraphStimulus stimulus={q.stimulus} />
 
                   {q.input.type === 'mcq' ? (
                     <div className="choices">
@@ -141,7 +143,7 @@ export default function Topic() {
                     <input
                       className="answer-input"
                       type="text"
-                      inputMode="decimal"
+                      inputMode={q.input.type === 'number' ? 'decimal' : 'text'}
                       disabled={!!fb}
                       placeholder={q.input.placeholder || 'Your answer'}
                       value={answers[q.id] ?? ''}

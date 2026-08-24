@@ -127,11 +127,11 @@ export default function gen(v) {
     const flat = [];
     for (const [x, f] of c.table) for (let i = 0; i < f; i++) flat.push(x);
     flat.sort((a, b) => a - b);
-    ans = c.a;
+    ans = totalF % 2 === 0 ? (flat[totalF / 2 - 1] + flat[totalF / 2]) / 2 : flat[Math.floor(totalF / 2)];
     text = `The table shows the number of pets owned by ${totalF} students.\nNumber of pets (x): frequency\n${rows.join('   ')}\nWork out the median number of pets.`;
     input = { type: 'number', tolerance: 1e-9 };
-    const pos = (totalF + 1) / 2;
-    sol = [[`Total frequency = ${totalF}, so the median is in position ${pos}.`, `List them in order: ${flat.join(', ')}.`, `The middle value is ${ans}.`]];
+    const pos = totalF % 2 === 0 ? `positions ${totalF / 2} and ${totalF / 2 + 1}` : `position ${(totalF + 1) / 2}`;
+    sol = [[`Total frequency = ${totalF}, so use ${pos}.`, `List them in order: ${flat.join(', ')}.`, `The median is ${ans}.`]];
     hint = 'Find the middle POSITION first: (total frequency + 1) ÷ 2.';
     return { marks: 3, difficulty: 2, stretch: false, text, input, answer: ans, answerText: String(ans), solution: sol, hint };
   }

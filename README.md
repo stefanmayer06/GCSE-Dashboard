@@ -13,7 +13,7 @@ One revision dashboard for AQA GCSE Maths Foundation, Maths Higher and English L
 ## Subjects
 
 - **MathsMate Foundation**: AQA Mathematics 8300 Foundation, three papers, 1,730 generated questions, topic lessons, progress tracking and an AI tutor.
-- **MathsMate Higher**: AQA Mathematics 8300H, three 80-mark papers, 896 original Higher generators plus supporting topic practice, deterministic mark schemes, grades 4-9 and a Higher-aware AI tutor.
+- **MathsMate Higher**: AQA Mathematics 8300H, three 80-mark papers, original Higher generators plus supporting topic practice, accessible graph questions, deterministic mark schemes, grades 4-9 and a Higher-aware AI tutor.
 - **EnglishMate**: AQA English Language 8700, both papers, source-text library, skill lessons, AQA-style AI marking, progress tracking and an AI tutor.
 
 Open `http://localhost:3000`, choose Foundation Maths, Higher Maths or English, then sign in. Your light or dark theme choice is remembered across the whole site.

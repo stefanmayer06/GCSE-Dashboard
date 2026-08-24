@@ -143,10 +143,10 @@ export default function gen(v) {
     const unit = Math.max(6, Math.abs(c.b - c.a) * Math.round(24 / Math.abs(c.b - c.a)));
     const total = (c.a + c.b) * unit;
     const diff = Math.abs(c.b - c.a) * unit;
-    ans = Math.max(c.a, c.b) * unit;
+    ans = c.b * unit;
     text = `Nina and Omar share £${total} in the ratio ${c.a} : ${c.b}.\nOmar gets £${diff} more than Nina (Omar has the bigger share).\nHow much money does Omar get?`;
     input = { type: 'number', placeholder: '£' };
-    sol = [[`The difference in parts = ${Math.abs(c.b - c.a)} parts = £${diff}.`, `One part = £${diff} ÷ ${Math.abs(c.b - c.a)} = £${unit}.`, `Omar gets ${Math.max(c.a, c.b)} × £${unit} = £${ans}.`]];
+    sol = [[`The difference in parts = ${c.b - c.a} parts = £${diff}.`, `One part = £${diff} ÷ ${c.b - c.a} = £${unit}.`, `Omar gets ${c.b} × £${unit} = £${ans}.`]];
     hint = 'The DIFFERENCE between the shares corresponds to the difference in parts.';
     return { marks: 4, difficulty: 3, stretch: true, text, input, answer: ans, answerText: `£${ans}`, solution: sol, hint };
   }

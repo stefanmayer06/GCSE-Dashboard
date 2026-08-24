@@ -93,6 +93,8 @@ session, so a user may need to start a paper again after a restart.
 - Higher questions are original AQA 8300H-aligned generators, not copied past-paper text.
 - Keep Higher-only practice and grade predictions separate from Foundation progress.
 - Every generated question must include an exact answer, worked solution and deterministic marking metadata.
+- Every generated Higher paper must contain at least one accessible graph stimulus, no calculator-required items on 8300/1H, and exactly one item marked as an exceptional synoptic challenge.
+- AQA content weightings apply approximately across the qualification, not as fixed per-paper allocations; any specification topic may appear on any Higher paper.
 
 ### English
 

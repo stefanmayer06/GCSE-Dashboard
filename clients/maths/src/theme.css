@@ -63,3 +63,29 @@
   border-radius: 50%;
   pointer-events: none;
 }
+
+.graph-stimulus {
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid var(--line-strong);
+  background: var(--paper-muted);
+}
+
+.graph-stimulus figcaption {
+  margin-bottom: 8px;
+  color: var(--quiet);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.graph-stimulus svg { display: block; width: 100%; height: auto; max-height: 430px; }
+.graph-paper { fill: var(--paper); stroke: var(--line-strong); }
+.graph-grid { stroke: var(--line); stroke-width: 1; }
+.graph-axis { stroke: var(--ink); stroke-width: 1.7; }
+.graph-label, .graph-axis-title { fill: var(--quiet); font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.graph-axis-title { fill: var(--ink); font-weight: 700; }
+.graph-series { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.histogram-bar { fill: var(--accent-wash); stroke: var(--accent); stroke-width: 2; }

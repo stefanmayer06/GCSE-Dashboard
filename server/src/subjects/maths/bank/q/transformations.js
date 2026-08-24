@@ -105,7 +105,7 @@ export default function gen(v) {
       { shape: 'rectangle (not a square)', a: 2, w: [4, 1, 3] },
       { shape: 'regular hexagon', a: 6, w: [3, 2, 12] },
       { shape: 'isosceles triangle', a: 1, w: [2, 3, 4] },
-      { shape: 'circle', a: 4, w: [1, 2, 3] },
+      { shape: 'regular octagon', a: 8, w: [4, 2, 6] },
       { shape: 'regular pentagon', a: 5, w: [1, 10, 2] },
       { shape: 'parallelogram (not a rectangle or rhombus)', a: 0, w: [2, 1, 4] },
     ];

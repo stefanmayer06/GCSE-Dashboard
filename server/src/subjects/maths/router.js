@@ -127,6 +127,7 @@ app.post('/test/new', (req, res) => {
     tier: isHigher(req) ? 'higher' : 'foundation',
     calculator: paper.calculator,
     questions: paper.questions,
+    totalMarks: paper.totalMarks,
     startedAt: Date.now(),
   });
   if (activeTests.size > 50) {
@@ -143,6 +144,7 @@ app.post('/test/new', (req, res) => {
     totalMarks: paper.totalMarks,
     minutes: paper.minutes,
     stretchCount: paper.stretchCount,
+    exceptionalCount: paper.exceptionalCount || 0,
     strandCoverage: paper.strandCoverage,
     questions: paper.questions,
   });

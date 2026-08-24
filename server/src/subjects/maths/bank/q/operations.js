@@ -83,7 +83,7 @@ export default function gen(v) {
     ans = n % 10 === 0 ? null : n;
     if (ans === null) {
       text = `Work out  ${n * 2} ÷ ${b} × 2`;
-      ans = n * 2;
+      ans = 4 * a;
       input = { type: 'number' };
       sol = [`Division and multiplication have equal priority — work left to right.`, `${n * 2} ÷ ${b} = ${2 * a}, then × 2 = ${ans}`];
       hint = 'Left to right: ÷ and × are equal, do whatever comes first.';
@@ -100,9 +100,10 @@ export default function gen(v) {
   if (t === 6) {
     const d = [2, 4, 5, 8][p % 4];
     const a = ri(r, 11, 99) / 10;
-    ans = a * d * 10;
-    text = d === 4 || d === 2 ? `Work out  ${a} × 100` : `Work out  ${a} × ${d === 5 ? 1000 : 100}`;
-    sol = [`Each zero moves the decimal point one place to the right.`, `${a} × ${text.includes('1000') ? 1000 : 100} = ${ans}`];
+    const multiplier = d === 5 ? 1000 : 100;
+    ans = a * multiplier;
+    text = `Work out  ${a} × ${multiplier}`;
+    sol = [`Each zero moves the decimal point one place to the right.`, `${a} × ${multiplier} = ${ans}`];
     hint = '×100 moves the point 2 places right, ×1000 moves it 3 right.';
     input = { type: 'number' };
     return { marks: 1, difficulty: 1, stretch: false, text, input, answer: ans, answerText: String(ans), solution: sol, hint };

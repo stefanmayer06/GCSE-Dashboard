@@ -100,10 +100,10 @@ export default function gen(v) {
 
   if (t === 4) {
     const cases = [
-      { tallies: 'IIII III', n: 8 }, { tallies: 'IIII', n: 4 }, { tallies: 'IIII IIII I', n: 9 },
-      { tallies: 'IIII II', n: 7 }, { tallies: 'IIII IIII IIII', n: 12 }, { tallies: 'IIII I', n: 6 },
-      { tallies: 'IIII IIII', n: 8 }, { tallies: 'II', n: 2 }, { tallies: 'IIII IIII II', n: 10 },
-      { tallies: 'III', n: 3 }, { tallies: 'IIII IIII III', n: 11 }, { tallies: 'I', n: 1 },
+      { tallies: '||||/ |||', n: 8 }, { tallies: '||||', n: 4 }, { tallies: '||||/ ||||', n: 9 },
+      { tallies: '||||/ ||', n: 7 }, { tallies: '||||/ ||||/ ||', n: 12 }, { tallies: '||||/ |', n: 6 },
+      { tallies: '||||/ |||', n: 8 }, { tallies: '||', n: 2 }, { tallies: '||||/ ||||/', n: 10 },
+      { tallies: '|||', n: 3 }, { tallies: '||||/ ||||/ |', n: 11 }, { tallies: '|', n: 1 },
     ];
     const c = cases[p % 12];
     ans = c.n;

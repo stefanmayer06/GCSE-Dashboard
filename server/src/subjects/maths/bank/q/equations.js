@@ -50,7 +50,7 @@ export default function gen(v) {
     const x = ri(r, 2, 10);
     const b = ri(r, 1, 12);
     const c = x + b;
-    ans = x;
+    ans = a * x;
     text = `Solve  x/${a} + ${b} = ${c}`;
     input = { type: 'number' };
     sol = [[`Subtract ${b} from both sides: x/${a} = ${x}.`, `Multiply both sides by ${a}: x = ${ans}.`]];
@@ -77,7 +77,7 @@ export default function gen(v) {
     const b = [1, 2, 3, 4, 2, 3, 1, 2][p % 8];
     const cx = a - 1;
     ans = x;
-    const total = cx * x;
+    const total = x + b;
     text = `Solve  ${a}x + ${b} = ${cx}x + ${total}`;
     input = { type: 'number' };
     sol = [[`Get the x terms on one side: subtract ${cx}x from both sides → x + ${b} = ${total}.`, `x = ${total} − ${b} = ${ans}.`]];

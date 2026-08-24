@@ -18,6 +18,18 @@ const KEYWORDS = [
   { re: /sequence|nth/i, msg: 'Sequences: nth term = dn + (a − d), where d is the common difference and a is the first term.' },
 ];
 
+function contentText(value) {
+  if (typeof value === 'string') return value.trim();
+  if (Array.isArray(value)) {
+    return value
+      .map((part) => (typeof part === 'string' ? part : part?.text || part?.content || ''))
+      .join('')
+      .trim();
+  }
+  if (value && typeof value === 'object') return String(value.text || value.content || '').trim();
+  return '';
+}
+
 export async function askTutor(messages, { model, apiKey, tier = 'foundation' }) {
   if (!apiKey) {
     const last = [...messages].reverse().find((m) => m.role === 'user');
@@ -43,7 +55,8 @@ Rules:
     model: model || 'qwen/qwen3.7-flash',
     messages: [{ role: 'system', content: system }, ...messages.slice(-12)],
     temperature: 0.4,
-    max_tokens: 700,
+    max_tokens: 1200,
+    reasoning: { effort: 'none' },
   };
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -70,6 +83,6 @@ Rules:
     };
   }
   const data = await res.json();
-  const reply = data.choices?.[0]?.message?.content || 'Hmm, I got an empty reply. Try again!';
+  const reply = contentText(data.choices?.[0]?.message?.content) || 'Hmm, I got an empty reply. Try again!';
   return { reply, model: data.model || (model || 'qwen/qwen3.7-flash') };
 }

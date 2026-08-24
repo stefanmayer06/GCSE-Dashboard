@@ -24,7 +24,10 @@ export default function Chat({ health }) {
       .chatHistory()
       .then((r) => {
         if (r.messages.length) {
-          setMessages(r.messages.map((m) => ({ role: m.role, content: m.content })));
+          const history = r.messages
+            .map((m) => ({ role: m.role, content: m.content }))
+            .filter((m) => m.role !== 'assistant' || String(m.content || '').trim());
+          setMessages(history.length ? history : [{ role: 'assistant', content: "Hey! I'm your English Language tutor, tuned for AQA GCSE (8700)." }]);
         } else {
           setMessages([
             {
@@ -89,7 +92,7 @@ export default function Chat({ health }) {
             <div key={i} className={`msg ${m.role}`}>
               <div className="msg-avatar">{m.role === 'user' ? '🧑' : '🤖'}</div>
               <div className="msg-body">
-                <div className="msg-text">{m.content.split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
+                <div className="msg-text">{String(m.content ?? '').split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
                 {m.role === 'assistant' && m.model && <div className="msg-model">{m.model}</div>}
               </div>
             </div>

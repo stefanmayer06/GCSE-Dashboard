@@ -2,6 +2,18 @@ import { rubricFor } from './marking.js';
 
 const DEFAULT_MODEL = 'qwen/qwen3.7-flash';
 
+export function contentText(value) {
+  if (typeof value === 'string') return value.trim();
+  if (Array.isArray(value)) {
+    return value
+      .map((part) => (typeof part === 'string' ? part : part?.text || part?.content || ''))
+      .join('')
+      .trim();
+  }
+  if (value && typeof value === 'object') return String(value.text || value.content || '').trim();
+  return '';
+}
+
 export function aiConfig() {
   return {
     apiKey: process.env.OPENROUTER_API_KEY || '',
@@ -9,7 +21,7 @@ export function aiConfig() {
   };
 }
 
-async function callOpenRouter({ system, user, json = false, apiKey, model }) {
+async function callOpenRouter({ system, user, json = false, apiKey, model, maxTokens }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 90000);
   try {
@@ -25,7 +37,8 @@ async function callOpenRouter({ system, user, json = false, apiKey, model }) {
         model,
         messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
         temperature: 0.3,
-        max_tokens: json ? 1100 : 800,
+        max_tokens: maxTokens || (json ? 1100 : 800),
+        reasoning: { effort: 'none' },
         ...(json ? { response_format: { type: 'json_object' } } : {}),
       }),
     });
@@ -34,7 +47,8 @@ async function callOpenRouter({ system, user, json = false, apiKey, model }) {
       throw new Error(`OpenRouter ${res.status}: ${err.slice(0, 200)}`);
     }
     const data = await res.json();
-    return data.choices?.[0]?.message?.content || '';
+    const message = data.choices?.[0]?.message || {};
+    return contentText(message.content);
   } finally {
     clearTimeout(timer);
   }
@@ -164,8 +178,13 @@ Rules:
       user: messages.slice(-12).map((m) => `${m.role === 'user' ? 'Student' : 'Tutor'}: ${m.content}`).join('\n\n') + '\n\nTutor:',
       apiKey,
       model,
+      maxTokens: 1200,
     });
-    return { reply: raw, model: model || DEFAULT_MODEL };
+    return {
+      reply: raw || 'The AI returned an empty response. Please try again.',
+      model: model || DEFAULT_MODEL,
+      ...(raw ? {} : { error: true }),
+    };
   } catch (e) {
     return {
       reply: `The AI tutor is unavailable right now (${e.message}). Try again in a moment.`,

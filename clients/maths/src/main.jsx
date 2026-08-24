@@ -5,6 +5,7 @@ import App from './App.jsx';
 import './styles.css';
 import '../../shared/study-desk.css';
 import './theme.css';
+import './visuals.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

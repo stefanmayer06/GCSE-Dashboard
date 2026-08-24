@@ -470,7 +470,7 @@ export async function loadHigherBank() {
       difficulty: item.difficulty,
       stretch: item.difficulty === 3,
       exceptional: false,
-      calculator: 'either',
+      calculator: item.calculatorOnly ? 'required' : 'either',
       familyId: `${topic.id}-${item.text.split('\n')[0]}`,
       specRefs: [],
       ao: item.difficulty === 1 ? ['AO1'] : item.difficulty === 2 ? ['AO1', 'AO2'] : ['AO2', 'AO3'],
@@ -612,7 +612,8 @@ export function buildHigherPaper(type = 'full', paperId = 1) {
       selection.forEach((item) => { picked.push(item); used.add(item.id); });
     }
     const exceptionalCount = picked.filter((item) => item.exceptional).length;
-    if (failed || exceptionalCount !== 1 || !picked.some((item) => item.stimulus) || picked.reduce((sum, item) => sum + item.marks, 0) !== total || picked.length < (total === 80 ? 24 : 12) || picked.length > (total === 80 ? 38 : 22)) continue;
+    const hasGraph = picked.some((item) => item.stimulus?.type === 'cartesian' || item.stimulus?.type === 'histogram');
+    if (failed || exceptionalCount !== 1 || !hasGraph || picked.reduce((sum, item) => sum + item.marks, 0) !== total || picked.length < (total === 80 ? 24 : 12) || picked.length > (total === 80 ? 38 : 22)) continue;
     const orderRng = makeRand('higher-paper-order', attempt * 97 + picked.length);
     const ramp = shuffle(orderRng, picked)
       .map((item) => ({ item, score: item.difficulty + orderRng() * 1.15 }))

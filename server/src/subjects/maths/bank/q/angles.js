@@ -40,9 +40,9 @@ export default function gen(v) {
   }
 
   if (t === 3) {
-    const a = ri(r, 40, 100);
-    const b = ri(r, 40, 100);
-    const c = ri(r, 40, 100);
+    const a = ri(r, 50, 110);
+    const b = ri(r, 50, 110);
+    const c = ri(r, Math.max(40, 181 - a - b), Math.min(100, 319 - a - b));
     ans = 360 - a - b - c;
     text = `Three angles in a quadrilateral are ${a}°, ${b}° and ${c}°.\nWork out the fourth angle.`;
     input = { type: 'number', placeholder: '°' };
@@ -54,20 +54,20 @@ export default function gen(v) {
   if (t === 4) {
     const given = ri(r, 35, 140);
     ans = given;
-    text = `Two parallel lines are crossed by another line.\nOne angle is ${given}° and another angle is ALTERNATE (Z-shape) to it.\nWhat is the size of the alternate angle?`;
+    text = `Two parallel lines are crossed by a transversal.\nOne angle is ${given}° and another angle is alternate to it.\nWhat is the size of the alternate angle?`;
     input = { type: 'number', placeholder: '°' };
-    sol = [[`Alternate angles (Z-shape) are EQUAL.`, `The alternate angle is also ${ans}°.`]];
-    hint = 'Z-shape = alternate angles = equal. F-shape = corresponding = equal.';
+    sol = [[`Alternate angles between parallel lines are equal.`, `The alternate angle is also ${ans}°.`]];
+    hint = 'Alternate angles between parallel lines are equal.';
     return { marks: 2, difficulty: 2, stretch: false, text, input, answer: ans, answerText: `${ans}°`, solution: sol, hint };
   }
 
   if (t === 5) {
     const given = ri(r, 35, 140);
     ans = 180 - given;
-    text = `Two parallel lines are crossed by another line.\nOne angle is ${given}° and another angle is CO-INTERIOR (C-shape) with it.\nWork out the size of the co-interior angle.`;
+    text = `Two parallel lines are crossed by a transversal.\nOne angle is ${given}° and another angle is co-interior with it.\nWork out the size of the co-interior angle.`;
     input = { type: 'number', placeholder: '°' };
-    sol = [[`Co-interior angles (C-shape) add up to 180°.`, `180 − ${given} = ${ans}°`]];
-    hint = 'C-shape = co-interior = add to 180°.';
+    sol = [[`Co-interior angles between parallel lines add up to 180°.`, `180 − ${given} = ${ans}°`]];
+    hint = 'Co-interior angles between parallel lines add to 180°.';
     return { marks: 2, difficulty: 2, stretch: false, text, input, answer: ans, answerText: `${ans}°`, solution: sol, hint };
   }
 
@@ -80,7 +80,7 @@ export default function gen(v) {
     ];
     const c = polys[p % 8];
     ans = Math.round(c.a * 100) / 100;
-    text = `Work out the size of one interior angle of a regular ${c.name}.`;
+    text = `Work out the size of one interior angle of a regular ${c.name}.${Number.isInteger(c.a) ? '' : '\nGive your answer to 2 decimal places.'}`;
     input = { type: 'number', tolerance: 0.011, placeholder: '°' };
     sol = [[`Sum of interior angles = 180 × (${c.n} − 2) = ${180 * (c.n - 2)}°.`, `Each interior angle = ${180 * (c.n - 2)} ÷ ${c.n} = ${ans}° (rounded).`]];
     hint = 'Regular = all angles equal. Sum first, then divide by the number of sides.';

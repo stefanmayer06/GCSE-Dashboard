@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { STRAND_COLORS } from '../colors.js';
-import GraphStimulus from '../components/GraphStimulus.jsx';
+import MathsVisual from '../components/MathsVisual.jsx';
 
 const LS_KEY = window.location.pathname.startsWith('/maths-higher') ? 'mathsmate-higher-active-test' : 'mathsmate-active-test';
 
@@ -183,8 +183,9 @@ export default function Practice() {
       <section className="panel">
         <h2>Pick your paper</h2>
         <p className="sub">
-          Higher papers use AQA&apos;s approximate weighting across the qualification; any specification
-          topic can appear on any paper. Each generated paper includes graphical work and one synoptic challenge.
+          {higherTier
+            ? 'Higher papers use AQA\'s approximate weighting across the qualification; any specification topic can appear on any paper. Each generated paper includes graphical work and one synoptic challenge.'
+            : 'Any Foundation topic can appear on any paper. Each generated paper follows the tier weighting, includes exam-style visual questions and keeps Paper 1 non-calculator safe.'}
         </p>
         <div className="papers-grid">
           {(papers || [1, 2, 3]).map((p) =>
@@ -354,7 +355,7 @@ function AdhocRunner({ set, onExit, onNew }) {
                 {q.exceptional && <span className="q-tag stretch">Synoptic challenge</span>}
               </div>
               <div className="quiz-q-text">{q.text.split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
-              <GraphStimulus stimulus={q.stimulus} />
+              <MathsVisual stimulus={q.stimulus} />
 
               {q.input.type === 'mcq' ? (
                 <div className="choices">
@@ -511,7 +512,7 @@ function TestScreen(props) {
               {q.exceptional && <span className="q-tag stretch">Synoptic challenge</span>}
             </div>
             <div className="q-text">{q.text.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>
-            <GraphStimulus stimulus={q.stimulus} />
+            <MathsVisual stimulus={q.stimulus} />
 
             {q.input.type === 'mcq' ? (
               <div className="choices">

@@ -78,9 +78,10 @@ export default function gen(v) {
     ];
     const c = cases[p % 8];
     ans = round((c.n * 100) / (100 + c.pct), 4);
+    const multiplier = (1 + c.pct / 100).toFixed(2);
     text = `A bike costs £${c.n} after a price increase of ${c.pct}%.\nWhat was the original price?`;
     input = { type: 'number', placeholder: '£', tolerance: 0.005 };
-    sol = [[`£${c.n} is ${100 + c.pct}% of the original.`, `Original = £${c.n} ÷ 1.${c.pct} = £${round(ans, 2)}`]];
+    sol = [[`£${c.n} is ${100 + c.pct}% of the original.`, `Original = £${c.n} ÷ ${multiplier} = £${round(ans, 2)}`]];
     hint = 'To UNDO an increase, divide by the multiplier.';
     return { marks: 4, difficulty: 3, stretch: true, text, input, answer: ans, answerText: `£${round(ans, 2)}`, solution: sol, hint };
   }

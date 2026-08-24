@@ -12,7 +12,7 @@ One revision dashboard for AQA GCSE Maths Foundation, Maths Higher and English L
 
 ## Subjects
 
-- **MathsMate Foundation**: AQA Mathematics 8300 Foundation, three papers, 1,730 generated questions, topic lessons, progress tracking and an AI tutor.
+- **MathsMate Foundation**: AQA Mathematics 8300 Foundation, three papers, 1,730 generated questions, interactive diagrams and lesson models, topic lessons, progress tracking and an AI tutor. Any Foundation topic may appear on any paper; Paper 1 remains non-calculator safe.
 - **MathsMate Higher**: AQA Mathematics 8300H, three 80-mark papers, original Higher generators plus supporting topic practice, accessible graph questions, deterministic mark schemes, grades 4-9 and a Higher-aware AI tutor.
 - **EnglishMate**: AQA English Language 8700, both papers, source-text library, skill lessons, AQA-style AI marking, progress tracking and an AI tutor.
 
@@ -48,12 +48,14 @@ npm run dev
 Build and verify:
 
 ```bash
+npm test
 npm run build
 npm start
 npm run test:ui
 ```
 
-See `AGENTS.md` for architecture, educational goals and change invariants.
+See `FOUNDATION_AUDIT.md` for the Foundation bank review and remaining content backlog. See
+`AGENTS.md` for architecture, educational goals and change invariants.
 
 ## Routes
 

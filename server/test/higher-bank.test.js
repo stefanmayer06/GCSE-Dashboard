@@ -28,7 +28,7 @@ test('generated Higher papers satisfy hard assessment constraints', () => {
       for (let sample = 0; sample < 50; sample++) {
         const paper = buildHigherPaper(type, paperId);
         assert.equal(paper.questions.reduce((sum, question) => sum + question.marks, 0), expectedMarks);
-        assert.ok(paper.questions.some((question) => question.stimulus), `${paper.paperCode} needs a graph`);
+        assert.ok(paper.questions.some((question) => question.stimulus?.type === 'cartesian' || question.stimulus?.type === 'histogram'), `${paper.paperCode} needs a graph`);
         assert.equal(paper.questions.filter((question) => question.exceptional).length, 1, `${paper.paperCode} must have one exceptional question`);
         if (paperId === 1) {
           assert.equal(paper.questions.some((question) => higherQuestionById(question.id)?.calculator === 'required'), false, 'Paper 1 must be non-calculator safe');

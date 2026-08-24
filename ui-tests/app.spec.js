@@ -136,12 +136,49 @@ test('Higher Maths renders an accessible graph question in the exam runner', asy
   await page.goto(`${BASE}/maths-higher/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
   const graphIndex = await page.evaluate(() => {
     const saved = JSON.parse(localStorage.getItem('mathsmate-higher-active-test'));
-    return saved.test.questions.findIndex((question) => question.stimulus);
+    return saved.test.questions.findIndex((question) => question.stimulus?.type === 'cartesian' || question.stimulus?.type === 'histogram');
   });
   expect(graphIndex).toBeGreaterThanOrEqual(0);
   await page.locator('.q-dot').nth(graphIndex).click();
   await expect(page.locator('.graph-stimulus svg')).toBeVisible();
   await expect(page.locator('.graph-stimulus svg')).toHaveAttribute('role', 'img');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('Foundation Maths renders an accessible visual question in the exam runner', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/maths/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
+  const visualIndex = await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem('mathsmate-active-test'));
+    return saved.test.questions.findIndex((question) => question.stimulus);
+  });
+  expect(visualIndex).toBeGreaterThanOrEqual(0);
+  await page.locator('.q-dot').nth(visualIndex).click();
+  await expect(page.locator('.maths-visual')).toBeVisible();
+  await expect(page.locator('.maths-visual [role="img"]').first()).toBeVisible();
+});
+
+test('Foundation lesson graph supports keyboard inspection and resizing', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/maths/learn/graphs`, { waitUntil: 'networkidle' });
+  const visual = page.locator('.lesson-visual .maths-visual');
+  await expect(visual).toBeVisible();
+  await visual.locator('.visual-point').first().focus();
+  await visual.locator('.visual-point').first().press('Enter');
+  await expect(visual.locator('.visual-readout')).toContainText('A (1, 2)');
+  await visual.getByRole('button', { name: 'Enlarge' }).click();
+  await expect(visual.getByRole('button', { name: 'Fit' })).toBeVisible();
+});
+
+test('Foundation lesson visual stays interactive at mobile width', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.goto(`${BASE}/maths/learn/charts`, { waitUntil: 'networkidle' });
+  const visual = page.locator('.lesson-visual .maths-visual');
+  await expect(visual).toBeVisible();
+  await visual.locator('.data-bar-column').first().click();
+  await expect(visual.locator('.visual-readout')).toContainText('Mon: 23');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });

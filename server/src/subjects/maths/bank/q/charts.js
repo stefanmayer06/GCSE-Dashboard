@@ -99,17 +99,11 @@ export default function gen(v) {
   }
 
   if (t === 4) {
-    const cases = [
-      { tallies: '||||/ |||', n: 8 }, { tallies: '||||', n: 4 }, { tallies: '||||/ ||||', n: 9 },
-      { tallies: '||||/ ||', n: 7 }, { tallies: '||||/ ||||/ ||', n: 12 }, { tallies: '||||/ |', n: 6 },
-      { tallies: '||||/ |||', n: 8 }, { tallies: '||', n: 2 }, { tallies: '||||/ ||||/', n: 10 },
-      { tallies: '|||', n: 3 }, { tallies: '||||/ ||||/ |', n: 11 }, { tallies: '|', n: 1 },
-    ];
-    const c = cases[p % 12];
-    ans = c.n;
-    text = `A tally chart shows the number of pets owned.\nOne student's tally is:  ${c.tallies}\nHow many pets does this student own?`;
+    const cases = [8, 4, 9, 7, 12, 6, 8, 2, 10, 3, 11, 1];
+    ans = cases[p % 12];
+    text = `A tally chart shows the number of pets owned.\nCount the tally marks shown in the diagram.\nHow many pets does this student own?`;
     input = { type: 'number' };
-    sol = [[`Count in groups of 5 (four strokes then a diagonal line).`, `"${c.tallies}" = ${c.n}`]];
+    sol = [[`Count each crossed bundle as 5, then add the remaining strokes.`, `The tally shows ${ans}.`]];
     hint = 'Count in groups of 5: four vertical strokes and one diagonal = 5.';
     return { marks: 1, difficulty: 1, stretch: false, text, input, answer: ans, answerText: String(ans), solution: sol, hint };
   }

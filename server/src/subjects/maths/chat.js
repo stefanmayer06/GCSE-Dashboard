@@ -13,7 +13,7 @@ const KEYWORDS = [
   { re: /mean|median|mode|range|average/i, msg: 'Averages: Mean = total ÷ count. Median = middle value when ordered. Mode = most common. Range = biggest − smallest.' },
   { re: /area|perimeter|volume/i, msg: 'Measures: Area of rectangle = bh, triangle = ½bh, trapezium = ½(a+b)h. Perimeter = add the sides. Volume of a prism = cross-section × length.' },
   { re: /circle|circumference/i, msg: 'Circles: Circumference = πd, Area = πr². Remember the radius is HALF the diameter.' },
-  { re: /angle/i, msg: 'Angles: straight line = 180°, point = 360°, triangle = 180°, quadrilateral = 360°. Z-shape (alternate) equal, C-shape (co-interior) add to 180°.' },
+  { re: /angle/i, msg: 'Angles: straight line = 180°, point = 360°, triangle = 180°, quadrilateral = 360°. Alternate angles are equal; co-interior angles add to 180°.' },
   { re: /graph|gradient|line/i, msg: 'Graphs: y = mx + c — m is the gradient, c is the y-intercept. Gradient = change in y ÷ change in x.' },
   { re: /sequence|nth/i, msg: 'Sequences: nth term = dn + (a − d), where d is the common difference and a is the first term.' },
 ];

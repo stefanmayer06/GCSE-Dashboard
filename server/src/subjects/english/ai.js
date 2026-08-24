@@ -1,6 +1,6 @@
 import { rubricFor } from './marking.js';
 
-const DEFAULT_MODEL = 'google/gemma-4-26b-a4b-it:free';
+const DEFAULT_MODEL = 'qwen/qwen3.7-flash';
 
 export function aiConfig() {
   return {

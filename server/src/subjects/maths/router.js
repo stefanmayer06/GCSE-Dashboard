@@ -32,7 +32,7 @@ import { createDb } from '../../db.js';
 import { askTutor } from './chat.js';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'google/gemma-4-26b-a4b-it:free';
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'qwen/qwen3.7-flash';
 
 const app = express.Router();
 app.use(express.json({ limit: '1mb' }));

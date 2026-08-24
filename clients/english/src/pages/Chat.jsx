@@ -68,7 +68,7 @@ export default function Chat({ health }) {
     setMessages([{ role: 'assistant', content: 'Fresh start! What shall we work on?' }]);
   }
 
-  const modelName = health?.model || 'google/gemma-4-26b-a4b-it:free';
+  const modelName = health?.model || 'qwen/qwen3.7-flash';
 
   return (
     <div className="page chat-page">

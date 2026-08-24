@@ -40,7 +40,7 @@ Rules:
 - ${higher ? 'Use Higher content confidently: surds, quadratic formula, functions, vectors, sine/cosine rule, conditional probability and histograms.' : 'If a topic is higher-tier only (e.g. vectors with magnitudes, quadratic formula, sine rule), say so and focus on foundation-level skills.'}
 - Be warm and motivating.`;
   const body = {
-    model: model || 'google/gemma-4-26b-a4b-it:free',
+    model: model || 'qwen/qwen3.7-flash',
     messages: [{ role: 'system', content: system }, ...messages.slice(-12)],
     temperature: 0.4,
     max_tokens: 700,
@@ -71,5 +71,5 @@ Rules:
   }
   const data = await res.json();
   const reply = data.choices?.[0]?.message?.content || 'Hmm, I got an empty reply. Try again!';
-  return { reply, model: data.model || (model || 'google/gemma-4-26b-a4b-it:free') };
+  return { reply, model: data.model || (model || 'qwen/qwen3.7-flash') };
 }

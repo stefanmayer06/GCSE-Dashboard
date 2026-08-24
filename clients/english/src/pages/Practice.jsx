@@ -277,7 +277,7 @@ export default function Practice({ health }) {
           )}
         </div>
         <p className="sub small" style={{ marginTop: 12 }}>
-          Long answers are marked by the AI tutor (DeepSeek Flash) against summarised AQA mark
+           Long answers are marked by the AI tutor (Qwen 3.7 Flash) against summarised AQA mark
           schemes. {health?.aiMarking ? 'AI marking is ready.' : 'No OpenRouter key set — you\u2019ll self-mark against model answers and rubrics instead.'}
         </p>
         {error && (

@@ -7,7 +7,7 @@ services:
     environment:
       PORT: 3000
       DATA_DIR: /app/data
-      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemma-4-26b-a4b-it:free}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-qwen/qwen3.7-flash}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-}

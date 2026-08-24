@@ -1,6 +1,6 @@
 /**
  * AQA GCSE English Language (8700) marking rubrics — summarised from the
- * official mark schemes. Used by the AI marker (DeepSeek Flash) to award
+ * official mark schemes. Used by the configured OpenRouter model to award
  * marks, and shown to students for self-marking in offline mode.
  */
 export const RUBRICS = {

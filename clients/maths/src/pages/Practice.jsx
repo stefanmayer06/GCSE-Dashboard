@@ -17,9 +17,13 @@ function loadSaved() {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (!data?.test?.id) return null;
+    if (!data?.test?.id || !Array.isArray(data.test.questions) || data.secondsLeft <= 0) {
+      localStorage.removeItem(LS_KEY);
+      return null;
+    }
     return data;
   } catch {
+    localStorage.removeItem(LS_KEY);
     return null;
   }
 }
@@ -28,8 +32,9 @@ export default function Practice() {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const saved = useRef(loadSaved());
   const [papers, setPapers] = useState(null);
-  const [phase, setPhase] = useState('setup'); // setup | running | submitting
+  const [phase, setPhase] = useState(saved.current ? 'restoring' : 'setup'); // setup | restoring | running | submitting
   const [test, setTest] = useState(null);
   const [answers, setAnswers] = useState({});
   const [current, setCurrent] = useState(0);
@@ -38,7 +43,7 @@ export default function Practice() {
   const [perQStart, setPerQStart] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState('');
-  const saved = useRef(loadSaved());
+  const submitting = useRef(false);
 
   useEffect(() => {
     api.papers().then((r) => setPapers(r.papers)).catch(() => {});
@@ -57,23 +62,56 @@ export default function Practice() {
       phase === 'setup' &&
       papers
     ) {
-      start(autoStart.current.type === 'short' ? 'short' : 'full', Number(autoStart.current.paper));
+      const next = autoStart.current;
+      autoStart.current = { paper: null, type: null };
+      start(next.type === 'short' ? 'short' : 'full', Number(next.paper));
     }
   }, [papers]);
 
-  // Offer resume if a test was left mid-flight
+  // Resume only while the server still has the private marking context.
   useEffect(() => {
+    if (saved.current) resumeSaved();
+  }, []);
+
+  async function resumeSaved() {
     const s = saved.current;
-    if (s && s.secondsLeft > 0) {
+    if (!s) return;
+    setError('');
+    setPhase('restoring');
+    try {
+      await api.testStatus(s.test.id);
       setTest(s.test);
       setAnswers(s.answers || {});
       setSecondsLeft(s.secondsLeft);
       setElapsed(s.elapsed || 0);
       setPerQStart(s.perQStart || {});
-      setPhase('running');
       setCurrent(s.current || 0);
+      setPhase('running');
+    } catch (e) {
+      if (e.code === 'TEST_EXPIRED') clearExpiredTest(e.message);
+      else {
+        setError('We could not check your saved paper. Check your connection, then retry.');
+        setPhase('setup');
+      }
     }
-  }, []);
+  }
+
+  function clearExpiredTest(message) {
+    localStorage.removeItem(LS_KEY);
+    saved.current = null;
+    autoStart.current = { paper: null, type: null };
+    setTest(null);
+    setAnswers({});
+    setCurrent(0);
+    setSecondsLeft(null);
+    setElapsed(0);
+    setPerQStart({});
+    setConfirmOpen(false);
+    submitting.current = false;
+    setError(message);
+    setPhase('setup');
+    navigate('/practice', { replace: true });
+  }
 
   useEffect(() => {
     if (!test || phase !== 'running') return;
@@ -107,6 +145,8 @@ export default function Practice() {
     setError('');
     try {
       const t = await api.newTest(type, paperId);
+      localStorage.removeItem(LS_KEY);
+      saved.current = null;
       setTest(t);
       setAnswers({});
       setCurrent(0);
@@ -128,6 +168,9 @@ export default function Practice() {
   }
 
   async function doSubmit(ansOverride, dur, auto = false) {
+    if (submitting.current) return;
+    submitting.current = true;
+    setConfirmOpen(false);
     setPhase('submitting');
     try {
       const list = test.questions.map((q) => ({
@@ -139,13 +182,21 @@ export default function Practice() {
        localStorage.setItem(window.location.pathname.startsWith('/maths-higher') ? 'mathsmate-higher-last-result' : 'mathsmate-last-result', JSON.stringify(result));
       navigate('/results');
     } catch (e) {
-      setError(e.message);
-      setPhase('running');
-      if (auto) setSecondsLeft(30);
+      if (e.code === 'TEST_EXPIRED') clearExpiredTest(e.message);
+      else {
+        submitting.current = false;
+        setError(e.message);
+        setPhase('running');
+        if (auto) setSecondsLeft(30);
+      }
     }
   }
 
-  if (phase === 'running' && test) {
+  if (phase === 'restoring') {
+    return <div className="page"><div className="loading">Checking your saved paper...</div></div>;
+  }
+
+  if ((phase === 'running' || phase === 'submitting') && test) {
     return (
       <TestScreen
         test={test}
@@ -163,6 +214,7 @@ export default function Practice() {
         setConfirmOpen={setConfirmOpen}
         doConfirm={() => doSubmit({}, null, false)}
         error={error}
+        busy={phase === 'submitting'}
         marksAnswered={test.questions.filter((q) => answers[q.id] != null && answers[q.id] !== '').length}
       />
     );
@@ -219,7 +271,12 @@ export default function Practice() {
             )
           )}
         </div>
-        {error && <div className="error-banner">{error}</div>}
+        {error && (
+          <div className="error-banner">
+            {error}
+            {saved.current && <button className="btn" onClick={resumeSaved}>Retry saved paper</button>}
+          </div>
+        )}
       </section>
 
        <AdhocSection higherTier={higherTier} />
@@ -433,7 +490,7 @@ function AdhocRunner({ set, onExit, onNew }) {
 function TestScreen(props) {
   const {
     test, answers, current, secondsLeft, elapsed, onAnswer, onGo,
-    onSubmit, confirmOpen, setConfirmOpen, doConfirm, error, marksAnswered,
+    onSubmit, confirmOpen, setConfirmOpen, doConfirm, error, marksAnswered, busy,
   } = props;
   const q = test.questions[current];
   const lowTime = secondsLeft < 300;
@@ -444,7 +501,7 @@ function TestScreen(props) {
   const unanswered = test.questions.length - marksAnswered;
 
   return (
-    <div className="exam">
+    <div className="exam" aria-busy={busy}>
       <header className="exam-bar">
         <div className="exam-title">
           <span className="exam-paper">{test.paperCode} · {test.paperName}</span>
@@ -469,7 +526,7 @@ function TestScreen(props) {
             <span className="timer-value">{answeredMarks} / {test.totalMarks}</span>
           </div>
         </div>
-        <button className="btn btn-submit" onClick={() => onSubmit(false)}>Submit paper</button>
+        <button className="btn btn-submit" disabled={busy} onClick={() => onSubmit(false)}>{busy ? 'Submitting...' : 'Submit paper'}</button>
       </header>
 
       <div className="exam-body">
@@ -545,7 +602,7 @@ function TestScreen(props) {
             {current < test.questions.length - 1 ? (
               <button className="btn btn-primary" onClick={() => onGo(current + 1)}>Next →</button>
             ) : (
-              <button className="btn btn-finish" onClick={() => onSubmit(false)}>Finish & submit ✓</button>
+              <button className="btn btn-finish" disabled={busy} onClick={() => onSubmit(false)}>Finish & submit ✓</button>
             )}
           </div>
         </div>
@@ -562,7 +619,7 @@ function TestScreen(props) {
             </p>
             <div className="modal-actions">
               <button className="btn" onClick={() => setConfirmOpen(false)}>Keep working</button>
-              <button className="btn btn-primary" onClick={doConfirm}>Submit</button>
+              <button className="btn btn-primary" disabled={busy} onClick={doConfirm}>Submit</button>
             </div>
           </div>
         </div>

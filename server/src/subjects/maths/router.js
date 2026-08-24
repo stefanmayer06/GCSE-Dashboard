@@ -50,6 +50,19 @@ app.use((req, res, next) => {
 
 const activeTests = new Map();
 
+function activeTestFor(req) {
+  const test = activeTests.get(req.params.id);
+  if (!test || test.userId !== req.user.id || test.tier !== (isHigher(req) ? 'higher' : 'foundation')) return null;
+  return test;
+}
+
+function expiredTest(res) {
+  return res.status(410).json({
+    error: 'This saved paper is no longer active. It may have expired after a server restart. Start a new paper to continue.',
+    code: 'TEST_EXPIRED',
+  });
+}
+
 const publicTopic = (t) => ({
   id: t.id,
   strand: t.strand,
@@ -120,6 +133,7 @@ app.post('/test/new', (req, res) => {
   const id = crypto.randomUUID();
   activeTests.set(id, {
     id,
+    userId: req.user.id,
     type,
     paperId: paper.paperId,
     paperCode: paper.paperCode,
@@ -144,15 +158,22 @@ app.post('/test/new', (req, res) => {
     totalMarks: paper.totalMarks,
     minutes: paper.minutes,
     stretchCount: paper.stretchCount,
+    stretchMarks: paper.stretchMarks,
     exceptionalCount: paper.exceptionalCount || 0,
     strandCoverage: paper.strandCoverage,
     questions: paper.questions,
   });
 });
 
+app.get('/test/:id/status', (req, res) => {
+  const test = activeTestFor(req);
+  if (!test) return expiredTest(res);
+  res.json({ active: true });
+});
+
 app.post('/test/:id/submit', (req, res) => {
-  const test = activeTests.get(req.params.id);
-  if (!test) return res.status(404).json({ error: 'Test not found (it may have expired).' });
+  const test = activeTestFor(req);
+  if (!test) return expiredTest(res);
   const answers = req.body?.answers || [];
   const durationSec = req.body?.durationSec || null;
 

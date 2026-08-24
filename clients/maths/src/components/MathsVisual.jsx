@@ -156,6 +156,7 @@ function ShapeVisual({ data, highlighted }) {
     case 'joined-rectangles': drawing = <path d="M 70 70 H 245 V 130 H 350 V 220 H 70 Z" />; break;
     case 'frame': drawing = <><rect x="55" y="45" width="310" height="180" /><rect className="visual-inner" x="105" y="82" width="210" height="106" /></>; break;
     case 'circle': case 'wheel': drawing = <><circle cx="210" cy="140" r="92" />{data.measure !== 'circumference' && <line className="visual-helper" x1={data.measure === 'radius' ? 210 : 118} y1="140" x2="302" y2="140" />}{data.kind === 'wheel' && Array.from({ length: 8 }, (_, index) => <line key={index} className="visual-helper" x1="210" y1="140" x2={210 + Math.cos(index * Math.PI / 4) * 92} y2={140 + Math.sin(index * Math.PI / 4) * 92} />)}</>; break;
+    case 'circle-theorem': drawing = <><circle cx="210" cy="140" r="92" /><line className="visual-helper" x1="210" y1="140" x2="135" y2="193" /><line className="visual-helper" x1="210" y1="140" x2="285" y2="193" /><line x1="210" y1="48" x2="135" y2="193" /><line x1="210" y1="48" x2="285" y2="193" /><circle className="visual-node" cx="210" cy="140" r="4" /></>; break;
     case 'semicircle': drawing = <path d="M 80 205 A 130 130 0 0 1 340 205 Z" />; break;
     case 'parallel-lines': drawing = <><line x1="55" y1="80" x2="360" y2="80" /><line x1="55" y1="190" x2="360" y2="190" /><line x1="130" y1="235" x2="285" y2="35" /><path className="visual-arrow-mark" d="M 315 73 l 10 7 l -10 7" /><path className="visual-arrow-mark" d="M 315 183 l 10 7 l -10 7" /></>; break;
     case 'polygon': drawing = <polygon points={regularPolygon(data.sides)} />; break;
@@ -278,7 +279,11 @@ function VennVisual({ data, highlighted }) {
 }
 
 function TreeVisual({ data, highlighted }) {
-  return <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={data.alt} className={highlighted ? 'highlighted' : ''}><circle className="visual-node" cx="55" cy="130" r="6" />{(data.stages[0] || []).map((item, index) => <g key={item}><line className="tree-line" x1="55" y1="130" x2="190" y2={75 + index * 110} /><text className="tree-label" x="115" y={88 + index * 88}>{item}</text>{(data.stages[1] || []).map((second, secondIndex) => <g key={second}><line className="tree-line second" x1="190" y1={75 + index * 110} x2="350" y2={45 + index * 90 + secondIndex * 55} /><text className="tree-label" x="285" y={58 + index * 90 + secondIndex * 55}>{second}</text></g>)}</g>)}</svg>;
+  return <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={data.alt} className={highlighted ? 'highlighted' : ''}><circle className="visual-node" cx="55" cy="130" r="6" />{(data.stages[0] || []).map((item, index) => {
+    const shared = data.stages[1] || [];
+    const secondStage = Array.isArray(shared[index]) ? shared[index] : shared;
+    return <g key={item}><line className="tree-line" x1="55" y1="130" x2="190" y2={75 + index * 110} /><text className="tree-label" x="115" y={88 + index * 88}>{item}</text>{secondStage.map((second, secondIndex) => <g key={second}><line className="tree-line second" x1="190" y1={75 + index * 110} x2="350" y2={45 + index * 90 + secondIndex * 55} /><text className="tree-label" x="285" y={58 + index * 90 + secondIndex * 55}>{second}</text></g>)}</g>;
+  })}</svg>;
 }
 
 function SampleSpaceVisual({ size, highlighted, setSelected }) {

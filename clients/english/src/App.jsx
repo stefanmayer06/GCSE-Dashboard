@@ -64,6 +64,9 @@ export default function App() {
     try {
       await api.auth.logout();
     } catch {}
+    for (const key of ['mathsmate-active-test', 'mathsmate-higher-active-test', 'mathsmate-last-result', 'mathsmate-higher-last-result', 'englishmate-active-test', 'englishmate-last-result']) {
+      localStorage.removeItem(key);
+    }
     setProgress(null);
     setHealth(null);
     setAuth(false);

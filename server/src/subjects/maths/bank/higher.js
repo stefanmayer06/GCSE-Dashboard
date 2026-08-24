@@ -17,7 +17,7 @@ const q = (topicId, fields) => ({
   exceptional: !!fields.exceptional,
   specRefs: fields.specRefs || [],
   ao: fields.ao || ['AO1'],
-  calculator: fields.calculator || 'either',
+  calculator: fields.calculator || (/decimal places|nearest penny/i.test(fields.text) ? 'required' : 'either'),
   familyId: fields.familyId || topicId,
   text: fields.text,
   input: { type: 'number', ...(fields.input || {}) },
@@ -147,6 +147,11 @@ const generators = {
       text: `A length is recorded as ${x}${unit === 1 ? ' cm to the nearest centimetre' : ' cm to the nearest millimetre'}. What is the maximum possible error in the recorded length?`,
       solution: [[`The error interval is ${lower} ≤ length < ${upper}.`, `Maximum error = half the unit = ${answer} cm.`]],
       hint: 'The maximum error is half the unit used for rounding.',
+      stimulus: {
+        type: 'range', min: Math.floor(lower) - 1, max: Math.ceil(upper) + 1,
+        lower, upper, lowerClosed: true, upperClosed: false,
+        alt: `Number line showing the error interval from ${lower} inclusive to ${upper} exclusive.`,
+      },
     });
   },
   'algebraic-fractions': (v) => {
@@ -298,6 +303,11 @@ const generators = {
         text: `Two similar shapes have a scale factor of ${scale}. The smaller shape has a side of ${length / 2} cm. Find the corresponding side on the larger shape.`,
         solution: [[`The scale factor is ${scale}.`, `Corresponding length = ${length / 2} × ${scale} = ${answer} cm.`]],
         hint: 'Find the scale factor from a pair of corresponding sides, then multiply.',
+        stimulus: {
+          type: 'shape', kind: 'similar-triangles',
+          labels: [{ x: 105, y: 225, text: `${length / 2} cm` }, { x: 300, y: 225, text: '?' }, { x: 210, y: 34, text: `scale factor ${scale}` }],
+          alt: `Two similar triangles with scale factor ${scale}; the smaller corresponding side is ${length / 2} centimetres.`,
+        },
       });
     }
     const a = t - 3;
@@ -309,6 +319,12 @@ const generators = {
       text: `Vector a has x-component ${a}. Vector b has x-component ${b}. Work out the x-component of a + b.`,
       solution: [[`Add corresponding vector components.`, `x-component = ${a} + ${b} = ${answer}.`]],
       hint: 'Vectors are added component by component.',
+      stimulus: {
+        type: 'coordinate', xMin: -1, xMax: 8, yMin: -1, yMax: 7,
+        points: [{ x: 0, y: 0, label: 'O' }, { x: a, y: 2, label: 'a' }, { x: b, y: -1, label: 'b' }],
+        segments: [[{ x: 0, y: 0 }, { x: a, y: 2 }], [{ x: 0, y: 0 }, { x: b, y: -1 }]], operation: 'a + b',
+        alt: `Coordinate grid showing vectors a and b from the origin, with horizontal components ${a} and ${b}.`,
+      },
     });
   },
   'circle-theorems': (v) => {
@@ -323,6 +339,11 @@ const generators = {
         solution: [[`The angle at the centre is twice the angle at the circumference.`, `Centre angle = 2 × ${angle} = ${answer}°.`]],
         hint: 'The angle at the centre is twice the angle at the circumference standing on the same arc.',
         input: { placeholder: '°' },
+        stimulus: {
+          type: 'shape', kind: 'circle-theorem',
+          labels: [{ x: 205, y: 150, text: 'O' }, { x: 122, y: 222, text: 'A' }, { x: 305, y: 222, text: 'B' }, { x: 210, y: 47, text: `${angle}°` }],
+          alt: `Circle with centre O, points A and B on the circumference, and an angle of ${angle} degrees at the circumference standing on arc AB.`,
+        },
       });
     }
     const radius = [4, 5, 6, 7][t - 4];
@@ -334,6 +355,10 @@ const generators = {
       text: `A sector has radius ${radius} cm and angle ${angle}°. Work out its area to 2 decimal places.`,
       solution: [[`Area of a sector = angle/360 × πr².`, `Area = ${angle}/360 × π × ${radius}² = ${answer} cm².`]],
       hint: 'Use angle/360 × πr² for the area of a sector.',
+      stimulus: {
+        type: 'pie', angle, prompt: 'sector',
+        alt: `A circular sector with central angle ${angle} degrees and radius ${radius} centimetres.`,
+      },
     });
   },
   'trigonometry-higher': (v) => {
@@ -349,6 +374,11 @@ const generators = {
         text: `A triangle has two sides of ${side} cm with an included angle of ${angle}°. Work out its area to 3 decimal places.`,
         solution: [[`Use area = 1/2 ab sin C.`, `Area = 1/2 × ${side} × ${side} × sin ${angle}° = ${answer} cm².`]],
         hint: 'The non-right-angled triangle area formula is 1/2ab sin C.',
+        stimulus: {
+          type: 'shape', kind: 'scalene',
+          labels: [{ x: 120, y: 225, text: `${side} cm` }, { x: 285, y: 130, text: `${side} cm` }, { x: 320, y: 195, text: `${angle}°` }],
+          alt: `Scalene triangle with two sides of ${side} centimetres and included angle ${angle} degrees.`,
+        },
       });
     }
     const a = [6, 8, 10, 12][t - 4];
@@ -362,6 +392,11 @@ const generators = {
       text: `Two sides of a triangle are ${a} cm and ${b} cm. The angle between them is ${angle}°. Work out the third side to 3 decimal places.`,
       solution: [[`Use the cosine rule: c² = a² + b² − 2ab cos C.`, `c = √(${a}² + ${b}² − 2 × ${a} × ${b} × cos ${angle}°) = ${answer} cm.`]],
       hint: 'Use the cosine rule when you know two sides and the included angle.',
+      stimulus: {
+        type: 'shape', kind: 'scalene',
+        labels: [{ x: 120, y: 225, text: `${a} cm` }, { x: 285, y: 130, text: `${b} cm` }, { x: 320, y: 195, text: `${angle}°` }],
+        alt: `Scalene triangle with sides ${a} and ${b} centimetres enclosing an angle of ${angle} degrees.`,
+      },
     });
   },
   'probability-conditional': (v) => {
@@ -378,6 +413,13 @@ const generators = {
         text: `A bag contains ${red} red counters and ${blue} blue counters. Two counters are taken without replacement. Find the probability that both are red. Give your answer to 3 decimal places.`,
         solution: [[`P(first red) = ${red}/${total}; after a red, P(second red) = ${red - 1}/${total - 1}.`, `Multiply: ${red}/${total} × ${red - 1}/${total - 1} = ${answer}.`]],
         hint: 'Without replacement, the total and the number of red counters change after the first draw.',
+        stimulus: {
+          type: 'tree', stages: [
+            [`R ${red}/${total}`, `B ${blue}/${total}`],
+            [[`R ${red - 1}/${total - 1}`, `B ${blue}/${total - 1}`], [`R ${red}/${total - 1}`, `B ${blue - 1}/${total - 1}`]],
+          ],
+          alt: `Probability tree for two draws without replacement from a bag with ${red} red and ${blue} blue counters.`,
+        },
       });
     }
     const p = [0.2, 0.3, 0.4, 0.25][t - 4];
@@ -388,6 +430,10 @@ const generators = {
       text: `Events A and B are independent. P(A) = ${p} and P(B) = ${1 - p}. Work out P(A and not B).`,
       solution: [[`P(not B) = 1 − ${1 - p} = ${p}.`, `Independent events multiply: P(A and not B) = ${p} × ${p} = ${answer}.`]],
       hint: 'Find the complement first, then multiply probabilities for independent events.',
+      stimulus: {
+        type: 'tree', stages: [[`A ${p}`, `not A ${1 - p}`], [`B ${1 - p}`, `not B ${p}`]],
+        alt: `Probability tree for independent events A and B, where P of A is ${p} and P of B is ${1 - p}.`,
+      },
     });
   },
   'statistics-higher': (v) => {
@@ -402,6 +448,10 @@ const generators = {
         text: `A histogram class has class width ${width} and frequency ${freq}. Work out the frequency density.`,
         solution: [[`Frequency density = frequency ÷ class width.`, `Density = ${freq} ÷ ${width} = ${density}.`]],
         hint: 'Frequency density is frequency divided by class width.',
+        stimulus: {
+          type: 'table', headings: ['Class width', 'Frequency', 'Frequency density'], rows: [[width, freq, '?']],
+          alt: `Grouped-data table with class width ${width}, frequency ${freq}, and an unknown frequency density.`,
+        },
       });
     }
     const lowerQuartile = [12, 18, 24, 30][t - 4];
@@ -413,6 +463,10 @@ const generators = {
       text: `A box plot has lower quartile ${lowerQuartile} and upper quartile ${upperQuartile}. Work out the interquartile range.`,
       solution: [[`Interquartile range = upper quartile − lower quartile.`, `IQR = ${upperQuartile} − ${lowerQuartile} = ${answer}.`]],
       hint: 'Subtract the lower quartile from the upper quartile.',
+      stimulus: {
+        type: 'table', headings: ['Statistic', 'Value'], rows: [['Lower quartile', lowerQuartile], ['Upper quartile', upperQuartile], ['Interquartile range', '?']],
+        alt: `Summary table with lower quartile ${lowerQuartile}, upper quartile ${upperQuartile}, and an unknown interquartile range.`,
+      },
     });
   },
   proof: (v) => {
@@ -467,13 +521,13 @@ export async function loadHigherBank() {
       ...item,
       id: `higher-${item.id}`,
       tier: 'higher',
-      difficulty: item.difficulty,
-      stretch: item.difficulty === 3,
+      difficulty: item.difficulty === 1 ? 1 : 2,
+      stretch: false,
       exceptional: false,
-      calculator: item.calculatorOnly ? 'required' : 'either',
-      familyId: `${topic.id}-${item.text.split('\n')[0]}`,
+      calculator: item.calculatorOnly || /use π = 3\.14/i.test(item.text) ? 'required' : 'either',
+      familyId: `${topic.id}-${item.familyId || item.text.replace(/[+-]?\d+(?:\.\d+)?/g, '#').replace(/\s+/g, ' ').trim()}`,
       specRefs: [],
-      ao: item.difficulty === 1 ? ['AO1'] : item.difficulty === 2 ? ['AO1', 'AO2'] : ['AO2', 'AO3'],
+      ao: item.difficulty === 1 ? ['AO1'] : ['AO1', 'AO2'],
     }));
     higherCache.set(topic.id, set);
   }
@@ -549,22 +603,30 @@ function strandPool(strand, exclude = new Set()) {
   return [...high, ...foundation];
 }
 
-function chooseForMarks(rng, pool, marks, { calculator, allowExceptional = false } = {}) {
+function chooseForMarks(rng, pool, marks, { calculator, allowExceptional = false, usedFamilies = new Set(), targetStretchMarks = 0, maxStretchMarks = marks } = {}) {
   const chosen = [];
   let left = marks;
-  const high = pool.filter((item) => higherMeta.some((meta) => item.topicId === meta.id));
-  const foundation = pool.filter((item) => !higherMeta.some((meta) => item.topicId === meta.id));
   const compatible = (item) => (calculator || item.calculator !== 'required') && (allowExceptional || !item.exceptional);
-  const remaining = [...shuffle(rng, high.filter(compatible)), ...shuffle(rng, foundation.filter(compatible))];
+  const remaining = shuffle(rng, pool.filter((item) => compatible(item) && !usedFamilies.has(item.familyId)));
+  let stretchMarks = 0;
   while (left > 0) {
-    const exact = remaining.filter((item) => item.marks === left);
-    const candidates = exact.length ? exact : remaining.filter((item) => item.marks <= left);
+    const viable = remaining.filter((item) => item.marks <= left && (!item.stretch || stretchMarks + item.marks <= maxStretchMarks));
+    const exact = viable.filter((item) => item.marks === left);
+    const candidates = exact.length ? exact : viable;
     if (!candidates.length) return null;
-    const item = pick(rng, candidates.slice(0, Math.min(candidates.length, 20)));
+    const needsStretch = stretchMarks < targetStretchMarks;
+    const demand = candidates.filter((item) => needsStretch ? item.stretch : !item.stretch);
+    const demandPool = demand.length ? demand : candidates;
+    const higher = demandPool.filter((item) => higherMeta.some((meta) => item.topicId === meta.id));
+    const foundation = demandPool.filter((item) => !higherMeta.some((meta) => item.topicId === meta.id));
+    const source = higher.length && (!foundation.length || rng() < 0.6) ? higher : foundation.length ? foundation : demandPool;
+    const item = pick(rng, source);
     chosen.push(item);
     left -= item.marks;
-    const index = remaining.indexOf(item);
-    if (index >= 0) remaining.splice(index, 1);
+    if (item.stretch) stretchMarks += item.marks;
+    for (let index = remaining.length - 1; index >= 0; index--) {
+      if (remaining[index].familyId === item.familyId) remaining.splice(index, 1);
+    }
   }
   return chosen;
 }
@@ -592,6 +654,7 @@ export function buildHigherPaper(type = 'full', paperId = 1) {
     const graph = pick(rng, graphPool);
     const picked = [graph];
     const used = new Set();
+    const usedFamilies = new Set([graph.familyId]);
     used.add(graph.id);
     remainingBudgets[graph.strand] -= graph.marks;
 
@@ -601,19 +664,34 @@ export function buildHigherPaper(type = 'full', paperId = 1) {
       if (challenge) {
         picked.push(challenge);
         used.add(challenge.id);
+        usedFamilies.add(challenge.familyId);
         remainingBudgets[challenge.strand] -= challenge.marks;
       }
     }
 
     let failed = false;
     for (const strand of shuffle(rng, Object.keys(remainingBudgets))) {
-      const selection = chooseForMarks(rng, strandPool(strand, used), remainingBudgets[strand], { calculator: paper.calculator });
+      const preselectedStretch = picked.filter((item) => item.strand === strand && item.stretch).reduce((sum, item) => sum + item.marks, 0);
+      const targetStretch = Math.max(0, Math.round(budgets[strand] * 0.24) - preselectedStretch);
+      const maxStretch = Math.max(targetStretch, Math.ceil(budgets[strand] * 0.34) - preselectedStretch);
+      const selection = chooseForMarks(rng, strandPool(strand, used), remainingBudgets[strand], {
+        calculator: paper.calculator,
+        usedFamilies,
+        targetStretchMarks: targetStretch,
+        maxStretchMarks: maxStretch,
+      });
       if (!selection) { failed = true; break; }
-      selection.forEach((item) => { picked.push(item); used.add(item.id); });
+      selection.forEach((item) => { picked.push(item); used.add(item.id); usedFamilies.add(item.familyId); });
     }
     const exceptionalCount = picked.filter((item) => item.exceptional).length;
     const hasGraph = picked.some((item) => item.stimulus?.type === 'cartesian' || item.stimulus?.type === 'histogram');
-    if (failed || exceptionalCount !== 1 || !hasGraph || picked.reduce((sum, item) => sum + item.marks, 0) !== total || picked.length < (total === 80 ? 24 : 12) || picked.length > (total === 80 ? 38 : 22)) continue;
+    const stretchMarks = picked.filter((item) => item.stretch).reduce((sum, item) => sum + item.marks, 0);
+    const visualCount = picked.filter((item) => item.stimulus).length;
+    const higherMarks = picked.filter((item) => higherMeta.some((meta) => item.topicId === meta.id)).reduce((sum, item) => sum + item.marks, 0);
+    const stretchRange = total === 80 ? [18, 30] : [8, 16];
+    const totalPicked = picked.reduce((sum, item) => sum + item.marks, 0);
+    const validLength = picked.length >= (total === 80 ? 24 : 12) && picked.length <= (total === 80 ? 38 : 22);
+    if (failed || exceptionalCount !== 1 || !hasGraph || stretchMarks < stretchRange[0] || stretchMarks > stretchRange[1] || visualCount < (total === 80 ? 5 : 3) || higherMarks < (total === 80 ? 28 : 14) || totalPicked !== total || !validLength) continue;
     const orderRng = makeRand('higher-paper-order', attempt * 97 + picked.length);
     const ramp = shuffle(orderRng, picked)
       .map((item) => ({ item, score: item.difficulty + orderRng() * 1.15 }))
@@ -623,6 +701,7 @@ export function buildHigherPaper(type = 'full', paperId = 1) {
       tier: 'higher', paperId: paper.id, paperCode: paper.code, paperName: paper.name, calculator: paper.calculator,
       questions: ramp.map((item, index) => ({ ...sanitize(item), qn: index + 1 })), totalMarks: total,
       minutes: total === 80 ? 90 : 45, stretchCount: ramp.filter((item) => item.difficulty === 3).length,
+      stretchMarks,
       exceptionalCount,
       strandCoverage: Object.keys(paper.strands).map((id) => STRANDS[id].name),
     };

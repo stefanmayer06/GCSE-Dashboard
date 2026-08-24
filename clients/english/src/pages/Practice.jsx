@@ -15,9 +15,13 @@ function loadSaved() {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (!data?.test?.id) return null;
+    if (!data?.test?.id || !Array.isArray(data.test.questions) || data.secondsLeft <= 0) {
+      localStorage.removeItem(LS_KEY);
+      return null;
+    }
     return data;
   } catch {
+    localStorage.removeItem(LS_KEY);
     return null;
   }
 }
@@ -25,7 +29,8 @@ function loadSaved() {
 export default function Practice({ health }) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [phase, setPhase] = useState('setup');
+  const saved = useRef(loadSaved());
+  const [phase, setPhase] = useState(saved.current ? 'restoring' : 'setup');
   const [test, setTest] = useState(null);
   const [answers, setAnswers] = useState({});
   const [current, setCurrent] = useState(0);
@@ -34,23 +39,53 @@ export default function Practice({ health }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState('');
   const [papersMeta, setPapersMeta] = useState(null);
-  const saved = useRef(loadSaved());
+  const submitting = useRef(false);
 
   useEffect(() => {
     api.papers().then((r) => setPapersMeta(r.papers)).catch(() => {});
   }, []);
 
   useEffect(() => {
+    if (saved.current) resumeSaved();
+  }, []);
+
+  async function resumeSaved() {
     const s = saved.current;
-    if (s && s.secondsLeft > 0) {
+    if (!s) return;
+    setError('');
+    setPhase('restoring');
+    try {
+      await api.testStatus(s.test.id);
       setTest(s.test);
       setAnswers(s.answers || {});
       setSecondsLeft(s.secondsLeft);
       setElapsed(s.elapsed || 0);
-      setPhase('running');
       setCurrent(s.current || 0);
+      setPhase('running');
+    } catch (e) {
+      if (e.code === 'TEST_EXPIRED') clearExpiredTest(e.message);
+      else {
+        setError('We could not check your saved paper. Check your connection, then retry.');
+        setPhase('setup');
+      }
     }
-  }, []);
+  }
+
+  function clearExpiredTest(message) {
+    localStorage.removeItem(LS_KEY);
+    saved.current = null;
+    autoStart.current = { paper: null, type: null };
+    setTest(null);
+    setAnswers({});
+    setCurrent(0);
+    setSecondsLeft(null);
+    setElapsed(0);
+    setConfirmOpen(false);
+    submitting.current = false;
+    setError(message);
+    setPhase('setup');
+    navigate('/practice', { replace: true });
+  }
 
   useEffect(() => {
     if (!test || phase !== 'running') return;
@@ -84,6 +119,8 @@ export default function Practice({ health }) {
     setError('');
     try {
       const t = await api.newTest(type, paperId);
+      localStorage.removeItem(LS_KEY);
+      saved.current = null;
       setTest(t);
       setAnswers({});
       setCurrent(0);
@@ -101,7 +138,9 @@ export default function Practice({ health }) {
       document.getElementById('adhoc')?.scrollIntoView({ behavior: 'smooth' });
     }
     if (autoStart.current.paper && autoStart.current.type && !saved.current && phase === 'setup' && papersMeta) {
-      start(autoStart.current.type === 'short' ? 'short' : 'full', Number(autoStart.current.paper));
+      const next = autoStart.current;
+      autoStart.current = { paper: null, type: null };
+      start(next.type === 'short' ? 'short' : 'full', Number(next.paper));
     }
   }, [papersMeta]);
 
@@ -114,6 +153,9 @@ export default function Practice({ health }) {
   }
 
   async function doSubmit(ansOverride, dur, auto = false) {
+    if (submitting.current) return;
+    submitting.current = true;
+    setConfirmOpen(false);
     setPhase('submitting');
     try {
       const list = test.questions.map((q) => ({
@@ -125,13 +167,21 @@ export default function Practice({ health }) {
       localStorage.setItem('englishmate-last-result', JSON.stringify(result));
       navigate('/results');
     } catch (e) {
-      setError(e.message);
-      setPhase('running');
-      if (auto) setSecondsLeft(30);
+      if (e.code === 'TEST_EXPIRED') clearExpiredTest(e.message);
+      else {
+        submitting.current = false;
+        setError(e.message);
+        setPhase('running');
+        if (auto) setSecondsLeft(30);
+      }
     }
   }
 
-  if (phase === 'running' && test) {
+  if (phase === 'restoring') {
+    return <div className="page"><div className="loading">Checking your saved paper...</div></div>;
+  }
+
+  if ((phase === 'running' || phase === 'submitting') && test) {
     return (
       <TestScreen
         test={test}
@@ -147,6 +197,7 @@ export default function Practice({ health }) {
         doConfirm={() => doSubmit({}, null, false)}
         error={error}
         markingReady={health?.aiMarking}
+        busy={phase === 'submitting'}
       />
     );
   }
@@ -197,7 +248,12 @@ export default function Practice({ health }) {
           Long answers are marked by the AI tutor (DeepSeek Flash) against summarised AQA mark
           schemes. {health?.aiMarking ? 'AI marking is ready.' : 'No OpenRouter key set — you\u2019ll self-mark against model answers and rubrics instead.'}
         </p>
-        {error && <div className="error-banner">{error}</div>}
+        {error && (
+          <div className="error-banner">
+            {error}
+            {saved.current && <button className="btn" onClick={resumeSaved}>Retry saved paper</button>}
+          </div>
+        )}
       </section>
 
       <AdhocSection />
@@ -623,7 +679,7 @@ export function SourceBox({ ref_ }) {
 function TestScreen(props) {
   const {
     test, answers, current, secondsLeft, elapsed, onAnswer, onGo, onSubmit,
-    confirmOpen, setConfirmOpen, doConfirm, error, markingReady,
+    confirmOpen, setConfirmOpen, doConfirm, error, markingReady, busy,
   } = props;
   const q = test.questions[current];
   const lowTime = secondsLeft < 600;
@@ -638,7 +694,7 @@ function TestScreen(props) {
   const behind = elapsedMins > doneBefore + q.targetMins * 0.6 && elapsedMins > doneBefore;
 
   return (
-    <div className="exam">
+    <div className="exam" aria-busy={busy}>
       <header className="exam-bar">
         <div className="exam-title">
           <span className="exam-paper">{test.paperCode} · {test.paperName}</span>
@@ -661,7 +717,7 @@ function TestScreen(props) {
             <span className="timer-value">{answeredCount} / {test.questions.length}</span>
           </div>
         </div>
-        <button className="btn btn-submit" onClick={() => onSubmit(false)}>Submit paper</button>
+        <button className="btn btn-submit" disabled={busy} onClick={() => onSubmit(false)}>{busy ? 'Submitting...' : 'Submit paper'}</button>
       </header>
 
       <div className="exam-with-source">
@@ -779,7 +835,7 @@ function TestScreen(props) {
             {current < test.questions.length - 1 ? (
               <button className="btn btn-primary" onClick={() => onGo(current + 1)}>Next →</button>
             ) : (
-              <button className="btn btn-finish" onClick={() => onSubmit(false)}>Finish & submit ✓</button>
+              <button className="btn btn-finish" disabled={busy} onClick={() => onSubmit(false)}>Finish & submit ✓</button>
             )}
           </div>
         </div>
@@ -801,7 +857,7 @@ function TestScreen(props) {
             </div>
             <div className="modal-actions">
               <button className="btn" onClick={() => setConfirmOpen(false)}>Keep working</button>
-              <button className="btn btn-primary" onClick={doConfirm}>Submit</button>
+              <button className="btn btn-primary" disabled={busy} onClick={doConfirm}>Submit</button>
             </div>
           </div>
         </div>

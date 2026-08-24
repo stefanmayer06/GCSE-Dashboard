@@ -8,8 +8,11 @@ async function req(path, opts = {}) {
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Request failed (${res.status})`);
+    const body = await res.json().catch(() => ({}));
+    const error = new Error(body.error || `Request failed (${res.status})`);
+    error.code = body.code;
+    error.status = res.status;
+    throw error;
   }
   return res.json();
 }
@@ -33,6 +36,7 @@ export const api = {
   topic: (id) => req(`/topics/${id}`),
   papers: () => req('/papers'),
   newTest: (type, paper = 1) => req('/test/new', { method: 'POST', body: { type, paper } }),
+  testStatus: (id) => req(`/test/${id}/status`),
   submitTest: (id, answers, durationSec) =>
     req(`/test/${id}/submit`, { method: 'POST', body: { answers, durationSec } }),
   practice: (topicId, count = 8) =>

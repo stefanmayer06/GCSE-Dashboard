@@ -70,8 +70,14 @@ test('login gate accepts the admin account and rejects a bad password', async ({
 
 test('signing out returns to the login gate', async ({ page }) => {
   await signIn(page);
+  await page.evaluate(() => {
+    localStorage.setItem('mathsmate-active-test', 'private draft');
+    localStorage.setItem('mathsmate-last-result', 'private result');
+    localStorage.setItem('englishmate-last-result', 'other private result');
+  });
   await page.locator('.sign-out').click();
   await expect(page.locator('.login-card')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => [localStorage.getItem('mathsmate-active-test'), localStorage.getItem('mathsmate-last-result'), localStorage.getItem('englishmate-last-result')])).toEqual([null, null, null]);
 });
 
 test('subject selector links and live status', async ({ page }) => {
@@ -121,6 +127,13 @@ test('Higher Maths exposes three 8300H papers with Higher grade boundaries', asy
   expect(paper.questions.some((q) => /surds|function|quadratic|proof/i.test(`${q.topic} ${q.text}`))).toBeTruthy();
   expect(paper.questions.filter((q) => q.exceptional).length).toBe(1);
   expect(paper.questions.some((q) => q.stimulus?.type === 'cartesian' || q.stimulus?.type === 'histogram')).toBeTruthy();
+  expect(paper.questions.filter((q) => q.stimulus).length).toBeGreaterThanOrEqual(5);
+  expect(paper.stretchMarks).toBeGreaterThanOrEqual(18);
+  expect(paper.stretchMarks).toBeLessThanOrEqual(30);
+
+  const status = await page.request.get(`${BASE}/api/maths-higher/test/${paper.id}/status`);
+  expect(status.ok()).toBeTruthy();
+  expect(await status.json()).toEqual({ active: true });
 
   const submit = await page.request.post(`${BASE}/api/maths-higher/test/${paper.id}/submit`, {
     data: { answers: paper.questions.map((q) => ({ qid: q.id, value: null })), durationSec: 5 },
@@ -130,6 +143,28 @@ test('Higher Maths exposes three 8300H papers with Higher grade boundaries', asy
   expect(result.boundaries[0].grade).toBe(9);
   expect(result.strandAnalysis.length).toBeGreaterThan(0);
 });
+
+for (const [subject, route, storageKey] of [
+  ['Maths', 'maths', 'mathsmate-active-test'],
+  ['Higher Maths', 'maths-higher', 'mathsmate-higher-active-test'],
+  ['English', 'english', 'englishmate-active-test'],
+]) {
+  test(`${subject} clears an expired saved paper after a restart`, async ({ page }) => {
+    await signIn(page);
+    await page.goto(`${BASE}/${route}/`, { waitUntil: 'networkidle' });
+    await page.evaluate(({ key }) => {
+      localStorage.setItem(key, JSON.stringify({
+        test: { id: 'expired-after-restart', questions: [] },
+        answers: {}, current: 0, secondsLeft: 600, elapsed: 20,
+      }));
+    }, { key: storageKey });
+    await page.goto(`${BASE}/${route}/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
+    await expect(page.locator('.error-banner')).toContainText('no longer active');
+    await expect(page.locator('h1')).toContainText(/Practice/);
+    await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), storageKey)).toBeNull();
+    await expect(page).toHaveURL(new RegExp(`/${route}/practice$`));
+  });
+}
 
 test('Higher Maths renders an accessible graph question in the exam runner', async ({ page }) => {
   await signIn(page);
@@ -146,6 +181,37 @@ test('Higher Maths renders an accessible graph question in the exam runner', asy
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
+test('Higher Maths renders a structured visual at mobile width', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.goto(`${BASE}/maths-higher/practice?paper=2&type=short`, { waitUntil: 'networkidle' });
+  const visualIndex = await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem('mathsmate-higher-active-test'));
+    return saved.test.questions.findIndex((question) => question.stimulus && !['cartesian', 'histogram'].includes(question.stimulus.type));
+  });
+  expect(visualIndex).toBeGreaterThanOrEqual(0);
+  await page.locator('.q-dot').nth(visualIndex).click();
+  await expect(page.locator('.maths-visual')).toBeVisible();
+  await expect(page.locator('.maths-visual [role="img"], .maths-visual table').first()).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('Maths recovers if a paper expires while it is open', async ({ page }) => {
+  await signIn(page);
+  await page.route('**/api/maths/test/*/submit', (route) => route.fulfill({
+    status: 410,
+    contentType: 'application/json',
+    body: JSON.stringify({ error: 'This saved paper is no longer active. It may have expired after a server restart. Start a new paper to continue.', code: 'TEST_EXPIRED' }),
+  }));
+  await page.goto(`${BASE}/maths/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Submit paper' }).click();
+  await page.getByRole('button', { name: 'Submit', exact: true }).click();
+  await expect(page.locator('.error-banner')).toContainText('no longer active');
+  await expect(page.locator('h1')).toContainText('Practice exam');
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('mathsmate-active-test'))).toBeNull();
+});
+
 test('Foundation Maths renders an accessible visual question in the exam runner', async ({ page }) => {
   await signIn(page);
   await page.goto(`${BASE}/maths/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
@@ -156,7 +222,7 @@ test('Foundation Maths renders an accessible visual question in the exam runner'
   expect(visualIndex).toBeGreaterThanOrEqual(0);
   await page.locator('.q-dot').nth(visualIndex).click();
   await expect(page.locator('.maths-visual')).toBeVisible();
-  await expect(page.locator('.maths-visual [role="img"]').first()).toBeVisible();
+  await expect(page.locator('.maths-visual [role="img"], .maths-visual table').first()).toBeVisible();
 });
 
 test('Foundation lesson graph supports keyboard inspection and resizing', async ({ page }) => {

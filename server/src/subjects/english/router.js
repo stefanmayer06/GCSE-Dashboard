@@ -29,16 +29,29 @@ app.use((req, res, next) => {
 const activeTests = new Map();
 const sessions = new Map();
 
-function newSession(kind, fullQuestions) {
+function activeTestFor(req) {
+  const test = activeTests.get(req.params.id);
+  if (!test || test.userId !== req.user.id) return null;
+  return test;
+}
+
+function expiredTest(res) {
+  return res.status(410).json({
+    error: 'This saved paper is no longer active. It may have expired after a server restart. Start a new paper to continue.',
+    code: 'TEST_EXPIRED',
+  });
+}
+
+function newSession(req, kind, fullQuestions) {
   const id = crypto.randomUUID();
-  sessions.set(id, { kind, questions: fullQuestions, at: Date.now() });
+  sessions.set(id, { userId: req.user.id, kind, questions: fullQuestions, at: Date.now() });
   if (sessions.size > 100) sessions.delete(sessions.keys().next().value);
   return id;
 }
 
-function sessionFor(id) {
+function sessionFor(req, id) {
   const s = sessions.get(id);
-  if (!s) return null;
+  if (!s || s.userId !== req.user.id) return null;
   return s;
 }
 
@@ -129,9 +142,15 @@ app.post('/test/new', (req, res) => {
   const full = fullSetFor(paper.entryId, paperId);
   const byId = new Map(full.map((q) => [q.id, q]));
   const questions = paper.questions.map((q) => ({ ...q, __full: byId.get(q.id) }));
-  activeTests.set(id, { id, type, paperId, entryId: paper.entryId, questions, totalMarks: paper.totalMarks, startedAt: Date.now() });
+  activeTests.set(id, { id, userId: req.user.id, type, paperId, entryId: paper.entryId, questions, totalMarks: paper.totalMarks, startedAt: Date.now() });
   if (activeTests.size > 30) activeTests.delete(activeTests.keys().next().value);
   res.json({ id, ...paper });
+});
+
+app.get('/test/:id/status', (req, res) => {
+  const test = activeTestFor(req);
+  if (!test) return expiredTest(res);
+  res.json({ active: true });
 });
 
 function sourceTextFor(test) {
@@ -142,8 +161,8 @@ function sourceTextFor(test) {
 }
 
 app.post('/test/:id/submit', async (req, res) => {
-  const test = activeTests.get(req.params.id);
-  if (!test) return res.status(404).json({ error: 'Test not found (it may have expired).' });
+  const test = activeTestFor(req);
+  if (!test) return expiredTest(res);
   const answers = req.body?.answers || [];
   const durationSec = req.body?.durationSec || null;
   const sourceText = sourceTextFor(test);
@@ -260,7 +279,7 @@ app.post('/practice', (req, res) => {
   const count = Math.min(4, Math.max(1, req.body?.count || 3));
   const full = buildPractice(topicId, count);
   if (!full.length) return res.status(404).json({ error: 'Topic not found' });
-  const sessionId = newSession('practice', full);
+  const sessionId = newSession(req, 'practice', full);
   res.json({ sessionId, topicId, questions: full.map(stripMarkCtx) });
 });
 
@@ -270,13 +289,13 @@ app.post('/adhoc', (req, res) => {
     ? req.body.kinds.filter((k) => ['listing', 'truefalse', 'analysis'].includes(k))
     : ['listing', 'truefalse', 'analysis'];
   const full = buildAdhoc(count, kinds);
-  const sessionId = newSession('adhoc', full);
+  const sessionId = newSession(req, 'adhoc', full);
   res.json({ sessionId, questions: full.map(stripMarkCtx) });
 });
 
 app.post('/check', (req, res) => {
   const { sessionId, qid, value } = req.body || {};
-  const s = sessionFor(sessionId);
+  const s = sessionFor(req, sessionId);
   if (!s) return res.status(404).json({ error: 'Session expired — start again.' });
   const q = s.questions.find((x) => x.id === qid);
   if (!q) return res.status(404).json({ error: 'Question not found.' });
@@ -293,7 +312,7 @@ app.post('/check', (req, res) => {
 
 app.post('/practice/submit', (req, res) => {
   const { sessionId, answers, aiResults } = req.body || {};
-  const s = sessionFor(sessionId);
+  const s = sessionFor(req, sessionId);
   if (!s) return res.status(404).json({ error: 'Session expired.' });
   const aiMap = aiResults || {};
   let correct = 0;
@@ -325,7 +344,7 @@ app.post('/practice/submit', (req, res) => {
 
 app.post('/adhoc/submit', (req, res) => {
   const { sessionId, answers, aiResults } = req.body || {};
-  const s = sessionFor(sessionId);
+  const s = sessionFor(req, sessionId);
   if (!s) return res.status(404).json({ error: 'Session expired.' });
   const aiMap = aiResults || {};
   let correct = 0;

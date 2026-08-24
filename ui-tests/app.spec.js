@@ -116,6 +116,24 @@ test('subject themes share the desk system but keep distinct accents', async ({ 
   expect(maths).not.toEqual(english);
 });
 
+test('English tutor renders Markdown response structure', async ({ page }) => {
+  await signIn(page);
+  await page.route('**/api/english/chat/history', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      messages: [
+        { role: 'assistant', content: '### Language analysis\n\n**Step 1:** Choose a short quotation.\n\n- Name the technique\n- Explain the effect\n\n`quote → method → effect`' },
+      ],
+    }),
+  }));
+  await page.goto(`${BASE}/english/chat`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.markdown-message h3')).toContainText('Language analysis');
+  await expect(page.locator('.markdown-message strong')).toContainText('Step 1:');
+  await expect(page.locator('.markdown-message ul li')).toHaveCount(2);
+  await expect(page.locator('.markdown-message code')).toContainText('quote');
+});
+
 test('Higher Maths exposes three 8300H papers with Higher grade boundaries', async ({ page }) => {
   await signIn(page);
   const response = await page.request.post(`${BASE}/api/maths-higher/test/new`, { data: { type: 'full', paper: 1 } });

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
+import MarkdownMessage from '../../../shared/MarkdownMessage.jsx';
 
 const SUGGESTIONS = [
   'How should I structure my Paper 1 Q5 story?',
@@ -92,7 +93,7 @@ export default function Chat({ health }) {
             <div key={i} className={`msg ${m.role}`}>
               <div className="msg-avatar">{m.role === 'user' ? '🧑' : '🤖'}</div>
               <div className="msg-body">
-                <div className="msg-text">{String(m.content ?? '').split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
+                <div className="msg-text"><MarkdownMessage content={m.content} /></div>
                 {m.role === 'assistant' && m.model && <div className="msg-model">{m.model}</div>}
               </div>
             </div>

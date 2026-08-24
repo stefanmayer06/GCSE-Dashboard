@@ -171,6 +171,12 @@ app.get('/test/:id/status', (req, res) => {
   res.json({ active: true });
 });
 
+app.delete('/test/:id', (req, res) => {
+  const test = activeTestFor(req);
+  if (test) activeTests.delete(test.id);
+  res.json({ discarded: !!test });
+});
+
 app.post('/test/:id/submit', (req, res) => {
   const test = activeTestFor(req);
   if (!test) return expiredTest(res);

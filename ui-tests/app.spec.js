@@ -166,6 +166,35 @@ for (const [subject, route, storageKey] of [
   });
 }
 
+for (const [subject, route, apiRoute, storageKey] of [
+  ['Maths', 'maths', 'maths', 'mathsmate-active-test'],
+  ['Higher Maths', 'maths-higher', 'maths-higher', 'mathsmate-higher-active-test'],
+  ['English', 'english', 'english', 'englishmate-active-test'],
+]) {
+  test(`${subject} can quit a paper without changing progress`, async ({ page }) => {
+    if (route === 'maths-higher') await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page);
+    const before = await (await page.request.get(`${BASE}/api/${apiRoute}/progress`)).json();
+    await page.goto(`${BASE}/${route}/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
+    const testId = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)).test.id, storageKey);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+
+    await page.getByRole('button', { name: 'Quit paper', exact: true }).click();
+    const modal = page.locator('.modal').filter({ hasText: 'Quit this paper?' });
+    await expect(modal).toContainText('will not affect your scores or progress');
+    await modal.getByRole('button', { name: 'Quit paper', exact: true }).click();
+
+    await expect(page.locator('.papers-grid')).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/${route}/practice$`));
+    await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), storageKey)).toBeNull();
+    const status = await page.request.get(`${BASE}/api/${apiRoute}/test/${testId}/status`);
+    expect(status.status()).toBe(410);
+    const after = await (await page.request.get(`${BASE}/api/${apiRoute}/progress`)).json();
+    expect(after).toEqual(before);
+  });
+}
+
 test('Higher Maths renders an accessible graph question in the exam runner', async ({ page }) => {
   await signIn(page);
   await page.goto(`${BASE}/maths-higher/practice?paper=1&type=short`, { waitUntil: 'networkidle' });

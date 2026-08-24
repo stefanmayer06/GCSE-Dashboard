@@ -37,6 +37,7 @@ export const api = {
   papers: () => req('/papers'),
   newTest: (type, paper = 1) => req('/test/new', { method: 'POST', body: { type, paper } }),
   testStatus: (id) => req(`/test/${id}/status`),
+  discardTest: (id) => req(`/test/${id}`, { method: 'DELETE' }),
   submitTest: (id, answers, durationSec) =>
     req(`/test/${id}/submit`, { method: 'POST', body: { answers, durationSec } }),
   practice: (topicId, count = 8) =>

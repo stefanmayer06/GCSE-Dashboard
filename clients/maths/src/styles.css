@@ -544,6 +544,16 @@ h2 {
   color: #ff9b9b;
 }
 
+.btn-quit {
+  background: transparent;
+  color: var(--muted);
+}
+
+.btn-quit:hover:not(:disabled) {
+  background: var(--panel2);
+  color: var(--text);
+}
+
 .btn.small {
   padding: 6px 12px;
   font-size: 12.5px;
@@ -681,6 +691,12 @@ textarea:focus-visible,
 .exam-timers {
   display: flex;
   gap: 26px;
+}
+
+.exam-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .timer {
@@ -1879,5 +1895,10 @@ textarea:focus-visible,
   .exam-bar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .exam-bar-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 }

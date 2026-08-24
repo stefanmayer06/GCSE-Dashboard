@@ -37,6 +37,8 @@ export default function Practice({ health }) {
   const [secondsLeft, setSecondsLeft] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [quitOpen, setQuitOpen] = useState(false);
+  const [quitting, setQuitting] = useState(false);
   const [error, setError] = useState('');
   const [papersMeta, setPapersMeta] = useState(null);
   const submitting = useRef(false);
@@ -81,6 +83,8 @@ export default function Practice({ health }) {
     setSecondsLeft(null);
     setElapsed(0);
     setConfirmOpen(false);
+    setQuitOpen(false);
+    setQuitting(false);
     submitting.current = false;
     setError(message);
     setPhase('setup');
@@ -177,6 +181,30 @@ export default function Practice({ health }) {
     }
   }
 
+  async function doQuit() {
+    if (submitting.current) return;
+    submitting.current = true;
+    setQuitting(true);
+    try {
+      await api.discardTest(test.id);
+    } catch {}
+    localStorage.removeItem(LS_KEY);
+    saved.current = null;
+    autoStart.current = { paper: null, type: null };
+    setTest(null);
+    setAnswers({});
+    setCurrent(0);
+    setSecondsLeft(null);
+    setElapsed(0);
+    setConfirmOpen(false);
+    setQuitOpen(false);
+    setQuitting(false);
+    submitting.current = false;
+    setError('');
+    setPhase('setup');
+    navigate('/practice', { replace: true });
+  }
+
   if (phase === 'restoring') {
     return <div className="page"><div className="loading">Checking your saved paper...</div></div>;
   }
@@ -195,6 +223,10 @@ export default function Practice({ health }) {
         confirmOpen={confirmOpen}
         setConfirmOpen={setConfirmOpen}
         doConfirm={() => doSubmit({}, null, false)}
+        quitOpen={quitOpen}
+        setQuitOpen={setQuitOpen}
+        doQuit={doQuit}
+        quitting={quitting}
         error={error}
         markingReady={health?.aiMarking}
         busy={phase === 'submitting'}
@@ -679,7 +711,8 @@ export function SourceBox({ ref_ }) {
 function TestScreen(props) {
   const {
     test, answers, current, secondsLeft, elapsed, onAnswer, onGo, onSubmit,
-    confirmOpen, setConfirmOpen, doConfirm, error, markingReady, busy,
+    confirmOpen, setConfirmOpen, doConfirm, quitOpen, setQuitOpen, doQuit, quitting,
+    error, markingReady, busy,
   } = props;
   const q = test.questions[current];
   const lowTime = secondsLeft < 600;
@@ -717,7 +750,10 @@ function TestScreen(props) {
             <span className="timer-value">{answeredCount} / {test.questions.length}</span>
           </div>
         </div>
-        <button className="btn btn-submit" disabled={busy} onClick={() => onSubmit(false)}>{busy ? 'Submitting...' : 'Submit paper'}</button>
+        <div className="exam-bar-actions">
+          <button className="btn btn-quit" disabled={busy} onClick={() => { setConfirmOpen(false); setQuitOpen(true); }}>Quit paper</button>
+          <button className="btn btn-submit" disabled={busy} onClick={() => onSubmit(false)}>{busy ? 'Submitting...' : 'Submit paper'}</button>
+        </div>
       </header>
 
       <div className="exam-with-source">
@@ -858,6 +894,18 @@ function TestScreen(props) {
             <div className="modal-actions">
               <button className="btn" onClick={() => setConfirmOpen(false)}>Keep working</button>
               <button className="btn btn-primary" disabled={busy} onClick={doConfirm}>Submit</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {quitOpen && (
+        <div className="modal-back">
+          <div className="modal">
+            <h3>Quit this paper?</h3>
+            <p>Your answers on this unfinished paper will be discarded. Quitting will not affect your scores or progress.</p>
+            <div className="modal-actions">
+              <button className="btn" disabled={quitting} onClick={() => setQuitOpen(false)}>Keep working</button>
+              <button className="btn btn-submit" disabled={quitting} onClick={doQuit}>{quitting ? 'Quitting...' : 'Quit paper'}</button>
             </div>
           </div>
         </div>

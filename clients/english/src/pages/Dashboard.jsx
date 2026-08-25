@@ -6,8 +6,6 @@ import { ExpertisePath } from '../../../shared/rewards.jsx';
 
 export default function Dashboard({ health, progress }) {
   const navigate = useNavigate();
-  const recent = progress?.history?.slice(0, 10).reverse() || [];
-  const maxBar = Math.max(1, ...recent.map((h) => h.percent ?? 0));
   const overall = progress?.overallPercent;
   const [topics, setTopics] = useState(null);
 
@@ -39,6 +37,10 @@ export default function Dashboard({ health, progress }) {
   }, [topics, progress]);
 
   const anyMastery = mastery?.some((m) => m.answered > 0);
+  const focus = mastery
+    ?.filter((section) => section.answered > 0)
+    .sort((a, b) => (a.percent ?? 0) - (b.percent ?? 0))
+    .slice(0, 2);
 
   return (
     <div className="page">
@@ -131,22 +133,28 @@ export default function Dashboard({ health, progress }) {
 
       <section className="two-col">
         <div className="panel">
-          <h2>Recent papers</h2>
-          {recent.length === 0 ? (
-            <p className="empty">No papers yet — your results will chart here.</p>
+          <h2>Current focus</h2>
+          {!focus?.length ? (
+            <p className="empty">Answer a few questions and your weakest skills will appear here.</p>
           ) : (
-            <div className="chart">
-              {recent.map((h) => (
-                <div key={h.id} className="chart-col" title={`${h.percent ?? '—'}% — ${h.type}`}>
-                  <div className="chart-bar-wrap">
+            <div>
+              {focus.map((section) => (
+                <div key={section.id} className="mastery-row">
+                  <span className="strand-dot" style={{ background: section.color }} />
+                  <span className="mastery-name">{section.name}</span>
+                  <div className="mastery-bar">
                     <div
-                      className={`chart-bar ${(h.percent ?? 0) >= 50 ? 'ok' : 'bad'}`}
-                      style={{ height: `${Math.max(6, ((h.percent ?? 0) / maxBar) * 100)}%` }}
+                      className="mastery-fill"
+                      style={{
+                        width: `${section.percent ?? 0}%`,
+                        background: section.percent >= 50 ? 'var(--amber)' : 'var(--red)',
+                      }}
                     />
                   </div>
-                  <div className="chart-pct">{h.percent ?? '—'}%</div>
+                  <span className="mastery-pct">{section.percent}%</span>
                 </div>
               ))}
+              <p className="sub small">Build confidence in these skills in <button type="button" className="link link-button" onClick={() => navigate('/learn')}>Learn</button>.</p>
             </div>
           )}
         </div>

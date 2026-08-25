@@ -17,6 +17,7 @@ const DEFAULT_OAUTH_FETCH_TIMEOUT = 10_000;
 const MAX_OAUTH_FETCH_TIMEOUT = 15_000;
 const USERNAME_PATTERN = /^[a-z0-9_.-]{3,32}$/;
 const scrypt = promisify(crypto.scrypt);
+const supabaseAuth = storage.driver === 'supabase';
 
 const oauthCfg = {
   clientId: process.env.OAUTH_CLIENT_ID || '',
@@ -68,6 +69,7 @@ function storedTokenHash(value) {
 }
 
 function validateAuthConfiguration() {
+  if (supabaseAuth) return;
   const protectedDeployment = Boolean(process.env.VERCEL)
     || (process.env.NODE_ENV === 'production' && storage.driver === 'postgres');
   if (protectedDeployment && !configuredAppUrl()) {
@@ -147,6 +149,7 @@ let authInitPromise = null;
 async function initializeAuth() {
   validateAuthConfiguration();
   await storage.init();
+  if (supabaseAuth) return;
   const admin = await seedAdmin();
   if (storage.driver === 'json') {
     await migrateLegacyProgress(admin, 'maths');
@@ -183,8 +186,19 @@ function sessionTokenFrom(req) {
   return parseCookies(req.headers.cookie || '')[SESSION_COOKIE] || null;
 }
 
+function bearerTokenFrom(req) {
+  const value = req.headers.authorization;
+  if (typeof value !== 'string') return null;
+  const match = value.match(/^Bearer\s+(.+)$/i);
+  return match?.[1]?.trim() || null;
+}
+
 async function requestUser(req) {
   await initAuth();
+  if (supabaseAuth) {
+    const token = bearerTokenFrom(req);
+    return token ? storage.getAuthUser(token) : null;
+  }
   const token = sessionTokenFrom(req);
   if (!token) return null;
   const session = await storage.getAuthSession(storedTokenHash(token));
@@ -201,7 +215,12 @@ export async function requireAuth(req, res, next) {
   try {
     const user = await requestUser(req);
     if (!user) return res.status(401).json({ error: 'authentication required' });
-    req.user = { id: user.id, username: user.username, oauth: Boolean(user.oauth) };
+    req.user = {
+      id: user.id,
+      username: user.username,
+      email: user.email || null,
+      oauth: Boolean(user.oauth),
+    };
     return next();
   } catch (error) {
     return next(error);
@@ -408,10 +427,91 @@ export function authRoutes() {
   }));
 
   router.get('/config', (req, res) => {
+    if (supabaseAuth) {
+      return res.json({
+        driver: 'supabase',
+        emailRequired: true,
+        oauth: Boolean(storage.config.oauthProvider),
+        provider: storage.config.oauthProvider || 'OAuth',
+      });
+    }
     res.json({ oauth: oauthConfigured(), provider: oauthCfg.provider });
   });
 
+  router.post('/claim', asyncRoute(async (req, res) => {
+    if (!supabaseAuth) return res.status(404).json({ error: 'Account claiming is not enabled.' });
+
+    const username = String(req.body?.username || '').trim().toLowerCase();
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const currentPassword = String(req.body?.currentPassword || req.body?.password || '');
+    const newPassword = String(req.body?.newPassword || req.body?.password || '');
+    if (!USERNAME_PATTERN.test(username) || !email.includes('@')) {
+      return res.status(400).json({ error: 'Enter a valid username and email address.' });
+    }
+    if (currentPassword.length < 1 || newPassword.length < 8) {
+      return res.status(400).json({ error: 'Enter your old password and a new password of at least 8 characters.' });
+    }
+
+    const legacy = await storage.lookupLegacyUserForClaim(username);
+    if (legacy.status !== 'ready' || !await verifyPassword(currentPassword, legacy.passwordHash)) {
+      return res.status(400).json({ error: 'We could not verify that legacy account.' });
+    }
+    if (await storage.getUserByUsername(username)) {
+      return res.status(409).json({ error: 'That username is already in use.' });
+    }
+
+    const token = crypto.randomBytes(32).toString('base64url');
+    const tokenHash = storedTokenHash(token);
+    const started = await storage.startLegacyClaim(
+      legacy.legacyUserId,
+      email,
+      tokenHash,
+      new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    );
+    if (started.status !== 'started') {
+      return res.status(409).json({ error: 'That legacy account has already been claimed.' });
+    }
+
+    let created;
+    try {
+      created = await storage.createAuthUser(email, newPassword, username);
+      const completed = await storage.completeLegacyClaim(tokenHash, created.id);
+      if (completed.status !== 'completed') {
+        await storage.deleteAuthUser(created.id).catch(() => {});
+        return res.status(409).json({ error: 'That legacy account could not be claimed.' });
+      }
+      let confirmationRedirect;
+      try {
+        confirmationRedirect = configuredAppUrl() || undefined;
+      } catch {
+        confirmationRedirect = undefined;
+      }
+      await storage.resendSignup(email, confirmationRedirect).catch(() => {});
+    } catch (error) {
+      if (created?.id) await storage.deleteAuthUser(created.id).catch(() => {});
+      if (error?.code === 'STORAGE_CONFLICT' || error?.code === 'email_exists') {
+        return res.status(409).json({ error: 'That email or username is already in use.' });
+      }
+      throw error;
+    }
+
+    let session = null;
+    try {
+      session = (await storage.signIn(email, newPassword))?.session || null;
+    } catch {}
+    return res.status(201).json({
+      user: { username, email },
+      ...(session ? { session } : { pendingEmailConfirmation: true }),
+    });
+  }));
+
   router.get('/me', requireAuth, (req, res) => {
+    if (supabaseAuth) {
+      return res.json({
+        user: { username: req.user.username, email: req.user.email },
+        oauth: req.user.oauth,
+      });
+    }
     res.json({
       user: { username: req.user.username },
       oauth: req.user.oauth,
@@ -419,6 +519,27 @@ export function authRoutes() {
   });
 
   router.post('/login', asyncRoute(async (req, res) => {
+    if (supabaseAuth) {
+      const email = String(req.body?.email || req.body?.username || '').trim().toLowerCase();
+      const password = String(req.body?.password || '');
+      if (!email.includes('@') || !password) {
+        return res.status(400).json({ error: 'Enter a valid email address and password.' });
+      }
+      let result;
+      try {
+        result = await storage.signIn(email, password);
+      } catch {
+        return res.status(401).json({ error: 'Invalid email or password.' });
+      }
+      const user = await storage.getAuthUser(result.session?.access_token || '');
+      if (!user || !result.session?.access_token) {
+        return res.status(401).json({ error: 'Sign-in did not return a valid session.' });
+      }
+      return res.json({
+        user: { username: user.username, email: user.email },
+        session: result.session,
+      });
+    }
     const { username = '', password = '' } = req.body || {};
     const name = String(username).trim().toLowerCase();
     const user = await storage.getUserByUsername(name);
@@ -433,6 +554,42 @@ export function authRoutes() {
   }));
 
   router.post('/signup', asyncRoute(async (req, res) => {
+    if (supabaseAuth) {
+      const email = String(req.body?.email || '').trim().toLowerCase();
+      const name = String(req.body?.username || '').trim().toLowerCase();
+      const password = String(req.body?.password || '');
+      if (!email.includes('@')) return res.status(400).json({ error: 'Enter a valid email address.' });
+      if (!USERNAME_PATTERN.test(name)) {
+        return res.status(400).json({
+          error: 'Usernames must be 3-32 characters and may only use letters, numbers, dots, dashes and underscores.',
+        });
+      }
+      if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+      if (await storage.getUserByUsername(name)) {
+        return res.status(409).json({ error: 'That username is already taken.' });
+      }
+
+      let result;
+      try {
+        result = await storage.signUp(email, password, name);
+      } catch (error) {
+        if (error?.code === 'STORAGE_CONFLICT') {
+          return res.status(409).json({ error: 'That email or username is already in use.' });
+        }
+        if (error?.code === 'user_already_exists') {
+          return res.status(409).json({ error: 'That email or username is already in use.' });
+        }
+        throw error;
+      }
+      const user = result.session?.access_token
+        ? await storage.getAuthUser(result.session.access_token)
+        : null;
+      return res.status(201).json({
+        user: { username: user?.username || name, email },
+        ...(result.session ? { session: result.session } : {}),
+        ...(result.session ? {} : { pendingEmailConfirmation: true }),
+      });
+    }
     const { username = '', password = '' } = req.body || {};
     const name = String(username).trim().toLowerCase();
     const passwordValue = String(password);
@@ -467,6 +624,7 @@ export function authRoutes() {
   }));
 
   router.post('/logout', requireAuth, asyncRoute(async (req, res) => {
+    if (supabaseAuth) return res.json({ ok: true });
     const token = sessionTokenFrom(req);
     if (token) await storage.deleteAuthSession(storedTokenHash(token));
     clearSessionCookie(res);
@@ -474,6 +632,14 @@ export function authRoutes() {
   }));
 
   router.get('/oauth', asyncRoute(async (req, res) => {
+    if (supabaseAuth) {
+      if (!storage.config.oauthProvider) return res.status(404).json({ error: 'OAuth is not configured' });
+      const appUrl = configuredAppUrl();
+      const next = safeNext(req.query.next);
+      const redirectTo = `${appUrl || `${req.protocol}://${req.get('host')}`}${next}`;
+      const result = await storage.signInWithOAuth(storage.config.oauthProvider, redirectTo);
+      return res.redirect(result.url);
+    }
     if (!oauthConfigured()) return res.status(404).json({ error: 'OAuth is not configured' });
 
     const state = crypto.randomBytes(24).toString('base64url');
@@ -496,6 +662,7 @@ export function authRoutes() {
   }));
 
   router.get('/oauth/callback', asyncRoute(async (req, res) => {
+    if (supabaseAuth) return res.status(404).send('Supabase handles the OAuth callback.');
     if (!oauthConfigured()) return res.status(404).json({ error: 'OAuth is not configured' });
 
     const rawState = typeof req.query.state === 'string' ? req.query.state : '';

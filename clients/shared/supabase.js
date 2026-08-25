@@ -1,0 +1,45 @@
+import { createClient } from '@supabase/supabase-js';
+
+const url = String(import.meta.env.VITE_SUPABASE_URL || '').trim();
+const key = String(
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+    || import.meta.env.VITE_SUPABASE_ANON_KEY
+    || '',
+).trim();
+
+export const supabase = url && key
+  ? createClient(url, key, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
+    })
+  : null;
+
+const SERVER_SESSION_KEY = 'gcse-supabase-session';
+
+export async function supabaseAccessToken() {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token || null;
+}
+
+export function storedSupabaseAccessToken() {
+  if (supabase) return null;
+  try {
+    const value = JSON.parse(localStorage.getItem(SERVER_SESSION_KEY) || 'null');
+    return value?.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
+export function storeSupabaseSession(session) {
+  if (!session || supabase) return;
+  localStorage.setItem(SERVER_SESSION_KEY, JSON.stringify(session));
+}
+
+export function clearSupabaseSession() {
+  if (!supabase) localStorage.removeItem(SERVER_SESSION_KEY);
+}

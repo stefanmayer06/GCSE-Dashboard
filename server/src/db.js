@@ -56,12 +56,12 @@ function normalizeState(stored) {
   return state;
 }
 
-function progressFor(state) {
+function progressFor(state, { includeHistory = true } = {}) {
   const level = levelForXp(state.xp);
   const xpInto = state.xp - (level - 1) ** 2 * 50;
   const xpNeeded = (level ** 2 - (level - 1) ** 2) * 50;
   const completedLessonIds = [...state.completedLessons];
-  return {
+  const result = {
     xp: state.xp,
     level,
     xpInto,
@@ -72,11 +72,12 @@ function progressFor(state) {
     overallPercent: state.totalTestMarks
       ? Math.round((100 * state.totalTestCorrect) / state.totalTestMarks)
       : null,
-    history: state.history.slice(0, 20),
     topicStats: state.topicStats,
     completedLessonIds,
     lessonsCompleted: completedLessonIds.length,
   };
+  if (includeHistory) result.history = state.history.slice(0, 20);
+  return result;
 }
 
 function applyActivity(state) {
@@ -88,7 +89,7 @@ function applyActivity(state) {
   return state.streak;
 }
 
-function applyReward(state, { scoreXp = 0, lessonId = null } = {}) {
+function applyReward(state, { scoreXp = 0, lessonId = null } = {}, includeHistory = true) {
   const safeScoreXp = Number.isFinite(Number(scoreXp)) ? Math.max(0, Number(scoreXp)) : 0;
   const normalizedLessonId = typeof lessonId === 'string' ? lessonId.trim() : '';
   const levelBefore = levelForXp(state.xp);
@@ -109,7 +110,7 @@ function applyReward(state, { scoreXp = 0, lessonId = null } = {}) {
     firstCompletion,
     levelBefore,
     levelAfter: levelForXp(state.xp),
-    progress: progressFor(state),
+    progress: progressFor(state, { includeHistory }),
   };
 }
 
@@ -150,6 +151,7 @@ function applyPracticeRecords(state, records) {
 export function createDb(userId, subject, storage = defaultStorage) {
   const dbUserId = String(userId);
   const dbSubject = String(subject);
+  const compactStorage = storage.driver === 'supabase';
 
   async function loadDb() {
     return normalizeState(await storage.getProgress(dbUserId, dbSubject));
@@ -163,32 +165,71 @@ export function createDb(userId, subject, storage = defaultStorage) {
   }
 
   async function registerActivity() {
+    if (compactStorage) {
+      const result = await storage.mutateSubjectProgress(dbUserId, dbSubject, { type: 'activity' });
+      return result.progress.streak;
+    }
     return mutate((state) => applyActivity(state));
   }
 
   async function addXp(amount) {
+    if (compactStorage) {
+      await storage.mutateSubjectProgress(dbUserId, dbSubject, { type: 'add_xp', amount });
+      return;
+    }
     return mutate((state) => {
       state.xp += amount;
     });
   }
 
   async function rewardActivity(options = {}) {
+    if (compactStorage) {
+      const result = await storage.mutateSubjectProgress(dbUserId, dbSubject, {
+        type: 'reward',
+        scoreXp: options.scoreXp,
+        lessonId: options.lessonId,
+      });
+      return result.reward;
+    }
     return mutate((state) => applyReward(state, options));
   }
 
   async function recordTest(result) {
+    if (compactStorage) {
+      await storage.mutateSubjectProgress(dbUserId, dbSubject, {
+        type: 'test',
+        testResult: result,
+      });
+      return;
+    }
     return mutate((state) => {
       applyTest(state, result);
     });
   }
 
   async function recordPractice(record) {
+    if (compactStorage) {
+      await storage.mutateSubjectProgress(dbUserId, dbSubject, {
+        type: 'practice',
+        record,
+      });
+      return;
+    }
     return mutate((state) => {
       applyPractice(state, record);
     });
   }
 
   async function recordTestAndReward({ result, scoreXp, lessonId = null }) {
+    if (compactStorage) {
+      const updated = await storage.mutateSubjectProgress(dbUserId, dbSubject, {
+        type: 'test_and_reward',
+        testResult: result,
+        scoreXp,
+        lessonId,
+      });
+      return updated.reward;
+    }
     return mutate((state) => {
       applyTest(state, result);
       return applyReward(state, { scoreXp, lessonId });
@@ -196,6 +237,15 @@ export function createDb(userId, subject, storage = defaultStorage) {
   }
 
   async function recordPracticeAndReward({ records, scoreXp, lessonId = null }) {
+    if (compactStorage) {
+      const updated = await storage.mutateSubjectProgress(dbUserId, dbSubject, {
+        type: 'practice_and_reward',
+        records,
+        scoreXp,
+        lessonId,
+      });
+      return updated.reward;
+    }
     return mutate((state) => {
       applyPracticeRecords(state, records);
       return applyReward(state, { scoreXp, lessonId });
@@ -203,14 +253,16 @@ export function createDb(userId, subject, storage = defaultStorage) {
   }
 
   async function progress() {
-    return progressFor(await loadDb());
+    return progressFor(await loadDb(), { includeHistory: !compactStorage });
   }
 
   async function getChatHistory() {
+    if (compactStorage) return [];
     return (await loadDb()).chat.slice(-40);
   }
 
   async function pushChat(role, content) {
+    if (compactStorage) return;
     return mutate((state) => {
       state.chat.push({ role, content, at: new Date().toISOString() });
       state.chat = state.chat.slice(-100);
@@ -218,6 +270,7 @@ export function createDb(userId, subject, storage = defaultStorage) {
   }
 
   async function clearChat() {
+    if (compactStorage) return;
     return mutate((state) => {
       state.chat = [];
     });
@@ -235,7 +288,7 @@ export function createDb(userId, subject, storage = defaultStorage) {
       if (operation.practiceRecords !== undefined) {
         applyPracticeRecords(state, operation.practiceRecords);
       }
-      const rewarded = applyReward(state, operation);
+      const rewarded = applyReward(state, operation, !compactStorage);
       const { progress, ...reward } = rewarded;
       return {
         state,

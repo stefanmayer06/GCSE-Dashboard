@@ -1,6 +1,10 @@
 services:
   gcse-dashboard:
-    build: .
+    build:
+      context: .
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:-}
     container_name: gcse-dashboard
     ports:
       - "3000:3000"
@@ -9,6 +13,10 @@ services:
       DATA_DIR: /app/data
       STORAGE_DRIVER: ${STORAGE_DRIVER:-json}
       DATABASE_URL: ${DATABASE_URL:-}
+      SUPABASE_URL: ${SUPABASE_CONTAINER_URL:-${SUPABASE_URL:-}}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:-}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
+      SUPABASE_OAUTH_PROVIDER: ${SUPABASE_OAUTH_PROVIDER:-}
       APP_URL: ${APP_URL:-http://localhost:3000}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
       SESSION_SECRET: ${SESSION_SECRET:-}

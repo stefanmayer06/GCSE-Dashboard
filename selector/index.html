@@ -96,6 +96,17 @@
       </footer>
     </main>
     <script src="/selector.js" defer></script>
-    <script defer src="/_vercel/insights/script.js"></script>
+    <script>
+      (() => {
+        if (['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)) return;
+        window.va = window.va || function (...args) {
+          (window.vaq = window.vaq || []).push(args);
+        };
+        const script = document.createElement('script');
+        script.defer = true;
+        script.src = '/_vercel/insights/script.js';
+        document.head.appendChild(script);
+      })();
+    </script>
   </body>
 </html>

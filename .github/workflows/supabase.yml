@@ -1,0 +1,35 @@
+name: Supabase Database
+
+on:
+  push:
+    paths:
+      - 'supabase/**'
+      - 'server/src/storage/supabase.js'
+      - 'server/src/supabase/**'
+      - 'server/src/db.js'
+      - '.github/workflows/supabase.yml'
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - 'server/src/storage/supabase.js'
+      - 'server/src/supabase/**'
+      - 'server/src/db.js'
+      - '.github/workflows/supabase.yml'
+
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx supabase start
+      - run: npx supabase db reset --local
+      - run: npx supabase test db
+      - run: npx supabase db lint --local --schema public,migration_private --fail-on error
+      - run: npm test
+      - run: npm run build

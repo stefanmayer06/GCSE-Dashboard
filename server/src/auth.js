@@ -565,6 +565,9 @@ export function authRoutes() {
         });
       }
       if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+      if (await storage.getUserByUsername(name)) {
+        return res.status(409).json({ error: 'That username is already taken.' });
+      }
 
       let result;
       try {

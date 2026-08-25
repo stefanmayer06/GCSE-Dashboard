@@ -88,14 +88,12 @@ export const api = {
         storeSupabaseSession(result.session);
         return result;
       }
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { username } },
+      const result = await authReq('/signup', {
+        method: 'POST',
+        body: { username, email, password },
       });
-      if (error) throw new Error(error.message || 'Sign up failed.');
-      if (!data.session) return { pendingEmailConfirmation: true, user: { username, email } };
-      return authReq('/me');
+      storeSupabaseSession(result.session);
+      return result;
     },
     claim: async ({ username, email, currentPassword, newPassword }) => {
       const result = await authReq('/claim', {

@@ -415,7 +415,12 @@ test('lesson rewards persist, update levels live and cannot be claimed twice', a
   const replay = await page.request.post(`${BASE}/api/maths/practice/submit`, {
     data: { sessionId: issued.sessionId, topicId: 'fractions', answers: [] },
   });
-  expect(replay.status()).toBe(404);
+  expect(replay.ok()).toBeTruthy();
+  expect(await replay.json()).toMatchObject({
+    correctMarks: incomplete.correctMarks,
+    totalMarks: incomplete.totalMarks,
+    reward: incomplete.reward,
+  });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${BASE}/maths/learn/fractions`, { waitUntil: 'networkidle' });

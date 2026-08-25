@@ -1,10 +1,4 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-export const ROOT_DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
+import { defaultStorage } from './storage/index.js';
 
 const defaultState = () => ({
   xp: 0,
@@ -46,179 +40,223 @@ function normalizeCompletedLessons(completedLessons, topicStats) {
   return [...normalized];
 }
 
-/**
- * Per-user, per-subject JSON store.
- * A user's data lives at ${DATA_DIR}/users/<userId>/<subject>.json so
- * it survives server restarts and Docker redeploys on the persistent volume.
- */
-export function createDb(userId, subject) {
-  const dir = path.join(ROOT_DATA_DIR, 'users', String(userId));
-  const file = path.join(dir, `${subject}.json`);
-  let state = null;
+function normalizeState(stored) {
+  const source = stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+  const storedCompletions = source.completedLessons;
+  const hasCompletedLessons = Array.isArray(storedCompletions)
+    || (storedCompletions
+      && typeof storedCompletions === 'object'
+      && !Array.isArray(storedCompletions)
+      && Object.values(storedCompletions).every((value) => typeof value === 'boolean'));
+  const state = { ...defaultState(), ...source };
+  state.completedLessons = normalizeCompletedLessons(
+    state.completedLessons,
+    hasCompletedLessons ? null : state.topicStats,
+  );
+  return state;
+}
 
-  function loadDb() {
-    if (state) return state;
-    try {
-      const stored = JSON.parse(fs.readFileSync(file, 'utf8'));
-      const storedCompletions = stored.completedLessons;
-      const hasCompletedLessons = Array.isArray(storedCompletions)
-        || (storedCompletions
-          && typeof storedCompletions === 'object'
-          && !Array.isArray(storedCompletions)
-          && Object.values(storedCompletions).every((value) => typeof value === 'boolean'));
-      state = { ...defaultState(), ...stored };
-      state.completedLessons = normalizeCompletedLessons(
-        state.completedLessons,
-        hasCompletedLessons ? null : state.topicStats,
-      );
-    } catch {
-      state = defaultState();
-    }
-    return state;
+function progressFor(state) {
+  const level = levelForXp(state.xp);
+  const xpInto = state.xp - (level - 1) ** 2 * 50;
+  const xpNeeded = (level ** 2 - (level - 1) ** 2) * 50;
+  const completedLessonIds = [...state.completedLessons];
+  return {
+    xp: state.xp,
+    level,
+    xpInto,
+    xpNeeded,
+    streak: state.streak,
+    testsTaken: state.testsTaken,
+    practiceAnswered: state.practiceAnswered,
+    overallPercent: state.totalTestMarks
+      ? Math.round((100 * state.totalTestCorrect) / state.totalTestMarks)
+      : null,
+    history: state.history.slice(0, 20),
+    topicStats: state.topicStats,
+    completedLessonIds,
+    lessonsCompleted: completedLessonIds.length,
+  };
+}
+
+function applyActivity(state) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (state.lastActiveDate === today) return state.streak;
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  state.streak = state.lastActiveDate === yesterday ? state.streak + 1 : 1;
+  state.lastActiveDate = today;
+  return state.streak;
+}
+
+function applyReward(state, { scoreXp = 0, lessonId = null } = {}) {
+  const safeScoreXp = Number.isFinite(Number(scoreXp)) ? Math.max(0, Number(scoreXp)) : 0;
+  const normalizedLessonId = typeof lessonId === 'string' ? lessonId.trim() : '';
+  const levelBefore = levelForXp(state.xp);
+  const firstCompletion = Boolean(
+    normalizedLessonId && !state.completedLessons.includes(normalizedLessonId),
+  );
+  const completionXp = firstCompletion ? 20 : 0;
+  const xpAwarded = safeScoreXp + completionXp;
+
+  if (firstCompletion) state.completedLessons.push(normalizedLessonId);
+  state.xp += xpAwarded;
+  applyActivity(state);
+
+  return {
+    scoreXp: safeScoreXp,
+    completionXp,
+    xpAwarded,
+    firstCompletion,
+    levelBefore,
+    levelAfter: levelForXp(state.xp),
+    progress: progressFor(state),
+  };
+}
+
+function applyTest(state, result) {
+  state.testsTaken += 1;
+  state.totalTestMarks += result.totalMarks;
+  state.totalTestCorrect += result.correctMarks;
+  state.history.unshift({
+    id: result.id,
+    at: new Date().toISOString(),
+    type: result.type,
+    totalMarks: result.totalMarks,
+    correctMarks: result.correctMarks,
+    percent: result.percent,
+    grade: result.grade,
+    topicAcc: result.topicAccuracy,
+  });
+  state.history = state.history.slice(0, 200);
+}
+
+function applyPractice(state, { topicId, correct, total }) {
+  const topic = (state.topicStats[topicId] = state.topicStats[topicId] || {
+    correct: 0,
+    total: 0,
+  });
+  topic.correct += correct;
+  topic.total += total;
+  state.practiceAnswered += total;
+}
+
+function applyPracticeRecords(state, records) {
+  for (const record of Array.isArray(records) ? records : [records]) {
+    applyPractice(state, record);
+  }
+}
+
+/** Per-user, per-subject progress backed by the configured async storage driver. */
+export function createDb(userId, subject, storage = defaultStorage) {
+  const dbUserId = String(userId);
+  const dbSubject = String(subject);
+
+  async function loadDb() {
+    return normalizeState(await storage.getProgress(dbUserId, dbSubject));
   }
 
-  function saveDb() {
-    const s = loadDb();
-    fs.mkdirSync(dir, { recursive: true });
-    const tmp = file + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(s));
-    fs.renameSync(tmp, file);
-  }
-
-  /**
-   * Register activity. Returns updated streak.
-   */
-  function registerActivity() {
-    const s = loadDb();
-    const today = new Date().toISOString().slice(0, 10);
-    if (s.lastActiveDate === today) return s.streak;
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    s.streak = s.lastActiveDate === yesterday ? s.streak + 1 : 1;
-    s.lastActiveDate = today;
-    saveDb();
-    return s.streak;
-  }
-
-  function addXp(amount) {
-    const s = loadDb();
-    s.xp += amount;
-    saveDb();
-  }
-
-  function rewardActivity({ scoreXp = 0, lessonId = null } = {}) {
-    const s = loadDb();
-    const safeScoreXp = Number.isFinite(Number(scoreXp)) ? Math.max(0, Number(scoreXp)) : 0;
-    const normalizedLessonId = typeof lessonId === 'string' ? lessonId.trim() : '';
-    const levelBefore = levelForXp(s.xp);
-    const firstCompletion = Boolean(normalizedLessonId && !s.completedLessons.includes(normalizedLessonId));
-    const completionXp = firstCompletion ? 20 : 0;
-    const xpAwarded = safeScoreXp + completionXp;
-
-    if (firstCompletion) s.completedLessons.push(normalizedLessonId);
-    s.xp += xpAwarded;
-
-    const today = new Date().toISOString().slice(0, 10);
-    if (s.lastActiveDate !== today) {
-      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-      s.streak = s.lastActiveDate === yesterday ? s.streak + 1 : 1;
-      s.lastActiveDate = today;
-    }
-
-    saveDb();
-    return {
-      scoreXp: safeScoreXp,
-      completionXp,
-      xpAwarded,
-      firstCompletion,
-      levelBefore,
-      levelAfter: levelForXp(s.xp),
-      progress: progress(),
-    };
-  }
-
-  function recordTest(result) {
-    const s = loadDb();
-    s.testsTaken += 1;
-    s.totalTestMarks += result.totalMarks;
-    s.totalTestCorrect += result.correctMarks;
-    s.history.unshift({
-      id: result.id,
-      at: new Date().toISOString(),
-      type: result.type,
-      totalMarks: result.totalMarks,
-      correctMarks: result.correctMarks,
-      percent: result.percent,
-      grade: result.grade,
-      topicAcc: result.topicAccuracy,
+  async function mutate(update) {
+    return storage.mutateProgress(dbUserId, dbSubject, (stored) => {
+      const state = normalizeState(stored);
+      return { state, value: update(state) };
     });
-    s.history = s.history.slice(0, 200);
-    saveDb();
   }
 
-  function recordPractice({ topicId, correct, total }) {
-    const s = loadDb();
-    const t = (s.topicStats[topicId] = s.topicStats[topicId] || {
-      correct: 0,
-      total: 0,
+  async function registerActivity() {
+    return mutate((state) => applyActivity(state));
+  }
+
+  async function addXp(amount) {
+    return mutate((state) => {
+      state.xp += amount;
     });
-    t.correct += correct;
-    t.total += total;
-    s.practiceAnswered += total;
-    saveDb();
   }
 
-  function progress() {
-    const s = loadDb();
-    const level = levelForXp(s.xp);
-    const xpInto = s.xp - (level - 1) ** 2 * 50;
-    const xpNeeded = (level ** 2 - (level - 1) ** 2) * 50;
-    const completedLessonIds = [...s.completedLessons];
-    return {
-      xp: s.xp,
-      level,
-      xpInto,
-      xpNeeded,
-      streak: s.streak,
-      testsTaken: s.testsTaken,
-      practiceAnswered: s.practiceAnswered,
-      overallPercent: s.totalTestMarks
-        ? Math.round((100 * s.totalTestCorrect) / s.totalTestMarks)
-        : null,
-      history: s.history.slice(0, 20),
-      topicStats: s.topicStats,
-      completedLessonIds,
-      lessonsCompleted: completedLessonIds.length,
-    };
+  async function rewardActivity(options = {}) {
+    return mutate((state) => applyReward(state, options));
   }
 
-  function getChatHistory() {
-    return loadDb().chat.slice(-40);
+  async function recordTest(result) {
+    return mutate((state) => {
+      applyTest(state, result);
+    });
   }
 
-  function pushChat(role, content) {
-    const s = loadDb();
-    s.chat.push({ role, content, at: new Date().toISOString() });
-    s.chat = s.chat.slice(-100);
-    saveDb();
+  async function recordPractice(record) {
+    return mutate((state) => {
+      applyPractice(state, record);
+    });
   }
 
-  function clearChat() {
-    const s = loadDb();
-    s.chat = [];
-    saveDb();
+  async function recordTestAndReward({ result, scoreXp, lessonId = null }) {
+    return mutate((state) => {
+      applyTest(state, result);
+      return applyReward(state, { scoreXp, lessonId });
+    });
+  }
+
+  async function recordPracticeAndReward({ records, scoreXp, lessonId = null }) {
+    return mutate((state) => {
+      applyPracticeRecords(state, records);
+      return applyReward(state, { scoreXp, lessonId });
+    });
+  }
+
+  async function progress() {
+    return progressFor(await loadDb());
+  }
+
+  async function getChatHistory() {
+    return (await loadDb()).chat.slice(-40);
+  }
+
+  async function pushChat(role, content) {
+    return mutate((state) => {
+      state.chat.push({ role, content, at: new Date().toISOString() });
+      state.chat = state.chat.slice(-100);
+    });
+  }
+
+  async function clearChat() {
+    return mutate((state) => {
+      state.chat = [];
+    });
+  }
+
+  async function finalizeStudySession(criteria, operation) {
+    return storage.finalizeStudySession({
+      id: criteria.id,
+      userId: dbUserId,
+      subject: dbSubject,
+      kind: criteria.kind,
+    }, (_session, stored) => {
+      const state = normalizeState(stored);
+      if (operation.testResult !== undefined) applyTest(state, operation.testResult);
+      if (operation.practiceRecords !== undefined) {
+        applyPracticeRecords(state, operation.practiceRecords);
+      }
+      const rewarded = applyReward(state, operation);
+      const { progress, ...reward } = rewarded;
+      return {
+        state,
+        response: { ...operation.response, reward, progress },
+      };
+    });
   }
 
   return {
     loadDb,
-    saveDb,
     registerActivity,
     addXp,
     rewardActivity,
     recordTest,
     recordPractice,
+    recordTestAndReward,
+    recordPracticeAndReward,
     progress,
     getChatHistory,
     pushChat,
     clearChat,
+    finalizeStudySession,
   };
 }

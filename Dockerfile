@@ -25,6 +25,8 @@ COPY --from=build /app/clients/english/dist clients/english/dist
 RUN mkdir -p /app/data/maths /app/data/english
 ENV PORT=3000
 ENV DATA_DIR=/app/data
+ENV STORAGE_DRIVER=json
+ENV APP_URL=http://localhost:3000
 EXPOSE 3000
 VOLUME ["/app/data"]
 CMD ["node", "server/src/index.js"]

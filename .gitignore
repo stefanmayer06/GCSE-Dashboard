@@ -6,3 +6,5 @@ server/data/
 *.log
 test-results/
 playwright-report/
+public/
+.vercel/

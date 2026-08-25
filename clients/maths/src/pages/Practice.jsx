@@ -411,7 +411,8 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
 
   async function finish() {
     const res = await api.adhocSubmit(
-      set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }))
+       set.roundId,
+       set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }))
     );
     onProgress?.(res.progress);
     setFeedback((f) => {

@@ -34,6 +34,28 @@ docker compose up --build
 
 Both apps retain offline support when no key is configured.
 
+## Vercel + Neon
+
+Vercel uses the same Express API through `api/index.js` and assembles the three
+client bundles under `public/` with `npm run build:vercel`. Configure these
+production variables in Vercel:
+
+- `STORAGE_DRIVER=postgres`
+- `DATABASE_URL` with the Neon connection string
+- `APP_URL` with the canonical HTTPS URL
+- `ADMIN_PASSWORD` for first-run admin seeding
+- `SESSION_SECRET` with a random value of at least 32 characters
+
+Do not set `DATA_DIR` on Vercel. Existing JSON accounts, progress and study
+sessions can be copied idempotently with:
+
+```bash
+npm run migrate:postgres -- --data-dir server/data
+```
+
+Use `--dry-run` to inspect the source data without a database connection. Local
+and Docker deployments continue to use the JSON driver by default.
+
 ## Development
 
 ```bash
@@ -50,6 +72,7 @@ Build and verify:
 ```bash
 npm test
 npm run build
+npm run build:vercel
 npm start
 npm run test:ui
 ```

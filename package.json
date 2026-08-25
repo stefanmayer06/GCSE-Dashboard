@@ -11,6 +11,8 @@
   "scripts": {
     "dev": "concurrently -n server,maths,english -c blue,magenta,yellow \"npm run dev -w server\" \"npm run dev -w clients/maths\" \"npm run dev -w clients/english\"",
     "build": "npm run build -w clients/maths && npm run build -w clients/english",
+    "build:vercel": "node scripts/build-vercel.mjs",
+    "migrate:postgres": "node scripts/migrate-json-to-postgres.mjs",
     "start": "npm run start -w server",
     "test": "npm test -w server",
     "test:foundation": "node --test server/test/foundation-bank.test.js",

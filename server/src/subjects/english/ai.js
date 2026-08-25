@@ -1,6 +1,7 @@
 import { rubricFor } from './marking.js';
 
 const DEFAULT_MODEL = 'qwen/qwen3.7-flash';
+const AI_TIMEOUT_MS = 15_000;
 
 export function contentText(value) {
   if (typeof value === 'string') return value.trim();
@@ -23,7 +24,7 @@ export function aiConfig() {
 
 async function callOpenRouter({ system, user, json = false, apiKey, model, maxTokens }) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90000);
+  const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -145,7 +146,7 @@ RULES:
       name: r.name,
       marksTotal: r.marks,
       rubric: r,
-      error: e.message,
+       error: 'AI marking is temporarily unavailable.',
     };
   }
 }
@@ -187,7 +188,7 @@ Rules:
     };
   } catch (e) {
     return {
-      reply: `The AI tutor is unavailable right now (${e.message}). Try again in a moment.`,
+       reply: 'The AI tutor is unavailable right now. Try again in a moment.',
       model: 'error',
       error: true,
     };

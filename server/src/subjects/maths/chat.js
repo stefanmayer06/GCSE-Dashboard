@@ -1,6 +1,7 @@
 const FALLBACK_REPLIES = [
   `I'm running in offline mode right now because no OpenRouter API key is configured.\n\nIn the meantime, here's a tip: for any GCSE question, underline the key numbers, decide which topic it is, then write down the formula you need BEFORE you start. Getting the right method is half the mark.\n\nAdd OPENROUTER_API_KEY to the environment (see .env.example) and I'll become a full AI maths tutor.`,
 ];
+const AI_TIMEOUT_MS = 15_000;
 
 const KEYWORDS = [
   { re: /fraction/i, msg: 'Fractions: to add or subtract, find a common denominator first. To multiply, top × top and bottom × bottom. To divide, keep-flip-change (multiply by the reciprocal).' },
@@ -58,15 +59,23 @@ Rules:
     max_tokens: 1200,
     reasoning: { effort: 'none' },
   };
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      'X-Title': 'Maths Dashboard Tutor',
-    },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        'X-Title': 'Maths Dashboard Tutor',
+      },
+      body: JSON.stringify(body),
+    });
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) {
     const err = await res.text().catch(() => '');
     if (res.status === 401 || res.status === 403) {

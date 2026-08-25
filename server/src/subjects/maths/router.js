@@ -29,6 +29,7 @@ import {
   higherTopics,
 } from './bank/higher.js';
 import { createDb } from '../../db.js';
+import { defaultStorage } from '../../storage/index.js';
 import { askTutor } from './chat.js';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
@@ -48,8 +49,9 @@ app.use((req, res, next) => {
   next();
 });
 
-const activeTests = new Map();
-const practiceSessions = new Map();
+const asyncRoute = (handler) => (req, res, next) => {
+  Promise.resolve(handler(req, res, next)).catch(next);
+};
 
 function uniqueAnswersByQid(answers) {
   const byQid = new Map();
@@ -65,17 +67,29 @@ function isNonblank(value) {
   return typeof value !== 'string' || value.trim().length > 0;
 }
 
-function activeTestFor(req) {
-  const test = activeTests.get(req.params.id);
-  if (!test || test.userId !== req.user.id || test.tier !== (isHigher(req) ? 'higher' : 'foundation')) return null;
-  return test;
-}
-
 function expiredTest(res) {
   return res.status(410).json({
-    error: 'This saved paper is no longer active. It may have expired after a server restart. Start a new paper to continue.',
+    error: 'This saved paper is no longer active. Start a new paper to continue.',
     code: 'TEST_EXPIRED',
   });
+}
+
+function sessionCriteria(req, id, kind) {
+  return { id, userId: String(req.user.id), subject: tierKey(req), kind };
+}
+
+function sessionFailure(res, outcome) {
+  if (outcome?.status === 'busy') {
+    return res.status(409).json({
+      error: 'This submission is already being marked. Try again in a moment.',
+      code: 'SUBMISSION_IN_PROGRESS',
+    });
+  }
+  return expiredTest(res);
+}
+
+async function claimSession(req, id, kind) {
+  return defaultStorage.claimStudySession(sessionCriteria(req, id, kind));
 }
 
 const publicTopic = (t) => ({
@@ -99,9 +113,9 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.get('/topics', (req, res) => {
+app.get('/topics', asyncRoute(async (req, res) => {
   const fns = tierFns(req);
-  const p = req.db.progress();
+  const p = await req.db.progress();
   const completed = new Set(p.completedLessonIds);
   const byStrand = {};
   for (const s of Object.values(STRANDS)) {
@@ -119,13 +133,13 @@ app.get('/topics', (req, res) => {
     };
   }
   res.json({ strands: byStrand });
-});
+}));
 
-app.get('/topics/:id', (req, res) => {
+app.get('/topics/:id', asyncRoute(async (req, res) => {
   const fns = tierFns(req);
   const t = fns.topics.find((x) => x.id === req.params.id);
   if (!t) return res.status(404).json({ error: 'Topic not found' });
-  const p = req.db.progress();
+  const p = await req.db.progress();
   const stats = p.topicStats[t.id];
   res.json({
     ...publicTopic(t),
@@ -137,36 +151,19 @@ app.get('/topics/:id', (req, res) => {
     answered: stats ? stats.total : 0,
     completed: p.completedLessonIds.includes(t.id),
   });
-});
+}));
 
 app.get('/papers', (req, res) => {
   res.json({ papers: tierFns(req).papers() });
 });
 
-app.post('/test/new', (req, res) => {
+app.post('/test/new', asyncRoute(async (req, res) => {
   const fns = tierFns(req);
   const type = req.body?.type === 'short' ? 'short' : 'full';
   const paperId = [1, 2, 3].includes(req.body?.paper) ? req.body.paper : 1;
   const paper = fns.buildPaper(type, paperId);
   const id = crypto.randomUUID();
-  activeTests.set(id, {
-    id,
-    userId: req.user.id,
-    type,
-    paperId: paper.paperId,
-    paperCode: paper.paperCode,
-    paperName: paper.paperName,
-    tier: isHigher(req) ? 'higher' : 'foundation',
-    calculator: paper.calculator,
-    questions: paper.questions,
-    totalMarks: paper.totalMarks,
-    startedAt: Date.now(),
-  });
-  if (activeTests.size > 50) {
-    const first = activeTests.keys().next().value;
-    activeTests.delete(first);
-  }
-  res.json({
+  const response = {
     id,
     type,
     paperId: paper.paperId,
@@ -180,34 +177,52 @@ app.post('/test/new', (req, res) => {
     exceptionalCount: paper.exceptionalCount || 0,
     strandCoverage: paper.strandCoverage,
     questions: paper.questions,
+  };
+  const created = await defaultStorage.createStudySession({
+    ...sessionCriteria(req, id, 'paper'),
+    payload: {
+      ...response,
+      tier: isHigher(req) ? 'higher' : 'foundation',
+      questionIds: paper.questions.map((question) => question.id),
+      startedAt: new Date().toISOString(),
+    },
   });
-});
+  if (created.status !== 'created') {
+    return res.status(503).json({ error: 'Could not start a paper. Please try again.' });
+  }
+  res.json(response);
+}));
 
-app.get('/test/:id/status', (req, res) => {
-  const test = activeTestFor(req);
-  if (!test) return expiredTest(res);
-  res.json({ active: true });
-});
+app.get('/test/:id/status', asyncRoute(async (req, res) => {
+  const outcome = await defaultStorage.getStudySession(sessionCriteria(req, req.params.id, 'paper'));
+  if (outcome.status === 'ok') return res.json({ active: true });
+  if (outcome.status === 'completed') return res.json({ active: false, completed: true });
+  return sessionFailure(res, outcome);
+}));
 
-app.delete('/test/:id', (req, res) => {
-  const test = activeTestFor(req);
-  if (test) activeTests.delete(test.id);
-  res.json({ discarded: !!test });
-});
+app.delete('/test/:id', asyncRoute(async (req, res) => {
+  const outcome = await defaultStorage.discardStudySession(sessionCriteria(req, req.params.id, 'paper'));
+  if (outcome.status === 'discarded') return res.json({ discarded: true });
+  if (outcome.status === 'completed') return res.json({ discarded: false, completed: true });
+  return sessionFailure(res, outcome);
+}));
 
-app.post('/test/:id/submit', (req, res) => {
-  const test = activeTestFor(req);
-  if (!test) return expiredTest(res);
+app.post('/test/:id/submit', asyncRoute(async (req, res) => {
+  const criteria = sessionCriteria(req, req.params.id, 'paper');
+  const claimed = await claimSession(req, req.params.id, 'paper');
+  if (claimed.status === 'completed') return res.json(claimed.result);
+  if (claimed.status !== 'claimed') return sessionFailure(res, claimed);
+  const test = claimed.session.payload;
   const answers = uniqueAnswersByQid(req.body?.answers);
   const durationSec = req.body?.durationSec || null;
 
   const higher = test.tier === 'higher';
   const questionById = higher ? higherQuestionById : getQuestionById;
   const marker = higher ? higherMarkAnswers : markAnswers;
-  const pool = test.questions.map((q) => questionById(q.id)).filter(Boolean);
+  const pool = test.questionIds.map((qid) => questionById(qid)).filter(Boolean);
   const marked = marker(pool, answers);
   for (const row of marked.perQ) {
-    const qn = test.questions.findIndex((q) => q.id === row.qid);
+    const qn = test.questionIds.findIndex((qid) => qid === row.qid);
     row.qn = qn + 1;
   }
   const totalMarks = test.totalMarks || marked.totalMarks;
@@ -277,29 +292,43 @@ app.post('/test/:id/submit', (req, res) => {
     perQuestion: marked.perQ,
   };
 
-  req.db.recordTest({ ...result, topicAccuracy: topics.map((t) => ({ id: t.id, percent: t.percent })) });
-  const rewardResult = req.db.rewardActivity({ scoreXp: correctMarks * 2 });
-  const { progress, ...reward } = rewardResult;
-  activeTests.delete(test.id);
-  res.json({ ...result, reward, progress });
-});
+  try {
+    const finalized = await req.db.finalizeStudySession(criteria, {
+      testResult: {
+        ...result,
+        topicAccuracy: topics.map((topic) => ({ id: topic.id, percent: topic.percent })),
+      },
+      scoreXp: correctMarks * 2,
+      response: result,
+    });
+    if (finalized.status === 'completed') return res.json(finalized.result);
+    return sessionFailure(res, finalized);
+  } catch (error) {
+    await defaultStorage.releaseStudySession(criteria).catch(() => {});
+    throw error;
+  }
+}));
 
-app.post('/practice', (req, res) => {
+app.post('/practice', asyncRoute(async (req, res) => {
   const fns = tierFns(req);
   const topicId = req.body?.topicId;
   const count = Math.min(20, Math.max(4, req.body?.count || 8));
   const questions = fns.buildPractice(topicId, count);
   if (!questions.length) return res.status(404).json({ error: 'Topic not found' });
   const sessionId = crypto.randomUUID();
-  practiceSessions.set(sessionId, {
-    userId: String(req.user.id),
-    tier: isHigher(req) ? 'higher' : 'foundation',
-    topicId,
-    questionIds: questions.map((question) => question.id),
+  const created = await defaultStorage.createStudySession({
+    ...sessionCriteria(req, sessionId, 'practice'),
+    payload: {
+      tier: isHigher(req) ? 'higher' : 'foundation',
+      topicId,
+      questionIds: questions.map((question) => question.id),
+    },
   });
-  if (practiceSessions.size > 100) practiceSessions.delete(practiceSessions.keys().next().value);
+  if (created.status !== 'created') {
+    return res.status(503).json({ error: 'Could not start practice. Please try again.' });
+  }
   res.json({ sessionId, topicId, questions });
-});
+}));
 
 app.post('/check', (req, res) => {
   const fns = tierFns(req);
@@ -309,45 +338,79 @@ app.post('/check', (req, res) => {
   res.json(out);
 });
 
-app.post('/practice/submit', (req, res) => {
+app.post('/practice/submit', asyncRoute(async (req, res) => {
   const fns = tierFns(req);
   const { sessionId, topicId } = req.body || {};
-  const session = practiceSessions.get(sessionId);
+  if (!sessionId) return res.status(400).json({ error: 'sessionId required' });
+  const criteria = sessionCriteria(req, sessionId, 'practice');
+  const claimed = await claimSession(req, sessionId, 'practice');
+  if (claimed.status === 'completed') return res.json(claimed.result);
+  if (claimed.status !== 'claimed') return sessionFailure(res, claimed);
+  const session = claimed.session.payload;
   const tier = isHigher(req) ? 'higher' : 'foundation';
-  if (!session || session.userId !== String(req.user.id) || session.tier !== tier) {
-    return res.status(404).json({ error: 'Practice session expired.' });
+  if (session.tier !== tier) {
+    await defaultStorage.releaseStudySession(criteria);
+    return res.status(400).json({ error: 'Practice tier does not match session.' });
   }
-  if (topicId !== session.topicId) return res.status(400).json({ error: 'Practice topic does not match session.' });
+  if (topicId !== session.topicId) {
+    await defaultStorage.releaseStudySession(criteria);
+    return res.status(400).json({ error: 'Practice topic does not match session.' });
+  }
   const submittedAnswers = Array.isArray(req.body?.answers) ? req.body.answers : [];
   const issuedIds = new Set(session.questionIds);
   const answers = uniqueAnswersByQid(submittedAnswers).filter((answer) => issuedIds.has(answer.qid));
   const pool = fns.questionsFor(topicId);
   const marked = fns.markAnswers(pool, answers);
-  req.db.recordPractice({ topicId, correct: marked.correctMarks, total: marked.totalMarks });
   const qualifies = answers.length === session.questionIds.length
     && answers.every((answer) => isNonblank(answer.value));
-  const rewardResult = req.db.rewardActivity({
-    scoreXp: marked.correctMarks,
-    lessonId: qualifies ? topicId : null,
-  });
-  const { progress, ...reward } = rewardResult;
-  practiceSessions.delete(sessionId);
-  res.json({ correctMarks: marked.correctMarks, totalMarks: marked.totalMarks, perQ: marked.perQ, reward, progress });
-});
+  const response = {
+    correctMarks: marked.correctMarks,
+    totalMarks: marked.totalMarks,
+    perQ: marked.perQ,
+  };
+  try {
+    const finalized = await req.db.finalizeStudySession(criteria, {
+      practiceRecords: { topicId, correct: marked.correctMarks, total: marked.totalMarks },
+      scoreXp: marked.correctMarks,
+      lessonId: qualifies ? topicId : null,
+      response,
+    });
+    if (finalized.status === 'completed') return res.json(finalized.result);
+    return sessionFailure(res, finalized);
+  } catch (error) {
+    await defaultStorage.releaseStudySession(criteria).catch(() => {});
+    throw error;
+  }
+}));
 
-app.post('/adhoc', (req, res) => {
+app.post('/adhoc', asyncRoute(async (req, res) => {
   const fns = tierFns(req);
   const count = Math.min(30, Math.max(5, req.body?.count || 15));
   const papers = Array.isArray(req.body?.papers) && req.body.papers.length
     ? req.body.papers
      : [1, 2, 3];
   const set = fns.buildAdhoc(count, papers);
-  res.json({ ...set, roundId: crypto.randomUUID() });
-});
+  const roundId = crypto.randomUUID();
+  const created = await defaultStorage.createStudySession({
+    ...sessionCriteria(req, roundId, 'adhoc'),
+    payload: { questionIds: set.questions.map((question) => question.id) },
+  });
+  if (created.status !== 'created') {
+    return res.status(503).json({ error: 'Could not start the round. Please try again.' });
+  }
+  res.json({ ...set, roundId });
+}));
 
-app.post('/adhoc/submit', (req, res) => {
+app.post('/adhoc/submit', asyncRoute(async (req, res) => {
   const fns = tierFns(req);
-  const answers = uniqueAnswersByQid(req.body?.answers);
+  const roundId = req.body?.roundId;
+  if (!roundId) return res.status(400).json({ error: 'roundId required' });
+  const criteria = sessionCriteria(req, roundId, 'adhoc');
+  const claimed = await claimSession(req, roundId, 'adhoc');
+  if (claimed.status === 'completed') return res.json(claimed.result);
+  if (claimed.status !== 'claimed') return sessionFailure(res, claimed);
+  const issuedIds = new Set(claimed.session.payload.questionIds);
+  const answers = uniqueAnswersByQid(req.body?.answers).filter((answer) => issuedIds.has(answer.qid));
   const results = { perQ: [], correctMarks: 0, totalMarks: 0 };
   const topicTally = new Map();
   for (const { qid, value } of answers) {
@@ -362,40 +425,53 @@ app.post('/adhoc/submit', (req, res) => {
     t.total += q.marks;
     if (correct) t.correct += q.marks;
   }
-  for (const [topicId, t] of topicTally) req.db.recordPractice({ topicId, correct: t.correct, total: t.total });
-  const rewardResult = req.db.rewardActivity({ scoreXp: results.correctMarks });
-  const { progress, ...reward } = rewardResult;
-  res.json({ ...results, reward, progress });
-});
+  const response = { ...results };
+  try {
+    const finalized = await req.db.finalizeStudySession(criteria, {
+      practiceRecords: [...topicTally].map(([topicId, tally]) => ({
+        topicId,
+        correct: tally.correct,
+        total: tally.total,
+      })),
+      scoreXp: results.correctMarks,
+      response,
+    });
+    if (finalized.status === 'completed') return res.json(finalized.result);
+    return sessionFailure(res, finalized);
+  } catch (error) {
+    await defaultStorage.releaseStudySession(criteria).catch(() => {});
+    throw error;
+  }
+}));
 
-app.get('/progress', (req, res) => {
-  res.json(req.db.progress());
-});
+app.get('/progress', asyncRoute(async (req, res) => {
+  res.json(await req.db.progress());
+}));
 
-app.post('/chat', async (req, res) => {
+app.post('/chat', asyncRoute(async (req, res) => {
   const messages = req.body?.messages;
   if (!Array.isArray(messages) || !messages.length) {
     return res.status(400).json({ error: 'messages required' });
   }
-  req.db.registerActivity();
-  req.db.pushChat('user', messages[messages.length - 1].content);
+  await req.db.registerActivity();
+  await req.db.pushChat('user', messages[messages.length - 1].content);
   try {
      const out = await askTutor(messages, { model: OPENROUTER_MODEL, apiKey: OPENROUTER_API_KEY, tier: isHigher(req) ? 'higher' : 'foundation' });
-    req.db.pushChat('assistant', out.reply);
+    await req.db.pushChat('assistant', out.reply);
     res.json(out);
   } catch (e) {
     res.json({ reply: 'Something went wrong talking to the AI. Try again in a moment.', model: 'error', error: true });
   }
-});
+}));
 
-app.delete('/chat', (req, res) => {
-  req.db.clearChat();
+app.delete('/chat', asyncRoute(async (req, res) => {
+  await req.db.clearChat();
   res.json({ ok: true });
-});
+}));
 
-app.get('/chat/history', (req, res) => {
-  res.json({ messages: req.db.getChatHistory() });
-});
+app.get('/chat/history', asyncRoute(async (req, res) => {
+  res.json({ messages: await req.db.getChatHistory() });
+}));
 
 await loadBank();
 await loadHigherBank();

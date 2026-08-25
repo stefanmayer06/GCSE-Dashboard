@@ -1,6 +1,6 @@
 # GCSE Study Desk
 
-One revision dashboard for AQA GCSE Maths Foundation, Maths Higher and English Language. A clean subject selector opens three complete study routes while one Express server handles sign-in, APIs, deployment and persistent per-user progress.
+One revision dashboard for AQA GCSE Maths Foundation, Maths Higher and English Language. A clean subject selector opens three complete study routes while one Express application handles sign-in, APIs, deployment and persistent per-user progress. Local and Docker runs use JSON storage; Vercel production uses Neon PostgreSQL.
 
 ## Sign In
 
@@ -34,27 +34,46 @@ docker compose up --build
 
 Both apps retain offline support when no key is configured.
 
+## Runtime Design
+
+- Local and Docker runs start the combined Express server from `server/src/index.js`. The JSON driver stores accounts, sessions, progress and study sessions beneath `DATA_DIR`; Docker persists that directory in the `gcse-data` volume.
+- Vercel runs `api/index.js` as the serverless API entrypoint and builds the selector and three subject bundles into `public/` with `npm run build:vercel`.
+- Both drivers expose the same async storage interface, so authentication, progress, rewards and subject routers do not depend on a specific database.
+- The PostgreSQL schema is applied automatically on first startup. Users, auth sessions, OAuth states, subject progress and active study sessions are stored in Neon tables rather than process memory.
+- The deployment excludes local JSON data, environment files and generated agent files through `.vercelignore`; local data must be migrated explicitly when moving to production.
+
 ## Vercel + Neon
 
-Vercel uses the same Express API through `api/index.js` and assembles the three
-client bundles under `public/` with `npm run build:vercel`. Configure these
-production variables in Vercel:
+The Vercel project root must be the repository root (`.`). Vercel uses the same
+Express API through `api/index.js` and assembles the three client bundles under
+`public/` with `npm run build:vercel`.
+
+1. Install **Neon** from the Vercel Marketplace and connect it to this project.
+   The Vercel-native integration can create a Neon project for you or link an
+   existing Neon account, then sync its connection variables to the selected
+   Vercel environments.
+2. Confirm that the integration has supplied `DATABASE_URL`. This application
+   uses `@neondatabase/serverless` and does not use Supabase's client/API layer.
+   Supabase would require a different PostgreSQL driver and storage configuration.
+3. Add these application variables to the Production environment:
 
 - `STORAGE_DRIVER=postgres`
-- `DATABASE_URL` with the Neon connection string
-- `APP_URL` with the canonical HTTPS URL
+- `APP_URL` with the canonical HTTPS URL, for example `https://gcse-dashboard-server.vercel.app`
 - `ADMIN_PASSWORD` for first-run admin seeding
 - `SESSION_SECRET` with a random value of at least 32 characters
 
-Do not set `DATA_DIR` on Vercel. Existing JSON accounts, progress and study
-sessions can be copied idempotently with:
+The free `*.vercel.app` hostname is sufficient; a custom domain is optional.
+Do not set `DATA_DIR` on Vercel. Existing JSON accounts, progress, auth
+sessions, OAuth states and study sessions can be copied idempotently with:
 
 ```bash
 npm run migrate:postgres -- --data-dir server/data
 ```
 
-Use `--dry-run` to inspect the source data without a database connection. Local
-and Docker deployments continue to use the JSON driver by default.
+Run the migration with the production `DATABASE_URL` available in the shell,
+before relying on the new deployment. Use `--dry-run` to inspect the source data
+without a database connection. Local and Docker deployments continue to use the
+JSON driver by default.
 
 ## Development
 
@@ -94,6 +113,9 @@ See `FOUNDATION_AUDIT.md` for the Foundation bank review and remaining content b
 | `/api/maths-higher/*` | Higher Maths API (session required; health is public) |
 | `/api/english/*` | English API (session required; health is public) |
 
-User progress is stored locally at `${DATA_DIR}/users/<userId>/maths.json` and
+With the JSON driver, user progress is stored locally at
+`${DATA_DIR}/users/<userId>/maths.json`,
 `${DATA_DIR}/users/<userId>/maths-higher.json` and
-`${DATA_DIR}/users/<userId>/english.json`. Docker persists everything beneath `/app/data`.
+`${DATA_DIR}/users/<userId>/english.json`. Docker persists everything beneath
+`/app/data`. With the PostgreSQL driver, the equivalent records live in the
+`subject_progress` table and are scoped by user and subject.

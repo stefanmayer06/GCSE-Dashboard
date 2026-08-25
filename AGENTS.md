@@ -14,7 +14,7 @@ Teaching quality matters more than novelty. Explanations should be clear, encour
 
 ## Application Shape
 
-This is one repository and one deployable Express process with two intentionally isolated React clients:
+This is one repository with one Express application and two intentionally isolated React clients. Local and Docker runs use the combined process; Vercel runs the same API through a serverless entrypoint and serves the built clients as static output:
 
 - `/` serves the subject selector in `selector/`.
 - `/maths/*` serves the MathsMate React client from `clients/maths/`.
@@ -24,13 +24,18 @@ This is one repository and one deployable Express process with two intentionally
 - `/api/maths-higher/*` mounts the same API in Higher-tier mode with separate progress storage.
 - `/api/english/*` mounts the English API router.
 
+- `api/index.js` wraps the Express API for Vercel.
+- `public/` is assembled by `npm run build:vercel` for the Vercel deployment.
+
 The clients remain separate because their question formats, grading logic and global visual themes differ. Do not combine their CSS into one bundle without first scoping every global rule.
 
 ## Source Map
 
 - `server/src/index.js`: combined host server, auth wiring, API mounts and static routing.
 - `server/src/auth.js`: user accounts, sessions and OAuth2 sign-in; seeds the local admin account.
-- `server/src/db.js`: per-user, per-subject JSON store factory.
+- `server/src/db.js`: per-user, per-subject progress and reward logic over the configured async storage driver.
+- `server/src/storage/`: JSON and Neon PostgreSQL drivers plus the shared schema.
+- `scripts/migrate-json-to-postgres.mjs`: idempotent migration from local JSON data to PostgreSQL.
 - `server/src/subjects/maths/`: generated question bank, exact marking, grades, progress and Maths tutor.
 - `server/src/subjects/english/`: source texts, question assembly, rubric marking, grades, progress and English tutor.
 - `clients/maths/src/pages/`: Maths dashboard, papers, results, topic lessons and tutor.
@@ -49,7 +54,7 @@ Every request to `/api/maths/*`, `/api/maths-higher/*` and `/api/english/*` requ
 - `POST /api/auth/logout` ends the session.
 - `GET /api/auth/config` reports whether OAuth is configured.
 
-The local `admin` account (username `admin`, password `admin`) is seeded automatically on first boot when `users.json` does not already contain it. It is always recreated if missing. Passwords are stored as `scrypt` hashes, never in plain text.
+The local `admin` account (username `admin`, password `admin`) is seeded automatically on first boot when `users.json` does not already contain it. In production, `ADMIN_PASSWORD` must be set before the missing admin account can be seeded. It is always recreated if missing. Passwords are stored as `scrypt` hashes, never in plain text. Never use the local default password in production.
 
 OAuth2 is optional and configured entirely by environment variables. When `OAUTH_CLIENT_ID`,
 `OAUTH_CLIENT_SECRET`, `OAUTH_AUTHORIZE_URL`, `OAUTH_TOKEN_URL` and `OAUTH_USERINFO_URL` are all set,
@@ -58,15 +63,23 @@ A provider identity maps to a username (email or preferred_username), created on
 
 ## Data And Progress
 
-Each user has separate stores per subject. Progress is never mixed between users or subjects.
+Each user has separate stores per subject. Progress is never mixed between users or subjects. The configured storage driver is JSON for local/Docker runs and PostgreSQL for Vercel production.
 
 - `${DATA_DIR}/users/<userId>/maths.json`
 - `${DATA_DIR}/users/<userId>/maths-higher.json`
 - `${DATA_DIR}/users/<userId>/english.json`
 
-Accounts live in `${DATA_DIR}/users.json`, sessions in `${DATA_DIR}/sessions.json`.
-`DATA_DIR` is a single environment variable; Docker sets it to `/app/data`, which is persisted in
-the `gcse-data` volume and survives container recreation and redeploys.
+With the JSON driver, accounts live in `${DATA_DIR}/users.json`, sessions in
+`${DATA_DIR}/sessions.json`, and subject progress lives beneath
+`${DATA_DIR}/users/<userId>/`. `DATA_DIR` is a single environment variable;
+Docker sets it to `/app/data`, which is persisted in the `gcse-data` volume and
+survives container recreation and redeploys.
+
+With the PostgreSQL driver, users, auth sessions, OAuth states, subject progress
+and study sessions live in the `users`, `auth_sessions`, `oauth_states`,
+`subject_progress` and `study_sessions` tables. The schema is applied on startup
+through `server/src/storage/schema.sql`. Vercel supplies the Neon connection as
+`DATABASE_URL`; do not set `DATA_DIR` there.
 
 On startup, legacy single-file progress from `${DATA_DIR}/maths/db.json` and
 `${DATA_DIR}/english/db.json` is migrated into the `admin` account when no user store exists yet,
@@ -74,8 +87,10 @@ so upgrading to logins never loses existing progress.
 
 Each store tracks XP, streak, paper history, topic accuracy and tutor chat for its own subject.
 
-Active paper and practice sessions are held in memory. Restarting the server expires an active
-session, so a user may need to start a paper again after a restart.
+Active paper, practice and adhoc sessions are persisted through the configured
+storage driver. PostgreSQL deployments can resume them across serverless
+invocations and restarts; expired sessions are rejected by the session lifecycle
+checks.
 
 ## Subject Rules
 
@@ -131,6 +146,7 @@ docker compose up --build
 - Prefer small, testable changes over cross-subject abstractions that obscure exam-specific behavior.
 - Subject data is always scoped to the signed-in user. Never write progress, chat or history to a shared file.
 - New sign-in-facing API routes belong under `/api/auth`; new subject routes stay namespaced under `/api/maths`, `/api/maths-higher` and `/api/english` and must keep working with the session gate.
-- The `admin` account (admin / admin) must always exist after a fresh start, and users/sessions must persist under `DATA_DIR`.
+- The local/Docker default admin account is `admin` / `admin`; production must use `ADMIN_PASSWORD` and must never depend on that default.
+- User data, auth sessions, progress, chat and study sessions must use the configured storage driver: JSON beneath `DATA_DIR` locally, PostgreSQL tables on Vercel.
 - Themes (light and dark) are driven by the shared design tokens in `clients/shared/study-desk.css` and each subject's `theme.css`. The `data-theme` attribute is set on `<html>` and persisted under the `gcse-theme` localStorage key so the choice survives across the selector and both subjects. New UI should consume these tokens rather than hardcoding colors.
 - Every colour, border and surface should stay legible in both themes. Dark mode is not a shadow of the light design; it uses its own warm ink, muted text and brighter semantic colours on the same grid and typography.

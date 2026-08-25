@@ -454,8 +454,10 @@ export function authRoutes() {
         createdAt: new Date().toISOString(),
       });
     } catch (error) {
-      if (error?.code === 'STORAGE_CONFLICT' && error.field === 'username') {
-        return res.status(409).json({ error: 'That username is already taken.' });
+      if (error?.code === 'STORAGE_CONFLICT') {
+        // PostgreSQL may report the deterministic user ID constraint before username.
+        const existing = await storage.getUserByUsername(name);
+        if (existing) return res.status(409).json({ error: 'That username is already taken.' });
       }
       throw error;
     }

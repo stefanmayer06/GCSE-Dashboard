@@ -1,9 +1,21 @@
+import {
+  clearSupabaseSession,
+  storeSupabaseSession,
+  storedSupabaseAccessToken,
+  supabase,
+  supabaseAccessToken,
+} from '../../shared/supabase.js';
+
 const base = window.location.pathname.startsWith('/maths-higher') ? '/api/maths-higher' : '/api/maths';
 const authBase = '/api/auth';
 
 async function req(path, opts = {}) {
+  const token = (await supabaseAccessToken()) || storedSupabaseAccessToken();
   const res = await fetch(base + path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     ...opts,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
@@ -18,8 +30,12 @@ async function req(path, opts = {}) {
 }
 
 async function authReq(path, opts = {}) {
+  const token = (await supabaseAccessToken()) || storedSupabaseAccessToken();
   const res = await fetch(authBase + path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     ...opts,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
@@ -53,9 +69,59 @@ export const api = {
   chatHistory: () => req('/chat/history'),
   auth: {
     me: () => authReq('/me'),
-    login: (username, password) => authReq('/login', { method: 'POST', body: { username, password } }),
-    signup: (username, password) => authReq('/signup', { method: 'POST', body: { username, password } }),
-    logout: () => authReq('/logout', { method: 'POST' }),
+    login: async (identifier, password) => {
+      if (!supabase) {
+        const result = await authReq('/login', {
+          method: 'POST',
+          body: { username: identifier, email: identifier, password },
+        });
+        storeSupabaseSession(result.session);
+        return result;
+      }
+      const { error } = await supabase.auth.signInWithPassword({ email: identifier, password });
+      if (error) throw new Error(error.message || 'Sign in failed.');
+      return authReq('/me');
+    },
+    signup: async ({ username, email, password }) => {
+      if (!supabase) {
+        const result = await authReq('/signup', { method: 'POST', body: { username, email, password } });
+        storeSupabaseSession(result.session);
+        return result;
+      }
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { username } },
+      });
+      if (error) throw new Error(error.message || 'Sign up failed.');
+      if (!data.session) return { pendingEmailConfirmation: true, user: { username, email } };
+      return authReq('/me');
+    },
+    claim: async ({ username, email, currentPassword, newPassword }) => {
+      const result = await authReq('/claim', {
+        method: 'POST',
+        body: { username, email, currentPassword, newPassword },
+      });
+      if (result.session && supabase) {
+        await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
+        });
+      } else {
+        storeSupabaseSession(result.session);
+      }
+      return result.session ? authReq('/me') : result;
+    },
+    logout: async () => {
+      if (supabase) {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw new Error(error.message || 'Sign out failed.');
+        return { ok: true };
+      }
+      const result = await authReq('/logout', { method: 'POST' });
+      clearSupabaseSession();
+      return result;
+    },
     config: () => authReq('/config'),
   },
 };

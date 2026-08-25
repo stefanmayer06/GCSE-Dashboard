@@ -3,12 +3,16 @@ import { useEffect, useState } from 'react';
 export default function LoginScreen({ subjectName, tag, letter, authApi, onSignedIn }) {
   const [mode, setMode] = useState('signin');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newConfirm, setNewConfirm] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [oauth, setOauth] = useState(false);
   const [provider, setProvider] = useState('OAuth');
+  const [authDriver, setAuthDriver] = useState('legacy');
 
   useEffect(() => {
     authApi
@@ -16,6 +20,7 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
       .then((c) => {
         setOauth(!!c.oauth);
         if (c.provider) setProvider(c.provider);
+        if (c.driver) setAuthDriver(c.driver);
       })
       .catch(() => {});
   }, [authApi]);
@@ -25,31 +30,54 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
     setError('');
     setPassword('');
     setConfirm('');
+    setNewPassword('');
+    setNewConfirm('');
   };
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!username || !password) {
-      setError('Enter your username and password.');
+    const supabaseAuth = authDriver === 'supabase';
+    const isClaim = mode === 'claim';
+    const isSignup = mode === 'signup';
+    if ((!supabaseAuth && !username) || (supabaseAuth && !email) || !password) {
+      setError(supabaseAuth ? 'Enter your email and password.' : 'Enter your username and password.');
       return;
     }
-    if (mode === 'signup') {
-      if (password !== confirm) {
+    if (supabaseAuth && (isSignup || isClaim) && !username) {
+      setError('Choose a username.');
+      return;
+    }
+    if (isSignup && password !== confirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (isClaim) {
+      if (newPassword.length < 8) {
+        setError('Your new password must be at least 8 characters.');
+        return;
+      }
+      if (newPassword !== newConfirm) {
         setError('Passwords do not match.');
         return;
       }
-      if (password.length < 8) {
-        setError('Password must be at least 8 characters.');
-        return;
-      }
+    } else if (isSignup && password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
     }
     setBusy(true);
     setError('');
     try {
       const data =
-        mode === 'signup'
-          ? await authApi.signup(username, password)
-          : await authApi.login(username, password);
+        isClaim
+          ? await authApi.claim({ username, email, currentPassword: password, newPassword })
+          : isSignup
+          ? await authApi.signup({ username, email, password })
+          : await authApi.login(supabaseAuth ? email : username, password);
+      if (data.pendingEmailConfirmation) {
+        setError('Check your email to confirm your account, then sign in.');
+        setMode('signin');
+        return;
+      }
       onSignedIn(data.user);
     } catch (err) {
       setError(err.message || (mode === 'signup' ? 'Sign up failed.' : 'Sign in failed.'));
@@ -60,6 +88,7 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
 
   const next = `${window.location.pathname}${window.location.search}`;
   const isSignup = mode === 'signup';
+  const isClaim = mode === 'claim';
 
   return (
     <div className="login-screen">
@@ -71,30 +100,49 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
             <div className="login-brand-tag">{tag}</div>
           </div>
         </div>
-        <h1>{isSignup ? 'Create an account' : 'Sign in'}</h1>
+        <h1>{isClaim ? 'Move your account' : isSignup ? 'Create an account' : 'Sign in'}</h1>
         <p className="login-sub">
-          {isSignup
-            ? 'Make a local account to keep your progress, papers and tutor history on this device.'
-            : 'Your progress, papers and tutor history are stored locally and follow this account.'}
+          {isClaim
+            ? 'Move your existing progress into a secure account. Your old password verifies the transfer; choose a new password below.'
+            : authDriver === 'supabase'
+              ? 'Use your email to keep one secure account across every Study Desk subject.'
+            : isSignup
+              ? 'Make a local account to keep your progress and papers on this device.'
+              : 'Your progress and papers are stored locally and follow this account.'}
         </p>
         {error && (
           <div className="login-error" role="alert">{error}</div>
         )}
         <form onSubmit={submit}>
+          {(authDriver !== 'supabase' || isSignup || isClaim) && (
+            <label className="login-field">
+              <span>Username</span>
+              <input
+                name="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                minLength={3}
+                maxLength={32}
+                required
+              />
+            </label>
+          )}
+          {authDriver === 'supabase' && (
+            <label className="login-field">
+              <span>Email address</span>
+              <input
+                name="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+              />
+            </label>
+          )}
           <label className="login-field">
-            <span>Username</span>
-            <input
-              name="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-              minLength={3}
-              maxLength={32}
-              required
-            />
-          </label>
-          <label className="login-field">
-            <span>Password</span>
+              <span>{isClaim ? 'Old password' : 'Password'}</span>
             <input
               name="password"
               type="password"
@@ -105,6 +153,34 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
               required
             />
           </label>
+          {isClaim && (
+            <>
+              <label className="login-field">
+                <span>New password</span>
+                <input
+                  name="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+              </label>
+              <label className="login-field">
+                <span>Confirm new password</span>
+                <input
+                  name="new-confirm"
+                  type="password"
+                  value={newConfirm}
+                  onChange={(e) => setNewConfirm(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+              </label>
+            </>
+          )}
           {isSignup && (
             <label className="login-field">
               <span>Confirm password</span>
@@ -120,18 +196,33 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
             </label>
           )}
           <button className="login-submit" type="submit" disabled={busy}>
-            {busy ? (isSignup ? 'Creating account…' : 'Signing in…') : isSignup ? 'Create account' : 'Sign in'}
+            {busy
+              ? (isClaim ? 'Moving account…' : isSignup ? 'Creating account…' : 'Signing in…')
+              : isClaim ? 'Move account' : isSignup ? 'Create account' : 'Sign in'}
           </button>
         </form>
-        {oauth && (
+        {oauth && !isClaim && (
           <a className="login-oauth" href={`/api/auth/oauth?next=${encodeURIComponent(next)}`}>
             Continue with {provider}
           </a>
         )}
-        <button type="button" className="login-switch" onClick={() => switchMode(isSignup ? 'signin' : 'signup')}>
-          {isSignup ? 'Already have an account? Sign in' : 'New here? Create an account'}
-        </button>
-        <p className="login-local">Local account · data stored on this device</p>
+        {!isClaim && (
+          <button type="button" className="login-switch" onClick={() => switchMode(isSignup ? 'signin' : 'signup')}>
+            {isSignup ? 'Already have an account? Sign in' : 'New here? Create an account'}
+          </button>
+        )}
+        {authDriver === 'supabase' && (
+          <button
+            type="button"
+            className="login-switch"
+            onClick={() => switchMode(isClaim ? 'signin' : 'claim')}
+          >
+            {isClaim ? 'Back to sign in' : 'Move an existing account'}
+          </button>
+        )}
+        <p className="login-local">
+          {authDriver === 'supabase' ? 'Secure account · shared across subjects' : 'Local account · data stored on this device'}
+        </p>
       </div>
     </div>
   );

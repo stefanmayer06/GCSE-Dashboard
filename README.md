@@ -38,9 +38,61 @@ Both apps retain offline support when no key is configured.
 
 - Local and Docker runs start the combined Express server from `server/src/index.js`. The JSON driver stores accounts, sessions, progress and study sessions beneath `DATA_DIR`; Docker persists that directory in the `gcse-data` volume.
 - Vercel runs `api/index.js` as the serverless API entrypoint and builds the selector and three subject bundles into `public/` with `npm run build:vercel`.
-- Both drivers expose the same async storage interface, so authentication, progress, rewards and subject routers do not depend on a specific database.
+- All storage drivers expose the same async storage interface, so authentication, progress, rewards and subject routers do not depend on a specific database.
 - The PostgreSQL schema is applied automatically on first startup. Users, auth sessions, OAuth states, subject progress and active study sessions are stored in Neon tables rather than process memory.
 - The deployment excludes local JSON data, environment files and generated agent files through `.vercelignore`; local data must be migrated explicitly when moving to production.
+
+## Supabase Migration
+
+Supabase is currently an opt-in migration driver. Neon remains the production
+database until the migration has been rehearsed, reconciled and approved.
+
+- `STORAGE_DRIVER=supabase` uses Supabase Auth email/password sessions and bearer JWTs.
+- Browser configuration uses `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
+- The server uses `SUPABASE_URL` and `SUPABASE_SECRET_KEY`; never expose the secret key through `VITE_*` variables.
+- The public schema contains `profiles`, compact `subject_progress` aggregates and temporary `study_sessions`.
+- Legacy users and migration-only data live in the private `migration_private` schema. Password hashes are never copied to public tables or logs.
+- Tutor chat and paper history are not persisted by the Supabase driver. The dashboards use retained topic aggregates for current focus.
+- The hosted migration rehearsal uses Supabase's default email service with email confirmations enabled and MFA disabled; custom SMTP can be configured later if needed. The local `supabase/config.toml` remains configured for localhost development.
+
+Start Local Supabase with Docker, then configure the server and browser URLs:
+
+```bash
+npx supabase start
+cp .env.example .env.supabase.local
+# Set STORAGE_DRIVER=supabase, the local Supabase keys, and VITE_* values.
+npm run dev
+```
+
+For Docker, the browser should use `http://localhost:54321`, while the
+container reaches the host service through `http://host.docker.internal:54321`:
+
+```bash
+STORAGE_DRIVER=supabase \
+SUPABASE_CONTAINER_URL=http://host.docker.internal:54321 \
+VITE_SUPABASE_URL=http://localhost:54321 \
+docker compose up --build
+```
+
+The migration is dry-run by default. A write requires both `--write` and
+`SUPABASE_MIGRATION_CONFIRM=YES`:
+
+```bash
+npm run migrate:supabase
+SUPABASE_MIGRATION_CONFIRM=YES npm run migrate:supabase -- --write
+npm run verify:supabase
+```
+
+Set `SUPABASE_DB_URL` for the migration scripts. They stage only legacy
+identity metadata and compact aggregates; they do not copy auth sessions,
+OAuth state, active papers, chat or history.
+
+After the stability window and explicit sign-off, private staging can be
+purged only when no legacy account remains pending:
+
+```bash
+SUPABASE_MIGRATION_PURGE=YES npm run purge:supabase-staging -- --write
+```
 
 ## Vercel + Neon
 
@@ -117,5 +169,7 @@ With the JSON driver, user progress is stored locally at
 `${DATA_DIR}/users/<userId>/maths.json`,
 `${DATA_DIR}/users/<userId>/maths-higher.json` and
 `${DATA_DIR}/users/<userId>/english.json`. Docker persists everything beneath
-`/app/data`. With the PostgreSQL driver, the equivalent records live in the
-`subject_progress` table and are scoped by user and subject.
+`/app/data`. With the PostgreSQL drivers, the equivalent records live in the
+`subject_progress` table and are scoped by user and subject. Supabase stores
+only compact aggregates there; paper history and tutor chat are not persisted
+by that driver.

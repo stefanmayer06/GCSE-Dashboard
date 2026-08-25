@@ -1,6 +1,10 @@
 # Build both subject clients.
 FROM node:22-alpine AS build
 WORKDIR /app
+ARG VITE_SUPABASE_URL=
+ARG VITE_SUPABASE_PUBLISHABLE_KEY=
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
 COPY package.json package-lock.json ./
 COPY server/package.json server/package.json
 COPY clients/maths/package.json clients/maths/package.json

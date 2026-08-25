@@ -34,7 +34,10 @@ The clients remain separate because their question formats, grading logic and gl
 - `server/src/index.js`: combined host server, auth wiring, API mounts and static routing.
 - `server/src/auth.js`: user accounts, sessions and OAuth2 sign-in; seeds the local admin account.
 - `server/src/db.js`: per-user, per-subject progress and reward logic over the configured async storage driver.
-- `server/src/storage/`: JSON and Neon PostgreSQL drivers plus the shared schema.
+- `server/src/storage/`: JSON, Neon PostgreSQL and opt-in Supabase drivers plus the shared schema.
+- `server/src/storage/supabase.js`: Supabase Auth/PostgreSQL driver used during the staged migration; it must not replace Neon production until cutover approval.
+- `server/src/supabase/`: Supabase server client configuration and secret-key handling.
+- `supabase/`: local/remote SQL migrations, RLS policies, private legacy staging tables and database tests.
 - `scripts/migrate-json-to-postgres.mjs`: idempotent migration from local JSON data to PostgreSQL.
 - `server/src/subjects/maths/`: generated question bank, exact marking, grades, progress and Maths tutor.
 - `server/src/subjects/english/`: source texts, question assembly, rubric marking, grades, progress and English tutor.
@@ -52,6 +55,7 @@ Every request to `/api/maths/*`, `/api/maths-higher/*` and `/api/english/*` requ
 - `POST /api/auth/signup` creates a new local account (3-32 character username, 8+ character password) and signs it in.
 - `GET /api/auth/me` returns the signed-in user.
 - `POST /api/auth/logout` ends the session.
+- `POST /api/auth/claim` verifies a legacy scrypt password, creates a Supabase Auth email account and copies compact progress once during migration.
 - `GET /api/auth/config` reports whether OAuth is configured.
 
 The local `admin` account (username `admin`, password `admin`) is seeded automatically on first boot when `users.json` does not already contain it. In production, `ADMIN_PASSWORD` must be set before the missing admin account can be seeded. It is always recreated if missing. Passwords are stored as `scrypt` hashes, never in plain text. Never use the local default password in production.
@@ -61,9 +65,12 @@ OAuth2 is optional and configured entirely by environment variables. When `OAUTH
 the sign-in screens show "Continue with <provider>" and the server runs the authorization-code flow.
 A provider identity maps to a username (email or preferred_username), created on first sign-in.
 
+On the opt-in Supabase driver, the sign-in screen uses email/password and bearer JWTs. Supabase Auth
+accounts are separate from the legacy custom accounts; old auth sessions are not migrated.
+
 ## Data And Progress
 
-Each user has separate stores per subject. Progress is never mixed between users or subjects. The configured storage driver is JSON for local/Docker runs and PostgreSQL for Vercel production.
+Each user has separate stores per subject. Progress is never mixed between users or subjects. The configured storage driver is JSON for local/Docker runs and PostgreSQL for Vercel production; Supabase is currently opt-in on the isolated migration branch.
 
 - `${DATA_DIR}/users/<userId>/maths.json`
 - `${DATA_DIR}/users/<userId>/maths-higher.json`
@@ -85,7 +92,9 @@ On startup, legacy single-file progress from `${DATA_DIR}/maths/db.json` and
 `${DATA_DIR}/english/db.json` is migrated into the `admin` account when no user store exists yet,
 so upgrading to logins never loses existing progress.
 
-Each store tracks XP, streak, paper history, topic accuracy and tutor chat for its own subject.
+Each legacy store tracks XP, streak, paper history, topic accuracy and tutor chat for its own subject. The opt-in Supabase driver deliberately stores only XP, streak, counters, topic accuracy and completed lessons. Paper history and tutor chat are not written to Supabase. Legacy users and compact progress are staged in the private `migration_private` schema, and custom scrypt hashes are never imported into `auth.users`.
+
+Supabase Auth accounts are created through the one-time `POST /api/auth/claim` flow, which verifies the legacy password, requires an email and new password, and copies only compact subject aggregates.
 
 Active paper, practice and adhoc sessions are persisted through the configured
 storage driver. PostgreSQL deployments can resume them across serverless
@@ -148,5 +157,6 @@ docker compose up --build
 - New sign-in-facing API routes belong under `/api/auth`; new subject routes stay namespaced under `/api/maths`, `/api/maths-higher` and `/api/english` and must keep working with the session gate.
 - The local/Docker default admin account is `admin` / `admin`; production must use `ADMIN_PASSWORD` and must never depend on that default.
 - User data, auth sessions, progress, chat and study sessions must use the configured storage driver: JSON beneath `DATA_DIR` locally, PostgreSQL tables on Vercel.
+- Supabase migration work belongs on the isolated `supabase-migration` branch until cutover; production `prod` continues using Neon. Promote schema and reviewed reference SQL only. Never merge development users, progress, sessions, chat or submissions into production.
 - Themes (light and dark) are driven by the shared design tokens in `clients/shared/study-desk.css` and each subject's `theme.css`. The `data-theme` attribute is set on `<html>` and persisted under the `gcse-theme` localStorage key so the choice survives across the selector and both subjects. New UI should consume these tokens rather than hardcoding colors.
 - Every colour, border and surface should stay legible in both themes. Dark mode is not a shadow of the light design; it uses its own warm ink, muted text and brighter semantic colours on the same grid and typography.

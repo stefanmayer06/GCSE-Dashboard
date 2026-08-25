@@ -53,7 +53,7 @@ database until the migration has been rehearsed, reconciled and approved.
 - The public schema contains `profiles`, compact `subject_progress` aggregates and temporary `study_sessions`.
 - Legacy users and migration-only data live in the private `migration_private` schema. Password hashes are never copied to public tables or logs.
 - Tutor chat and paper history are not persisted by the Supabase driver. The dashboards use retained topic aggregates for current focus.
-- The hosted migration rehearsal uses Supabase's default email service with email confirmations enabled and MFA disabled; custom SMTP can be configured later if needed. The local `supabase/config.toml` remains configured for localhost development.
+- The hosted migration rehearsal uses Supabase's default email service with email confirmations temporarily disabled and MFA disabled; re-enable confirmations after configuring custom SMTP. The local `supabase/config.toml` remains configured for localhost development.
 
 Start Local Supabase with Docker, then configure the server and browser URLs:
 

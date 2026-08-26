@@ -80,7 +80,7 @@ function isNonblank(value) {
 
 function sourceTextForQuestion(q) {
   if (!q.sourceRef) return '';
-  if (q.sourceRef.paperId === 2) {
+  if (q.sourceRef.paperId === 2 && (q.sourceRef.textA || q.sourceRef.textB)) {
     return `${q.sourceRef.textA || ''}\n\n${q.sourceRef.textB || ''}`.slice(0, 7000);
   }
   return q.sourceRef.text || '';

@@ -495,6 +495,33 @@ test('English offline lesson completion earns the same first-completion reward',
   expect(topic.completed).toBeTruthy();
 });
 
+test('English quick-fire shows extracts and enables true-false marking', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/english/practice`, { waitUntil: 'networkidle' });
+
+  await page.getByRole('button', { name: 'List four things' }).click();
+  await page.getByRole('button', { name: 'Language analysis' }).click();
+  await page.getByRole('button', { name: /Give me questions/ }).click();
+
+  const sourcePanel = page.locator('.adhoc-source-panel');
+  await expect(sourcePanel).toBeVisible();
+  await expect(sourcePanel.locator('.source-text')).toBeVisible();
+  await expect(sourcePanel.locator('.adhoc-source-tabs')).toBeVisible();
+  await expect(sourcePanel.locator('.source-panel')).toHaveCSS('overflow-y', 'auto');
+
+  const question = page.locator('.quiz-q').first();
+  const check = question.getByRole('button', { name: 'Check answer' });
+  await expect(check).toBeDisabled();
+  const rows = question.locator('.tf-row');
+  expect(await rows.count()).toBeGreaterThan(0);
+  for (let index = 0; index < await rows.count(); index += 1) {
+    await rows.nth(index).getByRole('button', { name: 'TRUE' }).click();
+  }
+  await expect(check).toBeEnabled();
+  await check.click();
+  await expect(question.locator('.fb-box')).toBeVisible();
+});
+
 for (const [name, url] of [
   ['mobile-selector', '/'],
   ['mobile-subjects', '/subjects'],

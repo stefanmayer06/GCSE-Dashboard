@@ -419,6 +419,7 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
         </div>
         <button className="btn" onClick={onExit}>Back to setup</button>
       </div>
+      <AdhocSourcePanel questions={set.questions} />
       <div className="quiz">
         {set.questions.map((q, i) => (
           <QuestionCard
@@ -448,10 +449,77 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
   );
 }
 
+function sourceRefKey(ref_) {
+  return [ref_.paperId, ref_.title, ref_.titleA, ref_.titleB].filter(Boolean).join('|');
+}
+
+function sourceRefsFor(questions) {
+  const seen = new Set();
+  return questions.reduce((sources, question) => {
+    if (!question.sourceRef) return sources;
+    const key = sourceRefKey(question.sourceRef);
+    if (seen.has(key)) return sources;
+    seen.add(key);
+    sources.push(question.sourceRef);
+    return sources;
+  }, []);
+}
+
+function sourceRefLabel(ref_, index) {
+  const title = ref_.title || (ref_.titleA && ref_.titleB ? `${ref_.titleA} / ${ref_.titleB}` : 'Extract');
+  return `${index + 1}. ${title}`;
+}
+
+function AdhocSourcePanel({ questions }) {
+  const sources = sourceRefsFor(questions);
+  const [active, setActive] = useState(0);
+  if (!sources.length) return null;
+  const current = sources[Math.min(active, sources.length - 1)];
+
+  return (
+    <div className="adhoc-source-panel" aria-label="Extracts for this quick-fire round">
+      <div className="adhoc-source-heading">
+        <div>
+          <span className="source-flag">Extracts for this round</span>
+          <h3>Read before you answer</h3>
+        </div>
+        <span className="adhoc-source-count">{sources.length} {sources.length === 1 ? 'extract' : 'extracts'}</span>
+      </div>
+      {sources.length > 1 && (
+        <div className="source-tabs adhoc-source-tabs" role="tablist" aria-label="Round extracts">
+          {sources.map((ref_, index) => (
+            <button
+              key={sourceRefKey(ref_)}
+              role="tab"
+              aria-selected={active === index}
+              className={`source-tab ${active === index ? 'on' : ''}`}
+              onClick={() => setActive(index)}
+            >
+              {sourceRefLabel(ref_, index)}
+            </button>
+          ))}
+        </div>
+      )}
+      <SourceBox key={sourceRefKey(current)} ref_={current} />
+    </div>
+  );
+}
+
 /* ---------------- shared question card ---------------- */
 
 export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSource = false }) {
   const [checked, setChecked] = useState(false);
+
+  function answerReady() {
+    if (q.type === 'truefalse') {
+      return q.input?.statements?.every((_, i) => Object.prototype.hasOwnProperty.call(value || {}, i));
+    }
+    if (q.type === 'list') return Boolean(String(value ?? '').trim());
+    if (typeof value === 'object' && value !== null) {
+      return Boolean(String(value.text || '').trim()) || value.option !== undefined;
+    }
+    return Boolean(String(value ?? '').trim());
+  }
 
   function answerControl() {
     if (q.type === 'list') {
@@ -641,7 +709,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
         <div className="quiz-actions">
           <button
             className="btn small"
-            disabled={!value || (typeof value === 'object' && !value.text && value.option === undefined)}
+            disabled={!answerReady()}
             onClick={() => onCheck(value)}
           >
             Check answer
@@ -685,7 +753,9 @@ export function RubricBands({ rubric, level }) {
 
 export function SourceBox({ ref_ }) {
   const [tab, setTab] = useState(ref_.paperId === 2 ? 'B' : 'A');
-  const p2 = ref_.paperId === 2;
+  const p2 = ref_.paperId === 2 && Boolean(ref_.textA && ref_.textB);
+  const title = p2 ? (tab === 'A' ? ref_.titleA : ref_.titleB) : ref_.title;
+  const text = p2 ? (tab === 'A' ? ref_.textA : ref_.textB) : (ref_.text || '');
   return (
     <div className="source-panel">
       <div className="source-meta">
@@ -697,9 +767,9 @@ export function SourceBox({ ref_ }) {
           </div>
         )}
       </div>
-      <div className="source-title">{p2 ? (tab === 'A' ? ref_.titleA : ref_.titleB) : ref_.title}</div>
+      <div className="source-title">{title}</div>
       <div className="source-text">
-        {(p2 ? (tab === 'A' ? ref_.textA : ref_.textB) : ref_.text).split('\n\n').map((p, i) => <p key={i}>{p}</p>)}
+        {text.split('\n\n').map((p, i) => <p key={i}>{p}</p>)}
       </div>
     </div>
   );

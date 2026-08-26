@@ -2002,6 +2002,48 @@ textarea:focus-visible,
   max-height: 480px;
 }
 
+.adhoc-source-panel {
+  border: 1px solid var(--source-line);
+  border-radius: 12px;
+  background: var(--source-bg);
+  padding: 14px 16px 0;
+  margin-bottom: 18px;
+}
+
+.adhoc-source-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.adhoc-source-heading h3 {
+  margin: 8px 0 0;
+  color: var(--subject-ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 20px;
+}
+
+.adhoc-source-count {
+  color: var(--quiet);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adhoc-source-tabs {
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.adhoc-source-panel > .source-panel {
+  max-height: 320px;
+  border: 0;
+  padding: 0 2px 14px;
+  margin-bottom: 0;
+}
+
 .source-meta {
   display: flex;
   gap: 8px;

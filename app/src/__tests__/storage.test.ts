@@ -1,0 +1,3 @@
+import { createChunkedStorage, type KeyValueStore } from '../storage';
+function memory(){const data=new Map<string,string>();const store:KeyValueStore={getItemAsync:async k=>data.get(k)??null,setItemAsync:async(k,v)=>{data.set(k,v)},deleteItemAsync:async k=>{data.delete(k)}};return {data,storage:createChunkedStorage(store)}}
+test('assembles values spanning secure-store chunks',async()=>{const {data,storage}=memory();const value='token'.repeat(1200);await storage.setItem('session',value);expect(data.size).toBeGreaterThan(2);expect(await storage.getItem('session')).toBe(value);await storage.removeItem('session');expect(data.size).toBe(0)});

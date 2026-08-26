@@ -1,0 +1,16 @@
+node_modules/
+clients/*/dist/
+server/data/
+.env
+.DS_Store
+*.log
+test-results/
+playwright-report/
+public/
+.vercel/
+.env.local
+.env.docker.local
+.env.supabase.local
+.agents/
+.claude/
+skills-lock.json

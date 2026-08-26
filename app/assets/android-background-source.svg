@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <pattern id="grid" width="96" height="96" patternUnits="userSpaceOnUse">
+      <path d="M 96 0 L 0 0 0 96" fill="none" stroke="#d7d1c4" stroke-width="3"/>
+    </pattern>
+  </defs>
+  <rect width="1024" height="1024" fill="#f3f0e8"/>
+  <rect width="1024" height="1024" fill="url(#grid)"/>
+  <circle cx="512" cy="512" r="390" fill="#fbfaf6" stroke="#cbc8bd" stroke-width="6"/>
+  <circle cx="512" cy="512" r="350" fill="none" stroke="#8d8e85" stroke-width="4" stroke-dasharray="16 14"/>
+</svg>

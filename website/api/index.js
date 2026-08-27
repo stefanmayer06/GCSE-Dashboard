@@ -18,6 +18,7 @@ function initializeApp() {
       .catch((error) => {
         appPromise = null;
         console.error(`[vercel] application initialization failed (${startupCode(error)})`);
+        console.error(error?.stack || error);
         throw error;
       });
   }

@@ -83,16 +83,19 @@ export const api = {
       return authReq('/me');
     },
     signup: async ({ username, email, password }) => {
-      if (!supabase) {
-        const result = await authReq('/signup', { method: 'POST', body: { username, email, password } });
-        storeSupabaseSession(result.session);
-        return result;
-      }
       const result = await authReq('/signup', {
         method: 'POST',
         body: { username, email, password },
       });
-      storeSupabaseSession(result.session);
+      if (result.session && supabase) {
+        const { error } = await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
+        });
+        if (error) throw new Error(error.message || 'Could not start your session.');
+      } else {
+        storeSupabaseSession(result.session);
+      }
       return result;
     },
     claim: async ({ username, email, currentPassword, newPassword }) => {

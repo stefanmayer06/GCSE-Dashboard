@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { supabase } from './supabase.js';
 
 export default function LoginScreen({ subjectName, tag, letter, authApi, onSignedIn }) {
   const [mode, setMode] = useState('signin');
@@ -12,7 +13,7 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
   const [error, setError] = useState('');
   const [oauth, setOauth] = useState(false);
   const [provider, setProvider] = useState('OAuth');
-  const [authDriver, setAuthDriver] = useState('legacy');
+  const [authDriver, setAuthDriver] = useState(supabase ? 'supabase' : 'legacy');
 
   useEffect(() => {
     authApi

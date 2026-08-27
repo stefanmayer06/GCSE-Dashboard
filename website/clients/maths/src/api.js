@@ -4,6 +4,7 @@ import {
   storedSupabaseAccessToken,
   supabase,
   supabaseAccessToken,
+  supabaseSessionUser,
 } from '../../shared/supabase.js';
 
 const base = window.location.pathname.startsWith('/maths-higher') ? '/api/maths-higher' : '/api/maths';
@@ -78,9 +79,17 @@ export const api = {
         storeSupabaseSession(result.session);
         return result;
       }
-      const { error } = await supabase.auth.signInWithPassword({ email: identifier, password });
+      const { data: signedIn, error } = await supabase.auth.signInWithPassword({ email: identifier, password });
       if (error) throw new Error(error.message || 'Sign in failed.');
-      return authReq('/me');
+      try {
+        return await authReq('/me');
+      } catch (meError) {
+        const user = signedIn.user
+          ? { username: signedIn.user.user_metadata?.username || null, email: signedIn.user.email || null }
+          : await supabaseSessionUser();
+        if (user) return { user };
+        throw meError;
+      }
     },
     signup: async ({ username, email, password }) => {
       if (supabase) {

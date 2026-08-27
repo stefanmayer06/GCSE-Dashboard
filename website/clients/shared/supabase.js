@@ -25,6 +25,20 @@ export async function supabaseAccessToken() {
   return data.session?.access_token || null;
 }
 
+export async function supabaseSessionUser() {
+  if (!supabase) {
+    const stored = storedSupabaseAccessToken();
+    return stored ? { username: null, email: null } : null;
+  }
+  const { data } = await supabase.auth.getSession();
+  const user = data.session?.user;
+  if (!user) return null;
+  return {
+    username: user.user_metadata?.username || null,
+    email: user.email || null,
+  };
+}
+
 export function storedSupabaseAccessToken() {
   if (supabase) return null;
   try {
@@ -40,6 +54,10 @@ export function storeSupabaseSession(session) {
   localStorage.setItem(SERVER_SESSION_KEY, JSON.stringify(session));
 }
 
-export function clearSupabaseSession() {
-  if (!supabase) localStorage.removeItem(SERVER_SESSION_KEY);
+export async function clearSupabaseSession() {
+  if (supabase) {
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+    return;
+  }
+  localStorage.removeItem(SERVER_SESSION_KEY);
 }

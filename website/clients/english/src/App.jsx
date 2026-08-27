@@ -9,6 +9,7 @@ import Texts from './pages/Texts.jsx';
 import TextDetail from './pages/TextDetail.jsx';
 import Chat from './pages/Chat.jsx';
 import { api } from './api.js';
+import { clearSupabaseSession, storedSupabaseAccessToken, supabaseAccessToken } from '../../shared/supabase.js';
 import LoginScreen from '../../shared/login.jsx';
 
 const NAV = [
@@ -40,10 +41,20 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    api.auth
-      .me()
-      .then((data) => setAuth(data.user))
-      .catch(() => setAuth(false));
+    (async () => {
+      const token = (await supabaseAccessToken()) || storedSupabaseAccessToken();
+      if (!token) {
+        setAuth(false);
+        return;
+      }
+      api.auth
+        .me()
+        .then((data) => setAuth(data.user))
+        .catch(() => {
+          clearSupabaseSession();
+          setAuth(false);
+        });
+    })();
   }, []);
 
   useEffect(() => {

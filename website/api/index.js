@@ -24,7 +24,7 @@ function initializeApp() {
   return appPromise;
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   try {
     const app = await initializeApp();
     return app(req, res);

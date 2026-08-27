@@ -1,12 +1,9 @@
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-
-const require = createRequire(import.meta.url);
 
 async function listen(server) {
   await new Promise((resolve, reject) => {
@@ -44,7 +41,7 @@ test('Vercel entrypoint retries after transient initialization failures', async 
 
   await writeFile(dataDir, 'temporarily unavailable');
 
-  const handler = require('../../api/index.js');
+  const { default: handler } = await import('../../api/index.js');
   const server = http.createServer(handler);
   const appUrl = await listen(server);
   t.after(() => close(server));

@@ -2,6 +2,7 @@
   "name": "gcse-dashboard",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "description": "One revision dashboard for AQA GCSE Maths and English Language",
   "workspaces": [
     "server",

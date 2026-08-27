@@ -593,11 +593,11 @@ export function authRoutes() {
         }
         throw error;
       }
-      const user = result.session?.access_token
-        ? await storage.getAuthUser(result.session.access_token)
+      const user = result.session?.user
+        ? { username: result.session.user.user_metadata?.username || name, email }
         : null;
       return res.status(201).json({
-        user: { username: user?.username || name, email },
+        user,
         ...(result.session ? { session: result.session } : {}),
         ...(result.session ? {} : { pendingEmailConfirmation: true }),
       });

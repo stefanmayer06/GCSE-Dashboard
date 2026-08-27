@@ -83,19 +83,26 @@ export const api = {
       return authReq('/me');
     },
     signup: async ({ username, email, password }) => {
-      const result = await authReq('/signup', {
-        method: 'POST',
-        body: { username, email, password },
-      });
-      if (result.session && supabase) {
-        const { error } = await supabase.auth.setSession({
-          access_token: result.session.access_token,
-          refresh_token: result.session.refresh_token,
+      if (supabase) {
+        if (!/^[a-z0-9_.-]{3,32}$/.test(username)) {
+          throw new Error('Usernames must be 3-32 characters and may only use letters, numbers, dots, dashes and underscores.');
+        }
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { username } },
         });
-        if (error) throw new Error(error.message || 'Could not start your session.');
-      } else {
-        storeSupabaseSession(result.session);
+        if (error) throw new Error(error.message || 'Sign up failed.');
+        if (data.session) {
+          return {
+            user: { username: data.user?.user_metadata?.username || username, email },
+            session: data.session,
+          };
+        }
+        return { user: null, pendingEmailConfirmation: true };
       }
+      const result = await authReq('/signup', { method: 'POST', body: { username, email, password } });
+      storeSupabaseSession(result.session);
       return result;
     },
     claim: async ({ username, email, currentPassword, newPassword }) => {

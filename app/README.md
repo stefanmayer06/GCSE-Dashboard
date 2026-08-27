@@ -10,6 +10,8 @@ Expo + React Native app for the independent GCSE Study Desk product on iOS and A
 
 `EXPO_PUBLIC_API_URL` is an origin such as `https://study.example.com`, without `/api`. `EXPO_PUBLIC_WEBSITE_URL` is the public origin hosting privacy, support and deletion pages. Sessions use SecureStore and are split into chunks before storage. Preferences, tutor notebooks, practice drafts and recent result views use AsyncStorage; they are device-local. TanStack Query's learning-content cache is in memory only.
 
+The app and API must use the same Supabase project: `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` must correspond to the API's `SUPABASE_URL` and public key. Account creation returns an immediately usable session when **Confirm email** is disabled in Supabase Auth. When confirmation is enabled, the app sends the learner to the confirmation screen and the account becomes usable after email confirmation.
+
 ## Links and releases
 
 The custom scheme is `gcsestudydesk://`; password recovery resolves to `gcsestudydesk://auth/recover`. Add production `ios.associatedDomains` and Android `intentFilters` only after a verified HTTPS domain and hosted association files exist. The placeholders are documented rather than shipping unverifiable universal links.

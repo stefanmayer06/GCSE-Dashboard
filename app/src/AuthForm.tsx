@@ -2,15 +2,12 @@ import { Link, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Text } from "react-native";
 import { authRequest } from "./api";
+import { ApiAuthResponse, applyApiAuthResponse } from "./auth";
 import { Button, DeskHeader, Field, Notice, ScrollScreen } from "./components";
 import { supabase } from "./supabase";
 import { useTheme } from "./theme";
 
 type Mode = "signin" | "signup" | "forgot" | "recover" | "claim";
-type AuthResponse = {
-  session?: { access_token: string; refresh_token: string };
-  pendingEmailConfirmation?: boolean;
-};
 export type RecoveryParams = {
   accessToken?: string;
   refreshToken?: string;
@@ -137,7 +134,7 @@ export function AuthForm({
         if (updateError) throw updateError;
         router.replace("/");
       } else {
-        const result = await authRequest<AuthResponse>(
+        const result = await authRequest<ApiAuthResponse>(
           mode === "signup" ? "/signup" : "/claim",
           mode === "signup"
             ? { username, email, password }
@@ -148,13 +145,8 @@ export function AuthForm({
                 newPassword: password,
               },
         );
-        if (result.session)
-          await supabase.auth.setSession({
-            access_token: result.session.access_token,
-            refresh_token: result.session.refresh_token,
-          });
-        if (result.pendingEmailConfirmation) router.replace("/auth/confirm");
-        else router.replace("/");
+        const state = await applyApiAuthResponse(supabase, result);
+        router.replace(state === "confirmation-required" ? "/auth/confirm" : "/");
       }
     } catch (cause) {
       setError(
@@ -188,7 +180,7 @@ export function AuthForm({
           value={email}
           onChangeText={setEmail}
         />
-      )}{" "}
+      )}
       {(mode === "signup" || mode === "claim") && (
         <Field
           label="Username"
@@ -196,7 +188,7 @@ export function AuthForm({
           value={username}
           onChangeText={setUsername}
         />
-      )}{" "}
+      )}
       {mode === "claim" && (
         <Field
           label="Current password"
@@ -204,7 +196,7 @@ export function AuthForm({
           value={oldPassword}
           onChangeText={setOldPassword}
         />
-      )}{" "}
+      )}
       {(mode === "signin" ||
         mode === "signup" ||
         mode === "recover" ||
@@ -215,7 +207,7 @@ export function AuthForm({
           value={password}
           onChangeText={setPassword}
         />
-      )}{" "}
+      )}
       {error && (
         <Notice kind="error" title="NOT COMPLETED">
           {error}
@@ -238,6 +230,14 @@ export function AuthForm({
           style={{ color: colors.info, fontWeight: "700" }}
         >
           Back to sign in
+        </Link>
+      )}
+      {mode === "signin" && (
+        <Link
+          href="/auth/signup"
+          style={{ color: colors.info, fontWeight: "700" }}
+        >
+          Create an account
         </Link>
       )}
       {mode === "signin" && (

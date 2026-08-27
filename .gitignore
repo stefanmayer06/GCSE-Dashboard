@@ -1,16 +1,23 @@
-node_modules/
-clients/*/dist/
-server/data/
+# Repository-local tooling and secrets
 .env
-.DS_Store
-*.log
-test-results/
-playwright-report/
-public/
-.vercel/
 .env.local
 .env.docker.local
 .env.supabase.local
 .agents/
 .claude/
 skills-lock.json
+
+# Website dependencies and generated output
+node_modules/
+clients/*/dist/
+server/data/
+test-results/
+playwright-report/
+public/
+.vercel/
+*.log
+.DS_Store
+
+# Supabase local branch and runtime state retained at repository root
+/supabase/.branches/
+/supabase/.temp/

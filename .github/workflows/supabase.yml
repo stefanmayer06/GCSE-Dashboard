@@ -3,29 +3,33 @@ name: Supabase Database
 on:
   push:
     paths:
-      - 'supabase/**'
-      - 'server/src/storage/supabase.js'
-      - 'server/src/supabase/**'
-      - 'server/src/db.js'
+      - 'website/supabase/**'
+      - 'website/server/src/storage/supabase.js'
+      - 'website/server/src/supabase/**'
+      - 'website/server/src/db.js'
       - '.github/workflows/supabase.yml'
   pull_request:
     paths:
-      - 'supabase/**'
-      - 'server/src/storage/supabase.js'
-      - 'server/src/supabase/**'
-      - 'server/src/db.js'
+      - 'website/supabase/**'
+      - 'website/server/src/storage/supabase.js'
+      - 'website/server/src/supabase/**'
+      - 'website/server/src/db.js'
       - '.github/workflows/supabase.yml'
 
 jobs:
   database:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: website
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: website/package-lock.json
       - run: npm ci
       - run: npx supabase start
       - run: npx supabase db reset --local

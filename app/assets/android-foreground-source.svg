@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect x="242" y="242" width="540" height="540" fill="#161713"/>
+  <rect x="210" y="300" width="32" height="100" fill="#6849e8"/>
+  <rect x="210" y="462" width="32" height="100" fill="#287c68"/>
+  <rect x="210" y="624" width="32" height="100" fill="#ad7621"/>
+  <text x="512" y="610" fill="#f3f0e8" font-family="Georgia, Times New Roman, serif" font-size="272" text-anchor="middle" letter-spacing="-24">SD</text>
+  <path d="M326 690H698" stroke="#f3f0e8" stroke-width="8"/>
+</svg>

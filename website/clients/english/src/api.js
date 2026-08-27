@@ -4,7 +4,6 @@ import {
   storedSupabaseAccessToken,
   supabase,
   supabaseAccessToken,
-  supabaseSessionUser,
 } from '../../shared/supabase.js';
 
 const base = '/api/english';
@@ -85,20 +84,42 @@ export const api = {
         storeSupabaseSession(result.session);
         return result;
       }
-      const { data: signedIn, error } = await supabase.auth.signInWithPassword({ email: identifier, password });
-      if (error) throw new Error(error.message || 'Sign in failed.');
       try {
-        return await authReq('/me');
-      } catch (meError) {
+        const result = await authReq('/login', {
+          method: 'POST',
+          body: { email: identifier, password },
+        });
+        if (result.session) {
+          await supabase.auth.setSession({
+            access_token: result.session.access_token,
+            refresh_token: result.session.refresh_token,
+          });
+        }
+        return result;
+      } catch (serverError) {
+        const { data: signedIn, error } = await supabase.auth.signInWithPassword({ email: identifier, password });
+        if (error) throw new Error(error.message || 'Sign in failed.');
         const user = signedIn.user
           ? { username: signedIn.user.user_metadata?.username || null, email: signedIn.user.email || null }
-          : await supabaseSessionUser();
+          : null;
         if (user) return { user };
-        throw meError;
+        throw serverError;
       }
     },
     signup: async ({ username, email, password }) => {
-      if (supabase) {
+      try {
+        const result = await authReq('/signup', { method: 'POST', body: { username, email, password } });
+        if (result.session && supabase) {
+          await supabase.auth.setSession({
+            access_token: result.session.access_token,
+            refresh_token: result.session.refresh_token,
+          });
+        } else {
+          storeSupabaseSession(result.session);
+        }
+        return result;
+      } catch (serverError) {
+        if (!supabase) throw serverError;
         if (!/^[a-z0-9_.-]{3,32}$/.test(username)) {
           throw new Error('Usernames must be 3-32 characters and may only use letters, numbers, dots, dashes and underscores.');
         }
@@ -116,9 +137,6 @@ export const api = {
         }
         return { user: null, pendingEmailConfirmation: true };
       }
-      const result = await authReq('/signup', { method: 'POST', body: { username, email, password } });
-      storeSupabaseSession(result.session);
-      return result;
     },
     claim: async ({ username, email, currentPassword, newPassword }) => {
       const result = await authReq('/claim', {

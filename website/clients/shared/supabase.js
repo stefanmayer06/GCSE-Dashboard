@@ -20,6 +20,8 @@ export const supabase = url && key
 const SERVER_SESSION_KEY = 'gcse-supabase-session';
 
 export async function supabaseAccessToken() {
+  const stored = storedSupabaseAccessToken();
+  if (stored) return stored;
   if (!supabase) return null;
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token || null;
@@ -40,7 +42,6 @@ export async function supabaseSessionUser() {
 }
 
 export function storedSupabaseAccessToken() {
-  if (supabase) return null;
   try {
     const value = JSON.parse(localStorage.getItem(SERVER_SESSION_KEY) || 'null');
     return value?.access_token || null;
@@ -50,14 +51,11 @@ export function storedSupabaseAccessToken() {
 }
 
 export function storeSupabaseSession(session) {
-  if (!session || supabase) return;
+  if (!session?.access_token) return;
   localStorage.setItem(SERVER_SESSION_KEY, JSON.stringify(session));
 }
 
 export async function clearSupabaseSession() {
-  if (supabase) {
-    await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
-    return;
-  }
   localStorage.removeItem(SERVER_SESSION_KEY);
+  if (supabase) await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
 }

@@ -18,13 +18,14 @@ function initializeApp() {
       .catch((error) => {
         appPromise = null;
         console.error(`[vercel] application initialization failed (${startupCode(error)})`);
+        console.error(error?.stack || error);
         throw error;
       });
   }
   return appPromise;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   try {
     const app = await initializeApp();
     return app(req, res);

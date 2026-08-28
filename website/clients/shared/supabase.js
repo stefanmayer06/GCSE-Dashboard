@@ -18,13 +18,27 @@ export const supabase = url && key
   : null;
 
 const SERVER_SESSION_KEY = 'gcse-supabase-session';
+const TOKEN_TIMEOUT_MS = 2500;
+
+if (supabase) {
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) storeSupabaseSession(session);
+    else localStorage.removeItem(SERVER_SESSION_KEY);
+  });
+}
 
 export async function supabaseAccessToken() {
   const stored = storedSupabaseAccessToken();
   if (stored) return stored;
   if (!supabase) return null;
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token || null;
+  try {
+    return await Promise.race([
+      supabase.auth.getSession().then(({ data }) => data.session?.access_token || null),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('token timeout')), TOKEN_TIMEOUT_MS)),
+    ]);
+  } catch {
+    return storedSupabaseAccessToken();
+  }
 }
 
 export async function supabaseSessionUser() {

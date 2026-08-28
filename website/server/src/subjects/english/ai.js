@@ -110,9 +110,10 @@ RULES:
 - Reply with ONLY a valid JSON object: {"marks": <int>, "level": <1-4>, ${r.split ? '"content": <int>, "accuracy": <int>, ' : ''}"strengths": "<2-3 specific strengths, quoting the student where possible>", "improvements": "<2-3 precise, actionable targets>", "modelAnswer": "<a concise exemplar answer for this exact question (roughly 120-200 words, or for 40-mark tasks a short opening plus note on structure, ~150 words)>"}`;
 
   try {
+    const answerText = contentText(answer) || '(no answer submitted)';
     const raw = await callOpenRouter({
       system,
-      user: `STUDENT ANSWER:\n${String(answer || '(no answer submitted)').slice(0, 8000)}`,
+      user: `STUDENT ANSWER:\n${answerText.slice(0, 8000)}`,
       json: true,
       apiKey,
       model,

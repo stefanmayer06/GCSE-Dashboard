@@ -26,6 +26,7 @@ import {
   hasAnswer,
   normalizeAnswer,
   parseDraft,
+  progressiveSolutionHints,
   questionId,
   resultId,
   secondsRemaining,
@@ -35,6 +36,8 @@ import {
   type UnknownRecord,
 } from "@/practice/core";
 import { useTheme } from "@/theme";
+import { mergeMistakes, mistakesFromResult, notebookKey } from "@/notebook";
+import { completeMission, missionResultFromServer, parsePlanState, planStateKey } from "@/planning";
 
 const rec = (value: unknown): UnknownRecord =>
   value && typeof value === "object" && !Array.isArray(value)
@@ -123,20 +126,21 @@ export default function ActivePractice() {
     "loading" | "running" | "frozen" | "submitting" | "error"
   >("loading");
   const [error, setError] = useState("");
-  const [feedback, setFeedback] = useState<Record<string, UnknownRecord>>({});
   const [aiResults, setAiResults] = useState<Record<string, UnknownRecord>>({});
+  const [hintReveals, setHintReveals] = useState<Record<string, number>>({});
+  const [feedbackHistory, setFeedbackHistory] = useState<Record<string, UnknownRecord[]>>({});
   const submitting = useRef(false);
   const mounted = useRef(true);
-  const latest = useRef<{ draft: Draft | null; answers: Record<string, AnswerValue>; current: number }>({ draft: null, answers: {}, current: 0 });
+  const latest = useRef<{ draft: Draft | null; answers: Record<string, AnswerValue>; current: number; hintReveals: Record<string, number>; feedbackHistory: Record<string, UnknownRecord[]> }>({ draft: null, answers: {}, current: 0, hintReveals: {}, feedbackHistory: {} });
   const [discardError, setDiscardError] = useState("");
   const [pane, setPane] = useState<"question" | "source">("question");
   const [sourceIndex, setSourceIndex] = useState(0);
-  latest.current = { draft, answers, current };
+  latest.current = { draft, answers, current, hintReveals, feedbackHistory };
 
   async function flush(expiredAt?: string) {
     const snapshot = latest.current;
     if (!snapshot.draft) return;
-    const next = { ...snapshot.draft, answers: snapshot.answers, current: snapshot.current, savedAt: new Date().toISOString(), expiredAt: expiredAt ?? snapshot.draft.expiredAt };
+    const next = { ...snapshot.draft, answers: snapshot.answers, current: snapshot.current, hintReveals: snapshot.hintReveals, feedbackHistory: snapshot.feedbackHistory, savedAt: new Date().toISOString(), expiredAt: expiredAt ?? snapshot.draft.expiredAt };
     latest.current.draft = next;
     await AsyncStorage.setItem(key, JSON.stringify(next));
   }
@@ -166,6 +170,8 @@ export default function ActivePractice() {
       if (!mounted.current) return;
       setDraft(restored);
       setAnswers(saved.answers ?? {});
+      setHintReveals(saved.hintReveals ?? {});
+      setFeedbackHistory(saved.feedbackHistory ?? {});
       setCurrent(
         Math.min(
           saved.current ?? 0,
@@ -227,12 +233,14 @@ export default function ActivePractice() {
         ...draft,
         answers,
         current,
+        hintReveals,
+        feedbackHistory,
         savedAt: new Date().toISOString(),
       };
       void AsyncStorage.setItem(key, JSON.stringify(next));
     }, 250);
     return () => clearTimeout(timer);
-  }, [answers, current, draft, key, phase]);
+  }, [answers, current, draft, feedbackHistory, hintReveals, key, phase]);
   // The hardware subscription is replaced whenever the route phase changes.
   useEffect(() => {
     const subscription = BackHandler.addEventListener(
@@ -274,6 +282,7 @@ export default function ActivePractice() {
   const questions = active.session.questions;
   const question = questions[current] ?? {};
   const qid = questionId(question, current);
+  const finalAttempt = subject === "english" && feedbackHistory[qid]?.at(-1)?.canResubmit === false;
   const answered = questions.filter((q, i) =>
     hasQuestionAnswer(q, answers[questionId(q, i)]),
   ).length;
@@ -294,18 +303,15 @@ export default function ActivePractice() {
           ? mergeEssayAnswer(previous[qid], rec(value))
           : value,
     }));
-    setFeedback((previous) => {
-      const next = { ...previous };
-      delete next[qid];
-      return next;
-    });
   }
   async function checkCurrent() {
     if (phase !== "running" || !hasQuestionAnswer(question, answers[qid])) return;
+    if (subject === "english" && feedbackHistory[qid]?.at(-1)?.canResubmit === false) return;
     setError("");
     if (question.markType === "self") {
       const marking = rec(question.marking);
-      setFeedback(previous => ({ ...previous, [qid]: { ai: false, modelAnswer: question.modelAnswer ?? question.answerText ?? marking.modelAnswer, rubric: question.rubric ?? marking.rubric, guidance: question.guidance ?? marking.guidance } }));
+      const row = { ai: false, modelAnswer: question.modelAnswer ?? question.answerText ?? marking.modelAnswer, rubric: question.rubric ?? marking.rubric, guidance: question.guidance ?? marking.guidance };
+      setFeedbackHistory(previous => ({ ...previous, [qid]: [...(previous[qid] ?? []), row] }));
       return;
     }
     if (!online) return;
@@ -322,7 +328,7 @@ export default function ActivePractice() {
           : await api.check(qid, value, active.session.id);
       const row = rec(response);
       if (!mounted.current) return;
-      setFeedback((previous) => ({ ...previous, [qid]: row }));
+      setFeedbackHistory(previous => ({ ...previous, [qid]: [...(previous[qid] ?? []), row] }));
       if (row.ai === true)
         setAiResults((previous) => ({ ...previous, [qid]: row }));
     } catch (cause) {
@@ -375,10 +381,23 @@ export default function ActivePractice() {
                 list,
                 subject === "english" ? aiResults : undefined,
               );
-      await AsyncStorage.multiSet([
-         [resultId(auth?.user.id, subject, id), JSON.stringify(cacheResult(result, answers))],
+       const cached = cacheResult(result, answers);
+       const notebookStorageKey = notebookKey(auth?.user.id);
+       const existingMistakes = await AsyncStorage.getItem(notebookStorageKey);
+       const mistakes = mistakesFromResult(result, cached.submittedAnswers, id, subject);
+       await AsyncStorage.multiSet([
+          [resultId(auth?.user.id, subject, id), JSON.stringify(cached)],
+         [notebookStorageKey, JSON.stringify(mergeMistakes(existingMistakes, mistakes))],
         [activeId(auth?.user.id, subject), ""],
       ]);
+      if (active.session.kind === "practice") {
+        const planStorageKey = planStateKey(auth?.user.id, subject);
+        const currentPlan = parsePlanState(await AsyncStorage.getItem(planStorageKey));
+        if (currentPlan) {
+          const updated = completeMission(currentPlan, active.session.topicId, missionResultFromServer(result));
+          if (updated !== currentPlan) await AsyncStorage.setItem(planStorageKey, JSON.stringify(updated));
+        }
+      }
       await AsyncStorage.removeItem(key);
       router.replace({ pathname: "/results/[id]", params: { id } });
     } catch (cause) {
@@ -528,7 +547,8 @@ export default function ActivePractice() {
             colors={colors}
             accent={tokens.accent}
           />
-          {feedback[qid] && <Feedback value={feedback[qid]} colors={colors} />}
+           {feedbackHistory[qid]?.map((item,index)=><Feedback key={index} value={item} colors={colors} attempt={index+1} />)}
+           {subject.startsWith("maths") && draft.session.kind !== "paper" && <MathsHints question={question} revealed={hintReveals[qid]??0} onReveal={()=>setHintReveals(value=>({...value,[qid]:(value[qid]??0)+1}))} colors={colors}/>}
           {error && (
             <Notice kind="error" title="ACTION NOT COMPLETED">
               {error}
@@ -539,15 +559,18 @@ export default function ActivePractice() {
               variant="secondary"
               disabled={
                  phase !== "running" ||
+                 finalAttempt ||
                  (question.markType !== "self" && !online) ||
                  !hasQuestionAnswer(question, answers[qid])
               }
               onPress={checkCurrent}
             >
-              {question.markType === "self"
-                ? "Reveal model answer and rubric"
+              {finalAttempt
+                ? "Final attempt reached"
+                : question.markType === "self"
+                 ? "Reveal model answer and rubric"
                 : subject === "english" && !["list", "truefalse"].includes(text(question.type) ?? "")
-                  ? "Ask examiner to mark"
+                   ? feedbackHistory[qid]?.length ? "Improve answer / resubmit to examiner" : "Ask examiner to mark"
                   : "Check with server"}
             </Button>
           )}
@@ -1001,9 +1024,11 @@ function subjectValue(question: UnknownRecord, value: string): AnswerValue {
 function Feedback({
   value,
   colors,
+  attempt,
 }: {
   value: UnknownRecord;
   colors: Record<string, string>;
+  attempt?: number;
 }) {
   const model = text(value.modelAnswer) ?? text(value.answerText);
   const guidance = text(value.guidance);
@@ -1023,6 +1048,7 @@ function Feedback({
             ? "AI EXAMINER FEEDBACK"
             : "SERVER CHECK"}
       </Text>
+      {attempt != null && <Text style={{color:colors.quiet}}>Attempt {finite(value.attemptNo) ?? attempt}{finite(value.markDelta) != null ? ` / delta ${finite(value.markDelta)! >= 0 ? "+" : ""}${finite(value.markDelta)}` : ""}{value.canResubmit === false ? " / final attempt" : " / can resubmit"}</Text>}
       {finite(value.marks) != null && (
         <Text style={{ color: colors.ink, fontWeight: "800" }}>
           {finite(value.marks)} /{" "}
@@ -1061,6 +1087,14 @@ function Feedback({
       )}
     </View>
   );
+}
+
+function MathsHints({question,revealed,onReveal,colors}:{question:UnknownRecord;revealed:number;onReveal:()=>void;colors:Record<string,string>}){
+  const first=text(question.hint)??text(rec(question.marking).hint);
+  const solution=progressiveSolutionHints(question.solution);
+  const hints=[...(first?[first]:[]),...solution];
+  if(!hints.length)return null;
+  return <View style={[styles.feedback,{borderColor:colors.warning,backgroundColor:colors.raised}]}><Text style={[styles.meta,{color:colors.warning}]}>PROGRESSIVE HINTS / FINAL ANSWER HIDDEN</Text>{hints.slice(0,revealed).map((hint,index)=><Text key={index} style={{color:colors.ink,lineHeight:21}}>{index+1}. {hint}</Text>)}{revealed<hints.length&&<Button variant="secondary" onPress={onReveal}>{revealed===0?'Reveal hint':'Reveal next step'}</Button>}</View>
 }
 
 const styles = StyleSheet.create({

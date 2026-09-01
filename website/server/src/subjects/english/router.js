@@ -18,6 +18,7 @@ import { createDb } from '../../db.js';
 import { defaultStorage } from '../../storage/index.js';
 
 const { apiKey, model } = aiConfig();
+const MAX_MARK_ATTEMPTS = 3;
 
 const app = express.Router();
 app.use(express.json({ limit: '2mb' }));
@@ -84,6 +85,31 @@ function sourceTextForQuestion(q) {
     return `${q.sourceRef.textA || ''}\n\n${q.sourceRef.textB || ''}`.slice(0, 7000);
   }
   return q.sourceRef.text || '';
+}
+
+export function markAttemptsFor(payload, qid) {
+  const attempts = payload?.markAttempts?.[qid];
+  return Array.isArray(attempts) ? attempts.slice(0, MAX_MARK_ATTEMPTS) : [];
+}
+
+export function attemptMetadata(attempts, marks = null) {
+  const previousMarks = attempts.length ? attempts[attempts.length - 1].marks : null;
+  return {
+    attemptNo: attempts.length + 1,
+    previousMarks,
+    markDelta: Number.isFinite(marks) && Number.isFinite(previousMarks)
+      ? marks - previousMarks
+      : null,
+    canResubmit: attempts.length + (Number.isFinite(marks) ? 1 : 0) < MAX_MARK_ATTEMPTS,
+  };
+}
+
+function attemptLimit(res) {
+  return res.status(429).json({
+    error: `This question has already been AI-marked ${MAX_MARK_ATTEMPTS} times.`,
+    code: 'MARK_ATTEMPT_LIMIT',
+    canResubmit: false,
+  });
 }
 
 const stripMarkCtx = (q) => {
@@ -353,7 +379,7 @@ app.post('/practice', asyncRoute(async (req, res) => {
   const sessionId = crypto.randomUUID();
   const created = await defaultStorage.createStudySession({
     ...sessionCriteria(req, sessionId, 'practice'),
-    payload: { topicId, questions: full, aiMarks: {} },
+    payload: { topicId, questions: full, aiMarks: {}, markAttempts: {} },
   });
   if (created.status !== 'created') {
     return res.status(503).json({ error: 'Could not start practice. Please try again.' });
@@ -370,7 +396,7 @@ app.post('/adhoc', asyncRoute(async (req, res) => {
   const sessionId = crypto.randomUUID();
   const created = await defaultStorage.createStudySession({
     ...sessionCriteria(req, sessionId, 'adhoc'),
-    payload: { questions: full, aiMarks: {} },
+    payload: { questions: full, aiMarks: {}, markAttempts: {} },
   });
   if (created.status !== 'created') {
     return res.status(503).json({ error: 'Could not start the round. Please try again.' });
@@ -412,6 +438,8 @@ async function scoreEnglishSession(req, res, kind, includeLesson) {
   const perQ = [];
   for (const q of s.questions) {
     const ans = answerMap.get(q.id) ?? null;
+    const attempts = markAttemptsFor(s, q.id);
+    const latestAttempt = attempts.at(-1);
     let got = 0;
     if (q.type === 'list') got = markList(ans, q.markCtx.points).marks;
     else if (q.type === 'truefalse') got = markTrueFalse(ans, q.markCtx.answers).marks;
@@ -419,7 +447,24 @@ async function scoreEnglishSession(req, res, kind, includeLesson) {
     else got = Math.min(q.marks, Number(s.aiMarks?.[q.id]) || 0);
     total += q.marks;
     correct += got;
-    perQ.push({ qid: q.id, got, marks: q.marks, skillIds: q.skillIds });
+    perQ.push({
+      qid: q.id,
+      got,
+      marks: q.marks,
+      skillIds: q.skillIds,
+      topicId: q.skillIds?.[0],
+      topicName: TOPICS.find((topic) => topic.id === q.skillIds?.[0])?.name,
+      title: q.title,
+      text: q.text,
+      value: ans,
+      ...(latestAttempt ? {
+        marking: latestAttempt.feedback,
+        attemptNo: attempts.length,
+        previousMarks: attempts.length > 1 ? attempts.at(-2).marks : null,
+        markDelta: attempts.length > 1 ? latestAttempt.marks - attempts.at(-2).marks : null,
+        canResubmit: attempts.length < MAX_MARK_ATTEMPTS,
+      } : {}),
+    });
   }
 
   const practiceRecords = [];
@@ -465,6 +510,8 @@ app.post('/mark', asyncRoute(async (req, res) => {
   if (!s) return res.status(404).json({ error: 'Session expired.' });
   const q = s.payload.questions.find((question) => question.id === qid);
   if (!q?.rubricKey || q.markType === 'self') return res.status(400).json({ error: 'Question is not AI-marked.' });
+  const existingAttempts = markAttemptsFor(s.payload, q.id);
+  if (existingAttempts.length >= MAX_MARK_ATTEMPTS) return attemptLimit(res);
   const out = await markAnswer({
     rubricKey: q.rubricKey,
     questionText: q.text,
@@ -474,23 +521,41 @@ app.post('/mark', asyncRoute(async (req, res) => {
     model,
   });
   if (out.ai && Number.isFinite(Number(out.marks))) {
+    const marks = Math.min(q.marks, Math.max(0, Number(out.marks)));
     const updated = await defaultStorage.updateStudySession(
       sessionCriteria(req, sessionId, s.kind),
-      (current) => ({
-        payload: {
-          ...current.payload,
-          aiMarks: {
-            ...(current.payload.aiMarks || {}),
-            [q.id]: Math.min(q.marks, Math.max(0, Number(out.marks))),
+      (current) => {
+        const attempts = markAttemptsFor(current.payload, q.id);
+        if (attempts.length >= MAX_MARK_ATTEMPTS) return { value: { limited: true } };
+        const metadata = attemptMetadata(attempts, marks);
+        const attempt = {
+          answer: answer ?? null,
+          feedback: { ...out, marks },
+          timestamp: new Date().toISOString(),
+          marks,
+        };
+        return {
+          payload: {
+            ...current.payload,
+            aiMarks: {
+              ...(current.payload.aiMarks || {}),
+              [q.id]: marks,
+            },
+            markAttempts: {
+              ...(current.payload.markAttempts || {}),
+              [q.id]: [...attempts, attempt],
+            },
           },
-        },
-        value: true,
-      }),
+          value: metadata,
+        };
+      },
     );
     if (updated.status === 'busy') return sessionFailure(res, updated);
     if (updated.status !== 'updated') return sessionFailure(res, updated);
+    if (updated.value?.limited) return attemptLimit(res);
+    return res.json({ ...out, marks, ...updated.value });
   }
-  res.json(out);
+  return res.json({ ...out, ...attemptMetadata(existingAttempts) });
 }));
 
 /* ---------------- progress & chat ---------------- */

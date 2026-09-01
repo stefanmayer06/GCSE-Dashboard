@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { RubricBands } from './Practice.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
+import { captureMistakes } from '../../../shared/study.js';
 
-export default function Results() {
+export default function Results({ userId }) {
   const navigate = useNavigate();
   const [result, setResult] = useState(null);
   const [open, setOpen] = useState({});
@@ -11,11 +12,15 @@ export default function Results() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem('englishmate-last-result');
-      if (raw) setResult(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setResult(parsed);
+        captureMistakes(userId, 'english', parsed, (q, topic) => parsed.weakTopics?.find((row) => row.name === topic)?.internal || `/learn/${q.topicId || q.skillId || ''}`);
+      }
     } catch {
       /* noop */
     }
-  }, []);
+  }, [userId]);
 
   if (!result) {
     return (

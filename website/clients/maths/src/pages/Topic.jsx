@@ -4,8 +4,9 @@ import { api } from '../api.js';
 import LessonVisual from '../components/LessonVisual.jsx';
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
+import { completePlanDay, missionOutcome } from '../../../shared/study.js';
 
-export default function Topic({ onProgress }) {
+export default function Topic({ onProgress, userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const { topicId } = useParams();
   const navigate = useNavigate();
@@ -62,6 +63,7 @@ export default function Topic({ onProgress }) {
       const res = await api.practiceSubmit(sessionId, topicId, list);
       setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
       onProgress?.(res.progress);
+      if (userId) completePlanDay(userId, higherTier ? 'maths-higher' : 'maths', topicId, missionOutcome(res));
       if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
       if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
         setCelebration(res.reward);

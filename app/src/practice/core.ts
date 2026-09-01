@@ -22,6 +22,8 @@ export interface Draft {
   current: number;
   savedAt: string;
   expiredAt?: string;
+  hintReveals?: Record<string, number>;
+  feedbackHistory?: Record<string, UnknownRecord[]>;
 }
 
 export interface PracticeStorage {
@@ -36,6 +38,11 @@ const record = (value: unknown): UnknownRecord => value && typeof value === 'obj
 export const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 export const text = (value: unknown): string | undefined => typeof value === 'string' && value.trim() ? value : undefined;
 export const finite = (value: unknown): number | undefined => typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+
+export function progressiveSolutionHints(value: unknown) {
+  const steps = asArray(value).flat(Infinity).map(item => text(item) ?? text(record(item).text)).filter((item): item is string => Boolean(item));
+  return steps.slice(0, -1);
+}
 
 export function questionId(question: UnknownRecord, index = 0) {
   return text(question.id) ?? text(question.qid) ?? `question-${index + 1}`;
@@ -125,7 +132,7 @@ export function parsePapers(payload: unknown): UnknownRecord[] {
 export function parseTopics(payload: unknown): UnknownRecord[] {
   if (Array.isArray(payload)) return payload.map(record);
   const root = record(payload);
-  const sections = record(root.sections);
+  const sections = Object.keys(record(root.strands)).length ? record(root.strands) : record(root.sections);
   if (Object.keys(sections).length) return Object.values(sections).flatMap(section => asArray(record(section).topics).map(record));
   return asArray(root.topics).map(record);
 }

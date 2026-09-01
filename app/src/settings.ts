@@ -39,6 +39,8 @@ export function isDisposableAppStorageKey(key: string) {
   return (
     key.startsWith("practice:") ||
     key.startsWith("cache:") ||
-    key.startsWith("tutor-notebook:")
+    key.startsWith("tutor-notebook:") ||
+    key.startsWith("planning:") ||
+    key.startsWith("notebook:")
   );
 }

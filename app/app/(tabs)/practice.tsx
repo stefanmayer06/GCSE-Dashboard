@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ApiClient } from '@/api';
@@ -17,6 +17,7 @@ export default function PracticeHome() {
   const { online } = useNetwork();
   const { colors, subject: tokens } = useTheme();
   const router = useRouter();
+  const params = useLocalSearchParams<{ diagnostic?: string; topicId?: string }>();
   const api = new ApiClient(subject);
   const papers = useQuery({ queryKey: ['practice-papers', subject], queryFn: () => api.papers() });
   const topics = useQuery({ queryKey: ['practice-topics', subject], queryFn: () => api.topics() as Promise<unknown> });
@@ -63,6 +64,9 @@ export default function PracticeHome() {
 
   const paperList = parsePapers(papers.data);
   const topicList = parseTopics(topics.data);
+  // Route parameters intentionally initialize the preparation panel.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(()=>{const available=parseTopics(topics.data);const topic=available.find(item=>text(item.id)===params.topicId);if(params.diagnostic==='1')setSelected({kind:'adhoc',count:10,sources:subject==='english'?['listing','truefalse','analysis']:['1','2','3'],title:'Diagnostic mixed check'});else if(params.topicId&&topic)setSelected({kind:'practice',topicId:params.topicId,count:subject==='english'?3:8,title:label(topic)});},[params.diagnostic,params.topicId,subject,topics.data]);
   return <ScrollScreen>
     <DeskHeader title="Practice desk" eyebrow="PAPERS AND TARGETED ROUNDS" />
     <OfflineBanner />

@@ -9,15 +9,18 @@ import Texts from './pages/Texts.jsx';
 import TextDetail from './pages/TextDetail.jsx';
 import Chat from './pages/Chat.jsx';
 import { api } from './api.js';
-import { clearSupabaseSession, storedSupabaseAccessToken, supabaseAccessToken } from '../../shared/supabase.js';
+import { clearSupabaseSession } from '../../shared/supabase.js';
 import LoginScreen from '../../shared/login.jsx';
+import { Notebook, WeeklySummary } from '../../shared/StudyTools.jsx';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: '01' },
   { to: '/practice', label: 'Practice Papers', icon: '02' },
   { to: '/learn', label: 'Learn', icon: '03' },
   { to: '/texts', label: 'The Texts', icon: '04' },
-  { to: '/chat', label: 'AI Tutor', icon: '05' },
+  { to: '/notebook', label: 'Notebook', icon: '05' },
+  { to: '/summary', label: 'Summary', icon: '06' },
+  { to: '/chat', label: 'AI Tutor', icon: '07' },
 ];
 
 function initialTheme() {
@@ -41,20 +44,13 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    (async () => {
-      const token = (await supabaseAccessToken()) || storedSupabaseAccessToken();
-      if (!token) {
+    api.auth
+      .me()
+      .then((data) => setAuth(data.user))
+      .catch(() => {
+        clearSupabaseSession();
         setAuth(false);
-        return;
-      }
-      api.auth
-        .me()
-        .then((data) => setAuth(data.user))
-        .catch(() => {
-          clearSupabaseSession();
-          setAuth(false);
-        });
-    })();
+      });
   }, []);
 
   useEffect(() => {
@@ -160,13 +156,15 @@ export default function App() {
       </aside>
       <main className="content">
         <Routes>
-          <Route path="/" element={<Dashboard health={health} progress={progress} />} />
+          <Route path="/" element={<Dashboard health={health} progress={progress} userId={auth.id || auth.username} />} />
           <Route path="/practice" element={<Practice health={health} onProgress={setProgress} />} />
-          <Route path="/results" element={<Results />} />
+          <Route path="/results" element={<Results userId={auth.id || auth.username} />} />
           <Route path="/learn" element={<Learn />} />
-          <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} />} />
+          <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} userId={auth.id || auth.username} />} />
           <Route path="/texts" element={<Texts />} />
           <Route path="/texts/:textId" element={<TextDetail />} />
+          <Route path="/notebook" element={<Notebook userId={auth.id || auth.username} subject="english" />} />
+          <Route path="/summary" element={<WeeklySummary userId={auth.id || auth.username} subject="english" progress={progress} />} />
           <Route path="/chat" element={<Chat health={health} />} />
         </Routes>
       </main>

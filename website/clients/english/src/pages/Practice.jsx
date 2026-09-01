@@ -290,28 +290,36 @@ export default function Practice({ health, onProgress }) {
         )}
       </section>
 
-      <AdhocSection onProgress={onProgress} />
+      <AdhocSection onProgress={onProgress} diagnostic={params.get('diagnostic') === '1'} />
     </div>
   );
 }
 
 /* ---------------- ad-hoc quick fire ---------------- */
 
-function AdhocSection({ onProgress }) {
+function AdhocSection({ onProgress, diagnostic = false }) {
+  const diagnosticStarted = useRef(false);
   const [kinds, setKinds] = useState(['listing', 'truefalse', 'analysis']);
   const [count, setCount] = useState(10);
   const [running, setRunning] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  async function startAdhoc() {
+  async function startAdhoc(countOverride) {
     setBusy(true);
     try {
-      const set = await api.adhoc(count, kinds);
+      const set = await api.adhoc(typeof countOverride === 'number' ? countOverride : count, kinds);
       setRunning(set);
     } finally {
       setBusy(false);
     }
   }
+
+  useEffect(() => {
+    if (!diagnostic || diagnosticStarted.current) return;
+    diagnosticStarted.current = true;
+    setCount(10);
+    startAdhoc(10);
+  }, [diagnostic]);
 
   function toggleKind(k) {
     setKinds((s) => {
@@ -509,6 +517,19 @@ function AdhocSourcePanel({ questions }) {
 
 export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSource = false }) {
   const [checked, setChecked] = useState(false);
+  const [attempt, setAttempt] = useState(1);
+  const [previousMark, setPreviousMark] = useState(null);
+  const [resubmitting, setResubmitting] = useState(false);
+
+  async function resubmit() {
+    setResubmitting(true);
+    const before = fb?.marks ?? previousMark;
+    try {
+      const next = await onCheck(value);
+      setPreviousMark(before);
+      setAttempt(next.attemptNo ?? next.attemptNumber ?? next.attempt ?? attempt + 1);
+    } finally { setResubmitting(false); }
+  }
 
   function answerReady() {
     if (q.type === 'truefalse') {
@@ -528,7 +549,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
           <textarea
             className="answer-area list"
             placeholder={q.input?.placeholder || 'One point per line…'}
-            disabled={!!fb}
+            disabled={!!fb && !fb.ai}
             value={value ?? ''}
             onChange={(e) => onAnswer(e.target.value)}
           />
@@ -572,7 +593,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
               <button
                 key={o.id}
                 className={`option-card ${value?.option === o.id ? 'selected' : ''}`}
-                disabled={!!fb}
+                disabled={!!fb && !fb.ai}
                 onClick={() => onAnswer({ ...(value || {}), option: o.id, optionText: o.text })}
               >
                 <div className="option-label">{o.label}</div>
@@ -584,7 +605,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
         <textarea
           className={`answer-area ${q.type === 'essay' ? 'essay' : ''}`}
           placeholder={q.input?.placeholder || 'Write your answer here…'}
-          disabled={!!fb}
+          disabled={!!fb && !fb.ai}
           value={value?.text ?? ''}
           onChange={(e) => onAnswer({ ...(value || {}), text: e.target.value })}
         />
@@ -598,7 +619,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
 
   function feedbackBlock() {
     if (!fb) return null;
-    if (fb.modelAnswer || (fb.ai === false && q.modelAnswer)) {
+    if (fb.ai === false && (fb.modelAnswer || q.modelAnswer)) {
       return (
         <div className="fb-box">
           <div className="fb-head">
@@ -719,7 +740,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
           )}
         </div>
       ) : (
-        feedbackBlock()
+        <>{feedbackBlock()}{fb.ai && <div className="resubmit-box"><div className="fb-label">Attempt {fb.attemptNo ?? fb.attemptNumber ?? fb.attempt ?? attempt}{(fb.markDelta != null || previousMark != null) && <span className="mark-delta"> · {(fb.markDelta ?? fb.marks - previousMark) >= 0 ? '+' : ''}{fb.markDelta ?? fb.marks - previousMark} marks</span>}</div>{fb.canResubmit !== false ? <><p className="sub small">Improve your answer using the target above, then submit it for marking again.</p><button className="btn btn-primary" disabled={!answerReady() || resubmitting} onClick={resubmit}>{resubmitting ? 'Marking again…' : 'Improve and resubmit'}</button></> : <p className="sub small">You have completed all marking attempts for this answer.</p>}</div>}</>
       )}
     </div>
   );

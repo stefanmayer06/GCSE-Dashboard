@@ -1,4 +1,4 @@
-import { activeId, cacheResult, draftId, normalizeAnswer, parseDraft, parseResult, persistNewSession, readCachedResult, secondsRemaining, type PracticeStorage } from './core';
+import { activeId, cacheResult, draftId, normalizeAnswer, parseDraft, parseResult, parseTopics, persistNewSession, progressiveSolutionHints, readCachedResult, secondsRemaining, type PracticeStorage } from './core';
 
 describe('practice core', () => {
   test('normalizes submitted answers without inventing values', () => {
@@ -29,6 +29,8 @@ describe('practice core', () => {
     expect(cached.serverResult).toMatchObject({ xpEarned: 10 });
     expect(cached.submittedAnswers.q1).toBe('response');
   });
+  test('parses Maths strand topic payloads',()=>{expect(parseTopics({strands:{number:{topics:[{id:'fractions'}]}}})).toEqual([{id:'fractions'}])});
+  test('extracts nested progressive solution steps while hiding the final answer',()=>{expect(progressiveSolutionHints([['Choose two points.','Calculate the gradient.','Answer = 3.']])).toEqual(['Choose two points.','Calculate the gradient.'])});
   test('cleans both scoped keys if creating the persisted handoff fails', async () => {
     const removed: readonly string[][] = [];
     const storage: PracticeStorage = {

@@ -252,6 +252,7 @@ export default function Results() {
                       : "—"}
                   {marks != null ? ` / ${marks}` : ""} marks
                 </Text>
+                {(finite(question.attemptNo)!=null||finite(question.markDelta)!=null||question.canResubmit!=null)&&<Text style={{color:colors.quiet}}>Attempt {finite(question.attemptNo)??1}{finite(question.markDelta)!=null?` / delta ${finite(question.markDelta)!>=0?'+':''}${finite(question.markDelta)}`:''}{question.canResubmit===false?' / final attempt':' / can resubmit'}</Text>}
               </View>
               <Text style={{ color: colors.quiet, fontSize: 20 }}>
                 {expanded ? "−" : "+"}

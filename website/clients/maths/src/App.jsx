@@ -7,14 +7,17 @@ import Learn from './pages/Learn.jsx';
 import Topic from './pages/Topic.jsx';
 import Chat from './pages/Chat.jsx';
 import { api } from './api.js';
-import { clearSupabaseSession, storedSupabaseAccessToken, supabaseAccessToken } from '../../shared/supabase.js';
+import { clearSupabaseSession } from '../../shared/supabase.js';
 import LoginScreen from '../../shared/login.jsx';
+import { Notebook, WeeklySummary } from '../../shared/StudyTools.jsx';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: '01' },
   { to: '/practice', label: 'Practice Exam', icon: '02' },
   { to: '/learn', label: 'Learn', icon: '03' },
-  { to: '/chat', label: 'AI Tutor', icon: '04' },
+  { to: '/notebook', label: 'Notebook', icon: '04' },
+  { to: '/summary', label: 'Summary', icon: '05' },
+  { to: '/chat', label: 'AI Tutor', icon: '06' },
 ];
 
 function initialTheme() {
@@ -39,20 +42,13 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    (async () => {
-      const token = (await supabaseAccessToken()) || storedSupabaseAccessToken();
-      if (!token) {
+    api.auth
+      .me()
+      .then((data) => setAuth(data.user))
+      .catch(() => {
+        clearSupabaseSession();
         setAuth(false);
-        return;
-      }
-      api.auth
-        .me()
-        .then((data) => setAuth(data.user))
-        .catch(() => {
-          clearSupabaseSession();
-          setAuth(false);
-        });
-    })();
+      });
   }, []);
 
   useEffect(() => {
@@ -158,11 +154,13 @@ export default function App() {
       </aside>
       <main className="content">
         <Routes>
-           <Route path="/" element={<Dashboard health={health} progress={progress} higherTier={higherTier} />} />
+           <Route path="/" element={<Dashboard health={health} progress={progress} higherTier={higherTier} userId={auth.id || auth.username} />} />
           <Route path="/practice" element={<Practice onProgress={setProgress} />} />
-          <Route path="/results" element={<Results />} />
+          <Route path="/results" element={<Results userId={auth.id || auth.username} />} />
           <Route path="/learn" element={<Learn />} />
-          <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} />} />
+          <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} userId={auth.id || auth.username} />} />
+          <Route path="/notebook" element={<Notebook userId={auth.id || auth.username} subject={higherTier ? 'maths-higher' : 'maths'} />} />
+          <Route path="/summary" element={<WeeklySummary userId={auth.id || auth.username} subject={higherTier ? 'maths-higher' : 'maths'} progress={progress} />} />
           <Route path="/chat" element={<Chat health={health} />} />
         </Routes>
       </main>

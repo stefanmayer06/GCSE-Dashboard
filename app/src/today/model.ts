@@ -97,11 +97,13 @@ export function parseProgress(value: Progress): TodayProgress {
   };
 }
 
-export function rankedTopics(topics: TodayTopic[]): TodayTopic[] {
+export function rankedTopics(topics: TodayTopic[], foundationPass = false): TodayTopic[] {
   return [...topics].sort((a, b) => {
+    const passCore = (topic: TodayTopic) => /number|ratio|proportion|algebra|geometry/i.test(`${topic.area} ${topic.name}`) ? 0 : 1;
+    const coreOrder = foundationPass ? passCore(a) - passCore(b) : 0;
     const neverA = a.answered === 0 ? 0 : 1;
     const neverB = b.answered === 0 ? 0 : 1;
-    return neverA - neverB
+    return coreOrder || neverA - neverB
       || Number(a.completed) - Number(b.completed)
       || (a.accuracy ?? 101) - (b.accuracy ?? 101)
       || a.answered - b.answered

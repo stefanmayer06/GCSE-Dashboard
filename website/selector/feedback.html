@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Tell us what to improve in GCSE Study Desk — quick feedback from early testers."><meta name="referrer" content="no-referrer"><title>Feedback | GCSE Study Desk</title><link rel="stylesheet" href="/legal.css"></head>
+<body><main class="page"><header class="masthead"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">SD</span><span>GCSE Study Desk</span></a><span class="updated">Early access feedback</span></header><section class="hero"><div><p class="section-label">Beta tester form</p><h1>Tell us what<br>to fix first.</h1></div><p class="lede">You are using an early version of the Study Desk website. Two minutes of honest feedback shapes what we build next — no marketing, just product decisions.</p></section>
+<div class="content"><nav class="contents" aria-label="On this page"><strong class="section-label">Before you start</strong><a href="#what">What we ask</a><a href="#privacy">Privacy</a><a href="/">Back to subjects</a></nav><article class="prose">
+<h2 id="what">What we ask</h2><p>Five quick questions. The most useful answers are specific: name the exact screen, question or moment that went wrong (or right). "The Higher paper timing felt tight" helps far more than "it was good".</p>
+<form class="form" id="feedback-form" novalidate>
+  <div class="field">
+    <label for="role">I am a…</label>
+    <select id="role" name="role" required>
+      <option value="" selected disabled>Choose one</option>
+      <option value="student">Student (Year 10, Year 11 or resitting)</option>
+      <option value="parent">Parent or carer</option>
+      <option value="teacher">Teacher or tutor</option>
+      <option value="other">Other</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="subject">Which subject did you look at?</label>
+    <select id="subject" name="subject" required>
+      <option value="" selected disabled>Choose one</option>
+      <option value="maths">Maths — Foundation (8300F)</option>
+      <option value="maths-higher">Maths — Higher (8300H)</option>
+      <option value="english">English Language (8700)</option>
+      <option value="multiple">More than one</option>
+    </select>
+  </div>
+  <fieldset class="field rating-field">
+    <legend>How likely are you to keep using Study Desk for revision?</legend>
+    <div class="rating-row" role="radiogroup" aria-label="Rating from 1 to 5">
+      <label class="rating"><input type="radio" name="rating" value="1" required><span>1</span></label>
+      <label class="rating"><input type="radio" name="rating" value="2"><span>2</span></label>
+      <label class="rating"><input type="radio" name="rating" value="3"><span>3</span></label>
+      <label class="rating"><input type="radio" name="rating" value="4"><span>4</span></label>
+      <label class="rating"><input type="radio" name="rating" value="5"><span>5</span></label>
+    </div>
+    <p class="fine rating-hint">1 = I would not come back · 5 = I would use it weekly</p>
+  </fieldset>
+  <div class="field">
+    <label for="message">What should we improve first?</label>
+    <textarea id="message" name="message" rows="5" maxlength="2000" required placeholder="Be specific — name the screen, topic or question. What happened, and what did you expect?"></textarea>
+  </div>
+  <div class="field">
+    <label for="heard">How did you hear about Study Desk? <span class="optional">optional</span></label>
+    <input id="heard" name="heard" maxlength="120" placeholder="e.g. a Reddit post, a friend, a teacher">
+  </div>
+  <div class="field">
+    <label for="email">Your email, if you want a reply <span class="optional">optional</span></label>
+    <input id="email" name="email" type="email" maxlength="200" placeholder="you@example.com" autocomplete="email">
+  </div>
+  <div class="hp" aria-hidden="true">
+    <label for="website">Website</label>
+    <input id="website" name="website" tabindex="-1" autocomplete="off">
+  </div>
+  <input type="hidden" name="source" id="source">
+  <button type="submit" id="feedback-button">Send feedback</button>
+  <p class="status" id="status" role="status"></p>
+</form>
+<h2 id="privacy">Privacy</h2><p>The email address is optional and is only used to reply about your feedback. Please do not include passwords, tokens or sensitive personal information in the text. Feedback about AI-assisted marking is reviewed by a human to improve question quality, not to grade anyone.</p>
+<p class="fine">Study Desk is an independent revision product and is not affiliated with, approved by or endorsed by AQA.</p></article></div><footer class="footer"><a href="/">Study Desk</a><a href="/privacy.html">Privacy</a><a href="/support.html">Support</a><a href="/subjects.html">Subjects</a></footer></main><script src="/feedback.js" defer></script></body></html>

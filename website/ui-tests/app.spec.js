@@ -467,6 +467,31 @@ test('lesson rewards persist, update levels live and cannot be claimed twice', a
   await expect(page.locator('.badge-collection')).toBeVisible();
 });
 
+test('Maths lesson quick practice completes today in the exam plan', async ({ page }) => {
+  const username = `mission${Date.now()}`;
+  const signup = await page.request.post(`${BASE}/api/auth/signup`, {
+    data: { username, password: 'revision-pass-1' },
+  });
+  expect(signup.ok()).toBeTruthy();
+  const today = new Date();
+  const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const savePlan = await page.request.put(`${BASE}/api/maths/personal/plan`, {
+    data: {
+      from: date,
+      days: [{ date, label: 'Today', task: 'Fractions', minutes: 15, topicId: 'fractions', status: 'todo' }],
+    },
+  });
+  expect(savePlan.ok()).toBeTruthy();
+
+  await page.goto(`${BASE}/maths/learn/fractions`, { waitUntil: 'networkidle' });
+  await completeMathsLessonQuiz(page);
+  await expect(page.locator('.quiz-done')).toBeVisible();
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.week-plan .done')).toContainText('Fractions');
+  await expect(page.locator('.mission-card')).toContainText('Fractions done');
+  await expect(page.locator('.plan-note').last()).toContainText('1/7 days done this week');
+});
+
 test('English offline lesson completion earns the same first-completion reward', async ({ page }) => {
   const username = `engreward${Date.now()}`;
   const signup = await page.request.post(`${BASE}/api/auth/signup`, {

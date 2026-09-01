@@ -26,11 +26,11 @@ function memoryStorage(t, seed = {}) {
 }
 
 function fakeApi(overrides = {}) {
-  const calls = { personal: 0, preferences: 0, plan: 0, mistakes: 0, savedMistakes: [] };
+  const calls = { personal: 0, preferences: 0, plan: 0, mistakes: 0, savedPlan: null, savedMistakes: [] };
   const api = {
     personal: async () => { calls.personal += 1; return overrides.personal ?? { preferences: null, plan: null, mistakes: [] }; },
     savePreferences: async (preferences) => { calls.preferences += 1; return { preferences }; },
-    savePlan: async (plan) => { calls.plan += 1; return { plan }; },
+    savePlan: async (plan) => { calls.plan += 1; calls.savedPlan = plan; return { plan }; },
     saveMistakes: async (rows) => { calls.mistakes += 1; calls.savedMistakes = rows; return { mistakes: rows }; },
   };
   return { api, calls };
@@ -60,6 +60,14 @@ test('plan state helpers keep completion scoped to today and the started day', (
   assert.equal(done.days[1].status, 'todo');
   // A topic that was never planned does not consume a day.
   assert.equal(completePlanDayInState(plan, 'algebra', missionOutcome({ correctMarks: 1, totalMarks: 2 })), null);
+});
+
+test('lesson quick practice completes today without requiring a start intent', () => {
+  const plan = buildWeekPlan([{ id: 'sequences', name: 'Sequences' }], 'maths', false, new Date(2026, 8, 1, 9, 0));
+  const done = completePlanDayInState(plan, 'sequences', missionOutcome({ correctMarks: 3, totalMarks: 5 }), '2026-09-01');
+  assert.equal(done.days[0].status, 'done');
+  assert.equal(done.days[0].result.percent, 60);
+  assert.equal(done.days[1].status, 'todo');
 });
 
 test('mistake rows build, merge, advance and go due on schedule', () => {
@@ -135,7 +143,8 @@ test('hydratePersonal refreshes after a one-time import', async (t) => {
 
 test('recordLessonResult completes the started mission and saves mistakes together', async (t) => {
   memoryStorage(t);
-  const plan = { from: '2026-09-01', days: [{ date: '2026-09-01', task: 'Fractions', topicId: 'fractions', status: 'todo', minutes: 15 }], intent: { date: '2026-09-01', topicId: 'fractions' } };
+  const today = dateKey();
+  const plan = { from: today, days: [{ date: today, task: 'Fractions', topicId: 'fractions', status: 'todo', minutes: 15 }], intent: { date: today, topicId: 'fractions' } };
   const { api, calls } = fakeApi({ personal: { preferences: null, plan, mistakes: [] } });
   await recordLessonResult(api, 'user', 'maths', 'fractions', 'Fractions', {
     correctMarks: 3,
@@ -144,6 +153,8 @@ test('recordLessonResult completes the started mission and saves mistakes togeth
     perQ: [{ qid: 'q1', correct: false, got: 0, marks: 3 }],
   }, { q1: '12' });
   assert.equal(calls.plan, 1);
+  assert.equal(calls.savedPlan.days[0].status, 'done');
+  assert.equal(calls.savedPlan.days[0].result.percent, 60);
   assert.equal(calls.mistakes, 1);
   assert.equal(calls.savedMistakes[0].topicName, 'Fractions');
   assert.equal(calls.savedMistakes[0].answer, '12');

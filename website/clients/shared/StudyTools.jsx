@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { advanceMistakeRows, completePlanDayInState, dueMistakeRows, hydratePersonal, startPlanDayInState } from './study-personal.js';
+import { advanceMistakeRows, dueMistakeRows, hydratePersonal, PERSONAL_UPDATED_EVENT, startPlanDayInState } from './study-personal.js';
 import { buildWeekPlan, dateKey, priorityTopics, readiness } from './study.js';
 
 const defaultPreferences = { examDate: '', targetGrade: '', passMode: 'balanced' };
@@ -13,12 +13,17 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
 
   useEffect(() => {
     let active = true;
-    setPersonal(null);
-    setError('');
-    hydratePersonal(api, userId, subject)
+    const refresh = () => hydratePersonal(api, userId, subject)
       .then((value) => { if (active) setPersonal(value); })
       .catch((cause) => { if (active) setError(cause?.message || 'Could not load your saved study data.'); });
-    return () => { active = false; };
+    const onPersonalUpdated = (event) => {
+      if (event.detail?.userId === userId && event.detail?.subject === subject) refresh();
+    };
+    setPersonal(null);
+    setError('');
+    refresh();
+    window.addEventListener(PERSONAL_UPDATED_EVENT, onPersonalUpdated);
+    return () => { active = false; window.removeEventListener(PERSONAL_UPDATED_EVENT, onPersonalUpdated); };
   }, [api, userId, subject]);
 
   useEffect(() => {

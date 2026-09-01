@@ -1,6 +1,12 @@
-import { missionOutcome } from './study.js';
+import { dateKey, missionOutcome } from './study.js';
 
 const DAY = 86400000;
+export const PERSONAL_UPDATED_EVENT = 'gcse-personal-updated';
+
+function notifyPersonalUpdated(userId, subject) {
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return;
+  window.dispatchEvent(new CustomEvent(PERSONAL_UPDATED_EVENT, { detail: { userId, subject } }));
+}
 
 export function personalKey(userId, subject, name) {
   return `gcse-${encodeURIComponent(userId || 'anonymous')}-${subject}-${name}`;
@@ -156,13 +162,13 @@ export function startPlanDayInState(plan, date, topicId) {
   return { ...plan, intent: { date, ...(topicId ? { topicId } : {}) } };
 }
 
-export function completePlanDayInState(plan, topicId, outcome) {
+export function completePlanDayInState(plan, topicId, outcome, today = dateKey()) {
   if (!plan || !Array.isArray(plan.days)) return null;
   let index = -1;
   if (plan.intent?.date) {
     index = plan.days.findIndex((day) => day.date === plan.intent.date && day.status !== 'done' && (plan.intent.topicId ? day.topicId === plan.intent.topicId : !day.topicId));
   }
-  if (index < 0) index = plan.days.findIndex((day) => day.date === plan.from && day.status !== 'done' && day.topicId === topicId);
+  if (index < 0) index = plan.days.findIndex((day) => day.date === today && day.status !== 'done' && day.topicId === topicId);
   if (index < 0) return null;
   const days = plan.days.map((day, position) => position === index
     ? { ...day, status: 'done', result: { ...outcome, completedAt: new Date().toISOString() } }
@@ -184,6 +190,10 @@ export async function recordLessonResult(api, userId, subject, topicId, topicNam
     })),
   };
   const built = mistakeRowsFromResult(enriched, subject, `lesson-${topicId}`, answers);
-  if (nextPlan) await api.savePlan(nextPlan);
+  if (nextPlan) {
+    await api.savePlan(nextPlan);
+    notifyPersonalUpdated(userId, subject);
+  }
   if (built.length) await api.saveMistakes(mergeMistakeRows(personal.mistakes, built));
+  return nextPlan;
 }

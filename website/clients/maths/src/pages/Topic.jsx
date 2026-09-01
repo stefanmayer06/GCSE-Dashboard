@@ -61,12 +61,16 @@ export default function Topic({ onProgress, userId }) {
     try {
       const list = quiz.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }));
       const res = await api.practiceSubmit(sessionId, topicId, list);
-      setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
       onProgress?.(res.progress);
       if (userId) {
-        recordLessonResult(api, userId, higherTier ? 'maths-higher' : 'maths', topicId, topic?.name, res, answers)
-          .catch((error) => console.error('[personal] lesson result could not be saved', error));
+        try {
+          await recordLessonResult(api, userId, higherTier ? 'maths-higher' : 'maths', topicId, topic?.name, res, answers);
+        } catch (error) {
+          console.error('[personal] lesson result could not be saved', error);
+          setQuizError('Your score was recorded, but today\'s mission could not be updated. Try returning to the dashboard and completing the practice again.');
+        }
       }
+      setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
       if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
       if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
         setCelebration(res.reward);
@@ -211,6 +215,7 @@ export default function Topic({ onProgress, userId }) {
               <div className="quiz-done">
                 <h3>You scored {done.correct}/{done.total}</h3>
                 <RewardSummary reward={done.reward} progress={done.progress} />
+                {quizError && <div className="error-banner">{quizError}</div>}
                 <button className="btn btn-primary" onClick={startQuiz}>Another 5</button>
               </div>
             ) : (

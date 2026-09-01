@@ -4,6 +4,7 @@ import { Button, DeskHeader, Notice, OfflineBanner, ScrollScreen } from '@/compo
 import { asRecord, asText } from '@/learn';
 import { useNetwork, usePreferences } from '@/providers';
 import { useTheme } from '@/theme';
+import { queryKeys } from '@/query-cache';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -23,7 +24,7 @@ export default function TextReader() {
   const [source, setSource] = useState<'A' | 'B'>('A');
   useEffect(() => { void AsyncStorage.getItem(SIZE_KEY).then((value) => { const parsed = Number(value); if (parsed >= 0 && parsed < sizes.length) setSizeIndex(parsed); }); }, []);
   const setSize = (next: number) => { const safe = Math.max(0, Math.min(sizes.length - 1, next)); setSizeIndex(safe); void AsyncStorage.setItem(SIZE_KEY, String(safe)); };
-  const query = useQuery({ queryKey: ['learn', 'english', 'text', textId], queryFn: () => new ApiClient('english').text(textId) as Promise<unknown>, enabled: !!textId && subject === 'english' });
+  const query = useQuery({ queryKey: queryKeys.text('english', textId), queryFn: () => new ApiClient('english').text(textId) as Promise<unknown>, enabled: !!textId && subject === 'english', staleTime: 30 * 60_000 });
   const item = asRecord(query.data);
   const pair = !!asText(item.textB);
   const meta = asRecord(source === 'A' ? item.textMetaA : item.textMetaB);

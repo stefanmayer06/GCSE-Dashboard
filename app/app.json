@@ -45,8 +45,16 @@
       "expo-secure-store",
       [
         "expo-build-properties",
-        { "android": { "compileSdkVersion": 36, "targetSdkVersion": 36, "minSdkVersion": 24 } }
-      ]
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "minSdkVersion": 24
+          }
+        }
+      ],
+      "expo-font",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true

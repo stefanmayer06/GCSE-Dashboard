@@ -5,6 +5,7 @@ import { asRecord, asText, parseNotes, safeText, type NoteBlock } from '@/learn'
 import { useAuth, useNetwork, usePreferences } from '@/providers';
 import { persistNewSession, sessionFromResponse } from '@/practice/core';
 import { useTheme } from '@/theme';
+import { queryKeys } from '@/query-cache';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Linking, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
@@ -26,7 +27,7 @@ export default function Lesson() {
   const { session: auth } = useAuth();
   const { width } = useWindowDimensions();
   const api = new ApiClient(subject);
-  const query = useQuery({ queryKey: ['learn', subject, 'topic', topicId], queryFn: () => api.topic(topicId) as Promise<unknown>, enabled: !!topicId });
+  const query = useQuery({ queryKey: queryKeys.topic(subject, topicId), queryFn: () => api.topic(topicId) as Promise<unknown>, enabled: !!topicId, staleTime: 10 * 60_000 });
   const topic = asRecord(query.data);
   const title = asText(topic.name) || asText(topic.title) || 'Topic lesson';
   const group = asText(topic.strandName) || asText(topic.sectionName) || asText(topic.strand) || asText(topic.section);

@@ -3,6 +3,7 @@ import {
   mergeEssayAnswer,
   normalizeSources,
 } from "../app/practice/[id]";
+import { stimulusType } from "./practice/MathsVisual";
 
 test("normalizes single and paired English sources", () => {
   expect(
@@ -49,4 +50,13 @@ test("merges essay choice and writing while requiring actual writing", () => {
     hasQuestionAnswer({ type: "essay", options: [{ id: "b" }] }, selected),
   ).toBe(true);
   expect(hasQuestionAnswer({ type: "mcq", options: ["A"] }, "A")).toBe(true);
+});
+
+test.each([
+  [{ type: "cartesian", series: [] }, "cartesian"],
+  [{ type: "histogram", bars: [] }, "histogram"],
+  [{ type: "table", rows: [] }, "table"],
+  [null, ""],
+] as const)("selects the structured question visual for %p", (stimulus, expected) => {
+  expect(stimulusType(stimulus)).toBe(expected);
 });

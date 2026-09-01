@@ -12,14 +12,15 @@ The app should help a learner answer three questions quickly:
 
 Teaching quality matters more than novelty. Explanations should be clear, encouraging and age-appropriate. Practice should reflect AQA paper structure, marks and timing. The AI tutors should guide students through a method before revealing an answer.
 
-## Application Shape
+## Web Application Shape
 
-The website is self-contained in the repository's `website/` directory. Treat
-that directory as the application root and run all npm, Docker, Supabase, and
-test commands from it. It contains one Express application and two intentionally
-isolated React clients. Local and Docker runs use the combined process; Vercel
-runs the same API through a serverless entrypoint and serves the built clients
-as static output:
+The web application is self-contained in the repository's `website/` directory.
+Treat that directory as the web application root and run its npm, Docker,
+Supabase, and test commands from it. The separate Expo application lives in
+`../app/` and has its own `AGENTS.md`. The web application contains one Express
+API and two intentionally isolated React clients. Local and Docker runs use the
+combined process; Vercel runs the same API through a serverless entrypoint and
+serves the built clients as static output:
 
 - `/` serves the subject selector in `selector/`.
 - `/maths/*` serves the MathsMate React client from `clients/maths/`.
@@ -39,11 +40,13 @@ The clients remain separate because their question formats, grading logic and gl
 - `server/src/index.js`: combined host server, auth wiring, API mounts and static routing.
 - `server/src/auth.js`: user accounts, sessions and OAuth2 sign-in; seeds the local admin account.
 - `server/src/db.js`: per-user, per-subject progress and reward logic over the configured async storage driver.
-- `server/src/storage/`: JSON, Neon PostgreSQL and opt-in Supabase drivers plus the shared schema.
-- `server/src/storage/supabase.js`: Supabase Auth/PostgreSQL driver used during the staged migration; it must not replace Neon production until cutover approval.
+- `server/src/storage/`: Supabase (production), JSON (local/Docker) storage drivers plus shared data-model helpers.
+- `server/src/storage/supabase.js`: Supabase Auth/PostgreSQL driver. It is the application's single source of truth in production.
+- `server/src/personal-model.js`: normalization/validation for account personal data (preferences, study plans, mistake notebook).
+- `server/src/personal.js`: per-subject `/personal` routes backing preferences, the saved 7-day plan and the mistake notebook.
+- `clients/shared/study-personal.js`: web personal-data repository, hydration and one-time legacy localStorage import.
 - `server/src/supabase/`: Supabase server client configuration and secret-key handling.
-- `supabase/`: local/remote SQL migrations, RLS policies, private legacy staging tables and database tests.
-- `scripts/migrate-json-to-postgres.mjs`: idempotent migration from local JSON data to PostgreSQL.
+- `supabase/`: SQL migrations (tables, RLS policies, RPCs), private legacy staging tables and database tests.
 - `server/src/subjects/maths/`: generated question bank, exact marking, grades, progress and Maths tutor.
 - `server/src/subjects/english/`: source texts, question assembly, rubric marking, grades, progress and English tutor.
 - `clients/maths/src/pages/`: Maths dashboard, papers, results, topic lessons and tutor.
@@ -70,16 +73,17 @@ OAuth2 is optional and configured entirely by environment variables. When `OAUTH
 the sign-in screens show "Continue with <provider>" and the server runs the authorization-code flow.
 A provider identity maps to a username (email or preferred_username), created on first sign-in.
 
-On the opt-in Supabase driver, the sign-in screen uses email/password and bearer JWTs. Supabase Auth
-accounts are separate from the legacy custom accounts; old auth sessions are not migrated.
+On the Supabase driver (required on Vercel), the sign-in screen uses email/password and bearer JWTs. Supabase Auth
+accounts are separate from the legacy custom accounts; old auth sessions are not migrated. Legacy accounts move over through the one-time claim flow.
 
 ## Data And Progress
 
-Each user has separate stores per subject. Progress is never mixed between users or subjects. The configured storage driver is JSON for local/Docker runs and PostgreSQL for Vercel production; Supabase is currently opt-in on the isolated migration branch.
+Each user has separate stores per subject. Progress is never mixed between users or subjects. The configured storage driver is JSON for local/Docker runs and Supabase for Vercel production. Supabase is the application's single source of truth for persistent data.
 
 - `${DATA_DIR}/users/<userId>/maths.json`
 - `${DATA_DIR}/users/<userId>/maths-higher.json`
 - `${DATA_DIR}/users/<userId>/english.json`
+- `${DATA_DIR}/users/<userId>/personal-<subject>.json` (JSON driver only)
 
 With the JSON driver, accounts live in `${DATA_DIR}/users.json`, sessions in
 `${DATA_DIR}/sessions.json`, and subject progress lives beneath
@@ -87,22 +91,43 @@ With the JSON driver, accounts live in `${DATA_DIR}/users.json`, sessions in
 Docker sets it to `/app/data`, which is persisted in the `gcse-data` volume and
 survives container recreation and redeploys.
 
-With the PostgreSQL driver, users, auth sessions, OAuth states, subject progress
-and study sessions live in the `users`, `auth_sessions`, `oauth_states`,
-`subject_progress` and `study_sessions` tables. The schema is applied on startup
-through `server/src/storage/schema.sql`. Vercel supplies the Neon connection as
-`DATABASE_URL`; do not set `DATA_DIR` there.
+With the Supabase driver, users, subject progress and active study sessions live
+in the `profiles`, `subject_progress` and `study_sessions` tables, and account
+personal data lives in `subject_preferences`, `study_plans`, `study_plan_days`
+and `mistake_notebook`. The schema is versioned under `supabase/migrations` and
+applied with `supabase db push`. Vercel supplies `SUPABASE_URL`,
+`SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY`; do not set `DATA_DIR` there.
+
+## Personal Data (Preferences, Plan, Notebook)
+
+Every subject router mounts `/personal` routes served from `server/src/personal.js`:
+`GET /personal`, `PUT /personal/preferences`, `PUT /personal/plan` and
+`PUT /personal/mistakes`. The web clients consume them through
+`clients/shared/study-personal.js`; the Expo app uses its own `src/personal.ts`
+repository. On first load, legacy localStorage/AsyncStorage data is uploaded once
+(only into empty domains), a completion flag is recorded, and the legacy keys are
+removed. Direct authenticated table access is protected by RLS
+(`user_id = auth.uid()`), while API mutations use the server-only service role.
+Client drafts and short-lived result caches may stay local, but they are never
+treated as authoritative.
 
 On startup, legacy single-file progress from `${DATA_DIR}/maths/db.json` and
 `${DATA_DIR}/english/db.json` is migrated into the `admin` account when no user store exists yet,
 so upgrading to logins never loses existing progress.
 
-Each legacy store tracks XP, streak, paper history, topic accuracy and tutor chat for its own subject. The opt-in Supabase driver deliberately stores only XP, streak, counters, topic accuracy and completed lessons. Paper history and tutor chat are not written to Supabase. Legacy users and compact progress are staged in the private `migration_private` schema, and custom scrypt hashes are never imported into `auth.users`.
+Each legacy store tracks XP, streak, paper history, topic accuracy and tutor chat
+for its own subject. The production Supabase driver stores compact progress (XP,
+streak, counters, topic accuracy and completed lessons), active study sessions,
+preferences, plans and notebook mistakes. Paper history and tutor chat are not
+durable Supabase domains; clients may retain them only as disposable caches.
+Legacy users and compact progress are staged in the private
+`migration_private` schema, and custom scrypt hashes are never imported into
+`auth.users`.
 
 Supabase Auth accounts are created through the one-time `POST /api/auth/claim` flow, which verifies the legacy password, requires an email and new password, and copies only compact subject aggregates.
 
 Active paper, practice and adhoc sessions are persisted through the configured
-storage driver. PostgreSQL deployments can resume them across serverless
+storage driver. Supabase deployments can resume them across serverless
 invocations and restarts; expired sessions are rejected by the session lifecycle
 checks.
 
@@ -156,16 +181,16 @@ docker compose up --build
 ## Change Invariants
 
 - Keep API routes namespaced by subject.
-- Keep subject databases and browser storage keys separate.
+- Keep user and subject scopes explicit in API paths, database keys and any disposable browser cache keys.
 - Keep `BrowserRouter` basenames and Vite bases aligned with `/maths`, `/maths-higher` and `/english`.
 - Preserve direct refreshes on nested routes such as `/maths/learn/fractions` and `/english/texts/p1-great-expectations`.
 - Test desktop and 390px mobile layouts for the selector and all three subject routes.
 - Do not claim official AQA endorsement. AQA course structures can be represented accurately, but the product is an independent revision tool.
 - Prefer small, testable changes over cross-subject abstractions that obscure exam-specific behavior.
-- Subject data is always scoped to the signed-in user. Never write progress, chat or history to a shared file.
+- Subject data is always scoped to the signed-in user. Never write progress, drafts, chat or history to a shared file.
 - New sign-in-facing API routes belong under `/api/auth`; new subject routes stay namespaced under `/api/maths`, `/api/maths-higher` and `/api/english` and must keep working with the session gate.
 - The local/Docker default admin account is `admin` / `admin`; production must use `ADMIN_PASSWORD` and must never depend on that default.
-- User data, auth sessions, progress, chat and study sessions must use the configured storage driver: JSON beneath `DATA_DIR` locally, PostgreSQL tables on Vercel.
-- Supabase migration work belongs on the isolated `supabase-migration` branch until cutover; production `prod` continues using Neon. Promote schema and reviewed reference SQL only. Never merge development users, progress, sessions, chat or submissions into production.
+- Authoritative user data, progress and study sessions must use the configured storage driver: JSON beneath `DATA_DIR` locally and Supabase tables on Vercel. Browser storage is limited to theme, auth-library session persistence, active drafts, disposable result/history caches and one-time migration flags.
+- Supabase is the application database. Keep service-role keys server-side, keep RLS enabled on user-owned tables (`user_id = auth.uid()`), and version every schema change as a migration under `supabase/migrations`. Never merge development users, progress, sessions, chat or submissions into production.
 - Themes (light and dark) are driven by the shared design tokens in `clients/shared/study-desk.css` and each subject's `theme.css`. The `data-theme` attribute is set on `<html>` and persisted under the `gcse-theme` localStorage key so the choice survives across the selector and both subjects. New UI should consume these tokens rather than hardcoding colors.
 - Every colour, border and surface should stay legible in both themes. Dark mode is not a shadow of the light design; it uses its own warm ink, muted text and brighter semantic colours on the same grid and typography.

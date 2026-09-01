@@ -838,6 +838,38 @@ textarea:focus-visible,
 .quiz-q.wrong { border-color: var(--negative); background: var(--negative-wash); }
 .hint-inline { border-color: var(--warning); color: var(--warning); background: var(--warning-wash); }
 
+/* Browser-local MVP study tools */
+.study-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 22px 0; }
+.study-grid .plan-card { grid-column: 1 / -1; }
+.mission-card { border-left: 6px solid var(--accent); }
+.readiness-number { margin: 8px 0; color: var(--subject-ink); font-family: Georgia, "Times New Roman", serif; font-size: clamp(30px, 5vw, 48px); }
+.study-actions, .plan-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.plan-head input { min-height: 42px; padding: 8px; border: 1px solid var(--line-strong); color: var(--ink); background: var(--input-bg); }
+.pass-toggle { display: flex; align-items: center; gap: 10px; margin: 14px 0; padding: 12px; border: 1px solid var(--subject-ink); background: var(--subject-tint); }
+.pass-toggle span, .pass-toggle small { display: block; }
+.pass-toggle small { margin-top: 3px; color: var(--quiet); }
+.week-plan { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--line-strong); }
+.week-plan a { min-width: 0; padding: 10px; border-right: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.week-plan a:last-child { border: 0; }
+.week-plan b, .week-plan span { display: block; overflow: hidden; text-overflow: ellipsis; }
+.week-plan b { margin-bottom: 5px; color: var(--subject-ink); font-size: 10px; text-transform: uppercase; }
+.week-plan span { font-size: 11px; }
+.week-plan small { display: block; margin-top: 4px; color: var(--positive); font-size: 10px; font-weight: 800; }
+.week-plan a.done { background: var(--positive-wash); }
+.week-plan a.done b { color: var(--positive); }
+.week-plan .locked { display: block; min-width: 0; padding: 10px; border-right: 1px solid var(--line); color: var(--quiet); }
+.week-plan .locked:last-child { border: 0; }
+.week-plan .locked b { color: var(--quiet); }
+.week-plan .locked small { color: var(--quiet); font-weight: 600; }
+.mission-card.mission-done { border-left-color: var(--positive); }
+.plan-note { margin-top: 10px; color: var(--quiet); font-size: 11px; }
+.notebook-list { margin-top: 22px; }
+.notebook-row { display: flex; justify-content: space-between; gap: 20px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.notebook-row:last-child { border: 0; }.notebook-row h3 { margin: 8px 0 4px; }.notebook-row p { max-width: 760px; }
+.due-chip { padding: 3px 6px; border: 1px solid var(--line-strong); color: var(--quiet); font-size: 9px; text-transform: uppercase; }.due-chip.due { border-color: var(--negative); color: var(--negative); background: var(--negative-wash); }
+.progressive-hints { display: grid; gap: 8px; margin-top: 12px; }.progressive-hints .hint-inline { width: fit-content; padding: 9px 11px; }
+.resubmit-box { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-strong); }.mark-delta { color: var(--positive); font-weight: 800; }
+
 /* Expertise rewards */
 .expertise-path {
   position: relative;
@@ -1169,7 +1201,10 @@ textarea:focus-visible,
   .badge-collection { grid-template-columns: minmax(0, 1fr); }
   .reward-backdrop { align-items: end; padding: 12px; }
   .reward-dialog { max-height: calc(100dvh - 24px); padding: 28px 20px 20px; }
+  .study-grid { grid-template-columns: 1fr; }.study-grid .plan-card { grid-column: auto; }.week-plan { grid-template-columns: 1fr; }.week-plan a { border-right: 0; border-bottom: 1px solid var(--line); }.notebook-row { align-items: stretch; flex-direction: column; }
 }
+
+@media print { .sidebar, .no-print { display: none !important; }.content { padding: 0; }.page { max-width: none; }.weekly-summary { color: #000; }.weekly-summary .panel, .weekly-summary .stat-card { background: #fff; } }
 
 @media (max-width: 420px) {
   .logo-name { font-size: 16px; }

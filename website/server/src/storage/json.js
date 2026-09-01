@@ -261,6 +261,12 @@ export function createJsonStorage({ dataDir } = {}) {
     fileComponent(userId, 'userId'),
     `${fileComponent(subject, 'subject')}.json`,
   );
+  const personalFile = (userId, subject) => path.join(
+    root,
+    'users',
+    fileComponent(userId, 'userId'),
+    `personal-${fileComponent(subject, 'subject')}.json`,
+  );
 
   async function recoverFinalizeTransaction() {
     const stored = await readJson(transactionFile);
@@ -365,6 +371,59 @@ export function createJsonStorage({ dataDir } = {}) {
 
   async function close() {
     if (initPromise) await initPromise;
+  }
+
+  async function getPersonalState(userId, subject) {
+    await init();
+    const file = personalFile(requiredIdentifier(userId, 'userId'), requiredString(subject, 'subject'));
+    const stored = await readJson(file);
+    if (!stored.found) return { preferences: null, plan: null, mistakes: [] };
+    const value = stored.value && typeof stored.value === 'object' && !Array.isArray(stored.value) ? stored.value : {};
+    return {
+      preferences: value.preferences ?? null,
+      plan: value.plan ?? null,
+      mistakes: Array.isArray(value.mistakes) ? value.mistakes : [],
+    };
+  }
+
+  async function updatePersonalState(userId, subject, patch) {
+    await init();
+    const file = personalFile(requiredIdentifier(userId, 'userId'), requiredString(subject, 'subject'));
+    return withLock(file, async () => {
+      const stored = await readJson(file);
+      const current = stored.found && stored.value && typeof stored.value === 'object' && !Array.isArray(stored.value)
+        ? stored.value
+        : {};
+      const next = { ...current };
+      for (const [key, value] of Object.entries(patch)) {
+        if (value === undefined || value === null) delete next[key];
+        else next[key] = value;
+      }
+      await atomicWrite(file, next);
+      return {
+        preferences: next.preferences ?? null,
+        plan: next.plan ?? null,
+        mistakes: Array.isArray(next.mistakes) ? next.mistakes : [],
+      };
+    });
+  }
+
+  async function savePreferences(userId, subject, preferences) {
+    const next = { preferences: cloneJson(preferences, 'preferences') };
+    return (await updatePersonalState(userId, subject, next)).preferences;
+  }
+
+  async function savePlan(userId, subject, plan) {
+    const patch = plan === undefined || plan === null
+      ? { plan: null }
+      : { plan: cloneJson(plan, 'study plan') };
+    return (await updatePersonalState(userId, subject, patch)).plan;
+  }
+
+  async function saveMistakes(userId, subject, rows) {
+    const next = { mistakes: cloneJson(rows, 'mistake rows') };
+    const state = await updatePersonalState(userId, subject, next);
+    return state.mistakes;
   }
 
   async function listUsers() {
@@ -813,5 +872,9 @@ export function createJsonStorage({ dataDir } = {}) {
     releaseStudySession,
     discardStudySession,
     finalizeStudySession,
+    getPersonal: getPersonalState,
+    savePreferences,
+    savePlan,
+    saveMistakes,
   };
 }

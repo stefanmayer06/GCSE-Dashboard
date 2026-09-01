@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
+import { mergeMistakeRows, mistakeRowsFromResult } from '../../../shared/study-personal.js';
 
-export default function Results() {
+export default function Results({ userId }) {
   const navigate = useNavigate();
   const [result, setResult] = useState(null);
   const [open, setOpen] = useState({});
@@ -13,11 +14,21 @@ export default function Results() {
     try {
       const key = window.location.pathname.startsWith('/maths-higher') ? 'mathsmate-higher-last-result' : 'mathsmate-last-result';
       const raw = localStorage.getItem(key);
-      if (raw) setResult(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setResult(parsed);
+        const subject = window.location.pathname.startsWith('/maths-higher') ? 'maths-higher' : 'maths';
+        const built = mistakeRowsFromResult(parsed, subject, parsed.test?.id ?? parsed.sessionId ?? 'paper', {});
+        if (built.length) {
+          api.personal()
+            .then(({ mistakes }) => api.saveMistakes(mergeMistakeRows(mistakes, built)))
+            .catch((error) => console.error('[notebook] mistake capture failed', error));
+        }
+      }
     } catch {
       /* noop */
     }
-  }, []);
+  }, [userId]);
 
   if (!result) {
     return (

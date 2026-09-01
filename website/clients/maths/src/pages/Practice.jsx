@@ -314,28 +314,36 @@ export default function Practice({ onProgress }) {
         )}
       </section>
 
-       <AdhocSection higherTier={higherTier} onProgress={onProgress} />
+       <AdhocSection higherTier={higherTier} onProgress={onProgress} diagnostic={params.get('diagnostic') === '1'} />
     </div>
   );
 }
 
 /* ---------------- Ad-hoc: mixed questions from any papers ---------------- */
 
-function AdhocSection({ higherTier = false, onProgress }) {
+function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
+  const diagnosticStarted = useRef(false);
   const [sources, setSources] = useState([1, 2, 3]);
   const [count, setCount] = useState(15);
   const [running, setRunning] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  async function startAdhoc() {
+  async function startAdhoc(countOverride) {
     setBusy(true);
     try {
-      const set = await api.adhoc(count, sources);
+      const set = await api.adhoc(typeof countOverride === 'number' ? countOverride : count, sources);
       setRunning(set);
     } finally {
       setBusy(false);
     }
   }
+
+  useEffect(() => {
+    if (!diagnostic || diagnosticStarted.current) return;
+    diagnosticStarted.current = true;
+    setCount(10);
+    startAdhoc(10);
+  }, [diagnostic]);
 
   function toggleSource(id) {
     setSources((s) => {
@@ -405,6 +413,7 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
   const [done, setDone] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [hints, setHints] = useState({});
 
   async function checkOne(qid, value) {
     const res = await api.check(qid, value);
@@ -496,18 +505,22 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
                   >
                     Check answer
                   </button>
-                  {q.hint && <span className="hint-inline">💡 {q.hint}</span>}
+                  {(q.hint || q.solution?.length) && <button className="btn small" onClick={() => setHints((h) => ({ ...h, [q.id]: Math.min((h[q.id] || 0) + 1, 1 + (q.solution?.length || 0)) }))}>Show next hint</button>}
+                  {hints[q.id] > 0 && <div className="progressive-hints"><span className="hint-inline">Hint: {q.hint}</span>{q.solution?.slice(0, Math.max(0, hints[q.id] - 1)).map((step, j) => <span className="hint-inline" key={j}>Step {j + 1}: {step}</span>)}</div>}
                 </div>
               ) : (
                 <div className="quiz-fb">
                   <div className="quiz-fb-line">
-                    {fb.correct ? '✅ Correct!' : '❌ Not quite.'} Answer: <b>{fb.answerText}</b>
+                    {fb.correct ? <>Correct! Answer: <b>{fb.answerText}</b></> : 'Not quite. Work through the solution before revealing the answer.'}
                   </div>
-                  {fb.solution && (
+                  {!fb.correct && fb.solution && (
                     <div className="review-sol">
-                      {fb.solution.map((s, j) => <div key={j} className="sol-step">{s}</div>)}
+                      {fb.solution.slice(0, hints[q.id] || 0).map((s, j) => <div key={j} className="sol-step">Step {j + 1}: {s}</div>)}
+                      {(hints[q.id] || 0) < fb.solution.length && <button className="btn small" onClick={() => setHints((h) => ({ ...h, [q.id]: (h[q.id] || 0) + 1 }))}>Show next solution step</button>}
+                      {(hints[q.id] || 0) >= fb.solution.length && <div className="review-answer">Answer: <b>{fb.answerText}</b></div>}
                     </div>
                   )}
+                  {!fb.correct && !fb.solution && <button className="btn small" onClick={() => setHints((h) => ({ ...h, [q.id]: 1 }))}>{hints[q.id] ? <>Answer: <b>{fb.answerText}</b></> : 'Reveal answer'}</button>}
                 </div>
               )}
             </div>

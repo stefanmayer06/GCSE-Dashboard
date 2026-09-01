@@ -73,6 +73,10 @@ export const api = {
   chat: (messages) => req('/chat', { method: 'POST', body: { messages } }),
   clearChat: () => req('/chat', { method: 'DELETE' }),
   chatHistory: () => req('/chat/history'),
+  personal: () => req('/personal'),
+  savePreferences: (preferences) => req('/personal/preferences', { method: 'PUT', body: preferences }),
+  savePlan: (plan) => req('/personal/plan', { method: 'PUT', body: plan }),
+  saveMistakes: (rows) => req('/personal/mistakes', { method: 'PUT', body: { rows } }),
   auth: {
     me: () => authReq('/me'),
     login: async (identifier, password) => {

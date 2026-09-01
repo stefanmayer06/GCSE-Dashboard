@@ -3,8 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { QuestionCard } from './Practice.jsx';
 import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
+import { recordLessonResult } from '../../../shared/study-personal.js';
 
-export default function Topic({ onProgress }) {
+export default function Topic({ onProgress, userId }) {
   const { topicId } = useParams();
   const navigate = useNavigate();
   const [topic, setTopic] = useState(null);
@@ -15,6 +16,7 @@ export default function Topic({ onProgress }) {
   const [done, setDone] = useState(null);
   const [celebration, setCelebration] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [quizError, setQuizError] = useState('');
 
   useEffect(() => {
     setTopic(null);
@@ -29,6 +31,7 @@ export default function Topic({ onProgress }) {
 
   async function startQuiz() {
     setBusy(true);
+    setQuizError('');
     try {
       const p = await api.practice(topicId, 3);
       setSession(p);
@@ -59,13 +62,31 @@ export default function Topic({ onProgress }) {
   }
 
   async function finishQuiz() {
-    const list = (session?.questions || []).map((q) => ({ qid: q.id, value: answers[q.id] ?? null }));
-    const res = await api.practiceSubmit(session.sessionId, list, aiResults);
-    setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
-    onProgress?.(res.progress);
-    if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
-    if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
-      setCelebration(res.reward);
+    setBusy(true);
+    setQuizError('');
+    try {
+      const list = (session?.questions || []).map((q) => ({ qid: q.id, value: answers[q.id] ?? null }));
+      const res = await api.practiceSubmit(session.sessionId, list, aiResults);
+      onProgress?.(res.progress);
+      if (userId) {
+        try {
+          await recordLessonResult(api, userId, 'english', topicId, topic?.name, res, answers);
+        } catch (error) {
+          console.error('[personal] lesson result could not be saved', error);
+          setQuizError(error.personalDomain === 'mistakes'
+            ? 'Today\'s mission is complete, but missed questions could not be added to your notebook.'
+            : 'Your score was recorded, but today\'s mission could not be updated. Return to the dashboard and try again.');
+        }
+      }
+      setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
+      if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
+      if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
+        setCelebration(res.reward);
+      }
+    } catch (error) {
+      setQuizError(error.message || 'Could not score this practice. Try again.');
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -148,15 +169,16 @@ export default function Topic({ onProgress }) {
               <div className="quiz-done">
                 <h3>You scored {done.correct}/{done.total}</h3>
                 <RewardSummary reward={done.reward} progress={done.progress} />
+                {quizError && <div className="error-banner">{quizError}</div>}
                 <button className="btn btn-primary" onClick={startQuiz}>Another 3</button>
               </div>
             ) : (
               <button
                 className="btn btn-finish"
-                disabled={Object.keys(feedback).length < session.questions.length}
+                disabled={busy || Object.keys(feedback).length < session.questions.length}
                 onClick={finishQuiz}
               >
-                Finish & score
+                {busy ? 'Scoring…' : 'Finish & score'}
               </button>
             )}
           </div>

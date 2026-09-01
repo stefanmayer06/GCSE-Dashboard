@@ -66,6 +66,66 @@ function compactState(value) {
   };
 }
 
+function dateKey(value) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function rowToPreferences(row) {
+  if (!row) return null;
+  return {
+    examDate: row.exam_date ? dateKey(row.exam_date) ?? '' : '',
+    targetGrade: row.target_grade ?? '',
+    passMode: row.pass_mode === 'foundation-pass' ? 'foundation-pass' : 'balanced',
+  };
+}
+
+function rowToMistake(row) {
+  if (!row) return null;
+  const dueDates = Array.isArray(row.due_dates) ? row.due_dates : [];
+  const reviewIndex = Math.max(0, Math.min(4, Number(row.review_index) || 0));
+  const mastered = row.status === 'mastered' || reviewIndex >= 4;
+  return {
+    id: String(row.legacy_id),
+    ...(row.session_id ? { sessionId: row.session_id } : {}),
+    ...(row.question_id ? { qid: row.question_id } : {}),
+    ...(row.topic_id ? { topicId: row.topic_id } : {}),
+    topicName: row.topic_name || 'Unassigned topic',
+    prompt: row.prompt || '',
+    ...(row.answer != null ? { answer: row.answer } : {}),
+    ...(row.marks != null ? { marks: row.marks } : {}),
+    ...(row.max_marks != null ? { maxMarks: row.max_marks } : {}),
+    capturedAt: isoDate(row.captured_at, 'capturedAt'),
+    dueDates,
+    reviewIndex,
+    mastered,
+  };
+}
+
+function rowsToPlan(planRow, dayRows) {
+  if (!planRow) return null;
+  const days = (Array.isArray(dayRows) ? dayRows : [])
+    .sort((a, b) => String(a.day_date).localeCompare(String(b.day_date)))
+    .map((row) => ({
+      date: dateKey(row.day_date) ?? '',
+      label: row.label || 'Today',
+      task: row.task || 'Study session',
+      minutes: Math.max(1, Math.min(120, Number(row.minutes) || 15)),
+      ...(row.topic_id ? { topicId: row.topic_id } : {}),
+      status: row.status === 'done' ? 'done' : 'todo',
+      ...(row.result != null ? { result: row.result } : {}),
+    }));
+  const intent = planRow.intent_date
+    ? { date: dateKey(planRow.intent_date), ...(planRow.intent_topic_id ? { topicId: planRow.intent_topic_id } : {}) }
+    : undefined;
+  return { from: dateKey(planRow.from_date), days, ...(intent ? { intent } : {}) };
+}
+
 function rowToProgress(row) {
   if (!row) return null;
   const xp = Math.max(0, Number(row.xp) || 0);
@@ -527,6 +587,110 @@ export function createSupabaseStorage(options = {}) {
     throw storageError('STORAGE_UNSUPPORTED', `${name} is not available with Supabase Auth`);
   }
 
+  async function getPreferences(userId, subject) {
+    await init();
+    const { data, error } = await service
+      .from('subject_preferences')
+      .select('exam_date, target_grade, pass_mode')
+      .eq('user_id', requiredString(String(userId), 'userId'))
+      .eq('subject', requiredString(subject, 'subject'))
+      .maybeSingle();
+    if (error) throw supabaseStorageError(error);
+    return rowToPreferences(data);
+  }
+
+  async function savePreferences(userId, subject, preferences) {
+    const clean = preferences && typeof preferences === 'object' ? preferences : {};
+    const examDate = typeof clean.examDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(clean.examDate) ? clean.examDate : null;
+    const targetGrade = typeof clean.targetGrade === 'string' && clean.targetGrade.trim() ? clean.targetGrade.trim().slice(0, 1) : null;
+    const passMode = clean.passMode === 'foundation-pass' ? 'foundation-pass' : 'balanced';
+    const { data, error } = await service
+      .from('subject_preferences')
+      .upsert({
+        user_id: requiredString(String(userId), 'userId'),
+        subject: requiredString(subject, 'subject'),
+        exam_date: examDate,
+        target_grade: targetGrade,
+        pass_mode: passMode,
+      }, { onConflict: 'user_id,subject' })
+      .select('exam_date, target_grade, pass_mode')
+      .maybeSingle();
+    if (error) throw supabaseStorageError(error);
+    return rowToPreferences(data);
+  }
+
+  async function getPlan(userId, subject) {
+    await init();
+    const id = requiredString(String(userId), 'userId');
+    const { data: plans, error } = await service
+      .from('study_plans')
+      .select('id, from_date, intent_date, intent_topic_id')
+      .eq('user_id', id)
+      .eq('subject', requiredString(subject, 'subject'))
+      .order('from_date', { ascending: false })
+      .limit(1);
+    if (error) throw supabaseStorageError(error);
+    const plan = Array.isArray(plans) && plans.length ? plans[0] : null;
+    if (!plan) return null;
+    const { data: days, error: dayError } = await service
+      .from('study_plan_days')
+      .select('day_date, label, task, minutes, topic_id, status, result')
+      .eq('plan_id', plan.id)
+      .order('day_date', { ascending: true });
+    if (dayError) throw supabaseStorageError(dayError);
+    return rowsToPlan(plan, days);
+  }
+
+  async function savePlan(userId, subject, plan) {
+    const clean = plan === undefined || plan === null
+      ? { from: dateKey(new Date()), days: [], intent: undefined }
+      : plan && typeof plan === 'object' ? plan : {};
+    const days = Array.isArray(clean.days) ? clean.days : [];
+    if (!days.length) {
+      const { error } = await service
+        .from('study_plans')
+        .delete({ count: 'exact' })
+        .eq('user_id', requiredString(String(userId), 'userId'))
+        .eq('subject', requiredString(subject, 'subject'));
+      if (error) throw supabaseStorageError(error);
+      return null;
+    }
+    const { data, error } = await service.rpc('save_study_plan', {
+      p_user_id: requiredString(String(userId), 'userId'),
+      p_subject: requiredString(subject, 'subject'),
+      p_from_date: clean.from && /^\d{4}-\d{2}-\d{2}$/.test(String(clean.from)) ? clean.from : dateKey(new Date()),
+      p_intent: clean.intent ? clean.intent : null,
+      p_days: cloneJson(days, 'plan days'),
+    });
+    if (error) throw supabaseStorageError(error);
+    data; // reserved for future plan_json echo
+    return getPlan(userId, subject);
+  }
+
+  async function getMistakes(userId, subject) {
+    await init();
+    const { data, error } = await service
+      .from('mistake_notebook')
+      .select('legacy_id, session_id, question_id, topic_id, topic_name, prompt, answer, marks, max_marks, due_dates, review_index, status, captured_at')
+      .eq('user_id', requiredString(String(userId), 'userId'))
+      .eq('subject', requiredString(subject, 'subject'))
+      .order('captured_at', { ascending: false });
+    if (error) throw supabaseStorageError(error);
+    return (data || []).map(rowToMistake).filter(Boolean);
+  }
+
+  async function saveMistakes(userId, subject, rows) {
+    const clean = Array.isArray(rows) ? rows : [];
+    await service.rpc('replace_mistakes', {
+      p_user_id: requiredString(String(userId), 'userId'),
+      p_subject: requiredString(subject, 'subject'),
+      p_rows: cloneJson(clean, 'mistake rows'),
+    }).then(({ error }) => {
+      if (error) throw supabaseStorageError(error);
+    });
+    return getMistakes(userId, subject);
+  }
+
   return {
     driver: 'supabase',
     schemaVersion: 1,
@@ -567,6 +731,14 @@ export function createSupabaseStorage(options = {}) {
     deleteAuthSession: (...args) => unsupported('deleteAuthSession', ...args),
     putOAuthState: (...args) => unsupported('putOAuthState', ...args),
     consumeOAuthState: (...args) => unsupported('consumeOAuthState', ...args),
+    getPersonal: async (userId, subject) => ({
+      preferences: await getPreferences(userId, subject),
+      plan: await getPlan(userId, subject),
+      mistakes: await getMistakes(userId, subject),
+    }),
+    savePreferences,
+    savePlan,
+    saveMistakes,
   };
 }
 

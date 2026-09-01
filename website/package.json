@@ -13,10 +13,8 @@
     "dev": "concurrently -n server,maths,english -c blue,magenta,yellow \"npm run dev -w server\" \"npm run dev -w clients/maths\" \"npm run dev -w clients/english\"",
     "build": "npm run build -w clients/maths && npm run build -w clients/english",
     "build:vercel": "node scripts/build-vercel.mjs",
-    "migrate:postgres": "node scripts/migrate-json-to-postgres.mjs",
-    "migrate:supabase": "node scripts/migrate-neon-to-supabase.mjs",
-    "verify:supabase": "node scripts/verify-supabase-migration.mjs",
-    "purge:supabase-staging": "node scripts/purge-supabase-migration-staging.mjs",
+    "db:migrations:list": "supabase migration list --linked",
+    "db:migrations:push": "supabase db push --linked",
     "start": "npm run start -w server",
     "test": "npm test -w server",
     "test:foundation": "node --test server/test/foundation-bank.test.js",
@@ -27,8 +25,5 @@
     "@playwright/test": "^1.52.0",
     "concurrently": "^9.1.0",
     "supabase": "^2.115.0"
-  },
-  "dependencies": {
-    "postgres": "^3.4.9"
   }
 }

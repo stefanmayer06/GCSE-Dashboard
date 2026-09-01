@@ -30,6 +30,8 @@ test("falls back to the API origin and rejects unsafe URLs", () => {
 test("marks account work, including tutor notebooks, as disposable", () => {
   expect(isDisposableAppStorageKey("practice:draft:user:maths:1")).toBe(true);
   expect(isDisposableAppStorageKey("tutor-notebook:english:v1")).toBe(true);
+  expect(isDisposableAppStorageKey("planning:user:maths")).toBe(true);
+  expect(isDisposableAppStorageKey("notebook:user")).toBe(true);
   expect(isDisposableAppStorageKey("subject")).toBe(false);
   expect(isDisposableAppStorageKey("appearance")).toBe(false);
   expect(isDisposableAppStorageKey("reading-preferences")).toBe(false);

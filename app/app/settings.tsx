@@ -14,7 +14,7 @@ const subjects:Subject[]=['maths','maths-higher','english'];
 const appearances:Appearance[]=['system','light','dark'];
 
 export default function Settings(){
-  const {subject,appearance,setSubject,setAppearance}=usePreferences(); const {session}=useAuth(); const {colors,subject:tokens}=useTheme();
+  const {subject,appearance,planning,setSubject,setAppearance,setPlanning}=usePreferences(); const {session}=useAuth(); const {colors,subject:tokens}=useTheme();
   const [busy,setBusy]=useState<'signout'|'delete'|null>(null); const [deleteOpen,setDeleteOpen]=useState(false); const [confirmation,setConfirmation]=useState(''); const [error,setError]=useState('');
   const links=accountLinks(process.env.EXPO_PUBLIC_WEBSITE_URL,process.env.EXPO_PUBLIC_API_URL); const version=Constants.expoConfig?.version;
   const choice=<T extends string>(label:string,values:readonly T[],selected:T,set:(v:T)=>void)=><View accessibilityRole="radiogroup" accessibilityLabel={label}>{values.map(v=>{const selectedNow=v===selected;const title=v in subjectTokens?subjectTokens[v as Subject].label:v[0].toUpperCase()+v.slice(1);return <Pressable key={v} accessibilityRole="radio" accessibilityState={{selected:selectedNow,checked:selectedNow}} onPress={()=>set(v)} style={[styles.choice,{borderColor:colors.line,backgroundColor:selectedNow?colors.muted:'transparent'}]}><Text style={[styles.choiceText,{color:selectedNow?tokens.accent:colors.ink}]}>{title}</Text><Text accessibilityElementsHidden style={{color:selectedNow?tokens.accent:colors.quiet}}>{selectedNow?'Selected':'○'}</Text></Pressable>})}</View>;
@@ -26,6 +26,13 @@ export default function Settings(){
     <View style={[styles.identity,{backgroundColor:colors.raised,borderColor:colors.strong,borderLeftColor:tokens.accent}]}><Text style={[styles.meta,{color:colors.quiet}]}>SIGNED IN AS</Text><Text selectable style={[styles.email,{color:colors.ink}]}>{session?.user.email??'Email unavailable'}</Text></View>
     <SectionHeader title="Course" meta="ACTIVE SUBJECT"/>{choice('Active subject',subjects,subject,setSubject)}
     <SectionHeader title="Appearance" meta="ON THIS DEVICE"/>{choice('Appearance',appearances,appearance,setAppearance)}
+    <SectionHeader title="Exam plan" meta="PRIVATE ON THIS DEVICE"/>
+    <Text style={[styles.copy,{color:colors.quiet}]}>These unvalidated planning preferences shape suggestions only. Server marks and progress remain authoritative.</Text>
+    <TextInput accessibilityLabel="Exam date in YYYY-MM-DD format" value={planning.examDate} onChangeText={examDate=>setPlanning({...planning,examDate})} placeholder="Exam date: YYYY-MM-DD" placeholderTextColor={colors.quiet} style={[styles.input,{color:colors.ink,borderColor:colors.strong,backgroundColor:colors.raised}]}/>
+    <TextInput accessibilityLabel="Target grade" value={planning.targetGrade} onChangeText={targetGrade=>setPlanning({...planning,targetGrade})} placeholder="Target grade" placeholderTextColor={colors.quiet} keyboardType="number-pad" style={[styles.input,{color:colors.ink,borderColor:colors.strong,backgroundColor:colors.raised}]}/>
+    {choice('Study mode',['balanced','foundation-pass'] as const,planning.passMode,passMode=>setPlanning({...planning,passMode}))}
+    <Button variant="secondary" onPress={()=>router.push('/notebook')}>OPEN MISTAKE NOTEBOOK</Button>
+    <Button variant="secondary" onPress={()=>router.push('/weekly-summary')}>OPEN WEEKLY SUMMARY</Button>
     <SectionHeader title="Sync & security"/><Text style={[styles.copy,{color:colors.quiet}]}>Your signed-in session lets the study service keep server progress tied to your account. Draft answers are also saved on this device so interrupted sessions can be resumed. Sign out leaves those drafts in place; deleting your account removes local app drafts after the server confirms deletion.</Text>
     <View>{(['privacy','support','accountDeletion'] as AccountLink[]).map(kind=><Pressable key={kind} accessibilityRole="link" onPress={()=>void openLink(kind)} style={[styles.link,{borderColor:colors.line}]}><Text style={[styles.linkText,{color:colors.ink}]}>{kind==='privacy'?'Privacy':kind==='support'?'Support':'Account deletion information'}</Text><Text style={{color:colors.quiet}}>Open in browser</Text></Pressable>)}</View>
     {error&&<Notice kind="error" title="ACCOUNT ACTION NOT COMPLETED">{error}</Notice>}

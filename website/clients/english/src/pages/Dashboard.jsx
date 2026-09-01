@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { SECTION_NAMES } from '../colors.js';
 import { ExpertisePath } from '../../../shared/rewards.jsx';
+import { StudyDashboard } from '../../../shared/StudyTools.jsx';
+import { flattenTopics } from '../../../shared/study.js';
 
-export default function Dashboard({ health, progress }) {
+export default function Dashboard({ health, progress, userId }) {
   const navigate = useNavigate();
   const overall = progress?.overallPercent;
   const [topics, setTopics] = useState(null);
@@ -74,6 +76,8 @@ export default function Dashboard({ health, progress }) {
           <div className="stat-label">Day streak</div>
         </div>
       </section>
+
+      <StudyDashboard userId={userId} subject="english" topics={flattenTopics(topics, 'sections')} progress={progress} diagnosticUrl="/practice?diagnostic=1#adhoc" api={api} />
 
       <ExpertisePath progress={progress} onChooseLesson={() => navigate('/learn')} />
 

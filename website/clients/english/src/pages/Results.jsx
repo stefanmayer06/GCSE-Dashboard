@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { RubricBands } from './Practice.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
+import { mergeMistakeRows, mistakeRowsFromResult } from '../../../shared/study-personal.js';
 
-export default function Results() {
+export default function Results({ userId }) {
   const navigate = useNavigate();
   const [result, setResult] = useState(null);
   const [open, setOpen] = useState({});
@@ -11,11 +12,20 @@ export default function Results() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem('englishmate-last-result');
-      if (raw) setResult(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setResult(parsed);
+        const built = mistakeRowsFromResult(parsed, 'english', parsed.test?.id ?? parsed.sessionId ?? 'paper', {});
+        if (built.length) {
+          api.personal()
+            .then(({ mistakes }) => api.saveMistakes(mergeMistakeRows(mistakes, built)))
+            .catch((error) => console.error('[notebook] mistake capture failed', error));
+        }
+      }
     } catch {
       /* noop */
     }
-  }, []);
+  }, [userId]);
 
   if (!result) {
     return (

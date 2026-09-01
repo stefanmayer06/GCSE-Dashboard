@@ -4,8 +4,9 @@ import { api } from '../api.js';
 import LessonVisual from '../components/LessonVisual.jsx';
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
+import { recordLessonResult } from '../../../shared/study-personal.js';
 
-export default function Topic({ onProgress }) {
+export default function Topic({ onProgress, userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const { topicId } = useParams();
   const navigate = useNavigate();
@@ -60,8 +61,18 @@ export default function Topic({ onProgress }) {
     try {
       const list = quiz.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }));
       const res = await api.practiceSubmit(sessionId, topicId, list);
-      setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
       onProgress?.(res.progress);
+      if (userId) {
+        try {
+          await recordLessonResult(api, userId, higherTier ? 'maths-higher' : 'maths', topicId, topic?.name, res, answers);
+        } catch (error) {
+          console.error('[personal] lesson result could not be saved', error);
+          setQuizError(error.personalDomain === 'mistakes'
+            ? 'Today\'s mission is complete, but missed questions could not be added to your notebook.'
+            : 'Your score was recorded, but today\'s mission could not be updated. Return to the dashboard and try again.');
+        }
+      }
+      setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
       if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
       if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
         setCelebration(res.reward);
@@ -206,6 +217,7 @@ export default function Topic({ onProgress }) {
               <div className="quiz-done">
                 <h3>You scored {done.correct}/{done.total}</h3>
                 <RewardSummary reward={done.reward} progress={done.progress} />
+                {quizError && <div className="error-banner">{quizError}</div>}
                 <button className="btn btn-primary" onClick={startQuiz}>Another 5</button>
               </div>
             ) : (

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { STRAND_COLORS } from '../colors.js';
 import { ExpertisePath } from '../../../shared/rewards.jsx';
+import { StudyDashboard } from '../../../shared/StudyTools.jsx';
+import { flattenTopics } from '../../../shared/study.js';
 
 const STRAND_NAMES_LIST = [
   { id: 'number', name: 'Number' },
@@ -13,7 +15,7 @@ const STRAND_NAMES_LIST = [
   { id: 'statistics', name: 'Statistics' },
 ];
 
-export default function Dashboard({ health, progress, higherTier = false }) {
+export default function Dashboard({ health, progress, higherTier = false, userId }) {
   const navigate = useNavigate();
   const overall = progress?.overallPercent;
   const [topics, setTopics] = useState(null);
@@ -85,6 +87,8 @@ export default function Dashboard({ health, progress, higherTier = false }) {
           <div className="stat-label">Day streak</div>
         </div>
       </section>
+
+      <StudyDashboard userId={userId} subject={higherTier ? 'maths-higher' : 'maths'} topics={flattenTopics(topics, 'strands')} progress={progress} diagnosticUrl="/practice?diagnostic=1#adhoc" foundation={!higherTier} api={api} />
 
       <ExpertisePath progress={progress} onChooseLesson={() => navigate('/learn')} />
 

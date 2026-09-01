@@ -71,7 +71,7 @@ function storedTokenHash(value) {
 function validateAuthConfiguration() {
   if (supabaseAuth) return;
   const protectedDeployment = Boolean(process.env.VERCEL)
-    || (process.env.NODE_ENV === 'production' && storage.driver === 'postgres');
+    || (process.env.NODE_ENV === 'production' && storage.driver === 'json');
   if (protectedDeployment && !configuredAppUrl()) {
     throw new Error('Auth configuration error: APP_URL is required on the production deployment.');
   }
@@ -89,7 +89,7 @@ export function userIdFor(username) {
 function adminPasswordForSeed() {
   if (process.env.ADMIN_PASSWORD) return process.env.ADMIN_PASSWORD;
   const protectedDeployment = Boolean(process.env.VERCEL)
-    || (process.env.NODE_ENV === 'production' && storage.driver === 'postgres');
+    || (process.env.NODE_ENV === 'production' && storage.driver === 'json');
   if (protectedDeployment) {
     throw new Error(
       'Auth configuration error: ADMIN_PASSWORD is required to seed a missing admin account.',

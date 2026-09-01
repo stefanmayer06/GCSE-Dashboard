@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
-import { captureMistakes } from '../../../shared/study.js';
+import { mergeMistakeRows, mistakeRowsFromResult } from '../../../shared/study-personal.js';
 
 export default function Results({ userId }) {
   const navigate = useNavigate();
@@ -17,7 +17,13 @@ export default function Results({ userId }) {
       if (raw) {
         const parsed = JSON.parse(raw);
         setResult(parsed);
-        captureMistakes(userId, window.location.pathname.startsWith('/maths-higher') ? 'maths-higher' : 'maths', parsed, (q, topic) => parsed.weakTopics?.find((row) => row.name === topic)?.internal || `/learn/${q.topicId || q.topicSlug || ''}`);
+        const subject = window.location.pathname.startsWith('/maths-higher') ? 'maths-higher' : 'maths';
+        const built = mistakeRowsFromResult(parsed, subject, parsed.test?.id ?? parsed.sessionId ?? 'paper', {});
+        if (built.length) {
+          api.personal()
+            .then(({ mistakes }) => api.saveMistakes(mergeMistakeRows(mistakes, built)))
+            .catch((error) => console.error('[notebook] mistake capture failed', error));
+        }
       }
     } catch {
       /* noop */

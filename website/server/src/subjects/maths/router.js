@@ -30,6 +30,7 @@ import {
 } from './bank/higher.js';
 import { createDb } from '../../db.js';
 import { defaultStorage } from '../../storage/index.js';
+import { attachPersonalRoutes } from '../../personal.js';
 import { askTutor } from './chat.js';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
@@ -43,6 +44,8 @@ const tierKey = (req) => (isHigher(req) ? 'maths-higher' : 'maths');
 const tierFns = (req) => isHigher(req)
   ? { topics: higherTopics(), size: higherBankSize, questionsFor: higherQuestionsFor, papers: higherPaperList, buildPaper: buildHigherPaper, buildPractice: buildHigherPractice, buildAdhoc: buildHigherAdhoc, markAnswers: higherMarkAnswers, checkAnswer: higherCheckAnswer, questionById: higherQuestionById }
   : { topics: TOPICS, size: bankSize, questionsFor, papers: paperList, buildPaper, buildPractice, buildAdhoc, markAnswers, checkAnswer, questionById: getQuestionById };
+
+attachPersonalRoutes(app, tierKey, defaultStorage);
 
 app.use((req, res, next) => {
   if (req.user) req.db = createDb(req.user.id, tierKey(req));

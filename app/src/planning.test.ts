@@ -1,4 +1,4 @@
-import { buildPlan, completeMission, dateKey, daysToExam, missionResultFromServer, nextMission, parsePlanState, parsePlanningPreferences, planStateKey, planningKey, readinessEvidence, stablePlan, startMission } from './planning';
+import { buildPlan, completeMission, dateKey, daysToExam, missionForToday, missionResultFromServer, nextMission, parsePlanState, parsePlanningPreferences, planStateKey, planningKey, readinessEvidence, stablePlan, startMission } from './planning';
 
 test('parses only supported local planning preferences',()=>{expect(parsePlanningPreferences(JSON.stringify({examDate:'2027-06-01',targetGrade:'5',passMode:'foundation-pass'}))).toEqual({examDate:'2027-06-01',targetGrade:'5',passMode:'foundation-pass'});expect(parsePlanningPreferences('{bad').passMode).toBe('balanced')});
 test('counts calendar days to an exam without going negative',()=>{expect(daysToExam('2026-09-04',new Date(2026,8,1))).toBe(3);expect(daysToExam('2020-01-01',new Date(2026,8,1))).toBe(0)});
@@ -49,6 +49,19 @@ test('a completed topic that was never started still fills today when it matches
   expect(updated.days[0].status).toBe('done');
   const other = completeMission(plan, 'algebra', missionResultFromServer({ correctMarks: 3, totalMarks: 4 }));
   expect(other).toBe(plan);
+});
+
+test('the mission for today only prompts today: done today never returns tomorrow',()=>{
+  const plan = buildPlan('maths', 'balanced', focus, new Date(2026, 8, 1, 10, 0));
+  const now = new Date(2026, 8, 1, 15, 0);
+  expect(missionForToday(plan, now).mission?.task).toBe('Fractions');
+  expect(missionForToday(plan, now).done).toBeNull();
+  const done = completeMission(startMission(plan, '2026-09-01', 'fractions'), 'fractions', missionResultFromServer({ correctMarks: 5, totalMarks: 5 }));
+  const after = missionForToday(done, now);
+  expect(after.mission).toBeNull();
+  expect(after.done?.task).toBe('Fractions');
+  expect(missionForToday(null, now).mission).toBeNull();
+  expect(missionForToday(done, new Date(2026, 8, 2, 8, 0)).mission?.date).toBe('2026-09-02');
 });
 
 test('next mission is the first unfinished day and plan survives storage round-trips',()=>{

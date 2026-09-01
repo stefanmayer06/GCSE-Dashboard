@@ -153,6 +153,13 @@ export function nextMission(plan: PlanState) {
   return plan.days.find(day => day.status === 'todo') ?? null;
 }
 
+export function missionForToday(plan: PlanState | null, now = new Date()) {
+  const day = plan?.days.find(item => item.date === dateKey(now)) ?? null;
+  if (!day) return { day: null, mission: null, done: null };
+  if (day.status === 'done') return { day, mission: null, done: day };
+  return { day, mission: day, done: null };
+}
+
 export function startMission(plan: PlanState, date: string, topicId: string | undefined): PlanState {
   return { ...plan, intent: { date, ...(topicId ? { topicId } : {}) } };
 }

@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { QuestionCard } from './Practice.jsx';
 import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
-import { completePlanDay, missionOutcome } from '../../../shared/study.js';
+import { recordLessonResult } from '../../../shared/study-personal.js';
 
 export default function Topic({ onProgress, userId }) {
   const { topicId } = useParams();
@@ -64,7 +64,10 @@ export default function Topic({ onProgress, userId }) {
     const res = await api.practiceSubmit(session.sessionId, list, aiResults);
     setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
     onProgress?.(res.progress);
-    if (userId) completePlanDay(userId, 'english', topicId, missionOutcome(res));
+    if (userId) {
+      recordLessonResult(api, userId, 'english', topicId, topic?.name, res, answers)
+        .catch((error) => console.error('[personal] lesson result could not be saved', error));
+    }
     if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
     if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
       setCelebration(res.reward);

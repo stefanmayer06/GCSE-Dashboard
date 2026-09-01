@@ -4,9 +4,20 @@ import type { AuthChangeEvent, Session, SupabaseClient } from '@supabase/supabas
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { AppState } from 'react-native';
 import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
+import { ApiClient } from './api';
 import { supabase } from './supabase';
 import type { Appearance, Subject } from './theme';
-import { defaultPlanningPreferences, parsePlanningPreferences, planningKey, type PlanningPreferences } from './planning';
+import { defaultPlanningPreferences, type PlanningPreferences } from './planning';
+
+function parsePreferences(value: unknown): PlanningPreferences {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return defaultPlanningPreferences;
+  const raw = value as Record<string, unknown>;
+  return {
+    examDate: typeof raw.examDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.examDate) ? raw.examDate : '',
+    targetGrade: typeof raw.targetGrade === 'string' ? raw.targetGrade.slice(0, 2) : '',
+    passMode: raw.passMode === 'foundation-pass' ? 'foundation-pass' : 'balanced',
+  };
+}
 
 type Prefs={subject:Subject;appearance:Appearance;planning:PlanningPreferences;hydrated:boolean;setSubject:(v:Subject)=>void;setAppearance:(v:Appearance)=>void;setPlanning:(v:PlanningPreferences)=>void};
 const PreferencesContext=createContext<Prefs|null>(null);
@@ -18,7 +29,10 @@ export const usePreferences=()=>{const value=useContext(PreferencesContext);if(!
 export const useNetwork=()=>useContext(NetworkContext);
 export const useAuth=()=>useContext(AuthContext);
 
-function PreferencesProvider({children}:PropsWithChildren){const auth=useContext(AuthContext);const userId=auth.session?.user.id;const [subject,setSubjectState]=useState<Subject>('maths');const [appearance,setAppearanceState]=useState<Appearance>('system');const [planning,setPlanningState]=useState(defaultPlanningPreferences);const [hydrated,setHydrated]=useState(false);useEffect(()=>{AsyncStorage.multiGet(['subject','appearance']).then(v=>{const s=v[0][1] as Subject|null;const a=v[1][1] as Appearance|null;if(s&&['maths','maths-higher','english'].includes(s))setSubjectState(s);if(a&&['system','light','dark'].includes(a))setAppearanceState(a)}).catch(()=>undefined).finally(()=>setHydrated(true))},[]);useEffect(()=>{let active=true;AsyncStorage.getItem(planningKey(userId,subject)).then(value=>{if(active)setPlanningState(parsePlanningPreferences(value))}).catch(()=>{if(active)setPlanningState(defaultPlanningPreferences)});return()=>{active=false}},[subject,userId]);const setSubject=(v:Subject)=>{setSubjectState(v);void AsyncStorage.setItem('subject',v)};const setAppearance=(v:Appearance)=>{setAppearanceState(v);void AsyncStorage.setItem('appearance',v)};const setPlanning=(v:PlanningPreferences)=>{setPlanningState(v);void AsyncStorage.setItem(planningKey(userId,subject),JSON.stringify(v))};return <PreferencesContext.Provider value={{subject,appearance,planning,hydrated,setSubject,setAppearance,setPlanning}}>{children}</PreferencesContext.Provider>}
+function PreferencesProvider({children}:PropsWithChildren){const auth=useContext(AuthContext);const userId=auth.session?.user.id;const [subject,setSubjectState]=useState<Subject>('maths');const [appearance,setAppearanceState]=useState<Appearance>('system');const [planning,setPlanningState]=useState(defaultPlanningPreferences);const [hydrated,setHydrated]=useState(false);useEffect(()=>{AsyncStorage.multiGet(['subject','appearance']).then(v=>{const s=v[0][1] as Subject|null;const a=v[1][1] as Appearance|null;if(s&&['maths','maths-higher','english'].includes(s))setSubjectState(s);if(a&&['system','light','dark'].includes(a))setAppearanceState(a)}).catch(()=>undefined).finally(()=>setHydrated(true))},[]);useEffect(()=>{let active=true;if(!userId){
+// Resetting preferences mirrors external account hydration when signed out.
+// eslint-disable-next-line react-hooks/set-state-in-effect
+if(active)setPlanningState(defaultPlanningPreferences);return};new ApiClient(subject).personal().then(value=>{if(active)setPlanningState(parsePreferences(value.preferences))}).catch(()=>{if(active)setPlanningState(defaultPlanningPreferences)});return()=>{active=false}},[subject,userId]);const setSubject=(v:Subject)=>{setSubjectState(v);void AsyncStorage.setItem('subject',v)};const setAppearance=(v:Appearance)=>{setAppearanceState(v);void AsyncStorage.setItem('appearance',v)};const setPlanning=(v:PlanningPreferences)=>{setPlanningState(v);if(userId)new ApiClient(subject).savePreferences(v).catch(()=>undefined)};return <PreferencesContext.Provider value={{subject,appearance,planning,hydrated,setSubject,setAppearance,setPlanning}}>{children}</PreferencesContext.Provider>}
 export function networkIsOnline(state:{isConnected?:boolean|null;isInternetReachable?:boolean|null}){return state.isConnected===true&&state.isInternetReachable!==false}
 function NetworkProvider({children}:PropsWithChildren){const [status,setStatus]=useState({online:false,hydrated:false});useEffect(()=>{let active=true;let listenerSeen=false;const update=(state:Network.NetworkState)=>{const online=networkIsOnline(state);onlineManager.setOnline(online);if(active)setStatus({online,hydrated:true})};onlineManager.setOnline(false);const sub=Network.addNetworkStateListener(state=>{listenerSeen=true;update(state)});void Network.getNetworkStateAsync().then(state=>{if(!listenerSeen)update(state)}).catch(()=>{if(!listenerSeen){onlineManager.setOnline(false);if(active)setStatus({online:false,hydrated:true})}});return()=>{active=false;sub.remove()}},[]);return <NetworkContext.Provider value={status}>{children}</NetworkContext.Provider>}
 

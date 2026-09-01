@@ -10,7 +10,6 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.10.4",
     "@supabase/server": "^1.4.1",
     "@supabase/supabase-js": "^2.112.4",
     "express": "^4.21.1"

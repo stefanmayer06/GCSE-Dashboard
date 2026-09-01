@@ -77,7 +77,7 @@ export default function Dashboard({ health, progress, userId }) {
         </div>
       </section>
 
-      <StudyDashboard userId={userId} subject="english" topics={flattenTopics(topics, 'sections')} progress={progress} diagnosticUrl="/practice?diagnostic=1#adhoc" />
+      <StudyDashboard userId={userId} subject="english" topics={flattenTopics(topics, 'sections')} progress={progress} diagnosticUrl="/practice?diagnostic=1#adhoc" api={api} />
 
       <ExpertisePath progress={progress} onChooseLesson={() => navigate('/learn')} />
 

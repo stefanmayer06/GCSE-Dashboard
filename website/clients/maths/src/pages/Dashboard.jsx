@@ -88,7 +88,7 @@ export default function Dashboard({ health, progress, higherTier = false, userId
         </div>
       </section>
 
-      <StudyDashboard userId={userId} subject={higherTier ? 'maths-higher' : 'maths'} topics={flattenTopics(topics, 'strands')} progress={progress} diagnosticUrl="/practice?diagnostic=1#adhoc" foundation={!higherTier} />
+      <StudyDashboard userId={userId} subject={higherTier ? 'maths-higher' : 'maths'} topics={flattenTopics(topics, 'strands')} progress={progress} diagnosticUrl="/practice?diagnostic=1#adhoc" foundation={!higherTier} api={api} />
 
       <ExpertisePath progress={progress} onChooseLesson={() => navigate('/learn')} />
 

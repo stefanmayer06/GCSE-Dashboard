@@ -5,8 +5,7 @@
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {
-      "maxDuration": 300,
-      "includeFiles": "server/src/storage/schema.sql"
+      "maxDuration": 300
     }
   },
   "headers": [

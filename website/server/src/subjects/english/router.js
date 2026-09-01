@@ -16,12 +16,14 @@ import { markList, markTrueFalse } from './marker.js';
 import { markAnswer, askTutor, aiConfig } from './ai.js';
 import { createDb } from '../../db.js';
 import { defaultStorage } from '../../storage/index.js';
+import { attachPersonalRoutes } from '../../personal.js';
 
 const { apiKey, model } = aiConfig();
 const MAX_MARK_ATTEMPTS = 3;
 
 const app = express.Router();
 app.use(express.json({ limit: '2mb' }));
+attachPersonalRoutes(app, () => 'english', defaultStorage);
 
 app.use((req, res, next) => {
   if (req.user) req.db = createDb(req.user.id, 'english');

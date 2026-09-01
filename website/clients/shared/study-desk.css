@@ -857,6 +857,11 @@ textarea:focus-visible,
 .week-plan small { display: block; margin-top: 4px; color: var(--positive); font-size: 10px; font-weight: 800; }
 .week-plan a.done { background: var(--positive-wash); }
 .week-plan a.done b { color: var(--positive); }
+.week-plan .locked { display: block; min-width: 0; padding: 10px; border-right: 1px solid var(--line); color: var(--quiet); }
+.week-plan .locked:last-child { border: 0; }
+.week-plan .locked b { color: var(--quiet); }
+.week-plan .locked small { color: var(--quiet); font-weight: 600; }
+.mission-card.mission-done { border-left-color: var(--positive); }
 .plan-note { margin-top: 10px; color: var(--quiet); font-size: 11px; }
 .notebook-list { margin-top: 22px; }
 .notebook-row { display: flex; justify-content: space-between; gap: 20px; padding: 18px 0; border-bottom: 1px solid var(--line); }

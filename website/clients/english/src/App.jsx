@@ -163,8 +163,8 @@ export default function App() {
           <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} userId={auth.id || auth.username} />} />
           <Route path="/texts" element={<Texts />} />
           <Route path="/texts/:textId" element={<TextDetail />} />
-          <Route path="/notebook" element={<Notebook userId={auth.id || auth.username} subject="english" />} />
-          <Route path="/summary" element={<WeeklySummary userId={auth.id || auth.username} subject="english" progress={progress} />} />
+          <Route path="/notebook" element={<Notebook userId={auth.id || auth.username} subject="english" api={api} />} />
+          <Route path="/summary" element={<WeeklySummary userId={auth.id || auth.username} subject="english" progress={progress} api={api} />} />
           <Route path="/chat" element={<Chat health={health} />} />
         </Routes>
       </main>

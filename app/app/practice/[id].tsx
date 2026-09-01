@@ -36,8 +36,9 @@ import {
   type UnknownRecord,
 } from "@/practice/core";
 import { useTheme } from "@/theme";
-import { mergeMistakes, mistakesFromResult, notebookKey } from "@/notebook";
-import { completeMission, missionResultFromServer, parsePlanState, planStateKey } from "@/planning";
+import { mergeMistakes, mistakesFromResult } from "@/notebook";
+import { hydratePersonal } from "@/personal";
+import { completeMission, missionResultFromServer } from "@/planning";
 
 const rec = (value: unknown): UnknownRecord =>
   value && typeof value === "object" && !Array.isArray(value)
@@ -381,25 +382,24 @@ export default function ActivePractice() {
                 list,
                 subject === "english" ? aiResults : undefined,
               );
-       const cached = cacheResult(result, answers);
-       const notebookStorageKey = notebookKey(auth?.user.id);
-       const existingMistakes = await AsyncStorage.getItem(notebookStorageKey);
-       const mistakes = mistakesFromResult(result, cached.submittedAnswers, id, subject);
+const cached = cacheResult(result, answers);
        await AsyncStorage.multiSet([
           [resultId(auth?.user.id, subject, id), JSON.stringify(cached)],
-         [notebookStorageKey, JSON.stringify(mergeMistakes(existingMistakes, mistakes))],
-        [activeId(auth?.user.id, subject), ""],
-      ]);
-      if (active.session.kind === "practice") {
-        const planStorageKey = planStateKey(auth?.user.id, subject);
-        const currentPlan = parsePlanState(await AsyncStorage.getItem(planStorageKey));
-        if (currentPlan) {
-          const updated = completeMission(currentPlan, active.session.topicId, missionResultFromServer(result));
-          if (updated !== currentPlan) await AsyncStorage.setItem(planStorageKey, JSON.stringify(updated));
-        }
-      }
-      await AsyncStorage.removeItem(key);
-      router.replace({ pathname: "/results/[id]", params: { id } });
+         [activeId(auth?.user.id, subject), ""],
+       ]);
+       await AsyncStorage.removeItem(key);
+       try {
+         const personal = await hydratePersonal(api, auth?.user.id, subject);
+         const mistakes = mistakesFromResult(result, cached.submittedAnswers, id, subject);
+         if (mistakes.length) await api.saveMistakes(mergeMistakes(personal.mistakes, mistakes));
+         if (active.session.kind === "practice" && personal.plan) {
+           const updated = completeMission(personal.plan, active.session.topicId, missionResultFromServer(result));
+           if (updated !== personal.plan) await api.savePlan(updated);
+         }
+       } catch (personalCause) {
+         console.error('[personal] result could not be saved to the account', personalCause);
+       }
+       router.replace({ pathname: "/results/[id]", params: { id } });
     } catch (cause) {
       submitting.current = false;
       const message =

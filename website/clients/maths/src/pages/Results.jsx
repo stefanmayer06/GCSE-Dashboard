@@ -3,22 +3,27 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
+import { TriagePanel } from '../../../shared/StudyTools.jsx';
 import { mergeMistakeRows, mistakeRowsFromResult } from '../../../shared/study-personal.js';
 
 export default function Results({ userId }) {
   const navigate = useNavigate();
   const [result, setResult] = useState(null);
+  const [attempts, setAttempts] = useState(null);
   const [open, setOpen] = useState({});
+  const [savedCount, setSavedCount] = useState(null);
 
   useEffect(() => {
     try {
-      const key = window.location.pathname.startsWith('/maths-higher') ? 'mathsmate-higher-last-result' : 'mathsmate-last-result';
+      const higherTier = window.location.pathname.startsWith('/maths-higher');
+      const key = higherTier ? 'mathsmate-higher-last-result' : 'mathsmate-last-result';
       const raw = localStorage.getItem(key);
       if (raw) {
         const parsed = JSON.parse(raw);
         setResult(parsed);
-        const subject = window.location.pathname.startsWith('/maths-higher') ? 'maths-higher' : 'maths';
+        const subject = higherTier ? 'maths-higher' : 'maths';
         const built = mistakeRowsFromResult(parsed, subject, parsed.test?.id ?? parsed.sessionId ?? 'paper', {});
+        setSavedCount(built.length);
         if (built.length) {
           api.personal()
             .then(({ mistakes }) => api.saveMistakes(mergeMistakeRows(mistakes, built)))
@@ -28,7 +33,16 @@ export default function Results({ userId }) {
     } catch {
       /* noop */
     }
+    api.attempts().then((data) => setAttempts(data.attempts ?? [])).catch(() => setAttempts([]));
   }, [userId]);
+
+  const openSession = (sessionId) => {
+    const found = attempts?.find((attempt) => attempt.sessionId === sessionId);
+    if (found?.result) {
+      setResult(found.result);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   if (!result) {
     return (
@@ -86,6 +100,37 @@ export default function Results({ userId }) {
       </div>
 
       <RewardSummary reward={result.reward} progress={result.progress} label="Paper XP earned" />
+
+      <TriagePanel
+        result={result}
+        mistakesNote={savedCount != null && savedCount > 0
+          ? `${savedCount} mistake${savedCount === 1 ? '' : 's'} from this paper are in your notebook with the worked method, ready for the 1-day retry.`
+          : null}
+      />
+
+      {attempts?.length > 0 && (
+        <section className="panel attempts-panel">
+          <h2>Your past papers</h2>
+          <p className="sub">Saved to your account — reopen any attempt to review every question.</p>
+          <table className="bound-table attempts-table">
+            <thead><tr><th>Date</th><th>Paper</th><th>Score</th><th>Grade</th><th>Time</th><th></th></tr></thead>
+            <tbody>
+              {attempts.map((attempt) => (
+                <tr key={attempt.sessionId} className={attempt.sessionId === result.id ? 'me' : ''}>
+                  <td>{new Date(attempt.completedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</td>
+                  <td>{attempt.paperCode || attempt.paperName || 'Paper'}</td>
+                  <td>{attempt.correctMarks}/{attempt.totalMarks} ({attempt.percent ?? '—'}%)</td>
+                  <td>{attempt.grade ?? '—'}</td>
+                  <td>{attempt.durationSec ? `${Math.floor(attempt.durationSec / 60)}m` : '—'}</td>
+                  <td>{attempt.sessionId === result.id
+                    ? <span className="sub small">viewing</span>
+                    : <button type="button" className="link link-button" onClick={() => openSession(attempt.sessionId)}>Review</button>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       <section className="two-col">
         <div className="panel">

@@ -1,4 +1,20 @@
 const SUBJECTS = ['maths', 'maths-higher', 'english'];
+const ERROR_TYPES = ['knowledge', 'method', 'misread', 'arithmetic', 'timing', 'incomplete'];
+const EVENT_NAMES = [
+  'signup',
+  'diagnostic_start',
+  'diagnostic_complete',
+  'mission_start',
+  'mission_complete',
+  'session_marked',
+  'mistake_saved',
+  'mistake_retry',
+  'mistake_mastered',
+  'onboarding_complete',
+  'week_return',
+  'evidence_report',
+];
+const MAX_ATTEMPTS_PER_SUBJECT = 50;
 const record = (value) => (value && typeof value === 'object' && !Array.isArray(value) ? value : {});
 const text = (value) => (typeof value === 'string' && value.trim() ? value.trim() : undefined);
 
@@ -98,6 +114,12 @@ export function normalizeMistakeRows(payload) {
     const reviewIndex = Number.isInteger(raw.reviewIndex) ? Math.max(0, Math.min(4, raw.reviewIndex)) : 0;
     const capturedAt = text(raw.capturedAt)
       ?? (Number.isFinite(raw.added) ? new Date(raw.added).toISOString() : new Date().toISOString());
+    const workedSolution = Array.isArray(raw.workedSolution)
+      ? raw.workedSolution
+        .map((step) => (typeof step === 'string' ? step.trim() : ''))
+        .filter(Boolean)
+        .slice(0, 30)
+      : [];
     out.push({
       id,
       ...(text(raw.sessionId) ? { sessionId: text(raw.sessionId).slice(0, 200) } : {}),
@@ -111,11 +133,72 @@ export function normalizeMistakeRows(payload) {
       capturedAt,
       dueDates,
       reviewIndex,
+      ...(ERROR_TYPES.includes(raw.errorType) ? { errorType: raw.errorType } : {}),
+      ...(Number.isInteger(raw.warmupCount) ? { warmupCount: Math.max(0, Math.min(99, raw.warmupCount)) } : {}),
+      ...(text(raw.lastReviewedAt) ? { lastReviewedAt: text(raw.lastReviewedAt) } : {}),
+      ...(raw.correctAnswer !== undefined && raw.correctAnswer !== null ? { correctAnswer: raw.correctAnswer } : {}),
+      ...(workedSolution.length ? { workedSolution } : {}),
       mastered: raw.mastered === true || reviewIndex >= dueDates.length && dueDates.length > 0,
     });
   }
   return out;
 }
+
+export function eventNames() {
+  return [...EVENT_NAMES];
+}
+
+export function normalizeEvent(payload) {
+  const raw = record(payload);
+  const name = text(raw.name);
+  if (!name || !EVENT_NAMES.includes(name)) {
+    throw personalError('EVENT_INVALID_NAME', 'Unknown event name');
+  }
+  const subject = text(raw.subject);
+  if (subject && !SUBJECTS.includes(subject)) {
+    throw personalError('EVENT_INVALID_SUBJECT', 'Invalid event subject');
+  }
+  const metadata = record(raw.metadata);
+  const clean = {};
+  for (const [key, value] of Object.entries(metadata).slice(0, 20)) {
+    if (typeof key !== 'string' || key.length > 60) continue;
+    if (value == null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      clean[key] = typeof value === 'string' ? value.slice(0, 300) : value;
+    }
+  }
+  return {
+    name,
+    ...(subject ? { subject } : {}),
+    metadata: clean,
+  };
+}
+
+export function normalizeAttempt(payload) {
+  const raw = record(payload);
+  const sessionId = text(raw.sessionId);
+  if (!sessionId) throw personalError('ATTEMPT_INVALID_SESSION', 'A paper attempt needs a session id');
+  const percent = Number.isFinite(Number(raw.percent)) ? Math.round(Number(raw.percent)) : null;
+  const grade = Number.isInteger(raw.grade) ? raw.grade : null;
+  const durationSec = Number.isFinite(Number(raw.durationSec)) && Number(raw.durationSec) >= 0
+    ? Math.round(Number(raw.durationSec))
+    : null;
+  return {
+    sessionId: sessionId.slice(0, 200),
+    paperCode: text(raw.paperCode)?.slice(0, 40),
+    paperName: text(raw.paperName)?.slice(0, 80),
+    type: raw.type === 'short' ? 'short' : 'full',
+    tier: text(raw.tier)?.slice(0, 40),
+    totalMarks: Math.max(0, Number(raw.totalMarks) || 0),
+    correctMarks: Math.max(0, Number(raw.correctMarks) || 0),
+    percent: percent != null && percent >= 0 && percent <= 100 ? percent : null,
+    grade: grade != null && grade >= 0 && grade <= 9 ? grade : null,
+    durationSec,
+    completedAt: text(raw.completedAt) ?? new Date().toISOString(),
+    result: record(raw.result),
+  };
+}
+
+export const attemptLimit = MAX_ATTEMPTS_PER_SUBJECT;
 
 export function mistakeRowToSnake(row, subject, userId) {
   return {
@@ -135,6 +218,11 @@ export function mistakeRowToSnake(row, subject, userId) {
     status: row.mastered ? 'mastered' : 'active',
     captured_at: row.capturedAt,
     mastered_at: row.mastered ? new Date().toISOString() : null,
+    error_type: row.errorType ?? null,
+    warmup_count: row.warmupCount ?? 0,
+    last_reviewed_at: row.lastReviewedAt ?? null,
+    correct_answer: row.correctAnswer === undefined ? null : row.correctAnswer,
+    worked_solution: row.workedSolution ?? null,
   };
 }
 

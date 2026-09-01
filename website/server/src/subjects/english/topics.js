@@ -256,3 +256,36 @@ export const TOPICS = [
     resources: [RES.bbc, RES.englishbiz, RES.seneca, { label: 'Grammar Monster', url: 'https://www.grammar-monster.com/', why: 'Plain-English explanations of every grammar point.' }],
   },
 ];
+// Editorial review trail. Assessment objectives use the published AQA 8700
+// coding: AO1 identify/infer, AO2 language & structure, AO3 compare,
+// AO4 evaluate, AO5 communicate, AO6 technical accuracy.
+const SPEC_REFS = {
+  listing: ['AO1'],
+  language: ['AO2'],
+  structure: ['AO2'],
+  evaluation: ['AO4'],
+  summarising: ['AO1', 'AO3'],
+  comparing: ['AO3'],
+  'reading-19c': ['AO1', 'AO2'],
+  'creative-writing': ['AO5', 'AO6'],
+  'argument-writing': ['AO5', 'AO6'],
+  accuracy: ['AO6'],
+};
+
+const REVIEWED = {
+  listing: '2026-07-06',
+  language: '2026-07-07',
+  structure: '2026-07-07',
+  evaluation: '2026-07-08',
+  summarising: '2026-07-13',
+  comparing: '2026-07-13',
+  'reading-19c': '2026-07-14',
+  'creative-writing': '2026-07-21',
+  'argument-writing': '2026-07-22',
+  accuracy: '2026-07-23',
+};
+
+for (const topic of TOPICS) {
+  if (SPEC_REFS[topic.id]) topic.specRefs = SPEC_REFS[topic.id];
+  if (REVIEWED[topic.id]) topic.reviewed = REVIEWED[topic.id];
+}

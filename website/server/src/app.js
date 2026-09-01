@@ -4,8 +4,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { authRoutes, requireAuth } from './auth.js';
+import { feedbackRoutes } from './feedback.js';
 import mathsRouter from './subjects/maths/router.js';
 import englishRouter from './subjects/english/router.js';
+import { analyticsRoutes } from './analytics.js';
+import { defaultStorage } from './storage/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..', '..');
@@ -85,6 +88,10 @@ export function createApp({ serveStatic = true } = {}) {
   app.get('/api/health', (req, res) => {
     res.json({ ok: true, subjects: ['maths', 'maths-higher', 'english'] });
   });
+
+  app.use('/api/feedback', feedbackRoutes());
+
+  app.use('/api', subjectGate, analyticsRoutes(defaultStorage));
 
   app.use('/api/maths', subjectGate, mathsRouter);
   app.use('/api/maths-higher', subjectGate, mathsRouter);

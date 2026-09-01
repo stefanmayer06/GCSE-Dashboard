@@ -3,6 +3,19 @@ import { dateKey, missionOutcome } from './study.js';
 const DAY = 86400000;
 export const PERSONAL_UPDATED_EVENT = 'gcse-personal-updated';
 
+// Learner-facing error classification for the mistake notebook. Each mistake
+// can be tagged with the reason it was missed so retries target the cause.
+export const ERROR_TYPES = [
+  { id: 'knowledge', label: 'Didn\u2019t know it', hint: 'I never learned or forgot this fact or rule.' },
+  { id: 'method', label: 'Wrong method', hint: 'I used the wrong approach for this kind of question.' },
+  { id: 'misread', label: 'Misread the question', hint: 'I answered a different question to the one asked.' },
+  { id: 'arithmetic', label: 'Arithmetic slip', hint: 'The method was right, the calculation wasn\u2019t.' },
+  { id: 'timing', label: 'Ran out of time', hint: 'I knew what to do but rushed or never finished.' },
+  { id: 'incomplete', label: 'Missing explanation', hint: 'My answer needed more working, reasoning or evidence.' },
+];
+
+export const ERROR_TYPE_IDS = ERROR_TYPES.map((type) => type.id);
+
 function notifyPersonalUpdated(userId, subject) {
   if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return;
   window.dispatchEvent(new CustomEvent(PERSONAL_UPDATED_EVENT, { detail: { userId, subject } }));
@@ -116,17 +129,64 @@ export function dueMistakeRows(rows, now = Date.now()) {
   });
 }
 
-export function advanceMistakeRows(rows, id) {
+export function advanceMistakeRows(rows, id, now = Date.now()) {
   return rows.map((row) => {
     if (row.id !== id) return row;
     const reviewIndex = Math.min(4, (row.reviewIndex ?? 0) + 1);
-    return { ...row, reviewIndex, mastered: reviewIndex >= 4 };
+    return { ...row, reviewIndex, lastReviewedAt: new Date(now).toISOString(), mastered: reviewIndex >= 4 };
   });
 }
 
+export function classifyMistake(rows, id, errorType) {
+  if (!ERROR_TYPE_IDS.includes(errorType)) return rows;
+  return rows.map((row) => (row.id === id ? { ...row, errorType } : row));
+}
+
+export function markWarmupDone(rows, id) {
+  return rows.map((row) => (row.id === id
+    ? { ...row, warmupCount: Math.min(99, (row.warmupCount ?? 0) + 1) }
+    : row));
+}
+
+// Mistakes mastered inside a window ending `now` — the weekly "mistakes
+// mastered" outcome reported on the dashboard and evidence summary.
+export function masteredSince(rows, windowMs = 7 * DAY, now = Date.now()) {
+  const cutoff = now - windowMs;
+  return (Array.isArray(rows) ? rows : []).filter((row) => {
+    if (!row.mastered) return false;
+    const at = Date.parse(row.lastReviewedAt || row.capturedAt || '');
+    return Number.isFinite(at) && at >= cutoff;
+  });
+}
+
+export function errorTypeCounts(rows) {
+  const counts = {};
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (row?.errorType) counts[row.errorType] = (counts[row.errorType] || 0) + 1;
+  }
+  return counts;
+}
+
+// Merges newly captured mistakes into the notebook. Re-capturing an existing
+// row (for example by reopening a results page) refreshes the evidence fields
+// but never resets review progress: retries, mastery and classification stick.
 export function mergeMistakeRows(existing, incoming) {
   const byId = new Map((Array.isArray(existing) ? existing : []).map((row) => [row.id, row]));
-  for (const row of Array.isArray(incoming) ? incoming : []) byId.set(row.id, row);
+  for (const row of Array.isArray(incoming) ? incoming : []) {
+    const prior = byId.get(row.id);
+    byId.set(row.id, prior
+      ? {
+          ...row,
+          capturedAt: prior.capturedAt,
+          dueDates: prior.dueDates?.length ? prior.dueDates : row.dueDates,
+          reviewIndex: prior.reviewIndex ?? 0,
+          mastered: prior.mastered === true,
+          ...(prior.errorType ? { errorType: prior.errorType } : {}),
+          ...(prior.warmupCount ? { warmupCount: prior.warmupCount } : {}),
+          ...(prior.lastReviewedAt ? { lastReviewedAt: prior.lastReviewedAt } : {}),
+        }
+      : row);
+  }
   return [...byId.values()].sort((a, b) => String(b.capturedAt).localeCompare(String(a.capturedAt)));
 }
 
@@ -141,14 +201,20 @@ export function mistakeRowsFromResult(result, subject, sessionSeed, answers = {}
     const max = Number.isFinite(Number(row.marks ?? row.maxMarks ?? row.max)) ? Number(row.marks ?? row.maxMarks ?? row.max) : undefined;
     const incorrect = row.correct === false || (got !== undefined && max !== undefined && got < max);
     if (!incorrect) return [];
+    const correctAnswer = row.answerText ?? row.correctAnswer
+      ?? (typeof row.marking?.modelAnswer === 'string' && row.marking.modelAnswer.trim() ? row.marking.modelAnswer : undefined);
+    const workedSolution = Array.isArray(row.solution) ? row.solution.filter((step) => typeof step === 'string' && step.trim()) : [];
     return [{
       id: `${subject}:${sessionSeed || 'session'}:${qid}`,
       qid: String(qid),
+      ...(typeof row.topicId === 'string' && row.topicId ? { topicId: row.topicId } : {}),
       topicName: row.topicName ?? row.topic ?? 'Mixed practice',
       prompt: row.text ?? row.prompt ?? row.question ?? `Question ${index + 1}`,
       ...(row.value !== undefined ? { answer: row.value } : answers[qid] !== undefined ? { answer: answers[qid] } : {}),
       ...(got !== undefined ? { marks: got } : {}),
       ...(max !== undefined ? { maxMarks: max } : {}),
+      ...(correctAnswer !== undefined ? { correctAnswer } : {}),
+      ...(workedSolution.length ? { workedSolution } : {}),
       capturedAt,
       dueDates: [1, 3, 7, 21].map((days) => new Date(Date.now() + days * DAY).toISOString()),
       reviewIndex: 0,
@@ -193,6 +259,7 @@ export async function recordLessonResult(api, userId, subject, topicId, topicNam
   if (nextPlan) {
     try {
       await api.savePlan(nextPlan);
+      api.track?.('mission_complete', { topicId });
     } catch (error) {
       error.personalDomain = 'plan';
       throw error;

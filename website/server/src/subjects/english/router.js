@@ -120,6 +120,14 @@ const stripMarkCtx = (q) => {
   return out;
 };
 
+// Editorial metadata for the coverage audit trail (see ENGLISH_AUDIT.md).
+const ENGLISH_EDITORIAL = {
+  spec: 'AQA 8700',
+  reviewer: 'Study Desk content team',
+  markingRationale: 'List and true/false questions are marked deterministically against fixed answers; extended answers use AQA-style rubrics and never promise an official mark.',
+  reportIssueUrl: '/support.html',
+};
+
 app.get('/health', (req, res) => {
   res.json({
     ok: true,
@@ -129,6 +137,7 @@ app.get('/health', (req, res) => {
     aiMarking: !!apiKey,
     boundaries: BOUNDARIES,
     papers: paperList(),
+    editorial: ENGLISH_EDITORIAL,
   });
 });
 
@@ -163,6 +172,8 @@ app.get('/topics', asyncRoute(async (req, res) => {
           name: t.name,
           blurb: t.blurb,
           examWeight: t.examWeight,
+          ...(Array.isArray(t.specRefs) && t.specRefs.length ? { specRefs: t.specRefs } : {}),
+          ...(t.reviewed ? { reviewed: t.reviewed } : {}),
           accuracy: stats && stats.total ? Math.round((100 * stats.correct) / stats.total) : null,
           answered: stats ? stats.total : 0,
           completed: completed.has(t.id),
@@ -188,6 +199,9 @@ app.get('/topics/:id', asyncRoute(async (req, res) => {
     examWeight: t.examWeight,
     notes: t.notes,
     resources: t.resources,
+    editorial: ENGLISH_EDITORIAL,
+    ...(Array.isArray(t.specRefs) && t.specRefs.length ? { specRefs: t.specRefs } : {}),
+    ...(t.reviewed ? { reviewed: t.reviewed } : {}),
     accuracy: stats && stats.total ? Math.round((100 * stats.correct) / stats.total) : null,
     answered: stats ? stats.total : 0,
     completed: p.completedLessonIds.includes(t.id),
@@ -363,7 +377,29 @@ app.post('/test/:id/submit', asyncRoute(async (req, res) => {
       scoreXp: Math.round(scored * 2),
       response: result,
     });
-    if (finalized.status === 'completed') return res.json(finalized.result);
+    if (finalized.status === 'completed') {
+      // Durable paper history + funnel trail (best-effort; never blocks the result).
+      await Promise.allSettled([
+        defaultStorage.saveAttempt(req.user.id, 'english', {
+          sessionId: test.id,
+          paperCode: result.paperCode,
+          paperName: result.paperName,
+          type: result.type,
+          totalMarks: result.totalMarks,
+          correctMarks: result.correctMarks,
+          percent: result.percent,
+          grade: result.grade,
+          durationSec: result.durationSec,
+          completedAt: new Date().toISOString(),
+          result,
+        }),
+        defaultStorage.recordEvent(req.user.id, 'session_marked', {
+          subject: 'english',
+          metadata: { kind: 'paper', type: result.type, paperCode: result.paperCode, complete: !incomplete },
+        }),
+      ]);
+      return res.json(finalized.result);
+    }
     return sessionFailure(res, finalized);
   } catch (error) {
     await defaultStorage.releaseStudySession(criteria).catch(() => {});

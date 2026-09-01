@@ -68,6 +68,30 @@ const higherMeta = [
   { id: 'proof', strand: 'algebra', name: 'Mathematical Proof', blurb: 'Proof by deduction and systematic reasoning.', examWeight: 4 },
 ];
 
+// Editorial review trail for Higher-only topics (see HIGHER_AUDIT.md). Topics
+// shared with Foundation inherit the Foundation review dates.
+const HIGHER_REVIEWED = {
+  'standard-form-higher': '2026-08-17',
+  surds: '2026-08-17',
+  bounds: '2026-08-18',
+  'algebraic-fractions': '2026-08-18',
+  'quadratics-higher': '2026-08-19',
+  'simultaneous-higher': '2026-08-19',
+  'functions-higher': '2026-08-20',
+  'graphs-higher': '2026-08-20',
+  'ratio-growth-higher': '2026-08-24',
+  'similarity-vectors': '2026-08-24',
+  'circle-theorems': '2026-08-25',
+  'trigonometry-higher': '2026-08-25',
+  'probability-conditional': '2026-08-26',
+  'statistics-higher': '2026-08-26',
+  proof: '2026-08-27',
+};
+
+for (const topic of higherMeta) {
+  if (HIGHER_REVIEWED[topic.id]) topic.reviewed = HIGHER_REVIEWED[topic.id];
+}
+
 const generators = {
   'graphs-higher': higherGraph,
   'standard-form-higher': (v) => {

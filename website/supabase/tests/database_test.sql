@@ -1,6 +1,6 @@
 begin;
 
-select plan(35);
+select plan(57);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'subject_progress', 'subject_progress table exists');
@@ -157,6 +157,115 @@ select is(
 );
 select is((select tests_taken from public.subject_progress where user_id = '10000000-0000-0000-0000-000000000001'), 1,
   'replay leaves progress unchanged');
+
+-- Mistake-to-mastery enrichment: classification, warm-ups and retry evidence.
+select has_column('public', 'mistake_notebook', 'error_type', 'mistake rows support error classification');
+select has_column('public', 'mistake_notebook', 'warmup_count', 'mistake rows support warm-up evidence');
+select has_column('public', 'mistake_notebook', 'last_reviewed_at', 'mistake rows support retry timestamps');
+select has_column('public', 'mistake_notebook', 'correct_answer', 'mistake rows keep the correct answer');
+select has_column('public', 'mistake_notebook', 'worked_solution', 'mistake rows keep the worked method');
+select lives_ok(
+  $test$select public.replace_mistakes(
+    '10000000-0000-0000-0000-000000000001', 'maths',
+    '[{"id":"mistake-2","qid":"q2","topicName":"Fractions","prompt":"Find a third","dueDates":[],"reviewIndex":1,"errorType":"method","warmupCount":2,"lastReviewedAt":"2026-09-06T10:00:00.000Z","correctAnswer":"3/4","workedSolution":["Simplify","Check"]}]'::jsonb
+  )$test$,
+  'a classified mistake row with evidence can be saved'
+);
+select is(
+  (select error_type from public.mistake_notebook where legacy_id = 'mistake-2'),
+  'method',
+  'the chosen classification is persisted'
+);
+select throws_ok(
+  $test$select public.replace_mistakes(
+    '10000000-0000-0000-0000-000000000001', 'maths',
+    '[{"id":"mistake-3","qid":"q3","topicName":"Ratio","prompt":"Share 10","dueDates":[],"reviewIndex":0,"workedSolution":{"not":"an array"}}]'::jsonb
+  )$test$,
+  '23514',
+  'worked solutions must be arrays, never objects'
+);
+
+-- Durable paper attempts.
+select has_table('public', 'paper_attempts', 'paper attempts table exists');
+select has_table('public', 'product_events', 'product events table exists');
+select ok(
+  (select relrowsecurity from pg_class where oid = 'public.paper_attempts'::regclass),
+  'paper attempts have RLS enabled'
+);
+select ok(
+  (select relrowsecurity from pg_class where oid = 'public.product_events'::regclass),
+  'product events have RLS enabled'
+);
+select has_function(
+  'public',
+  'save_paper_attempt',
+  array['uuid', 'text', 'text', 'jsonb'],
+  'paper attempt writer exists'
+);
+select ok(
+  not has_function_privilege('anon', 'public.save_paper_attempt(uuid,text,text,jsonb)', 'execute')
+  and not has_function_privilege('authenticated', 'public.save_paper_attempt(uuid,text,text,jsonb)', 'execute'),
+  'only the service role writes paper attempts'
+);
+select lives_ok(
+  $test$select count(*) from (
+    select public.save_paper_attempt(
+      '10000000-0000-0000-0000-000000000001', 'maths', 'attempt-' || g,
+      jsonb_build_object('paperCode','8300/1F','type','full','tier','foundation','totalMarks',80,
+        'correctMarks',40,'percent',50,'durationSec',3000,
+        'completedAt', to_char(timezone('utc', now()) - (g || ' days')::interval, 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+        'result', jsonb_build_object('id', 'attempt-' || g))
+    ) from generate_series(1, 52) g
+  ) t,
+  'paper attempts can be written through the RPC'
+);
+select is(
+  (select count(*) from public.paper_attempts where user_id = '10000000-0000-0000-0000-000000000001'),
+  50,
+  'only the most recent 50 attempts are retained per user and subject'
+);
+select lives_ok(
+  $test$select public.save_paper_attempt(
+    '10000000-0000-0000-0000-000000000001', 'maths', 'attempt-52',
+    '{"type":"full","totalMarks":80,"correctMarks":55,"percent":69,"grade":5}'::jsonb
+  )$test$,
+  're-saving an attempt updates it rather than duplicating it'
+);
+select is(
+  (select correct_marks from public.paper_attempts where session_id = 'attempt-52'),
+  55::numeric,
+  'the updated attempt score is persisted'
+);
+
+-- Product events: taxonomy constraint and retention function.
+select throws_ok(
+  $test$insert into public.product_events (user_id, name) values ('10000000-0000-0000-0000-000000000001', 'made_up_event')$test$,
+  '23514',
+  'product events reject unknown event names'
+);
+select lives_ok(
+  $test$
+  insert into public.product_events (user_id, name, subject, metadata, occurred_at)
+  values ('10000000-0000-0000-0000-000000000001', 'diagnostic_complete', 'maths', '{"percent":60}'::jsonb,
+          timezone('utc', now()) - interval '600 days')
+  returning id
+  $test$,
+  'product events can be appended for the signed-in learner'
+);
+select lives_ok(
+  $test$select public.prune_product_events(540)$test$,
+  'the documented 540-day retention prune runs'
+);
+select is(
+  (select count(*) from public.product_events where user_id = '10000000-0000-0000-0000-000000000001' and name = 'diagnostic_complete'),
+  0,
+  'the retention prune removes events past the documented window'
+);
+select throws_ok(
+  $test$select public.prune_product_events(10)$test$,
+  '22023',
+  'retention windows shorter than 30 days are rejected'
+);
 
 select * from finish();
 rollback;

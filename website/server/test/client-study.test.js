@@ -7,6 +7,7 @@ import {
   dueMistakeRows,
   hydratePersonal,
   importLegacyPersonal,
+  masteredSince,
   mergeMistakeRows,
   mistakeRowsFromResult,
   personalKey,
@@ -74,25 +75,37 @@ test('mistake rows build, merge, advance and go due on schedule', () => {
   const now = Date.now();
   const rows = mistakeRowsFromResult({
     perQ: [
-      { qid: 'q1', topic: 'Fractions', correct: false, got: 0, marks: 4, value: '7' },
+      { qid: 'q1', topic: 'Fractions', topicId: 'fractions', correct: false, got: 0, marks: 4, value: '7', answerText: '3/4', solution: ['Simplify', 'Check'] },
       { qid: 'q2', correct: true, got: 4, marks: 4 },
     ],
   }, 'maths', 'lesson-fractions');
   assert.equal(rows.length, 1);
   assert.equal(rows[0].topicName, 'Fractions');
+  assert.equal(rows[0].topicId, 'fractions');
   assert.equal(rows[0].answer, '7');
+  assert.equal(rows[0].correctAnswer, '3/4');
+  assert.deepEqual(rows[0].workedSolution, ['Simplify', 'Check']);
   assert.equal(rows[0].dueDates.length, 4);
 
-  const merged = mergeMistakeRows([{ ...rows[0], reviewIndex: 2 }], rows);
+  // Re-capturing the same miss (e.g. reopening an old results page) refreshes
+  // the evidence but must never reset review progress or mastery.
+  const merged = mergeMistakeRows(
+    [{ ...rows[0], reviewIndex: 2, mastered: false, errorType: 'method', warmupCount: 1 }],
+    rows,
+  );
   assert.equal(merged.length, 1);
-  assert.equal(merged[0].reviewIndex, 0, 'a repeated miss reactivates the row');
+  assert.equal(merged[0].reviewIndex, 2, 'a repeated miss keeps its review progress');
+  assert.equal(merged[0].errorType, 'method');
+  assert.equal(merged[0].warmupCount, 1);
+  assert.equal(dueMistakeRows(merged, now + 8 * 86400000).length, 1, 'review 3 is still scheduled on the original dates');
 
-  assert.equal(dueMistakeRows(merged, now + 2 * 86400000).length, 1);
   const advanced = advanceMistakeRows(merged, rows[0].id);
-  assert.equal(advanced[0].reviewIndex, 1);
-  assert.equal(dueMistakeRows(advanced, now).length, 0);
-  const mastered = [0, 1, 2, 3].reduce((acc) => advanceMistakeRows(acc, rows[0].id), merged);
+  assert.equal(advanced[0].reviewIndex, 3);
+  assert.ok(advanced[0].lastReviewedAt, 'retry evidence records when the review happened');
+  const mastered = [0, 1, 2].reduce((acc) => advanceMistakeRows(acc, rows[0].id), advanced);
   assert.equal(mastered[0].mastered, true);
+  assert.equal(masteredSince(mastered, 7 * 86400000, now + 86400000).length, 1);
+  assert.equal(masteredSince(mastered, 7 * 86400000, now + 8 * 86400000).length, 0, 'mastery evidence expires out of the weekly window');
 });
 
 test('legacy local data imports once, uploads only empty domains and clears the keys', async (t) => {

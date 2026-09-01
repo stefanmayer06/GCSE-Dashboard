@@ -106,6 +106,14 @@ export default function Topic({ onProgress, userId }) {
         </div>
       </header>
 
+      <div className="editorial-note" aria-label="Editorial metadata">
+        <span>AQA 8700{topic.specRefs?.length ? ` · ${topic.specRefs.join(', ')}` : ''}</span>
+        <span>·</span>
+        <span>Reviewed {topic.reviewed ? new Date(topic.reviewed).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : 'recently'} by {topic.editorial?.reviewer || 'the Study Desk content team'}</span>
+        <span>·</span>
+        <a href={topic.editorial?.reportIssueUrl || '/support.html'}>Report an issue</a>
+      </div>
+
       <section className="panel">
         <h2>Notes</h2>
         <div className="notes">

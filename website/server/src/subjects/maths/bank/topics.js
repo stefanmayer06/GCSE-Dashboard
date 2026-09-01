@@ -593,3 +593,40 @@ export const TOPICS = [
     resources: [RES.corbett('scatter graphs'), RES.mathsgenie, RES.bbc('scatter graphs'), RES.khan],
   },
 ];
+
+// Editorial review trail: every Foundation topic carries the month it was last
+// content-reviewed. Spec-section references (3.1-3.6) are attached in the API
+// layer; statement-level references ship with the documented coverage audit.
+const REVIEWED = {
+  'place-value': '2026-07-14',
+  operations: '2026-07-14',
+  fractions: '2026-07-15',
+  decimals: '2026-07-15',
+  percentages: '2026-07-16',
+  'money-finance': '2026-07-16',
+  expressions: '2026-07-20',
+  equations: '2026-07-20',
+  sequences: '2026-07-21',
+  inequalities: '2026-07-21',
+  formulae: '2026-07-22',
+  graphs: '2026-07-22',
+  ratio: '2026-07-27',
+  proportion: '2026-07-27',
+  scale: '2026-07-28',
+  angles: '2026-07-29',
+  'area-perimeter': '2026-07-29',
+  circles: '2026-07-30',
+  'volume-surface': '2026-07-30',
+  pythagoras: '2026-08-03',
+  trigonometry: '2026-08-03',
+  transformations: '2026-08-04',
+  'probability-basic': '2026-08-05',
+  'probability-combined': '2026-08-05',
+  averages: '2026-08-10',
+  charts: '2026-08-10',
+  scatter: '2026-08-11',
+};
+
+for (const topic of TOPICS) {
+  if (REVIEWED[topic.id]) topic.reviewed = REVIEWED[topic.id];
+}

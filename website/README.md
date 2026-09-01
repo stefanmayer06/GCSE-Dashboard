@@ -57,7 +57,7 @@ Docker development.
 - The public schema contains `profiles`, compact `subject_progress` aggregates, temporary `study_sessions`, plus account personal data: `subject_preferences`, `study_plans`, `study_plan_days` and `mistake_notebook`. All user-owned tables are protected by RLS (`user_id = auth.uid()`).
 - Browser/device preferences, plans and notebook mistakes load through the per-subject `/personal` API and follow the account across devices. Legacy localStorage/AsyncStorage data is uploaded once into empty domains and then cleared.
 - Legacy users and migration-only data live in the private `migration_private` schema. Password hashes are never copied to public tables or logs.
-- Tutor chat and paper history are not persisted by the Supabase driver. The dashboards use retained topic aggregates for current focus.
+- Tutor chat is not persisted by the Supabase driver. Finalized paper attempts are durable (`paper_attempts`, most recent 50 per user and subject) and replayable from the results page; the dashboards use retained topic aggregates for current focus.
 - Mobile `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` values must identify this same project. Disable **Confirm email** for immediate post-signup API access; if it is enabled, users must confirm their address before Supabase returns a session.
 
 Start Local Supabase with Docker, then configure the server and browser URLs:
@@ -144,10 +144,14 @@ See `FOUNDATION_AUDIT.md` for the Foundation bank review and remaining content b
 | --- | --- |
 | `/` | Subject selector |
 | `/subjects` | Subject directory (catalogue of available subjects) |
+| `/feedback` | Public beta-tester feedback form (stores to the `beta_feedback` table / local `feedback.json`) |
 | `/maths/*` | MathsMate client (sign-in gated) |
 | `/maths-higher/*` | MathsMate Higher client (sign-in gated) |
 | `/english/*` | EnglishMate client (sign-in gated) |
 | `/api/auth/*` | Sign-in, session and OAuth endpoints |
+| `/api/events` | Authenticated product-event append (see `ANALYTICS.md`) |
+| `/api/events/summary` | Activation and funnel summary for the signed-in learner |
+| `/api/feedback` | Public beta feedback submissions (rate limited) |
 | `/api/maths/*` | Maths API (session required; health is public) |
 | `/api/maths-higher/*` | Higher Maths API (session required; health is public) |
 | `/api/english/*` | English API (session required; health is public) |
@@ -156,9 +160,17 @@ With the JSON driver, user progress is stored locally at
 `${DATA_DIR}/users/<userId>/maths.json`,
 `${DATA_DIR}/users/<userId>/maths-higher.json` and
 `${DATA_DIR}/users/<userId>/english.json`; account personal data lives in
-`${DATA_DIR}/users/<userId>/personal-<subject>.json`. Docker persists everything beneath
+`${DATA_DIR}/users/<userId>/personal-<subject>.json`, finalized paper attempts in
+`${DATA_DIR}/users/<userId>/attempts-<subject>.json` and product events in
+`${DATA_DIR}/events.json`. Docker persists everything beneath
 `/app/data`. With the Supabase driver, the equivalent records live in the
-`subject_progress`, `subject_preferences`, `study_plans`, `study_plan_days` and
-`mistake_notebook` tables, scoped by user and subject. Supabase stores
-only compact aggregates in `subject_progress`; paper history and tutor chat are
-not persisted by that driver.
+`subject_progress`, `subject_preferences`, `study_plans`, `study_plan_days`,
+`mistake_notebook`, `paper_attempts` and `product_events` tables, scoped by user
+and subject. Supabase stores only compact aggregates in `subject_progress`;
+tutor chat is not persisted by that driver.
+
+See `ANALYTICS.md` for the product event taxonomy, activation definition and
+retention windows. See `FOUNDATION_AUDIT.md`, `HIGHER_AUDIT.md` and
+`ENGLISH_AUDIT.md` for the per-qualification coverage audits and remaining
+content backlog. See `AGENTS.md` for architecture, educational goals and change
+invariants.

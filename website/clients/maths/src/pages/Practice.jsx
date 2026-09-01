@@ -342,6 +342,7 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
     if (!diagnostic || diagnosticStarted.current) return;
     diagnosticStarted.current = true;
     setCount(10);
+    api.track?.('diagnostic_start', { questionCount: 10 });
     startAdhoc(10);
   }, [diagnostic]);
 
@@ -356,7 +357,7 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
   }
 
   if (running) {
-    return <AdhocRunner key={running.roundId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} />;
+    return <AdhocRunner key={running.roundId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} diagnostic={diagnostic} />;
   }
 
   return (
@@ -407,7 +408,7 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
   );
 }
 
-function AdhocRunner({ set, onExit, onNew, onProgress }) {
+function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false }) {
   const [answers, setAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
   const [done, setDone] = useState(null);
@@ -429,6 +430,9 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
         set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }))
       );
       onProgress?.(res.progress);
+      if (diagnostic) {
+        api.track?.('diagnostic_complete', { correctMarks: res.correctMarks, totalMarks: res.totalMarks });
+      }
       setFeedback((f) => {
         const out = { ...f };
         for (const row of res.perQ) {

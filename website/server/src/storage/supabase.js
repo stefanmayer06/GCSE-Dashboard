@@ -103,7 +103,30 @@ function rowToMistake(row) {
     capturedAt: isoDate(row.captured_at, 'capturedAt'),
     dueDates,
     reviewIndex,
+    ...(row.error_type ? { errorType: row.error_type } : {}),
+    ...(row.warmup_count ? { warmupCount: Math.max(0, Math.min(99, Number(row.warmup_count) || 0)) } : {}),
+    ...(row.last_reviewed_at ? { lastReviewedAt: isoDate(row.last_reviewed_at, 'lastReviewedAt') } : {}),
+    ...(row.correct_answer != null ? { correctAnswer: row.correct_answer } : {}),
+    ...(Array.isArray(row.worked_solution) && row.worked_solution.length ? { workedSolution: row.worked_solution } : {}),
     mastered,
+  };
+}
+
+function rowToAttempt(row) {
+  if (!row) return null;
+  return {
+    sessionId: row.session_id,
+    paperCode: row.paper_code ?? undefined,
+    paperName: row.paper_name ?? undefined,
+    type: row.type === 'short' ? 'short' : 'full',
+    tier: row.tier ?? undefined,
+    totalMarks: Math.max(0, Number(row.total_marks) || 0),
+    correctMarks: Math.max(0, Number(row.correct_marks) || 0),
+    percent: row.percent == null ? null : Math.max(0, Math.min(100, Number(row.percent))),
+    grade: row.grade == null ? null : Number(row.grade),
+    durationSec: row.duration_sec == null ? null : Math.max(0, Number(row.duration_sec) || 0),
+    completedAt: isoDate(row.created_at, 'completedAt'),
+    result: cloneJson(row.result || {}, 'paper attempt result'),
   };
 }
 
@@ -671,7 +694,7 @@ export function createSupabaseStorage(options = {}) {
     await init();
     const { data, error } = await service
       .from('mistake_notebook')
-      .select('legacy_id, session_id, question_id, topic_id, topic_name, prompt, answer, marks, max_marks, due_dates, review_index, status, captured_at')
+      .select('legacy_id, session_id, question_id, topic_id, topic_name, prompt, answer, marks, max_marks, due_dates, review_index, status, captured_at, error_type, warmup_count, last_reviewed_at, correct_answer, worked_solution')
       .eq('user_id', requiredString(String(userId), 'userId'))
       .eq('subject', requiredString(subject, 'subject'))
       .order('captured_at', { ascending: false });
@@ -689,6 +712,97 @@ export function createSupabaseStorage(options = {}) {
       if (error) throw supabaseStorageError(error);
     });
     return getMistakes(userId, subject);
+  }
+
+  async function saveAttempt(userId, subject, attempt) {
+    await init();
+    const clean = attempt && typeof attempt === 'object' && !Array.isArray(attempt) ? attempt : {};
+    await service.rpc('save_paper_attempt', {
+      p_user_id: requiredString(String(userId), 'userId'),
+      p_subject: requiredString(subject, 'subject'),
+      p_session_id: requiredString(String(clean.sessionId), 'sessionId'),
+      p_attempt: cloneJson(clean, 'paper attempt'),
+    }).then(({ error }) => {
+      if (error) throw supabaseStorageError(error);
+    });
+    return true;
+  }
+
+  async function listAttempts(userId, subject, limit = 20) {
+    await init();
+    const { data, error } = await service
+      .from('paper_attempts')
+      .select('session_id, paper_code, paper_name, type, tier, total_marks, correct_marks, percent, grade, duration_sec, result, created_at')
+      .eq('user_id', requiredString(String(userId), 'userId'))
+      .eq('subject', requiredString(subject, 'subject'))
+      .order('created_at', { ascending: false })
+      .limit(Math.max(1, Math.min(50, Number(limit) || 20)));
+    if (error) throw supabaseStorageError(error);
+    return (data || []).map(rowToAttempt).filter(Boolean);
+  }
+
+  async function recordEvent(userId, name, { subject, metadata } = {}) {
+    await init();
+    const { error } = await service.from('product_events').insert({
+      user_id: requiredString(String(userId), 'userId'),
+      name: requiredString(String(name), 'name'),
+      subject: subject == null ? null : requiredString(String(subject), 'subject'),
+      metadata: cloneJson(metadata && typeof metadata === 'object' && !Array.isArray(metadata) ? metadata : {}, 'event metadata'),
+    });
+    if (error) throw supabaseStorageError(error);
+    return true;
+  }
+
+  async function getEventSummary(userId) {
+    await init();
+    const since = new Date(Date.now() - 540 * 86400000).toISOString();
+    const { data, error } = await service
+      .from('product_events')
+      .select('name, subject, occurred_at')
+      .eq('user_id', requiredString(String(userId), 'userId'))
+      .gte('occurred_at', since)
+      .order('occurred_at', { ascending: true });
+    if (error) throw supabaseStorageError(error);
+    const counts = {};
+    let firstSeen = null;
+    let lastSeen = null;
+    for (const row of data || []) {
+      counts[row.name] = (counts[row.name] || 0) + 1;
+      if (!firstSeen) firstSeen = row.occurred_at;
+      lastSeen = row.occurred_at;
+    }
+    const activated = (counts.diagnostic_complete || 0) > 0 && (counts.session_marked || 0) > 0;
+    return { counts, firstSeen, lastSeen, activated };
+  }
+
+  async function pruneEvents(keepDays = 540) {
+    await init();
+    const result = await service.rpc('prune_product_events', {
+      p_keep_days: Math.max(30, Number(keepDays) || 540),
+    });
+    if (result.error) throw supabaseStorageError(result.error);
+    return Number(result.data) || 0;
+  }
+
+  async function saveFeedback(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      throw storageError('STORAGE_INVALID_ARGUMENT', 'feedback must be an object');
+    }
+    const row = {
+      id: requiredString(String(input.id), 'id'),
+      role: requiredString(String(input.role), 'role'),
+      subject: requiredString(String(input.subject), 'subject'),
+      rating: Math.max(1, Math.min(5, Math.round(Number(input.rating) || 0))),
+      heard: typeof input.heard === 'string' && input.heard ? input.heard : null,
+      message: requiredString(String(input.message), 'message'),
+      email: typeof input.email === 'string' && input.email ? input.email : null,
+      source: typeof input.source === 'string' && input.source ? input.source : null,
+      user_agent: typeof input.userAgent === 'string' && input.userAgent ? input.userAgent : null,
+      created_at: isoDate(input.createdAt, 'createdAt', Date.now()),
+    };
+    const { error } = await service.from('beta_feedback').insert(row);
+    if (error) throw supabaseStorageError(error);
+    return true;
   }
 
   return {
@@ -739,6 +853,12 @@ export function createSupabaseStorage(options = {}) {
     savePreferences,
     savePlan,
     saveMistakes,
+    saveAttempt,
+    listAttempts,
+    recordEvent,
+    getEventSummary,
+    pruneEvents,
+    saveFeedback,
   };
 }
 

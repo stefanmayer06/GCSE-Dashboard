@@ -1,6 +1,6 @@
 begin;
 
-select plan(28);
+select plan(35);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'subject_progress', 'subject_progress table exists');
@@ -73,6 +73,48 @@ select ok(
 );
 
 insert into auth.users (id, email) values ('10000000-0000-0000-0000-000000000001', 'atomic@example.test');
+
+select has_column('public', 'study_plan_days', 'updated_at', 'plan days support the shared update trigger');
+select has_column('public', 'mistake_notebook', 'updated_at', 'mistake rows support the shared update trigger');
+select lives_ok(
+  $test$select public.save_study_plan(
+    '10000000-0000-0000-0000-000000000001', 'maths', '2026-09-01', null,
+    '[{"date":"2026-09-01","label":"Today","task":"Fractions","minutes":15,"topicId":"fractions","status":"todo"}]'::jsonb
+  )$test$,
+  'a study plan day can be inserted'
+);
+select lives_ok(
+  $test$select public.save_study_plan(
+    '10000000-0000-0000-0000-000000000001', 'maths', '2026-09-01', null,
+    '[{"date":"2026-09-01","label":"Today","task":"Fractions","minutes":15,"topicId":"fractions","status":"done","result":{"percent":80,"completedAt":"2026-09-01T10:00:00.000Z"}}]'::jsonb
+  )$test$,
+  'an existing study plan day can be marked done'
+);
+select is(
+  (select status from public.study_plan_days where day_date = '2026-09-01'),
+  'done',
+  'the completed plan-day status is persisted'
+);
+select lives_ok(
+  $test$select public.replace_mistakes(
+    '10000000-0000-0000-0000-000000000001', 'maths',
+    '[{"id":"mistake-1","qid":"q1","topicName":"Fractions","prompt":"Find a half","answer":"2","dueDates":[],"reviewIndex":0,"capturedAt":"2026-09-01T10:00:00.000Z"}]'::jsonb
+  )$test$,
+  'a mistake-notebook row can be inserted'
+);
+select lives_ok(
+  $test$select public.replace_mistakes(
+    '10000000-0000-0000-0000-000000000001', 'maths',
+    '[{"id":"mistake-1","qid":"q1","topicName":"Fractions","prompt":"Find a half","answer":"2","dueDates":[],"reviewIndex":1,"capturedAt":"2026-09-01T10:00:00.000Z"}]'::jsonb
+  )$test$,
+  'an existing mistake-notebook row can be updated'
+);
+select is(
+  (select review_index from public.mistake_notebook where legacy_id = 'mistake-1'),
+  1,
+  'the updated mistake review index is persisted'
+);
+
 insert into public.study_sessions (id, user_id, subject, kind, payload, expires_at)
 values (
   '20000000-0000-0000-0000-000000000001',

@@ -30,8 +30,8 @@ function fakeApi(overrides = {}) {
   const api = {
     personal: async () => { calls.personal += 1; return overrides.personal ?? { preferences: null, plan: null, mistakes: [] }; },
     savePreferences: async (preferences) => { calls.preferences += 1; return { preferences }; },
-    savePlan: async (plan) => { calls.plan += 1; calls.savedPlan = plan; return { plan }; },
-    saveMistakes: async (rows) => { calls.mistakes += 1; calls.savedMistakes = rows; return { mistakes: rows }; },
+    savePlan: async (plan) => { calls.plan += 1; calls.savedPlan = plan; if (overrides.savePlan) return overrides.savePlan(plan); return { plan }; },
+    saveMistakes: async (rows) => { calls.mistakes += 1; calls.savedMistakes = rows; if (overrides.saveMistakes) return overrides.saveMistakes(rows); return { mistakes: rows }; },
   };
   return { api, calls };
 }
@@ -158,6 +158,25 @@ test('recordLessonResult completes the started mission and saves mistakes togeth
   assert.equal(calls.mistakes, 1);
   assert.equal(calls.savedMistakes[0].topicName, 'Fractions');
   assert.equal(calls.savedMistakes[0].answer, '12');
+});
+
+test('recordLessonResult distinguishes a notebook failure after the mission is saved', async (t) => {
+  memoryStorage(t);
+  const today = dateKey();
+  const plan = { from: today, days: [{ date: today, task: 'Fractions', topicId: 'fractions', status: 'todo', minutes: 15 }] };
+  const { api, calls } = fakeApi({
+    personal: { preferences: null, plan, mistakes: [] },
+    saveMistakes: async () => { throw new Error('Notebook unavailable'); },
+  });
+  await assert.rejects(
+    recordLessonResult(api, 'user', 'maths', 'fractions', 'Fractions', {
+      correctMarks: 1,
+      totalMarks: 2,
+      perQ: [{ qid: 'q1', correct: false, got: 0, marks: 1 }],
+    }),
+    (error) => error.personalDomain === 'mistakes',
+  );
+  assert.equal(calls.savedPlan.days[0].status, 'done');
 });
 
 test('dateKey is stable calendar-local', () => {

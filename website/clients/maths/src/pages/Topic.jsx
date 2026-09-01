@@ -67,7 +67,9 @@ export default function Topic({ onProgress, userId }) {
           await recordLessonResult(api, userId, higherTier ? 'maths-higher' : 'maths', topicId, topic?.name, res, answers);
         } catch (error) {
           console.error('[personal] lesson result could not be saved', error);
-          setQuizError('Your score was recorded, but today\'s mission could not be updated. Try returning to the dashboard and completing the practice again.');
+          setQuizError(error.personalDomain === 'mistakes'
+            ? 'Today\'s mission is complete, but missed questions could not be added to your notebook.'
+            : 'Your score was recorded, but today\'s mission could not be updated. Return to the dashboard and try again.');
         }
       }
       setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });

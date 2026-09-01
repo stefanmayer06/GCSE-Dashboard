@@ -191,9 +191,21 @@ export async function recordLessonResult(api, userId, subject, topicId, topicNam
   };
   const built = mistakeRowsFromResult(enriched, subject, `lesson-${topicId}`, answers);
   if (nextPlan) {
-    await api.savePlan(nextPlan);
+    try {
+      await api.savePlan(nextPlan);
+    } catch (error) {
+      error.personalDomain = 'plan';
+      throw error;
+    }
     notifyPersonalUpdated(userId, subject);
   }
-  if (built.length) await api.saveMistakes(mergeMistakeRows(personal.mistakes, built));
+  if (built.length) {
+    try {
+      await api.saveMistakes(mergeMistakeRows(personal.mistakes, built));
+    } catch (error) {
+      error.personalDomain = 'mistakes';
+      throw error;
+    }
+  }
   return nextPlan;
 }

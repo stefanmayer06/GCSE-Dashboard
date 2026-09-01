@@ -68,16 +68,31 @@ function compactState(value) {
 
 function rowToProgress(row) {
   if (!row) return null;
+  const xp = Math.max(0, Number(row.xp) || 0);
+  const totalTestMarks = Math.max(0, Number(row.total_test_marks) || 0);
+  const totalTestCorrect = Math.max(0, Number(row.total_test_correct) || 0);
+  const completedLessonIds = cloneJson(row.completed_lessons || [], 'completedLessons');
+  const level = Math.floor(Math.sqrt(xp / 50)) + 1;
+  const xpInto = xp - (level - 1) ** 2 * 50;
+  const xpNeeded = (level ** 2 - (level - 1) ** 2) * 50;
   return {
-    xp: row.xp,
+    xp,
+    level,
+    xpInto,
+    xpNeeded,
     streak: row.streak,
     lastActiveDate: row.last_active_date,
     testsTaken: row.tests_taken,
     practiceAnswered: row.practice_answered,
-    totalTestMarks: row.total_test_marks,
-    totalTestCorrect: row.total_test_correct,
+    totalTestMarks,
+    totalTestCorrect,
+    overallPercent: totalTestMarks
+      ? Math.round((100 * totalTestCorrect) / totalTestMarks)
+      : null,
     topicStats: cloneJson(row.topic_stats || {}, 'topicStats'),
-    completedLessons: cloneJson(row.completed_lessons || [], 'completedLessons'),
+    completedLessonIds,
+    completedLessons: completedLessonIds,
+    lessonsCompleted: completedLessonIds.length,
   };
 }
 
@@ -554,3 +569,5 @@ export function createSupabaseStorage(options = {}) {
     consumeOAuthState: (...args) => unsupported('consumeOAuthState', ...args),
   };
 }
+
+export { rowToProgress };

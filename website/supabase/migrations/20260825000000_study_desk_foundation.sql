@@ -627,7 +627,7 @@ begin
 
   if operation in ('practice', 'practice_and_reward') then
     records := p_operation -> 'records';
-    if jsonb_typeof(records) <> 'array' then records := jsonb_build_array(p_operation -> 'record'); end if;
+    if jsonb_typeof(records) <> 'array' then records := jsonb_build_array(records); end if;
     for record_value in select value from jsonb_array_elements(records) loop
       topic_id := nullif(trim(record_value ->> 'topicId'), '');
       total := greatest(0, floor(coalesce((record_value ->> 'total')::numeric, 0)))::integer;

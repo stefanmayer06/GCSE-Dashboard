@@ -8,7 +8,7 @@ export function supabaseConfig(env = process.env) {
   const url = String(env.SUPABASE_URL || '').trim();
   const secretKey = String(env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
   const publishableKey = String(
-    env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY || secretKey,
+    env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY || '',
   ).trim();
   return {
     url,
@@ -20,9 +20,9 @@ export function supabaseConfig(env = process.env) {
 
 export function requireSupabaseConfig(env = process.env) {
   const config = supabaseConfig(env);
-  if (!configured(config.url) || !configured(config.secretKey)) {
+  if (!configured(config.url) || !configured(config.secretKey) || !configured(config.publishableKey)) {
     const error = new Error(
-      'Supabase storage requires SUPABASE_URL and SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY).',
+      'Supabase storage requires SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY (or SUPABASE_ANON_KEY), and SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY).',
     );
     error.code = 'SUPABASE_CONFIGURATION_ERROR';
     throw error;

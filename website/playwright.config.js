@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   testDir: './ui-tests',
   use: {
     channel: 'chrome',

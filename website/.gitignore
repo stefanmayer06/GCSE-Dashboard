@@ -9,6 +9,7 @@ playwright-report/
 public/
 .vercel/
 .env.local
+.env.*.local
 .env.docker.local
 .env.supabase.local
 .agents/

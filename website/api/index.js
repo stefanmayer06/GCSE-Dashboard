@@ -18,13 +18,14 @@ function initializeApp() {
       .catch((error) => {
         appPromise = null;
         console.error(`[vercel] application initialization failed (${startupCode(error)})`);
+        console.error(error?.stack || error);
         throw error;
       });
   }
   return appPromise;
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   try {
     const app = await initializeApp();
     return app(req, res);
@@ -35,4 +36,4 @@ module.exports = async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.end(JSON.stringify({ error: 'Service temporarily unavailable' }));
   }
-};
+}

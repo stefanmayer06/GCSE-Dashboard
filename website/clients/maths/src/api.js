@@ -78,21 +78,30 @@ export const api = {
         storeSupabaseSession(result.session);
         return result;
       }
-      const { error } = await supabase.auth.signInWithPassword({ email: identifier, password });
-      if (error) throw new Error(error.message || 'Sign in failed.');
-      return authReq('/me');
+      const result = await authReq('/login', {
+        method: 'POST',
+        body: { email: identifier, password },
+      });
+      if (result.session) {
+        storeSupabaseSession(result.session);
+        supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
+        }).catch(() => undefined);
+      }
+      return result;
     },
     signup: async ({ username, email, password }) => {
-      if (!supabase) {
-        const result = await authReq('/signup', { method: 'POST', body: { username, email, password } });
+      const result = await authReq('/signup', { method: 'POST', body: { username, email, password } });
+      if (result.session) {
         storeSupabaseSession(result.session);
-        return result;
+        if (supabase) {
+          supabase.auth.setSession({
+            access_token: result.session.access_token,
+            refresh_token: result.session.refresh_token,
+          }).catch(() => undefined);
+        }
       }
-      const result = await authReq('/signup', {
-        method: 'POST',
-        body: { username, email, password },
-      });
-      storeSupabaseSession(result.session);
       return result;
     },
     claim: async ({ username, email, currentPassword, newPassword }) => {
@@ -111,14 +120,9 @@ export const api = {
       return result.session ? authReq('/me') : result;
     },
     logout: async () => {
-      if (supabase) {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw new Error(error.message || 'Sign out failed.');
-        return { ok: true };
-      }
-      const result = await authReq('/logout', { method: 'POST' });
       clearSupabaseSession();
-      return result;
+      if (!supabase) await authReq('/logout', { method: 'POST' }).catch(() => undefined);
+      return { ok: true };
     },
     config: () => authReq('/config'),
   },

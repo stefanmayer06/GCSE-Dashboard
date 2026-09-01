@@ -52,11 +52,12 @@ database until the migration has been rehearsed, reconciled and approved.
 
 - `STORAGE_DRIVER=supabase` uses Supabase Auth email/password sessions and bearer JWTs.
 - Browser configuration uses `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
-- The server uses `SUPABASE_URL` and `SUPABASE_SECRET_KEY`; never expose the secret key through `VITE_*` variables.
+- The server requires `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY`. The publishable key is used only for user Auth operations; the secret key is used for privileged storage/admin operations and must never be exposed through `VITE_*` or `EXPO_PUBLIC_*` variables.
 - The public schema contains `profiles`, compact `subject_progress` aggregates and temporary `study_sessions`.
 - Legacy users and migration-only data live in the private `migration_private` schema. Password hashes are never copied to public tables or logs.
 - Tutor chat and paper history are not persisted by the Supabase driver. The dashboards use retained topic aggregates for current focus.
 - The hosted migration rehearsal uses Supabase's default email service with email confirmations temporarily disabled and MFA disabled; re-enable confirmations after configuring custom SMTP. The local `supabase/config.toml` remains configured for localhost development.
+- Mobile `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` values must identify this same project. Disable **Confirm email** for immediate post-signup API access; if it is enabled, users must confirm their address before Supabase returns a session.
 
 Start Local Supabase with Docker, then configure the server and browser URLs:
 

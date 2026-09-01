@@ -17,6 +17,7 @@ export default function Topic({ onProgress }) {
   const [done, setDone] = useState(null);
   const [celebration, setCelebration] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [quizError, setQuizError] = useState('');
 
   useEffect(() => {
     setTopic(null);
@@ -31,6 +32,7 @@ export default function Topic({ onProgress }) {
 
   async function startQuiz() {
     setBusy(true);
+    setQuizError('');
     try {
       const q = await api.practice(topicId, 5);
       setQuiz(q.questions);
@@ -39,6 +41,8 @@ export default function Topic({ onProgress }) {
       setFeedback({});
       setDone(null);
       setCelebration(null);
+    } catch (e) {
+      setQuizError(e.message || 'Could not start practice. Try again.');
     } finally {
       setBusy(false);
     }
@@ -51,21 +55,29 @@ export default function Topic({ onProgress }) {
   }
 
   async function finishQuiz() {
-    const list = quiz.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }));
-    const res = await api.practiceSubmit(sessionId, topicId, list);
-    setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
-    onProgress?.(res.progress);
-    if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
-    if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
-      setCelebration(res.reward);
-    }
-    setFeedback((f) => {
-      const out = { ...f };
-      for (const row of res.perQ) {
-        out[row.qid] = { correct: row.correct, answerText: row.answerText, solution: row.solution };
+    setBusy(true);
+    setQuizError('');
+    try {
+      const list = quiz.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }));
+      const res = await api.practiceSubmit(sessionId, topicId, list);
+      setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
+      onProgress?.(res.progress);
+      if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
+      if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
+        setCelebration(res.reward);
       }
-      return out;
-    });
+      setFeedback((f) => {
+        const out = { ...f };
+        for (const row of res.perQ) {
+          out[row.qid] = { correct: row.correct, answerText: row.answerText, solution: row.solution };
+        }
+        return out;
+      });
+    } catch (e) {
+      setQuizError(e.message || 'Could not score this practice. Try again.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (!topic) return <div className="page"><div className="loading">Loading…</div></div>;
@@ -197,13 +209,16 @@ export default function Topic({ onProgress }) {
                 <button className="btn btn-primary" onClick={startQuiz}>Another 5</button>
               </div>
             ) : (
-              <button
-                className="btn btn-finish"
-                disabled={Object.keys(feedback).length < quiz.length}
-                onClick={finishQuiz}
-              >
-                Finish & score
-              </button>
+              <>
+                {quizError && <div className="error-banner">{quizError}</div>}
+                <button
+                  className="btn btn-finish"
+                  disabled={busy || Object.keys(feedback).length < quiz.length}
+                  onClick={finishQuiz}
+                >
+                  {busy ? 'Scoring…' : 'Finish & score'}
+                </button>
+              </>
             )}
           </div>
         )}

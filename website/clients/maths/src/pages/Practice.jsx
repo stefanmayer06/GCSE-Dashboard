@@ -403,6 +403,8 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
   const [answers, setAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
   const [done, setDone] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
   async function checkOne(qid, value) {
     const res = await api.check(qid, value);
@@ -410,19 +412,27 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
   }
 
   async function finish() {
-    const res = await api.adhocSubmit(
-       set.roundId,
-       set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }))
-    );
-    onProgress?.(res.progress);
-    setFeedback((f) => {
-      const out = { ...f };
-      for (const row of res.perQ) {
-        out[row.qid] = { correct: row.correct, answerText: row.answerText };
-      }
-      return out;
-    });
-    setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
+    setBusy(true);
+    setError('');
+    try {
+      const res = await api.adhocSubmit(
+        set.roundId,
+        set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }))
+      );
+      onProgress?.(res.progress);
+      setFeedback((f) => {
+        const out = { ...f };
+        for (const row of res.perQ) {
+          out[row.qid] = { correct: row.correct, answerText: row.answerText };
+        }
+        return out;
+      });
+      setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
+    } catch (e) {
+      setError(e.message || 'Could not score this round. Try again.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   const allChecked = Object.keys(feedback).length >= set.questions.length;
@@ -514,9 +524,12 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
             </div>
           </div>
         ) : (
-          <button className="btn btn-finish" disabled={!allChecked} onClick={finish}>
-            Finish & score
-          </button>
+          <>
+            {error && <div className="error-banner">{error}</div>}
+            <button className="btn btn-finish" disabled={busy || !allChecked} onClick={finish}>
+              {busy ? 'Scoring…' : 'Finish & score'}
+            </button>
+          </>
         )}
       </div>
     </section>

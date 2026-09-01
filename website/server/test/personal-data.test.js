@@ -46,12 +46,13 @@ test('personal model normalizes preferences, plans and mistake rows defensively'
   assert.equal('result' in normalizePlan({ from: '2026-09-01', days: [{ date: '2026-09-01', result: { percent: 50 } }] }).days[0], false);
 
   const rows = normalizeMistakeRows([
-    { id: 'm1', qid: 'q1', topicName: 'Fractions', prompt: 'Find a half', answer: '2', capturedAt: '2026-09-01T10:00:00.000Z', dueDates: ['2026-09-02T00:00:00.000Z'], reviewIndex: 0 },
+    { id: 'm1', qid: 'q1', topicName: 'Fractions', prompt: 'Find a half', answer: 2, capturedAt: '2026-09-01T10:00:00.000Z', dueDates: ['2026-09-02T00:00:00.000Z'], reviewIndex: 0 },
     { id: 'm1', qid: 'dup', topicName: 'Dup' },
     { id: 'm2', qid: 'q2', topic: 'Ratio', question: 'Simplify', due: [1], mastered: true },
   ]);
   assert.equal(rows.length, 2);
   assert.equal(rows[0].topicName, 'Fractions');
+  assert.equal(rows[0].answer, 2);
   assert.equal(rows[1].topicName, 'Ratio');
   assert.equal(rows[1].prompt, 'Simplify');
   assert.equal(rows[1].mastered, true);

@@ -98,14 +98,14 @@ select is(
 select lives_ok(
   $test$select public.replace_mistakes(
     '10000000-0000-0000-0000-000000000001', 'maths',
-    '[{"id":"mistake-1","qid":"q1","topicName":"Fractions","prompt":"Find a half","answer":"2","dueDates":[],"reviewIndex":0,"capturedAt":"2026-09-01T10:00:00.000Z"}]'::jsonb
+    '[{"id":"mistake-1","qid":"q1","topicName":"Fractions","prompt":"Find a half","answer":2,"dueDates":[],"reviewIndex":0,"capturedAt":"2026-09-01T10:00:00.000Z"}]'::jsonb
   )$test$,
   'a mistake-notebook row can be inserted'
 );
 select lives_ok(
   $test$select public.replace_mistakes(
     '10000000-0000-0000-0000-000000000001', 'maths',
-    '[{"id":"mistake-1","qid":"q1","topicName":"Fractions","prompt":"Find a half","answer":"2","dueDates":[],"reviewIndex":1,"capturedAt":"2026-09-01T10:00:00.000Z"}]'::jsonb
+    '[{"id":"mistake-1","qid":"q1","topicName":"Fractions","prompt":"Find a half","answer":2,"dueDates":[],"reviewIndex":1,"capturedAt":"2026-09-01T10:00:00.000Z"}]'::jsonb
   )$test$,
   'an existing mistake-notebook row can be updated'
 );

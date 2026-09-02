@@ -59,5 +59,11 @@ export function supabaseStorageError(error, fallback = 'Supabase request failed'
   if (error?.code === '23505' || error?.status === 409) {
     wrapped.code = 'STORAGE_CONFLICT';
   }
+  // Failures without an HTTP status (network blips, aborted fetches, cold-start
+  // connection resets) are transient — surface them as retryable 503s rather
+  // than opaque 500s so clients know the same request can simply be retried.
+  if (!Number.isInteger(wrapped.status) || wrapped.status < 400 || wrapped.status > 599) {
+    wrapped.status = 503;
+  }
   return wrapped;
 }

@@ -1,14 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
+import { useResource } from '../../../shared/resource-cache.js';
 
-export default function Learn() {
-  const [data, setData] = useState(null);
+export default function Learn({ userId }) {
+  const { data, error } = useResource(userId ? `topics:${userId}` : null, () => api.topics());
   const [open, setOpen] = useState({ reading: true });
-
-  useEffect(() => {
-    api.topics().then(setData).catch(() => {});
-  }, []);
 
   return (
     <div className="page">
@@ -21,7 +18,8 @@ export default function Learn() {
           </p>
         </div>
       </header>
-      {!data && <div className="loading">Loading skills…</div>}
+      {!data && !error && <div className="loading">Loading skills…</div>}
+      {error && !data && <div className="loading">Could not load skills. Check your connection and try again.</div>}
       {data &&
         Object.values(data.sections).map((s) => (
           <section key={s.id} className="panel strand-panel">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
+import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
 import LessonVisual from '../components/LessonVisual.jsx';
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
@@ -10,7 +11,11 @@ export default function Topic({ onProgress, userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const { topicId } = useParams();
   const navigate = useNavigate();
-  const [topic, setTopic] = useState(null);
+  const { data: fetchedTopic } = useResource(
+    userId && topicId ? `topic:${userId}:${topicId}` : null,
+    () => api.topic(topicId),
+  );
+  const [topicOverride, setTopicOverride] = useState(null);
   const [quiz, setQuiz] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -19,16 +24,16 @@ export default function Topic({ onProgress, userId }) {
   const [celebration, setCelebration] = useState(null);
   const [busy, setBusy] = useState(false);
   const [quizError, setQuizError] = useState('');
+  const topic = topicOverride && topicOverride.topicId === topicId ? topicOverride.value : fetchedTopic;
 
   useEffect(() => {
-    setTopic(null);
+    setTopicOverride(null);
     setQuiz(null);
     setSessionId(null);
     setAnswers({});
     setFeedback({});
     setDone(null);
     setCelebration(null);
-    api.topic(topicId).then(setTopic).catch(() => {});
   }, [topicId]);
 
   async function startQuiz() {
@@ -73,7 +78,10 @@ export default function Topic({ onProgress, userId }) {
         }
       }
       setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
-      if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
+      invalidateResources(`topic:${userId}:${topicId}`);
+      if (res.reward?.firstCompletion) {
+        setTopicOverride({ topicId, value: { ...(topicOverride?.value ?? fetchedTopic), completed: true } });
+      }
       if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
         setCelebration(res.reward);
       }

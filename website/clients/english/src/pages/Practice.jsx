@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
+import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 
 const LS_KEY = 'englishmate-active-test';
@@ -27,7 +28,7 @@ function loadSaved() {
   }
 }
 
-export default function Practice({ health, onProgress }) {
+export default function Practice({ health, onProgress, userId }) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const saved = useRef(loadSaved());
@@ -41,12 +42,9 @@ export default function Practice({ health, onProgress }) {
   const [quitOpen, setQuitOpen] = useState(false);
   const [quitting, setQuitting] = useState(false);
   const [error, setError] = useState('');
-  const [papersMeta, setPapersMeta] = useState(null);
+  const { data: papersData } = useResource(userId ? `papers:${userId}` : null, () => api.papers());
+  const papersMeta = papersData?.papers ?? null;
   const submitting = useRef(false);
-
-  useEffect(() => {
-    api.papers().then((r) => setPapersMeta(r.papers)).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (saved.current) resumeSaved();
@@ -169,6 +167,9 @@ export default function Practice({ health, onProgress }) {
       }));
       const result = await api.submitTest(test.id, list, dur ?? elapsed);
       onProgress?.(result.progress);
+      invalidateResources('attempts');
+      invalidateResources('topics:');
+      invalidateResources('personal:');
       localStorage.removeItem(LS_KEY);
       localStorage.setItem('englishmate-last-result', JSON.stringify(result));
       navigate('/results');
@@ -413,6 +414,9 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
   async function finish() {
     const res = await api.adhocSubmit(sessionId, set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null })), aiResults);
     onProgress?.(res.progress);
+    invalidateResources('attempts');
+    invalidateResources('topics:');
+    invalidateResources('personal:');
     setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
   }
 

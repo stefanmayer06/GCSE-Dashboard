@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildWeekPlan, dateKey, missionOutcome } from '../../clients/shared/study.js';
+import { buildWeekPlan, dateKey, missionOutcome, weekStartKey } from '../../clients/shared/study.js';
 import {
   advanceMistakeRows,
   completePlanDayInState,
@@ -37,10 +37,16 @@ function fakeApi(overrides = {}) {
   return { api, calls };
 }
 
-test('buildWeekPlan produces seven anchored days with review slots', () => {
+test('weeks run Monday to Sunday with today highlighted and review slots fixed', () => {
+  // Tuesday 1 Sep 2026: the week anchor is Monday 31 Aug, today lands on day 2.
   const plan = buildWeekPlan([{ id: 'fractions', name: 'Fractions' }, { id: 'ratio', name: 'Ratio' }], 'maths', true, new Date(2026, 8, 1, 9, 0));
-  assert.equal(plan.from, '2026-09-01');
+  assert.equal(plan.from, '2026-08-31');
   assert.equal(plan.days.length, 7);
+  assert.equal(plan.days[0].date, '2026-08-31');
+  assert.equal(plan.days[0].label, 'Mon');
+  assert.equal(plan.days[1].label, 'Today');
+  assert.equal(plan.days[2].date, '2026-09-02');
+  assert.equal(plan.days[6].date, '2026-09-06');
   assert.equal(plan.days[0].task, 'Fractions');
   assert.equal(plan.days[0].topicId, 'fractions');
   assert.equal(plan.days[0].minutes, 15);
@@ -49,16 +55,23 @@ test('buildWeekPlan produces seven anchored days with review slots', () => {
   assert.equal(plan.days[6].task, 'Weekly review');
 });
 
+test('weekStartKey anchors every weekday to the same Monday', () => {
+  assert.equal(weekStartKey(new Date(2026, 7, 31, 7, 0)), '2026-08-31', 'Monday maps to itself');
+  assert.equal(weekStartKey(new Date(2026, 8, 2, 23, 0)), '2026-08-31', 'Wednesday stays in the same week');
+  assert.equal(weekStartKey(new Date(2026, 8, 6, 12, 0)), '2026-08-31', 'Sunday closes the same week');
+  assert.equal(weekStartKey(new Date(2026, 8, 7, 0, 30)), '2026-09-07', 'Monday starts a fresh week');
+});
+
 test('plan state helpers keep completion scoped to today and the started day', () => {
   const plan = buildWeekPlan([{ id: 'fractions', name: 'Fractions' }], 'maths', false, new Date(2026, 8, 1, 9, 0));
   const started = startPlanDayInState(plan, '2026-09-01', 'fractions');
   assert.deepEqual(started.intent, { date: '2026-09-01', topicId: 'fractions' });
   const done = completePlanDayInState(started, 'fractions', missionOutcome({ correctMarks: 4, totalMarks: 5, reward: { scoreXp: 12 } }));
-  assert.equal(done.days[0].status, 'done');
-  assert.equal(done.days[0].result.percent, 80);
-  assert.equal(done.days[0].result.xpEarned, 12);
+  assert.equal(done.days[1].status, 'done');
+  assert.equal(done.days[1].result.percent, 80);
+  assert.equal(done.days[1].result.xpEarned, 12);
   assert.equal(done.intent, undefined);
-  assert.equal(done.days[1].status, 'todo');
+  assert.equal(done.days[2].status, 'todo');
   // A topic that was never planned does not consume a day.
   assert.equal(completePlanDayInState(plan, 'algebra', missionOutcome({ correctMarks: 1, totalMarks: 2 })), null);
 });
@@ -66,9 +79,9 @@ test('plan state helpers keep completion scoped to today and the started day', (
 test('lesson quick practice completes today without requiring a start intent', () => {
   const plan = buildWeekPlan([{ id: 'sequences', name: 'Sequences' }], 'maths', false, new Date(2026, 8, 1, 9, 0));
   const done = completePlanDayInState(plan, 'sequences', missionOutcome({ correctMarks: 3, totalMarks: 5 }), '2026-09-01');
-  assert.equal(done.days[0].status, 'done');
-  assert.equal(done.days[0].result.percent, 60);
-  assert.equal(done.days[1].status, 'todo');
+  assert.equal(done.days[1].status, 'done');
+  assert.equal(done.days[1].result.percent, 60);
+  assert.equal(done.days[2].status, 'todo');
 });
 
 test('mistake rows build, merge, advance and go due on schedule', () => {

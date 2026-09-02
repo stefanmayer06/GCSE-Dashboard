@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { invalidateResources, useResource } from './resource-cache.js';
 import {
   advanceMistakeRows,
   classifyMistake,
@@ -16,6 +17,27 @@ import { buildWeekPlan, dateKey, priorityTopics, readiness } from './study.js';
 
 const defaultPreferences = { examDate: '', targetGrade: '', passMode: 'balanced' };
 const DAY = 86400000;
+
+// Shared, cached personal-data hydration for the dashboard, notebook and
+// weekly summary. The first component to need it fetches once; every other
+// page reuses the cached response instantly and revalidates in the background.
+function usePersonal(userId, subject, api) {
+  const { data: fetched, error: loadError, refresh } = useResource(
+    userId && subject ? `personal:${userId}:${subject}` : null,
+    () => hydratePersonal(api, userId, subject),
+  );
+  const [override, setOverride] = useState(null);
+  useEffect(() => {
+    setOverride(null);
+  }, [fetched]);
+  return {
+    fetched,
+    personal: override ?? fetched,
+    loadError,
+    refresh,
+    setOverride,
+  };
+}
 
 function formatDate(iso) {
   const at = Date.parse(iso);
@@ -117,29 +139,26 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
 /* ---------------- Dashboard: mission, readiness, plan, notebook ---------------- */
 
 export function StudyDashboard({ userId, subject, topics, progress, diagnosticUrl, foundation = false, api }) {
-  const [personal, setPersonal] = useState(null);
-  const [error, setError] = useState('');
+  const { fetched, personal, loadError, refresh: refreshPersonal, setOverride } = usePersonal(userId, subject, api);
+  const [saveError, setSaveError] = useState('');
+  const error = [loadError && `Could not load your saved study data: ${loadError}`, saveError].filter(Boolean).join(' ');
   const evidence = readiness(progress);
   const priority = priorityTopics(topics, progress, foundation && (personal?.preferences ?? defaultPreferences).passMode === 'foundation-pass');
 
   useEffect(() => {
-    let active = true;
-    const refresh = () => hydratePersonal(api, userId, subject)
-      .then((value) => { if (active) setPersonal(value); })
-      .catch((cause) => { if (active) setError(cause?.message || 'Could not load your saved study data.'); });
     const onPersonalUpdated = (event) => {
-      if (event.detail?.userId === userId && event.detail?.subject === subject) refresh();
+      if (event.detail?.userId === userId && event.detail?.subject === subject) refreshPersonal();
     };
-    setPersonal(null);
-    setError('');
-    refresh();
     noteReturn(api);
     window.addEventListener(PERSONAL_UPDATED_EVENT, onPersonalUpdated);
-    return () => { active = false; window.removeEventListener(PERSONAL_UPDATED_EVENT, onPersonalUpdated); };
-  }, [api, userId, subject]);
+    return () => window.removeEventListener(PERSONAL_UPDATED_EVENT, onPersonalUpdated);
+  }, [api, userId, subject, refreshPersonal]);
 
   useEffect(() => {
-    if (!personal || personal.plan || !topics.length) return;
+    if (!personal || !topics.length) return;
+    // The plan covers Monday to Sunday; a fresh week is built the first time
+    // the saved plan has no row for today (new account or Monday rollover).
+    if (personal.plan?.days.some((day) => day.date === dateKey())) return;
     persistPlan(buildWeekPlan(priority, subject, foundation && preferences.passMode === 'foundation-pass'));
     // Seed a first plan once topics are available; the plan stays stable for the whole day.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,13 +178,17 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
 
   function updatePreferences(patch) {
     const next = { ...preferences, ...patch };
-    setPersonal((current) => (current ? { ...current, preferences: next } : current));
-    api.savePreferences(next).catch((cause) => setError(`Preferences could not be saved: ${cause.message}`));
+    setOverride((current) => ({ ...(current ?? fetched), preferences: next }));
+    api.savePreferences(next)
+      .then(() => refreshPersonal())
+      .catch((cause) => setSaveError(`Preferences could not be saved: ${cause.message}`));
   }
 
   function persistPlan(next) {
-    setPersonal((current) => (current ? { ...current, plan: next } : current));
-    api.savePlan(next).catch((cause) => setError(`Plan could not be saved: ${cause.message}`));
+    setOverride((current) => ({ ...(current ?? fetched), plan: next }));
+    api.savePlan(next)
+      .then(() => refreshPersonal())
+      .catch((cause) => setSaveError(`Plan could not be saved: ${cause.message}`));
   }
 
   function startMission(date, topicId) {
@@ -190,7 +213,7 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
         <div className={`panel mission-card${todayDone ? ' mission-done' : ''}`}>
           <div className="eyebrow">Today&apos;s mission</div>
           <h2>{mission ? mission.task : todayDone ? `✓ ${todayDone.task} done` : doneCount === 7 ? 'Every mission done' : 'Pick your first mission'}</h2>
-          <p className="sub">{mission ? (mission.topicId ? `${mission.minutes} focused minutes · learn it, then finish the short practice to lock today in.` : mission.task === 'Mistake retry' ? 'No lesson today. Clear the mistakes that are due, then the day is yours.' : 'This day has no lesson — use the practice desk to keep your plan on track.') : todayDone ? (todayDone.result ? `Score ${todayDone.result.percent}% · ${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks${todayDone.result.xpEarned != null ? ` · +${todayDone.result.xpEarned} XP` : ''} recorded. Come back tomorrow — the rest of the week stays locked.` : 'Come back tomorrow — the rest of the week stays locked.') : doneCount === 7 ? 'Enjoy the break, or keep practising freely. The plan rolls over tomorrow.' : 'Complete today\u2019s row in the exam plan below; future days stay locked until then.'}</p>
+          <p className="sub">{mission ? (mission.topicId ? `${mission.minutes} focused minutes · learn it, then finish the short practice to lock today in.` : mission.task === 'Mistake retry' ? 'No lesson today. Clear the mistakes that are due, then the day is yours.' : 'This day has no lesson — use the practice desk to keep your plan on track.') : todayDone ? (todayDone.result ? `Score ${todayDone.result.percent}% · ${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks${todayDone.result.xpEarned != null ? ` · +${todayDone.result.xpEarned} XP` : ''} recorded. Come back tomorrow — the rest of the week stays locked.` : 'Come back tomorrow — the rest of the week stays locked.') : doneCount === 7 ? 'Enjoy the break, or keep practising freely. A fresh plan starts on Monday.' : 'Complete today\u2019s row in the exam plan below; future days stay locked until then.'}</p>
           <div className="study-actions">
             {mission?.topicId && <Link className="btn btn-primary" to={`/learn/${mission.topicId}`} onClick={() => startMission(mission.date, mission.topicId)}>Start mission</Link>}
             {mission && !mission.topicId && <Link className="btn btn-primary" to={mission.task === 'Mistake retry' ? '/notebook' : '/practice'}>Open {mission.task}</Link>}
@@ -205,9 +228,16 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
         <div className="panel plan-card">
           <div className="plan-head"><div><div className="eyebrow">Exam plan</div><h2>{days == null ? 'Set your exam date' : days < 0 ? 'Exam date passed' : `${days} day${days === 1 ? '' : 's'} to go`}</h2></div><input aria-label="Exam date" type="date" value={preferences.examDate} onChange={(e) => updatePreferences({ examDate: e.target.value })} /></div>
           {foundation && <label className="pass-toggle"><input type="checkbox" checked={preferences.passMode === 'foundation-pass'} onChange={(e) => updatePreferences({ passMode: e.target.checked ? 'foundation-pass' : 'balanced' })} /><span><strong>Pass mode · grade 4 goal</strong><small>Prioritise core and weak Foundation topics.</small></span></label>}
-          <div className="week-plan">{!personal ? <p className="empty">Loading your plan…</p> : plan?.days.length ? plan.days.map((day) => { const done = day.status === 'done'; const canStart = !done && day.topicId && day.date === today; const locked = !done && !canStart; return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done" title={day.result ? `Done: ${day.result.percent}% · ${day.result.correctMarks}/${day.result.totalMarks} marks` : undefined}><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : canStart ? <Link key={day.date} to={`/learn/${day.topicId}`} onClick={() => startMission(day.date, day.topicId)} title="Today's mission"><b>{day.label}</b><span>{day.task}</span><small>Start ★</small></Link> : <span key={day.date} className="locked" title={locked ? 'Completes when a new day starts' : undefined}><b>{day.label}</b><span>{day.task}</span>{locked ? <small>Locked</small> : null}</span>); }) : <p className="empty">Complete a lesson to build your 7-day plan.</p>}</div>
+          <div className="week-plan">{!personal ? <p className="empty">Loading your plan…</p> : plan?.days.length ? plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < today; const canStart = !done && !past && day.topicId && day.date === today; const locked = !done && !canStart && !past; return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done" title={day.result ? `Done: ${day.result.percent}% · ${day.result.correctMarks}/${day.result.totalMarks} marks` : undefined}><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : canStart ? <Link key={day.date} to={`/learn/${day.topicId}`} onClick={() => startMission(day.date, day.topicId)} title="Today's mission"><b>{day.label}</b><span>{day.task}</span><small>Start ★</small></Link> : <span key={day.date} className={past ? 'past' : 'locked'} title={past ? 'That day has passed' : 'Completes when a new day starts'}><b>{day.label}</b><span>{day.task}</span>{past ? <small>Missed</small> : locked ? <small>Locked</small> : null}</span>); }) : <p className="empty">Complete a lesson to build your 7-day plan.</p>}</div>
+          {plan?.days?.length ? (
+            <div className="week-track" role="img" aria-label={`${doneCount} of 7 days done this week`}>
+              {plan.days.map((day) => (
+                <i key={day.date} className={day.status === 'done' ? 'done' : day.date === today ? 'today' : ''} />
+              ))}
+            </div>
+          ) : null}
           {error && <p className="plan-note error" role="alert">{error}</p>}
-          <p className="plan-note">{doneCount}/7 days done this week · the plan is saved to your account and only rolls over on a new day.</p>
+          <p className="plan-note">{doneCount}/7 days done this week · the plan is saved to your account and a fresh week starts on Monday.</p>
         </div>
       </section>
       <section className="evidence-strip" aria-label="Mistake notebook progress">
@@ -280,20 +310,11 @@ function ClassificationChips({ row, onClassify }) {
 }
 
 export function Notebook({ userId, subject, api }) {
-  const [personal, setPersonal] = useState(null);
-  const [error, setError] = useState('');
+  const { fetched, personal, loadError, setOverride } = usePersonal(userId, subject, api);
+  const [saveError, setSaveError] = useState('');
   const [open, setOpen] = useState({});
   const now = Date.now();
-
-  useEffect(() => {
-    let active = true;
-    setPersonal(null);
-    setError('');
-    hydratePersonal(api, userId, subject)
-      .then((value) => { if (active) setPersonal(value); })
-      .catch((cause) => { if (active) setError(cause?.message || 'Could not load the notebook.'); });
-    return () => { active = false; };
-  }, [api, userId, subject]);
+  const error = [loadError && `Could not load the notebook: ${loadError}`, saveError].filter(Boolean).join(' ');
 
   const rows = personal?.mistakes ?? [];
   const active = rows.filter((row) => !row.mastered)
@@ -307,12 +328,13 @@ export function Notebook({ userId, subject, api }) {
   const topReasonLabel = topReason ? ERROR_TYPES.find((type) => type.id === topReason[0])?.label : null;
 
   async function save(next, event, metadata) {
-    setPersonal((current) => (current ? { ...current, mistakes: next } : current));
+    setOverride((current) => ({ ...(current ?? fetched), mistakes: next }));
     try {
       await api.saveMistakes(next);
       if (event) api.track?.(event, metadata);
+      invalidateResources('personal:');
     } catch (cause) {
-      setError(`Notebook could not be saved: ${cause.message}`);
+      setSaveError(`Notebook could not be saved: ${cause.message}`);
     }
   }
 
@@ -375,9 +397,9 @@ export function Notebook({ userId, subject, api }) {
       </header>
       {error && <p className="plan-note error" role="alert">{error}</p>}
       <section className="stat-row">
-        <div className="stat-card"><div className="stat-num">{dueRows.length}</div><div className="stat-label">Due for retry</div></div>
+        <div className={`stat-card${dueRows.length ? ' warn' : ''}`}><div className="stat-num">{dueRows.length}</div><div className="stat-label">Due for retry</div></div>
         <div className="stat-card"><div className="stat-num">{upcoming.length}</div><div className="stat-label">Scheduled</div></div>
-        <div className="stat-card"><div className="stat-num">{masteredWeek.length}</div><div className="stat-label">Mastered this week</div></div>
+        <div className={`stat-card${masteredWeek.length ? ' good' : ''}`}><div className="stat-num">{masteredWeek.length}</div><div className="stat-label">Mastered this week</div></div>
         <div className="stat-card"><div className="stat-num">{rows.filter((row) => row.mastered).length}</div><div className="stat-label">Mastered all-time</div></div>
       </section>
       {topReasonLabel && (
@@ -462,20 +484,10 @@ export function TriagePanel({ result, mistakesNote = null }) {
 /* ---------------- Weekly summary / evidence report ---------------- */
 
 export function WeeklySummary({ userId, subject, progress, api, username }) {
-  const [personal, setPersonal] = useState(null);
-  const [error, setError] = useState('');
+  const { personal, loadError } = usePersonal(userId, subject, api);
+  const error = loadError ? `Could not load your summary data: ${loadError}` : '';
   const evidence = readiness(progress);
   const now = Date.now();
-
-  useEffect(() => {
-    let active = true;
-    setPersonal(null);
-    setError('');
-    hydratePersonal(api, userId, subject)
-      .then((value) => { if (active) setPersonal(value); })
-      .catch((cause) => { if (active) setError(cause?.message || 'Could not load your summary data.'); });
-    return () => { active = false; };
-  }, [api, userId, subject]);
 
   const preferences = personal?.preferences ?? defaultPreferences;
   const plan = personal?.plan ?? null;
@@ -505,12 +517,12 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
         <div className="stat-card"><div className="stat-num">{progress?.testsTaken ?? 0}</div><div className="stat-label">Papers completed</div></div>
         <div className="stat-card"><div className="stat-num">{progress?.practiceAnswered ?? 0}</div><div className="stat-label">Questions attempted</div></div>
         <div className="stat-card"><div className="stat-num">{evidence.ready ? `${evidence.score}%` : '—'}</div><div className="stat-label">Readiness accuracy</div></div>
-        <div className="stat-card"><div className="stat-num">{masteredWeek.length}</div><div className="stat-label">Mistakes mastered (7 days)</div></div>
-        <div className="stat-card"><div className="stat-num">{due}</div><div className="stat-label">Mistakes due</div></div>
+        <div className={`stat-card${masteredWeek.length ? ' good' : ''}`}><div className="stat-num">{masteredWeek.length}</div><div className="stat-label">Mistakes mastered (7 days)</div></div>
+        <div className={`stat-card${due > 0 ? ' warn' : ''}`}><div className="stat-num">{due}</div><div className="stat-label">Mistakes due</div></div>
       </section>
       <section className="panel">
         <h2>This week&apos;s exam plan</h2>
-        {plan?.days.length ? <div className="week-plan">{plan.days.map((day) => { const done = day.status === 'done'; return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done"><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : <span key={day.date} className="locked"><b>{day.label}</b><span>{day.task}</span></span>); })}</div> : <p className="empty">Open the dashboard to build your 7-day plan.</p>}
+        {plan?.days.length ? <div className="week-plan">{plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < dateKey(); return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done"><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : <span key={day.date} className={past ? 'past' : 'locked'}><b>{day.label}</b><span>{day.task}</span></span>); })}</div> : <p className="empty">Open the dashboard to build your 7-day plan.</p>}
         <p className="sub">{donePlan.length}/7 missions complete this week.</p>
       </section>
       <section className="panel">

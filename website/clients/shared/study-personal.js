@@ -1,4 +1,5 @@
 import { dateKey, missionOutcome } from './study.js';
+import { invalidateResources } from './resource-cache.js';
 
 const DAY = 86400000;
 export const PERSONAL_UPDATED_EVENT = 'gcse-personal-updated';
@@ -264,6 +265,7 @@ export async function recordLessonResult(api, userId, subject, topicId, topicNam
       error.personalDomain = 'plan';
       throw error;
     }
+    invalidateResources('personal:');
     notifyPersonalUpdated(userId, subject);
   }
   if (built.length) {
@@ -273,6 +275,9 @@ export async function recordLessonResult(api, userId, subject, topicId, topicNam
       error.personalDomain = 'mistakes';
       throw error;
     }
+    invalidateResources('personal:');
   }
+  // Topic accuracy/completion moved, so cached topic lists are stale.
+  invalidateResources('topics:');
   return nextPlan;
 }

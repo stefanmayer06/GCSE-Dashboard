@@ -36,8 +36,16 @@ function planMinutes(subject, passMode) {
   return subject === 'english' ? 20 : 15;
 }
 
+// Weeks run Monday to Sunday so the exam plan always shows the same calendar
+// week, with days before today rendered as already passed.
+export function weekStartKey(now = new Date()) {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+  return dateKey(new Date(today.getTime() - ((today.getDay() + 6) % 7) * DAY));
+}
+
 export function buildWeekPlan(priority, subject, passMode, now = new Date(), seeds = []) {
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+  const start = new Date(`${weekStartKey(now)}T12:00:00`);
+  const today = dateKey(now);
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(start.getTime() + index * DAY);
     const seed = (Array.isArray(seeds) ? seeds : []).find((row) => row.date === dateKey(date));
@@ -46,14 +54,14 @@ export function buildWeekPlan(priority, subject, passMode, now = new Date(), see
     const task = seed?.topic || (isReview ? (index === 6 ? 'Weekly review' : 'Mistake retry') : item?.name || FALLBACK_TASKS[index % 3]);
     return {
       date: dateKey(date),
-      label: index === 0 ? 'Today' : date.toLocaleDateString(undefined, { weekday: 'short' }),
+      label: dateKey(date) === today ? 'Today' : date.toLocaleDateString(undefined, { weekday: 'short' }),
       task,
       topicId: seed?.topicId || (task === item?.name ? item?.id : undefined) || null,
       minutes: planMinutes(subject, passMode),
       status: 'todo',
     };
   });
-  return { from: dateKey(now), days };
+  return { from: weekStartKey(now), days };
 }
 
 export function missionOutcome(res) {

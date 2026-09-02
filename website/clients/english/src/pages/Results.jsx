@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
+import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
 import { RubricBands } from './Practice.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 import { TriagePanel } from '../../../shared/StudyTools.jsx';
@@ -9,7 +10,8 @@ import { mergeMistakeRows, mistakeRowsFromResult } from '../../../shared/study-p
 export default function Results({ userId }) {
   const navigate = useNavigate();
   const [result, setResult] = useState(null);
-  const [attempts, setAttempts] = useState(null);
+  const { data: attemptsData } = useResource(userId ? `attempts:${userId}` : null, () => api.attempts());
+  const attempts = attemptsData?.attempts ?? null;
   const [open, setOpen] = useState({});
   const [savedCount, setSavedCount] = useState(null);
 
@@ -24,13 +26,13 @@ export default function Results({ userId }) {
         if (built.length) {
           api.personal()
             .then(({ mistakes }) => api.saveMistakes(mergeMistakeRows(mistakes, built)))
+            .then(() => invalidateResources('personal:'))
             .catch((error) => console.error('[notebook] mistake capture failed', error));
         }
       }
     } catch {
       /* noop */
     }
-    api.attempts().then((data) => setAttempts(data.attempts ?? [])).catch(() => setAttempts([]));
   }, [userId]);
 
   const openSession = (sessionId) => {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
+import { setResourceValue, useResource } from '../../../shared/resource-cache.js';
 import MarkdownMessage from '../../../shared/MarkdownMessage.jsx';
 
 const SUGGESTIONS = [
@@ -13,59 +14,68 @@ const SUGGESTIONS = [
   'Tips for probability questions',
 ];
 
-export default function Chat({ health }) {
+function toMessages(r, higherTier) {
+  const base = r.messages.length
+    ? r.messages.map((m) => ({ role: m.role, content: m.content }))
+    : [
+        {
+          role: 'assistant',
+          content:
+            "Hey! I'm your AI maths tutor, tuned for AQA GCSE Foundation.\n\nAsk me to explain any topic, walk you through a question, or check your method — I'll guide you step by step without just giving answers away. 💪",
+        },
+      ];
+  return higherTier
+    ? base.map((message) => ({ ...message, content: message.content.replace('Foundation', 'Higher') }))
+    : base;
+}
+
+export default function Chat({ health, userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
-  const [messages, setMessages] = useState([]);
+  const chatKey = userId ? `chat:${userId}` : null;
+  const { data: history, error } = useResource(chatKey, () =>
+    api.chatHistory().then((r) => toMessages(r, higherTier)),
+  );
+  const [messages, setMessagesState] = useState(null);
+  const [applied, setApplied] = useState(false);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [loaded, setLoaded] = useState(false);
   const endRef = useRef(null);
 
   useEffect(() => {
-    api
-      .chatHistory()
-      .then((r) => {
-        if (r.messages.length) {
-          setMessages(r.messages.map((m) => ({ role: m.role, content: m.content })));
-        } else {
-          setMessages([
-            {
-              role: 'assistant',
-              content:
-                "Hey! I'm your AI maths tutor, tuned for AQA GCSE Foundation.\n\nAsk me to explain any topic, walk you through a question, or check your method — I'll guide you step by step without just giving answers away. 💪",
-            },
-          ]);
-          if (higherTier) setMessages((current) => current.map((message) => ({ ...message, content: message.content.replace('Foundation', 'Higher') })));
-        }
-        setLoaded(true);
-      })
-      .catch(() => {
-        setMessages([
-          {
-            role: 'assistant',
-            content: 'Hey! Ask me any maths question — I\u2019m here to help you revise.',
-          },
-        ]);
-        setLoaded(true);
-      });
-  }, []);
+    if (applied || messages != null) return;
+    if (history != null) {
+      setMessagesState(history);
+      setApplied(true);
+    } else if (error) {
+      setMessagesState([{ role: 'assistant', content: 'Hey! Ask me any maths question — I\u2019m here to help you revise.' }]);
+      setApplied(true);
+    }
+  }, [applied, history, error, messages]);
+  const loaded = messages != null;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, busy]);
 
+  // Every transcript change is written through to the shared cache so the
+  // next visit to this page renders the conversation instantly.
+  function setMessages(next) {
+    setMessagesState(next);
+    setResourceValue(chatKey, next);
+  }
+
   async function send(text) {
     const content = (text ?? input).trim();
-    if (!content || busy) return;
+    if (!content || busy || !loaded) return;
     setInput('');
     const next = [...messages, { role: 'user', content }];
     setMessages(next);
     setBusy(true);
     try {
       const out = await api.chat(next);
-      setMessages((m) => [...m, { role: 'assistant', content: out.reply, model: out.model }]);
+      setMessages([...next, { role: 'assistant', content: out.reply, model: out.model }]);
     } catch (e) {
-      setMessages((m) => [...m, { role: 'assistant', content: `Sorry — something broke: ${e.message}` }]);
+      setMessages([...next, { role: 'assistant', content: `Sorry — something broke: ${e.message}` }]);
     } finally {
       setBusy(false);
     }
@@ -73,9 +83,7 @@ export default function Chat({ health }) {
 
   async function reset() {
     await api.clearChat();
-    setMessages([
-      { role: 'assistant', content: 'Fresh start! What shall we work on?' },
-    ]);
+    setMessages([{ role: 'assistant', content: 'Fresh start! What shall we work on?' }]);
   }
 
   const modelName = health?.model || 'qwen/qwen3.7-flash';
@@ -96,7 +104,7 @@ export default function Chat({ health }) {
 
       <div className="chat-box">
         <div className="chat-scroll">
-          {messages.map((m, i) => (
+          {(messages ?? []).map((m, i) => (
             <div key={i} className={`msg ${m.role}`}>
               <div className="msg-avatar">{m.role === 'user' ? '🧑' : '🤖'}</div>
               <div className="msg-body">

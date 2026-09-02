@@ -46,8 +46,23 @@ async function authReq(path, opts = {}) {
   return res.json();
 }
 
+async function eventReq(path, opts = {}) {
+  const token = (await supabaseAccessToken()) || storedSupabaseAccessToken();
+  const res = await fetch(`/api${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  return res.json();
+}
+
 export const api = {
   health: () => req('/health'),
+  track: (name, metadata) => eventReq('/events', { method: 'POST', body: { name, subject: 'english', metadata } }).catch(() => undefined),
   papers: () => req('/papers'),
   texts: () => req('/texts'),
   text: (id) => req(`/texts/${id}`),
@@ -74,6 +89,7 @@ export const api = {
   clearChat: () => req('/chat', { method: 'DELETE' }),
   chatHistory: () => req('/chat/history'),
   personal: () => req('/personal'),
+  attempts: (limit = 20) => req(`/personal/attempts?limit=${limit}`),
   savePreferences: (preferences) => req('/personal/preferences', { method: 'PUT', body: preferences }),
   savePlan: (plan) => req('/personal/plan', { method: 'PUT', body: plan }),
   saveMistakes: (rows) => req('/personal/mistakes', { method: 'PUT', body: { rows } }),

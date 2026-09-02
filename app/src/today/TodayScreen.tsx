@@ -6,11 +6,23 @@ import { isNewProgress, nextPaper, parsePapers, parseProgress, parseTopics, rank
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { InteractionManager, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { hydratePersonal } from '../personal';
 import { dateKey, daysToExam, missionForToday, readinessEvidence, stablePlan, startMission, type PlanState } from '../planning';
 import { dueMistakes, type MistakeRow } from '../notebook';
+import { queryKeys, warmSubjectCache } from '../query-cache';
+
+// Records one retention ping per local calendar day (see website/ANALYTICS.md).
+async function noteDailyReturn(client: ApiClient) {
+  try {
+    const flag = `week-return-noted:${dateKey(new Date())}`;
+    if (await AsyncStorage.getItem(flag)) return;
+    await AsyncStorage.setItem(flag, '1');
+    client.trackEvent('week_return');
+  } catch { /* bookkeeping only */ }
+}
 
 const subjects: { id: Subject; short: string }[] = [
   { id: 'maths', short: 'Foundation' },
@@ -35,11 +47,12 @@ export function TodayScreen() {
     let active = true;
     setPlanLoaded(false);
     setPlanError('');
-    hydratePersonal(personalClient, session?.user.id, subject).then((personal) => {
+    queryClient.fetchQuery({ queryKey: queryKeys.personal(subject, session?.user.id), queryFn: () => hydratePersonal(personalClient, session?.user.id, subject) }).then((personal) => {
       if (!active) return;
       setPlanState(personal.plan);
       setMistakes(personal.mistakes);
       setPlanLoaded(true);
+      void noteDailyReturn(personalClient);
     }).catch(() => {
       if (!active) return;
       setPlanError('Your saved plan could not be loaded. Check your connection and try again.');
@@ -48,12 +61,12 @@ export function TodayScreen() {
     return () => { active = false; };
     // The client is scoped to the active subject; reload whenever either identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user.id, subject]));
+  }, [queryClient, session?.user.id, subject]));
   const client = new ApiClient(subject);
   const queries = useQueries({ queries: [
-    { queryKey: ['today', subject, 'progress'], queryFn: () => client.progress() },
-    { queryKey: ['today', subject, 'topics'], queryFn: () => client.topics() },
-    { queryKey: ['today', subject, 'papers'], queryFn: () => client.papers() },
+    { queryKey: queryKeys.progress(subject), queryFn: () => client.progress() },
+    { queryKey: queryKeys.topics(subject), queryFn: () => client.topics(), staleTime: 10 * 60_000 },
+    { queryKey: queryKeys.papers(subject), queryFn: () => client.papers(), staleTime: 10 * 60_000 },
   ] });
   const [progressQuery, topicsQuery, papersQuery] = queries;
   const loading = queries.some((query) => query.isPending);
@@ -62,8 +75,20 @@ export function TodayScreen() {
 
   const refresh = async () => {
     setRefreshing(true);
-    await queryClient.refetchQueries({ queryKey: ['today', subject] }).finally(() => setRefreshing(false));
+    await Promise.all([
+      queryClient.refetchQueries({ queryKey: queryKeys.progress(subject) }),
+      queryClient.refetchQueries({ queryKey: queryKeys.topics(subject) }),
+      queryClient.refetchQueries({ queryKey: queryKeys.papers(subject) }),
+      queryClient.refetchQueries({ queryKey: queryKeys.personal(subject, session?.user.id) }),
+    ]).finally(() => setRefreshing(false));
   };
+
+  useEffect(() => {
+    if (!hasAllData || !topicsQuery.data) return;
+    const topicIds = parseTopics(topicsQuery.data).map(topic => topic.id);
+    const task = InteractionManager.runAfterInteractions(() => void warmSubjectCache(queryClient, subject, topicIds));
+    return () => task.cancel();
+  }, [hasAllData, queryClient, subject, topicsQuery.data]);
 
   useEffect(() => {
     if (!planLoaded || loading || !hasAllData || !topicsQuery.data || !session?.user.id) return;
@@ -104,11 +129,11 @@ export function TodayScreen() {
 
   return <SafeAreaView style={[styles.screen, { backgroundColor: colors.paper }]}><PaperPattern/><ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} tintColor={subjectTheme.accent}/>}>
     <View style={styles.topline}><View style={{ flex: 1 }}><DeskHeader title="Today at the desk" eyebrow="REVISION REGISTER"/></View><Link href="/settings" asChild><Pressable accessibilityRole="link" accessibilityLabel="Open profile and settings" style={StyleSheet.flatten([styles.settings, { borderColor: colors.strong }])}><Text style={[styles.mono, { color: colors.ink }]}>PROFILE</Text></Pressable></Link></View>
-    <View accessibilityRole="radiogroup" accessibilityLabel="Active subject" style={[styles.switcher, { borderColor: colors.ink }]}>{subjects.map((item) => <Pressable key={item.id} accessibilityRole="radio" accessibilityState={{ selected: item.id === subject }} accessibilityLabel={`${subjectTokens[item.id].label}${item.id === subject ? ', selected' : ''}`} onPress={() => setSubject(item.id)} style={[styles.subjectChoice, { backgroundColor: item.id === subject ? subjectTheme.accent : colors.raised, borderColor: colors.line }]}><Text style={[styles.mono, { color: item.id === subject ? '#fff' : colors.ink }]}>{item.short}</Text></Pressable>)}</View>
+    <View accessibilityRole="radiogroup" accessibilityLabel="Active subject" style={[styles.switcher, { borderColor: colors.line, backgroundColor: colors.muted }]}>{subjects.map((item) => <Pressable key={item.id} accessibilityRole="radio" accessibilityState={{ selected: item.id === subject }} accessibilityLabel={`${subjectTokens[item.id].label}${item.id === subject ? ', selected' : ''}`} onPress={() => setSubject(item.id)} style={({pressed})=>[styles.subjectChoice, { backgroundColor: item.id === subject ? subjectTheme.accent : 'transparent', borderColor: colors.line, opacity:pressed?.72:1 }]}><Text style={[styles.mono, { color: item.id === subject ? '#fff' : colors.ink }]}>{item.short}</Text></Pressable>)}</View>
     {!online && <Notice kind="offline" title="OFFLINE / SESSION COPY">You are viewing server data held in this app session. Pull to refresh when your connection returns.</Notice>}
     {error && hasAllData && online && <Notice kind="offline" title="SESSION COPY">The latest refresh failed, so data held in this app session is shown.</Notice>}
     {isNewProgress(progress) && <Notice title="A CLEAR START">There is no recorded study yet. Start with one manageable session; there is no need to make up for time away.</Notice>}
-    <View style={{borderColor:colors.strong,backgroundColor:colors.raised,borderWidth:1,borderLeftWidth:6,padding:16,gap:8}}><Text style={[styles.mono,{color:subjectTheme.accent}]}>READINESS / EVIDENCE</Text><Text style={{color:colors.ink,fontFamily:'serif',fontSize:27,fontWeight:'700'}}>{readiness.ready?`${readiness.score}% recorded`:'Building your score'}</Text><Text style={{color:colors.quiet,lineHeight:20}}>{readiness.ready?'Readiness uses your server-marked paper accuracy after the evidence threshold is met.':`Complete ${Math.max(0,2-readiness.tests)} more paper${2-readiness.tests===1?'':'s'} and ${Math.max(0,20-readiness.practiceAnswered)} more practice answers to unlock a score.`} This is a revision guide, not a predicted grade.</Text><Text style={[styles.mono,{color:colors.ink}]}>{countdown===null?'SET EXAM DATE IN SETTINGS':`${countdown} DAYS TO EXAM`} / {dueCount} MISTAKES DUE</Text></View>
+    <View style={[styles.readiness,{borderColor:colors.line,backgroundColor:subjectTheme.tint}]}><Text style={[styles.mono,{color:subjectTheme.accent}]}>READINESS / EVIDENCE</Text><Text style={[styles.readinessTitle,{color:colors.ink}]}>{readiness.ready?`${readiness.score}% recorded`:'Building your score'}</Text><Text style={{color:colors.quiet,lineHeight:20}}>{readiness.ready?'Readiness uses your server-marked paper accuracy after the evidence threshold is met.':`Complete ${Math.max(0,2-readiness.tests)} more paper${2-readiness.tests===1?'':'s'} and ${Math.max(0,20-readiness.practiceAnswered)} more practice answers to unlock a score.`} This is a revision guide, not a predicted grade.</Text><Text style={[styles.mono,{color:colors.ink}]}>{countdown===null?'SET EXAM DATE IN SETTINGS':`${countdown} DAYS TO EXAM`} / {dueCount} MISTAKES DUE</Text></View>
     {progress.tests===0&&<Button variant="secondary" onPress={()=>router.push({pathname:'/practice',params:{diagnostic:'1'}})}>START DIAGNOSTIC CHECK</Button>}
     {todayMission ? <View style={[styles.hero, todayMission.topicId ? { backgroundColor: colors.raised, borderColor: colors.ink, borderLeftColor: subjectTheme.accent } : { backgroundColor: colors.raised, borderColor: colors.ink, borderLeftColor: colors.warning }]}>
       <View style={styles.heroMeta}><Text style={[styles.mono, { color: todayMission.topicId ? subjectTheme.accent : colors.warning }]}>TODAY&apos;S MISSION</Text><Text style={[styles.mono, { color: colors.quiet }]}>{todayMission.minutes} MIN / SAVED PLAN</Text></View>
@@ -126,7 +151,7 @@ export function TodayScreen() {
       <View style={[styles.why, { borderTopColor: colors.line }]}><Text style={[styles.mono, { color: colors.quiet }]}>WHY THIS?</Text><Text style={{ color: colors.quiet, lineHeight: 20, flex: 1 }}>{recommendation.reason}</Text></View>
       <Button accessibilityLabel={`Start ${recommendation.topic.name} lesson`} onPress={() => { if (planState) { const next = startMission(planState, planState.from, recommendation.topic.id); setPlanState(next); personalClient.savePlan(next).catch(() => setPlanError('Plan could not be saved. Check your connection and try again.')); } router.push(`/lesson/${encodeURIComponent(recommendation.topic.id)}` as never); }}>START SESSION</Button>
     </View> : <Notice title="NO TOPICS AVAILABLE">This course has no revision topics available yet. Pull to refresh or choose another subject.</Notice>}
-    <View style={[styles.summary, { borderTopColor: colors.ink, borderBottomColor: colors.ink }]} accessibilityLabel={`Level ${progress.level}, ${progress.xp} XP, ${progress.streak} day streak, ${progress.accuracy ?? 'no'} percent accuracy, ${progress.lessons} lessons completed`}>
+    <View style={[styles.summary, { borderColor: colors.line, backgroundColor: colors.raised }]} accessibilityLabel={`Level ${progress.level}, ${progress.xp} XP, ${progress.streak} day streak, ${progress.accuracy ?? 'no'} percent accuracy, ${progress.lessons} lessons completed`}>
       <View style={styles.level}><Text style={[styles.mono, { color: colors.quiet }]}>LEVEL</Text><Text style={[styles.levelNumber, { color: subjectTheme.accent }]}>{progress.level}</Text></View>
       <View style={{ flex: 1, gap: 8 }}><Text style={[styles.summaryLine, { color: colors.ink }]}>{progress.xp.toLocaleString()} XP / {progress.streak} day streak</Text><Text style={[styles.mono, { color: colors.quiet }]}>{progress.accuracy === null ? 'NO PAPER ACCURACY YET' : `${progress.accuracy}% PAPER ACCURACY`} / {progress.lessons} LESSONS</Text><View accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(xpProgress * 100) }} style={[styles.track, { backgroundColor: colors.muted }]}><View style={{ width: `${xpProgress * 100}%`, height: '100%', backgroundColor: subjectTheme.accent }}/></View></View>
     </View>
@@ -139,7 +164,7 @@ export function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 }, content: { padding: 20, paddingBottom: 52, gap: 20 }, topline: { flexDirection: 'row', flexWrap:'wrap', alignItems: 'center', gap: 12 }, settings: { minWidth: 48, minHeight: 48, padding:8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' }, switcher: { flexDirection: 'row', flexWrap:'wrap', borderWidth: 1 }, subjectChoice: { flexGrow: 1, flexBasis:100, minHeight: 48, padding:8, alignItems: 'center', justifyContent: 'center', borderRightWidth: StyleSheet.hairlineWidth }, mono: { fontFamily: 'monospace', fontSize: 11, fontWeight: '700', letterSpacing: .7, textTransform: 'uppercase' },
-  planRow: { minHeight: 58, paddingVertical: 10, paddingLeft: 10, borderLeftWidth: 4, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  planTask: { fontWeight: '700', fontSize: 16 }, hero: { borderWidth: 1, borderLeftWidth: 7, padding: 19, gap: 15 }, heroMeta: { flexDirection: 'row', flexWrap:'wrap', justifyContent: 'space-between', gap: 8 }, heroTitle: { fontFamily: 'serif', fontSize: 32, lineHeight: 40 }, reason: { fontSize: 16, lineHeight: 23 }, why: { borderTopWidth: 1, paddingTop: 12, flexDirection: 'row', flexWrap:'wrap', gap: 12 }, summary: { borderTopWidth: 1, borderBottomWidth: 1, paddingVertical: 15, flexDirection: 'row', flexWrap:'wrap', alignItems: 'center', gap: 18 }, level: { alignItems: 'center', minWidth: 62 }, levelNumber: { fontFamily: 'serif', fontSize: 42, lineHeight: 50 }, summaryLine: { fontSize: 17, fontWeight: '700' }, track: { height: 5, width: '100%' }, focusRow: { minHeight: 68, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 14, borderBottomWidth: 1 }, focusName: { fontFamily: 'serif', fontSize: 20 }, paperRow: { paddingVertical: 15, flexDirection: 'row', flexWrap:'wrap', alignItems: 'center', gap: 12, borderBottomWidth: 1 }, paperTitle: { fontFamily: 'serif', fontSize: 23 }, profile: { borderWidth: 1, padding: 15, gap: 4 }, profileTitle: { fontSize: 16, fontWeight: '700' },
+  screen: { flex: 1 }, content: { padding: 20, paddingBottom: 108, gap: 20 }, topline: { flexDirection: 'row', flexWrap:'wrap', alignItems: 'center', gap: 12 }, settings: { minWidth: 48, minHeight: 48, padding:8, borderWidth: 1, borderRadius:24, alignItems: 'center', justifyContent: 'center' }, switcher: { flexDirection: 'row', borderWidth: 1, borderRadius:16, padding:4, gap:4 }, subjectChoice: { flex:1, minHeight: 44, paddingHorizontal:6, alignItems: 'center', justifyContent: 'center', borderRadius:12 }, mono: { fontFamily: 'monospace', fontSize: 11, fontWeight: '700', letterSpacing: .7, textTransform: 'uppercase' }, readiness:{borderWidth:1,padding:18,gap:8,borderRadius:20},readinessTitle:{fontSize:27,fontWeight:'900',letterSpacing:-.5},
+  planRow: { minHeight: 62, paddingVertical: 11, paddingLeft: 12, paddingRight:8, borderLeftWidth: 4, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  planTask: { fontWeight: '700', fontSize: 16 }, hero: { borderWidth: 1, borderLeftWidth: 7, padding: 19, gap: 15, borderRadius:20, shadowColor:'#000',shadowOpacity:.08,shadowRadius:14,shadowOffset:{width:0,height:6},elevation:3 }, heroMeta: { flexDirection: 'row', flexWrap:'wrap', justifyContent: 'space-between', gap: 8 }, heroTitle: { fontSize: 31, lineHeight: 37, fontWeight:'900',letterSpacing:-.7 }, reason: { fontSize: 16, lineHeight: 23 }, why: { borderTopWidth: 1, paddingTop: 12, flexDirection: 'row', flexWrap:'wrap', gap: 12 }, summary: { borderWidth: 1, borderRadius:18, padding:15, flexDirection: 'row', flexWrap:'wrap', alignItems: 'center', gap: 18 }, level: { alignItems: 'center', minWidth: 62 }, levelNumber: { fontSize: 42, lineHeight: 50,fontWeight:'900' }, summaryLine: { fontSize: 17, fontWeight: '700' }, track: { height: 7, width: '100%',borderRadius:4,overflow:'hidden' }, focusRow: { minHeight: 72, paddingVertical: 12, paddingHorizontal:4, flexDirection: 'row', alignItems: 'center', gap: 14, borderBottomWidth: 1 }, focusName: { fontSize: 19,fontWeight:'800' }, paperRow: { paddingVertical: 15, flexDirection: 'row', flexWrap:'wrap', alignItems: 'center', gap: 12, borderBottomWidth: 1 }, paperTitle: { fontSize: 22,fontWeight:'800' }, profile: { borderWidth: 1, padding: 16, gap: 4,borderRadius:16 }, profileTitle: { fontSize: 16, fontWeight: '700' },
 });

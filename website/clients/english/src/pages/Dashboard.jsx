@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { SECTION_NAMES } from '../colors.js';
+import { useResource } from '../../../shared/resource-cache.js';
 import { ExpertisePath } from '../../../shared/rewards.jsx';
 import { StudyDashboard } from '../../../shared/StudyTools.jsx';
 import { flattenTopics } from '../../../shared/study.js';
@@ -9,11 +10,8 @@ import { flattenTopics } from '../../../shared/study.js';
 export default function Dashboard({ health, progress, userId }) {
   const navigate = useNavigate();
   const overall = progress?.overallPercent;
-  const [topics, setTopics] = useState(null);
-
-  useEffect(() => {
-    api.topics().then(setTopics).catch(() => {});
-  }, []);
+  // Cached per user: returning from Learn/Practice renders instantly.
+  const { data: topics } = useResource(userId ? `topics:${userId}` : null, () => api.topics());
 
   const mastery = useMemo(() => {
     if (!topics || !progress) return null;

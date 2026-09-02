@@ -28,6 +28,13 @@ Supabase secret/service-role key through an `EXPO_PUBLIC_*` variable.
 - `src/notebook.ts`: canonical mistake rows, spaced-review dates, parsing and merge helpers.
 - `src/theme.ts` and `src/components.tsx`: theme tokens and shared native UI primitives.
 
+Mistake rows may carry a learner-chosen `errorType` (`knowledge`, `method`, `misread`,
+`arithmetic`, `timing`, `incomplete`), the `correctAnswer`, a `workedSolution`, warm-up counts and
+`lastReviewedAt` retry evidence. Merging a re-captured mistake refreshes the evidence but never
+resets review progress, classification or mastery. The mistake lifecycle also feeds the product
+event trail (`week_return`, retries) through `ApiClient.trackEvent`; the event taxonomy,
+activation definition and retention windows are documented in `website/ANALYTICS.md`.
+
 Expo Router route files should coordinate data and presentation. Put reusable
 normalization, marking-state and planning logic in `src/` so it can be tested
 without rendering a route.

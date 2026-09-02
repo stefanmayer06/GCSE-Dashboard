@@ -596,6 +596,11 @@ export function authRoutes() {
       const user = result.session?.user
         ? { username: result.session.user.user_metadata?.username || name, email }
         : null;
+      if (user && typeof storage.recordEvent === 'function') {
+        await storage.recordEvent(result.session.user.id, 'signup', {
+          metadata: { source: String(req.body?.source || '').slice(0, 60) || 'direct' },
+        }).catch(() => {});
+      }
       return res.status(201).json({
         user,
         ...(result.session ? { session: result.session } : {}),
@@ -632,6 +637,11 @@ export function authRoutes() {
     }
 
     setSessionCookie(res, await issueSession(user.id));
+    if (typeof storage.recordEvent === 'function') {
+      await storage.recordEvent(user.id, 'signup', {
+        metadata: { source: String(req.body?.source || '').slice(0, 60) || 'direct' },
+      }).catch(() => {});
+    }
     return res.status(201).json({ user: { username: user.username } });
   }));
 

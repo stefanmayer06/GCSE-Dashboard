@@ -21,6 +21,7 @@ import {
   type UnknownRecord,
 } from "@/practice/core";
 import { useTheme } from "@/theme";
+import { MathsVisual } from "@/practice/MathsVisual";
 
 const rec = (value: unknown): UnknownRecord =>
   value && typeof value === "object" && !Array.isArray(value)
@@ -268,6 +269,7 @@ export default function Results() {
                     {text(question.text)}
                   </Text>
                 )}
+                <MathsVisual stimulus={question.stimulus} colors={colors} accent={tokens.accent} />
                 <Text style={{ color: colors.quiet }}>
                   Your submitted answer:{" "}
                   {show(answer) ??

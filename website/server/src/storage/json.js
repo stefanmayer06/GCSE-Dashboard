@@ -12,6 +12,8 @@ import {
 const SCHEMA_VERSION = 1;
 const DEFAULT_STUDY_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_LEASE_MS = 30 * 1000;
+const MAX_ATTEMPTS_PER_SUBJECT = 50;
+const EVENT_RETENTION_DAYS = 540;
 const locks = new Map();
 
 const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
@@ -267,6 +269,14 @@ export function createJsonStorage({ dataDir } = {}) {
     fileComponent(userId, 'userId'),
     `personal-${fileComponent(subject, 'subject')}.json`,
   );
+  const attemptsFile = (userId, subject) => path.join(
+    root,
+    'users',
+    fileComponent(userId, 'userId'),
+    `attempts-${fileComponent(subject, 'subject')}.json`,
+  );
+  const eventsFile = path.join(root, 'events.json');
+  const feedbackFile = path.join(root, 'feedback.json');
 
   async function recoverFinalizeTransaction() {
     const stored = await readJson(transactionFile);
@@ -424,6 +434,83 @@ export function createJsonStorage({ dataDir } = {}) {
     const next = { mistakes: cloneJson(rows, 'mistake rows') };
     const state = await updatePersonalState(userId, subject, next);
     return state.mistakes;
+  }
+
+  async function saveAttempt(userId, subject, attempt) {
+    await init();
+    const clean = cloneJson(attempt && typeof attempt === 'object' ? attempt : {}, 'paper attempt');
+    const key = requiredString(String(clean.sessionId), 'sessionId');
+    const file = attemptsFile(requiredIdentifier(userId, 'userId'), requiredString(subject, 'subject'));
+    return withLock(file, async () => {
+      const stored = await readJson(file);
+      const attempts = stored.found && Array.isArray(stored.value) ? stored.value : [];
+      const next = [clean, ...attempts.filter((row) => row?.sessionId !== key)]
+        .slice(0, MAX_ATTEMPTS_PER_SUBJECT);
+      await atomicWrite(file, next);
+      return true;
+    });
+  }
+
+  async function listAttempts(userId, subject, limit = 20) {
+    await init();
+    const file = attemptsFile(requiredIdentifier(userId, 'userId'), requiredString(subject, 'subject'));
+    const stored = await readJson(file);
+    const attempts = stored.found && Array.isArray(stored.value) ? stored.value : [];
+    return attempts
+      .slice(0, Math.max(1, Math.min(50, Number(limit) || 20)))
+      .map((row) => cloneJson(row, 'paper attempt'));
+  }
+
+  async function recordEvent(userId, name, { subject, metadata } = {}) {
+    await init();
+    const record = {
+      id: crypto.randomUUID(),
+      userId: String(requiredIdentifier(userId, 'userId')),
+      name: requiredString(String(name), 'name'),
+      ...(subject == null ? {} : { subject: requiredString(String(subject), 'subject') }),
+      metadata: cloneJson(metadata && typeof metadata === 'object' && !Array.isArray(metadata) ? metadata : {}, 'event metadata'),
+      occurredAt: new Date().toISOString(),
+    };
+    return withLock(eventsFile, async () => {
+      const events = await readObject(eventsFile);
+      events[record.id] = record;
+      await atomicWrite(eventsFile, events);
+      return true;
+    });
+  }
+
+  async function pruneEvents(keepDays = EVENT_RETENTION_DAYS) {
+    await init();
+    const cutoff = Date.now() - Math.max(30, Number(keepDays) || EVENT_RETENTION_DAYS) * 86400000;
+    let removed = 0;
+    return withLock(eventsFile, async () => {
+      const events = await readObject(eventsFile);
+      for (const [key, event] of Object.entries(events)) {
+        if (!event?.occurredAt || Date.parse(event.occurredAt) < cutoff) {
+          delete events[key];
+          removed += 1;
+        }
+      }
+      if (removed) await atomicWrite(eventsFile, events);
+      return removed;
+    });
+  }
+
+  async function getEventSummary(userId) {
+    await init();
+    const id = requiredIdentifier(userId, 'userId');
+    const events = await readObject(eventsFile);
+    const counts = {};
+    let firstSeen = null;
+    let lastSeen = null;
+    for (const event of Object.values(events)) {
+      if (String(event?.userId) !== id) continue;
+      counts[event.name] = (counts[event.name] || 0) + 1;
+      if (!firstSeen || event.occurredAt < firstSeen) firstSeen = event.occurredAt;
+      if (!lastSeen || event.occurredAt > lastSeen) lastSeen = event.occurredAt;
+    }
+    const activated = (counts.diagnostic_complete || 0) > 0 && (counts.session_marked || 0) > 0;
+    return { counts, firstSeen, lastSeen, activated };
   }
 
   async function listUsers() {
@@ -845,6 +932,32 @@ export function createJsonStorage({ dataDir } = {}) {
     });
   }
 
+  async function saveFeedback(input) {
+    await init();
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      throw storageError('STORAGE_INVALID_ARGUMENT', 'feedback must be an object');
+    }
+    const record = {
+      id: requiredIdentifier(input.id, 'id'),
+      role: requiredString(String(input.role), 'role'),
+      subject: requiredString(String(input.subject), 'subject'),
+      rating: Math.max(1, Math.min(5, Math.round(Number(input.rating) || 0))),
+      heard: typeof input.heard === 'string' && input.heard ? String(input.heard) : null,
+      message: requiredString(String(input.message), 'message'),
+      email: typeof input.email === 'string' && input.email ? String(input.email) : null,
+      source: typeof input.source === 'string' && input.source ? String(input.source) : null,
+      userAgent: typeof input.userAgent === 'string' && input.userAgent ? String(input.userAgent) : null,
+      createdAt: isoDate(input.createdAt, 'createdAt', Date.now()),
+    };
+    return withLock(feedbackFile, async () => {
+      const feedback = await readObject(feedbackFile);
+      if (feedback[record.id]) return false;
+      feedback[record.id] = record;
+      await atomicWrite(feedbackFile, feedback);
+      return true;
+    });
+  }
+
   return {
     driver: 'json',
     schemaVersion: SCHEMA_VERSION,
@@ -876,5 +989,11 @@ export function createJsonStorage({ dataDir } = {}) {
     savePreferences,
     savePlan,
     saveMistakes,
+    saveAttempt,
+    listAttempts,
+    recordEvent,
+    getEventSummary,
+    pruneEvents,
+    saveFeedback,
   };
 }

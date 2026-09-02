@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.112.4",
     "@tanstack/react-query": "^5.102.6",
     "expo": "~57.0.17",
+    "expo-asset": "~57.0.16",
     "expo-build-properties": "~57.0.15",
     "expo-constants": "~57.0.15",
+    "expo-font": "~57.0.3",
     "expo-linking": "~57.0.8",
     "expo-network": "~57.0.1",
     "expo-router": "~57.0.17",
@@ -18,7 +21,8 @@
     "react-dom": "^19.2.3",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "~4.26.0"
+    "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4"
   },
   "devDependencies": {
     "@types/jest": "29.5.14",
@@ -44,6 +48,9 @@
     "setupFiles": [
       "<rootDir>/jest.setup.js"
     ],
+    "moduleNameMapper": {
+      "^expo-modules-core(.*)$": "<rootDir>/node_modules/expo/node_modules/expo-modules-core$1"
+    },
     "testPathIgnorePatterns": [
       "/node_modules/"
     ]

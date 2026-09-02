@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { STRAND_COLORS } from '../colors.js';
+import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 
@@ -29,12 +30,13 @@ function loadSaved() {
   }
 }
 
-export default function Practice({ onProgress }) {
+export default function Practice({ onProgress, userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const saved = useRef(loadSaved());
-  const [papers, setPapers] = useState(null);
+  const { data: papersData } = useResource(userId ? `papers:${userId}` : null, () => api.papers());
+  const papers = papersData?.papers ?? null;
   const [phase, setPhase] = useState(saved.current ? 'restoring' : 'setup'); // setup | restoring | running | submitting
   const [test, setTest] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -47,10 +49,6 @@ export default function Practice({ onProgress }) {
   const [quitting, setQuitting] = useState(false);
   const [error, setError] = useState('');
   const submitting = useRef(false);
-
-  useEffect(() => {
-    api.papers().then((r) => setPapers(r.papers)).catch(() => {});
-  }, []);
 
   // Deep links: /practice?paper=2&type=full starts that paper; /practice#adhoc scrolls to ad-hoc.
   const autoStart = useRef({ paper: params.get('paper'), type: params.get('type') });
@@ -184,6 +182,9 @@ export default function Practice({ onProgress }) {
       }));
       const result = await api.submitTest(test.id, list, dur ?? elapsed);
       onProgress?.(result.progress);
+      invalidateResources('attempts');
+      invalidateResources('topics:');
+      invalidateResources('personal:');
       localStorage.removeItem(LS_KEY);
        localStorage.setItem(window.location.pathname.startsWith('/maths-higher') ? 'mathsmate-higher-last-result' : 'mathsmate-last-result', JSON.stringify(result));
       navigate('/results');
@@ -342,6 +343,7 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
     if (!diagnostic || diagnosticStarted.current) return;
     diagnosticStarted.current = true;
     setCount(10);
+    api.track?.('diagnostic_start', { questionCount: 10 });
     startAdhoc(10);
   }, [diagnostic]);
 
@@ -356,7 +358,7 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
   }
 
   if (running) {
-    return <AdhocRunner key={running.roundId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} />;
+    return <AdhocRunner key={running.roundId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} diagnostic={diagnostic} />;
   }
 
   return (
@@ -407,7 +409,7 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
   );
 }
 
-function AdhocRunner({ set, onExit, onNew, onProgress }) {
+function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false }) {
   const [answers, setAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
   const [done, setDone] = useState(null);
@@ -429,6 +431,12 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
         set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null }))
       );
       onProgress?.(res.progress);
+      invalidateResources('attempts');
+      invalidateResources('topics:');
+      invalidateResources('personal:');
+      if (diagnostic) {
+        api.track?.('diagnostic_complete', { correctMarks: res.correctMarks, totalMarks: res.totalMarks });
+      }
       setFeedback((f) => {
         const out = { ...f };
         for (const row of res.perQ) {

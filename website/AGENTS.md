@@ -42,8 +42,10 @@ The clients remain separate because their question formats, grading logic and gl
 - `server/src/db.js`: per-user, per-subject progress and reward logic over the configured async storage driver.
 - `server/src/storage/`: Supabase (production), JSON (local/Docker) storage drivers plus shared data-model helpers.
 - `server/src/storage/supabase.js`: Supabase Auth/PostgreSQL driver. It is the application's single source of truth in production.
-- `server/src/personal-model.js`: normalization/validation for account personal data (preferences, study plans, mistake notebook).
-- `server/src/personal.js`: per-subject `/personal` routes backing preferences, the saved 7-day plan and the mistake notebook.
+- `server/src/personal-model.js`: normalization/validation for account personal data (preferences, study plans, mistake notebook, paper attempts, product events).
+- `server/src/personal.js`: per-subject `/personal` routes backing preferences, the saved 7-day plan, the mistake notebook and durable paper attempts.
+- `server/src/analytics.js`: authenticated `POST /api/events` append route and `GET /api/events/summary` activation/funnel summary, backed by the storage driver (`events.json` locally, `product_events` on Supabase). See `ANALYTICS.md` for the event taxonomy, activation definition and retention policy.
+- `server/src/feedback.js`: public, rate-limited `POST /api/feedback` route storing beta-tester feedback through the storage driver (`feedback.json` locally, `beta_feedback` table on Supabase).
 - `clients/shared/study-personal.js`: web personal-data repository, hydration and one-time legacy localStorage import.
 - `server/src/supabase/`: Supabase server client configuration and secret-key handling.
 - `supabase/`: SQL migrations (tables, RLS policies, RPCs), private legacy staging tables and database tests.
@@ -118,11 +120,36 @@ so upgrading to logins never loses existing progress.
 Each legacy store tracks XP, streak, paper history, topic accuracy and tutor chat
 for its own subject. The production Supabase driver stores compact progress (XP,
 streak, counters, topic accuracy and completed lessons), active study sessions,
-preferences, plans and notebook mistakes. Paper history and tutor chat are not
-durable Supabase domains; clients may retain them only as disposable caches.
+preferences, plans and notebook mistakes. Finalized paper attempts are now
+durable too: every marked paper is written to `paper_attempts` (question-level
+responses included, most recent 50 per user and subject, 1 year review window)
+and can be listed through `GET /personal/attempts`. Tutor chat remains a
+non-durable domain; clients may retain it only as a disposable cache.
 Legacy users and compact progress are staged in the private
 `migration_private` schema, and custom scrypt hashes are never imported into
 `auth.users`.
+
+## Mistake-To-Mastery Loop And Product Events
+
+The product promise is the evidence trail
+`exam date -> diagnostic -> daily mission -> authentic timed attempt -> transparent marking -> mistake reason -> scheduled retry -> later mastery`.
+Features should strengthen that trail, not replace it.
+
+- Every mistake row can carry a learner-chosen `errorType` (`knowledge`, `method`,
+  `misread`, `arithmetic`, `timing`, `incomplete`), the `correctAnswer`, a
+  `workedSolution`, warm-up count and `lastReviewedAt` retry evidence. The
+  notebook UI shows the original answer, the marked issue, the corrected method
+  and the next review together.
+- Re-capturing a mistake (e.g. reopening an old results page) refreshes the
+  evidence but never resets review progress, classification or mastery.
+- Durable attempts, the event taxonomy, the activation definition and the
+  retention windows are documented in `ANALYTICS.md`. Keep event payloads
+  scalar-only and free of learner content.
+- Topic pages publish editorial metadata (spec section/assessment objectives,
+  reviewer, last review month, issue-reporting route). Never invent
+  statement-level spec references; the coverage audits
+  (`FOUNDATION_AUDIT.md`, `HIGHER_AUDIT.md`, `ENGLISH_AUDIT.md`) document what
+  is verified.
 
 Supabase Auth accounts are created through the one-time `POST /api/auth/claim` flow, which verifies the legacy password, requires an email and new password, and copies only compact subject aggregates.
 
@@ -189,6 +216,7 @@ docker compose up --build
 - Prefer small, testable changes over cross-subject abstractions that obscure exam-specific behavior.
 - Subject data is always scoped to the signed-in user. Never write progress, drafts, chat or history to a shared file.
 - New sign-in-facing API routes belong under `/api/auth`; new subject routes stay namespaced under `/api/maths`, `/api/maths-higher` and `/api/english` and must keep working with the session gate.
+- `/api/feedback` is the only public write endpoint besides auth. Keep it anonymous, rate limited and free of personal data beyond the optional reply email; never expose stored feedback through any client-facing route.
 - The local/Docker default admin account is `admin` / `admin`; production must use `ADMIN_PASSWORD` and must never depend on that default.
 - Authoritative user data, progress and study sessions must use the configured storage driver: JSON beneath `DATA_DIR` locally and Supabase tables on Vercel. Browser storage is limited to theme, auth-library session persistence, active drafts, disposable result/history caches and one-time migration flags.
 - Supabase is the application database. Keep service-role keys server-side, keep RLS enabled on user-owned tables (`user_id = auth.uid()`), and version every schema change as a migration under `supabase/migrations`. Never merge development users, progress, sessions, chat or submissions into production.

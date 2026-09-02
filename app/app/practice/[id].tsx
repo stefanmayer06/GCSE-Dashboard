@@ -39,6 +39,7 @@ import { useTheme } from "@/theme";
 import { mergeMistakes, mistakesFromResult } from "@/notebook";
 import { hydratePersonal } from "@/personal";
 import { completeMission, missionResultFromServer } from "@/planning";
+import { MathsVisual } from "@/practice/MathsVisual";
 
 const rec = (value: unknown): UnknownRecord =>
   value && typeof value === "object" && !Array.isArray(value)
@@ -716,6 +717,7 @@ function Question({
       )}
       <PromptImage image={question.image} colors={colors} />
       <Text style={[styles.prompt, { color: colors.ink }]}>{prompt}</Text>
+      <MathsVisual stimulus={question.stimulus} colors={colors} accent={accent} />
       {type === "truefalse" && statements.length ? (
         statements.map((statement, index) => {
           const current = rec(value)[String(index)];

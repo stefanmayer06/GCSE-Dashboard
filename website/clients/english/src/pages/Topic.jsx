@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
+import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
 import { QuestionCard } from './Practice.jsx';
 import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
 import { recordLessonResult } from '../../../shared/study-personal.js';
@@ -8,7 +9,11 @@ import { recordLessonResult } from '../../../shared/study-personal.js';
 export default function Topic({ onProgress, userId }) {
   const { topicId } = useParams();
   const navigate = useNavigate();
-  const [topic, setTopic] = useState(null);
+  const { data: fetchedTopic } = useResource(
+    userId && topicId ? `topic:${userId}:${topicId}` : null,
+    () => api.topic(topicId),
+  );
+  const [topicOverride, setTopicOverride] = useState(null);
   const [session, setSession] = useState(null);
   const [answers, setAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
@@ -17,16 +22,16 @@ export default function Topic({ onProgress, userId }) {
   const [celebration, setCelebration] = useState(null);
   const [busy, setBusy] = useState(false);
   const [quizError, setQuizError] = useState('');
+  const topic = topicOverride && topicOverride.topicId === topicId ? topicOverride.value : fetchedTopic;
 
   useEffect(() => {
-    setTopic(null);
+    setTopicOverride(null);
     setSession(null);
     setAnswers({});
     setFeedback({});
     setAiResults({});
     setDone(null);
     setCelebration(null);
-    api.topic(topicId).then(setTopic).catch(() => {});
   }, [topicId]);
 
   async function startQuiz() {
@@ -79,7 +84,10 @@ export default function Topic({ onProgress, userId }) {
         }
       }
       setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
-      if (res.reward?.firstCompletion) setTopic((current) => ({ ...current, completed: true }));
+      invalidateResources(`topic:${userId}:${topicId}`);
+      if (res.reward?.firstCompletion) {
+        setTopicOverride({ topicId, value: { ...(topicOverride?.value ?? fetchedTopic), completed: true } });
+      }
       if (res.reward?.firstCompletion || res.reward?.levelAfter > res.reward?.levelBefore) {
         setCelebration(res.reward);
       }
@@ -105,6 +113,14 @@ export default function Topic({ onProgress, userId }) {
           {topic.completed && <div className="lesson-stamp topic-complete-stamp">Lesson completed</div>}
         </div>
       </header>
+
+      <div className="editorial-note" aria-label="Editorial metadata">
+        <span>AQA 8700{topic.specRefs?.length ? ` · ${topic.specRefs.join(', ')}` : ''}</span>
+        <span>·</span>
+        <span>Reviewed {topic.reviewed ? new Date(topic.reviewed).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : 'recently'} by {topic.editorial?.reviewer || 'the Study Desk content team'}</span>
+        <span>·</span>
+        <a href={topic.editorial?.reportIssueUrl || '/support.html'}>Report an issue</a>
+      </div>
 
       <section className="panel">
         <h2>Notes</h2>

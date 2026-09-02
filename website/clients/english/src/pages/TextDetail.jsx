@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api.js';
+import { useResource } from '../../../shared/resource-cache.js';
 
 export default function TextDetail() {
   const { textId } = useParams();
-  const [text, setText] = useState(null);
+  const { data: text } = useResource(textId ? `text:${textId}` : null, () => api.text(textId));
   const [tab, setTab] = useState('A');
 
   useEffect(() => {
-    setText(null);
     setTab('A');
-    api.text(textId).then(setText).catch(() => {});
   }, [textId]);
 
   if (!text) return <div className="page"><div className="loading">Loading…</div></div>;

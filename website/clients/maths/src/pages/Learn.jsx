@@ -1,15 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
+import { useResource } from '../../../shared/resource-cache.js';
 
-export default function Learn() {
+export default function Learn({ userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
-  const [data, setData] = useState(null);
+  const { data, error } = useResource(userId ? `topics:${userId}` : null, () => api.topics());
   const [open, setOpen] = useState({ number: true });
-
-  useEffect(() => {
-    api.topics().then(setData).catch(() => {});
-  }, []);
 
   return (
     <div className="page">
@@ -22,7 +19,8 @@ export default function Learn() {
           </p>
         </div>
       </header>
-      {!data && <div className="loading">Loading topics…</div>}
+      {!data && !error && <div className="loading">Loading topics…</div>}
+      {error && !data && <div className="loading">Could not load topics. Check your connection and try again.</div>}
       {data &&
         Object.values(data.strands).map((s) => (
           <section key={s.id} className="panel strand-panel">

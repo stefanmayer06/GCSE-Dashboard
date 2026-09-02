@@ -8,6 +8,8 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Alert, AppState, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/query-cache';
 
 const STARTERS: Record<Subject, string[]> = {
   maths: ['Show me a Foundation method for adding fractions.', 'Help me start a non-calculator percentage question.', 'Quiz me on solving a linear equation, one step at a time.', 'How should I check a 5-mark ratio answer?'],
@@ -24,6 +26,7 @@ export default function Tutor() {
   const { session } = useAuth();
   const { online } = useNetwork();
   const { colors, subject: subjectTheme } = useTheme();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ context?: string | string[]; topic?: string | string[]; lesson?: string | string[]; result?: string | string[]; question?: string | string[]; prompt?: string | string[] }>();
   const context = one(params.context) || one(params.question) || one(params.topic) || one(params.lesson) || one(params.result) || '';
   const lessonId = one(params.lesson) || one(params.topic) || 'sample';
@@ -65,7 +68,7 @@ export default function Tutor() {
       setHistoryNote('');
       setDraft(one(params.prompt) || localDraft || (context ? `Help me with this: ${context}` : ''));
       if (online) try {
-        const history = parseTutorHistory(await new ApiClient(subject).chatHistory());
+        const history = parseTutorHistory(await queryClient.fetchQuery({ queryKey: queryKeys.tutorHistory(subject), queryFn: () => new ApiClient(subject).chatHistory(), staleTime: 5 * 60_000 }));
         if (live && history.length) setMessages([...history.map((message, index) => ({ ...message, id: `history-${index}` })), ...localMessages.filter(message => message.status === 'failed')]);
         else if (live) setHistoryNote('Server history is unavailable for this account; this device notebook is kept instead.');
       } catch {
@@ -76,7 +79,7 @@ export default function Tutor() {
     return () => { live = false; request.current?.abort(); };
     // Context is consumed when the subject notebook opens, not whenever query or network state changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, subject, userId]);
+  }, [key, queryClient, subject, userId]);
 
   const loaded = loadedKey === key && Boolean(key);
 

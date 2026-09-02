@@ -95,12 +95,33 @@ async function claimSession(req, id, kind) {
   return defaultStorage.claimStudySession(sessionCriteria(req, id, kind));
 }
 
+// Editorial metadata for the coverage audit trail (see FOUNDATION_AUDIT.md and
+// HIGHER_AUDIT.md). Spec sections match the published AQA 8300 subject content
+// numbering (3.1-3.6); statement-level references ship with the documented
+// coverage audit rather than being guessed here.
+const SPEC_SECTIONS = {
+  number: { section: '3.1', area: 'Number' },
+  algebra: { section: '3.2', area: 'Algebra' },
+  ratio: { section: '3.3', area: 'Ratio, proportion and rates of change' },
+  geometry: { section: '3.4', area: 'Geometry and measures' },
+  probability: { section: '3.5', area: 'Probability' },
+  statistics: { section: '3.6', area: 'Statistics' },
+};
+
+const EDITORIAL = {
+  reviewer: 'Study Desk content team',
+  markingRationale: 'Every generated question carries an exact answer, worked solution and deterministic marking metadata — marks never depend on the AI tutor.',
+  reportIssueUrl: '/support.html',
+};
+
 const publicTopic = (t) => ({
   id: t.id,
   strand: t.strand,
   name: t.name,
   blurb: t.blurb,
   examWeight: t.examWeight,
+  ...(SPEC_SECTIONS[t.strand] ? { specSection: SPEC_SECTIONS[t.strand].section, specArea: SPEC_SECTIONS[t.strand].area } : {}),
+  ...(t.reviewed ? { reviewed: t.reviewed } : {}),
 });
 
 app.get('/health', (req, res) => {
@@ -113,6 +134,7 @@ app.get('/health', (req, res) => {
     model: OPENROUTER_MODEL,
     chatReady: !!OPENROUTER_API_KEY,
     boundaries: isHigher(req) ? BOUNDARIES.higher : BOUNDARIES.foundation,
+    editorial: { ...EDITORIAL, spec: 'AQA 8300' },
   });
 });
 
@@ -150,6 +172,7 @@ app.get('/topics/:id', asyncRoute(async (req, res) => {
     strandColor: STRANDS[t.strand].color,
     notes: t.notes,
     resources: t.resources,
+    editorial: EDITORIAL,
     accuracy: stats && stats.total ? Math.round((100 * stats.correct) / stats.total) : null,
     answered: stats ? stats.total : 0,
     completed: p.completedLessonIds.includes(t.id),
@@ -304,7 +327,30 @@ app.post('/test/:id/submit', asyncRoute(async (req, res) => {
       scoreXp: correctMarks * 2,
       response: result,
     });
-    if (finalized.status === 'completed') return res.json(finalized.result);
+    if (finalized.status === 'completed') {
+      // Durable paper history + funnel trail (best-effort; never blocks the result).
+      await Promise.allSettled([
+        defaultStorage.saveAttempt(req.user.id, tierKey(req), {
+          sessionId: test.id,
+          paperCode: result.paperCode,
+          paperName: result.paperName,
+          type: result.type,
+          tier: test.tier,
+          totalMarks: result.totalMarks,
+          correctMarks: result.correctMarks,
+          percent: result.percent,
+          grade: result.grade,
+          durationSec: result.durationSec,
+          completedAt: new Date().toISOString(),
+          result,
+        }),
+        defaultStorage.recordEvent(req.user.id, 'session_marked', {
+          subject: tierKey(req),
+          metadata: { kind: 'paper', type: result.type, paperCode: result.paperCode, percent: result.percent },
+        }),
+      ]);
+      return res.json(finalized.result);
+    }
     return sessionFailure(res, finalized);
   } catch (error) {
     await defaultStorage.releaseStudySession(criteria).catch(() => {});

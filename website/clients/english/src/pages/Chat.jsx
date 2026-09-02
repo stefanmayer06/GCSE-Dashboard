@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
+import { setResourceValue, useResource } from '../../../shared/resource-cache.js';
 import MarkdownMessage from '../../../shared/MarkdownMessage.jsx';
 
 const SUGGESTIONS = [
@@ -13,55 +14,66 @@ const SUGGESTIONS = [
   'What makes a grade 7 answer different from a grade 5?',
 ];
 
-export default function Chat({ health }) {
-  const [messages, setMessages] = useState([]);
+function toMessages(r) {
+  if (!r.messages.length) {
+    return [
+      {
+        role: 'assistant',
+        content:
+          "Hey! I'm your English Language tutor, tuned for AQA GCSE (8700).\n\nAsk me to explain any question type, build you a framework, or feedback on a paragraph — I'll coach you rather than just giving model answers. ✍️",
+      },
+    ];
+  }
+  const history = r.messages
+    .map((m) => ({ role: m.role, content: m.content }))
+    .filter((m) => m.role !== 'assistant' || String(m.content || '').trim());
+  return history.length ? history : [{ role: 'assistant', content: "Hey! I'm your English Language tutor, tuned for AQA GCSE (8700)." }];
+}
+
+export default function Chat({ health, userId }) {
+  const chatKey = userId ? `chat:${userId}` : null;
+  const { data: history, error } = useResource(chatKey, () => api.chatHistory().then(toMessages));
+  const [messages, setMessagesState] = useState(null);
+  const [applied, setApplied] = useState(false);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [loaded, setLoaded] = useState(false);
   const endRef = useRef(null);
 
   useEffect(() => {
-    api
-      .chatHistory()
-      .then((r) => {
-        if (r.messages.length) {
-          const history = r.messages
-            .map((m) => ({ role: m.role, content: m.content }))
-            .filter((m) => m.role !== 'assistant' || String(m.content || '').trim());
-          setMessages(history.length ? history : [{ role: 'assistant', content: "Hey! I'm your English Language tutor, tuned for AQA GCSE (8700)." }]);
-        } else {
-          setMessages([
-            {
-              role: 'assistant',
-              content:
-                "Hey! I'm your English Language tutor, tuned for AQA GCSE (8700).\n\nAsk me to explain any question type, build you a framework, or feedback on a paragraph — I'll coach you rather than just giving model answers. ✍️",
-            },
-          ]);
-        }
-        setLoaded(true);
-      })
-      .catch(() => {
-        setMessages([{ role: 'assistant', content: 'Hey! Ask me anything about the 8700 papers.' }]);
-        setLoaded(true);
-      });
-  }, []);
+    if (applied || messages != null) return;
+    if (history != null) {
+      setMessagesState(history);
+      setApplied(true);
+    } else if (error) {
+      setMessagesState([{ role: 'assistant', content: 'Hey! Ask me anything about the 8700 papers.' }]);
+      setApplied(true);
+    }
+  }, [applied, history, error, messages]);
+  const loaded = messages != null;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, busy]);
 
+  // Every transcript change is written through to the shared cache so the
+  // next visit to this page renders the conversation instantly.
+  function setMessages(next) {
+    setMessagesState(next);
+    setResourceValue(chatKey, next);
+  }
+
   async function send(text) {
     const content = (text ?? input).trim();
-    if (!content || busy) return;
+    if (!content || busy || !loaded) return;
     setInput('');
     const next = [...messages, { role: 'user', content }];
     setMessages(next);
     setBusy(true);
     try {
       const out = await api.chat(next);
-      setMessages((m) => [...m, { role: 'assistant', content: out.reply, model: out.model }]);
+      setMessages([...next, { role: 'assistant', content: out.reply, model: out.model }]);
     } catch (e) {
-      setMessages((m) => [...m, { role: 'assistant', content: `Sorry — something broke: ${e.message}` }]);
+      setMessages([...next, { role: 'assistant', content: `Sorry — something broke: ${e.message}` }]);
     } finally {
       setBusy(false);
     }
@@ -89,7 +101,7 @@ export default function Chat({ health }) {
 
       <div className="chat-box">
         <div className="chat-scroll">
-          {messages.map((m, i) => (
+          {(messages ?? []).map((m, i) => (
             <div key={i} className={`msg ${m.role}`}>
               <div className="msg-avatar">{m.role === 'user' ? '🧑' : '🤖'}</div>
               <div className="msg-body">

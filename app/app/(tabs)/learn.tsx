@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { queryKeys } from '@/query-cache';
 
 function RetryAction({ label, onPress, color }: { label: string; onPress: () => void; color: string }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={[styles.retry, { borderColor: color }]}>
@@ -22,9 +23,9 @@ export default function Learn() {
   const [search, setSearch] = useState('');
   const [closed, setClosed] = useState<Record<string, boolean>>({});
   const api = new ApiClient(subject);
-  const topics = useQuery({ queryKey: ['learn', subject, 'topics'], queryFn: () => api.topics() as Promise<unknown> });
-  const progress = useQuery({ queryKey: ['learn', subject, 'progress'], queryFn: () => api.progress() as Promise<unknown> });
-  const texts = useQuery({ queryKey: ['learn', subject, 'texts'], queryFn: () => api.texts() as Promise<unknown>, enabled: subject === 'english' });
+  const topics = useQuery({ queryKey: queryKeys.topics(subject), queryFn: () => api.topics() as Promise<unknown>, staleTime: 10 * 60_000 });
+  const progress = useQuery({ queryKey: queryKeys.progress(subject), queryFn: () => api.progress() as Promise<unknown> });
+  const texts = useQuery({ queryKey: queryKeys.texts(subject), queryFn: () => api.texts() as Promise<unknown>, enabled: subject === 'english', staleTime: 30 * 60_000 });
   const groups = filterTopicGroups(mergeTopicProgress(parseTopicGroups(topics.data), progress.data), search);
   const library = Array.isArray(asRecord(texts.data).texts) ? asRecord(texts.data).texts as unknown[] : [];
   const hasTopics = topics.data !== undefined;
@@ -70,4 +71,4 @@ export default function Learn() {
   </ScrollScreen>;
 }
 
-const styles = StyleSheet.create({ content:{padding:20,paddingBottom:56,gap:18},tablet:{width:'100%',maxWidth:900,alignSelf:'center',paddingHorizontal:36},search:{minHeight:50,borderWidth:1,paddingHorizontal:14,fontSize:16},cacheNote:{fontSize:13,lineHeight:19},recovery:{gap:10,alignItems:'flex-start'},retry:{minHeight:44,borderWidth:1,paddingHorizontal:14,justifyContent:'center'},retryText:{fontFamily:'monospace',fontSize:11,fontWeight:'800',letterSpacing:.5},section:{borderWidth:1,backgroundColor:'transparent'},sectionHead:{minHeight:72,padding:15,flexDirection:'row',alignItems:'center',gap:12},grow:{flex:1,gap:4},sectionTitle:{fontFamily:'serif',fontSize:25},copy:{fontSize:14,lineHeight:20},count:{fontFamily:'monospace',fontSize:11,fontWeight:'800'},topic:{minHeight:92,borderTopWidth:1,padding:14,flexDirection:'row',alignItems:'flex-start',gap:12},index:{fontFamily:'monospace',fontSize:11,paddingTop:4},topicTitle:{fontSize:17,fontWeight:'700',lineHeight:22},markers:{flexDirection:'row',flexWrap:'wrap',gap:9,marginTop:7},marker:{fontFamily:'monospace',fontSize:10,fontWeight:'800',letterSpacing:.5},arrow:{fontSize:24},library:{gap:13,marginTop:12},libraryTitle:{fontFamily:'serif',fontSize:30},source:{paddingVertical:15,borderBottomWidth:1,gap:5},excerpt:{fontFamily:'serif',fontSize:15,lineHeight:22,marginTop:4}});
+const styles = StyleSheet.create({ content:{padding:20,paddingBottom:108,gap:18},tablet:{width:'100%',maxWidth:900,alignSelf:'center',paddingHorizontal:36},search:{minHeight:52,borderWidth:1,paddingHorizontal:16,fontSize:16,borderRadius:16},cacheNote:{fontSize:13,lineHeight:19},recovery:{gap:10,alignItems:'flex-start'},retry:{minHeight:44,borderWidth:1,paddingHorizontal:14,justifyContent:'center',borderRadius:12},retryText:{fontFamily:'monospace',fontSize:11,fontWeight:'800',letterSpacing:.5},section:{borderWidth:1,backgroundColor:'transparent',borderRadius:20,overflow:'hidden'},sectionHead:{minHeight:76,padding:16,flexDirection:'row',alignItems:'center',gap:12},grow:{flex:1,gap:4},sectionTitle:{fontSize:24,fontWeight:'800',letterSpacing:-.4},copy:{fontSize:14,lineHeight:20},count:{fontFamily:'monospace',fontSize:11,fontWeight:'800'},topic:{minHeight:94,borderTopWidth:1,padding:15,flexDirection:'row',alignItems:'flex-start',gap:12},index:{fontFamily:'monospace',fontSize:11,paddingTop:4},topicTitle:{fontSize:17,fontWeight:'700',lineHeight:22},markers:{flexDirection:'row',flexWrap:'wrap',gap:9,marginTop:7},marker:{fontFamily:'monospace',fontSize:10,fontWeight:'800',letterSpacing:.5},arrow:{fontSize:24},library:{gap:13,marginTop:12},libraryTitle:{fontSize:29,fontWeight:'900'},source:{paddingVertical:15,borderBottomWidth:1,gap:5},excerpt:{fontFamily:'serif',fontSize:15,lineHeight:22,marginTop:4}});

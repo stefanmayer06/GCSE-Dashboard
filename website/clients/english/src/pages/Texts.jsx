@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
+import { useResource } from '../../../shared/resource-cache.js';
 
 export default function Texts() {
-  const [texts, setTexts] = useState(null);
-
-  useEffect(() => {
-    api.texts().then((r) => setTexts(r.texts)).catch(() => {});
-  }, []);
+  // Static course content: cached for the whole session, no user scope needed.
+  const { data, error } = useResource('texts', () => api.texts());
+  const texts = data?.texts ?? null;
 
   return (
     <div className="page">
@@ -21,7 +19,8 @@ export default function Texts() {
           </p>
         </div>
       </header>
-      {!texts && <div className="loading">Loading texts…</div>}
+      {!texts && !error && <div className="loading">Loading texts…</div>}
+      {error && !texts && <div className="loading">Could not load the text library. Check your connection and try again.</div>}
       {texts && (
         <div className="texts-grid">
           {texts.map((t) => (

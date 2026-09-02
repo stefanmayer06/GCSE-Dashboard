@@ -544,27 +544,41 @@ h2,
 .panel > h2:first-child { font-size: 27px; }
 
 .stat-row {
-  gap: 0;
-  border-top: 1px solid var(--line-strong);
-  border-bottom: 1px solid var(--line-strong);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+  gap: 10px;
 }
 
 .stat-card {
-  min-height: 116px;
-  padding: 20px 22px;
-  border-width: 0 1px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 112px;
+  padding: 18px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: none;
 }
-
-.stat-card:last-child { border-right: 0; }
 
 .stat-num {
   color: var(--subject-ink);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 38px;
   font-weight: 400;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
 }
 
-.stat-label { color: var(--quiet); font-size: 9px; }
+.stat-label { color: var(--quiet); font-size: 9px; line-height: 1.6; }
+
+.stat-card.good { background: var(--positive-wash); }
+.stat-card.good .stat-num { color: var(--positive); }
+.stat-card.good .stat-label { color: var(--positive); }
+
+.stat-card.warn { background: var(--negative-wash); }
+.stat-card.warn .stat-num,
+.stat-card.warn .stat-label { color: var(--negative); }
 
 .papers-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
@@ -861,6 +875,15 @@ textarea:focus-visible,
 .week-plan .locked:last-child { border: 0; }
 .week-plan .locked b { color: var(--quiet); }
 .week-plan .locked small { color: var(--quiet); font-weight: 600; }
+.week-plan .past { display: block; min-width: 0; padding: 10px; border-right: 1px solid var(--line); color: var(--quiet); opacity: 0.62; }
+.week-plan .past:last-child { border: 0; }
+.week-plan .past b { color: var(--quiet); }
+.week-plan .past span { text-decoration: line-through; text-decoration-color: var(--line-strong); }
+.week-plan .past small { color: var(--quiet); font-weight: 600; }
+.week-track { display: flex; gap: 4px; margin-top: 10px; }
+.week-track i { flex: 1; height: 6px; border-radius: 999px; background: var(--line); }
+.week-track i.done { background: var(--positive); }
+.week-track i.today { background: var(--subject-ink); }
 .mission-card.mission-done { border-left-color: var(--positive); }
 .plan-note { margin-top: 10px; color: var(--quiet); font-size: 11px; }
 .notebook-list { margin-top: 22px; }
@@ -1116,73 +1139,143 @@ textarea:focus-visible,
 @media (max-width: 760px) {
   html, body, #root { min-height: 100%; height: auto; }
   .app { display: block; min-height: 100dvh; height: auto; }
+
+  /* Sticky top bar: identity left, account controls right. No backdrop
+     filter here — it would become the containing block for the fixed tab
+     bar nested inside. The near-opaque sidebar token is enough. */
   .sidebar {
     position: sticky;
     top: 0;
     z-index: 100;
-    display: grid;
-    grid-template-columns: 1fr auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
     width: 100%;
-    height: auto;
-    padding: 10px 14px 8px;
+    min-height: 56px;
+    padding: 8px 12px;
     border-right: 0;
-    border-bottom: 1px solid var(--ink);
-    gap: 8px;
+    border-bottom: 1px solid var(--line-strong);
+    background: var(--panel);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
-  .logo { padding: 0; }
-  .logo > div { display: block; }
-  .logo-icon { width: 36px; height: 36px; font-size: 21px; }
-  .logo-name { font-size: 17px; }
-  .subject-switch { align-self: center; margin: 0; }
-  .subject-switch-label { display: inline; }
-  .sidebar nav {
-    grid-column: 1 / -1;
-    display: flex;
-    width: 100%;
-    gap: 3px;
-  }
-  .nav-item {
-    flex: 1 1 0;
-    justify-content: center;
-    min-width: 0;
-    min-height: 38px;
-    padding: 6px 3px;
-    text-align: center;
-  }
-  .nav-icon { display: none; }
-  .nav-label {
-    display: block !important;
-    overflow: hidden;
-    font-size: 10px;
-    line-height: 1.15;
-    text-overflow: ellipsis;
+  .logo { display: flex; align-items: center; gap: 8px; padding: 0; margin-right: auto; min-width: 0; }
+  .logo > div { display: block; min-width: 0; }
+  .logo-icon { width: 34px; height: 34px; font-size: 19px; flex-shrink: 0; }
+  .sidebar .logo .logo-name {
+    display: block;
+    font-size: 16px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .sidebar-foot {
-    grid-column: 1 / -1;
-    display: flex;
+  .logo-sub { display: none; }
+  .subject-switch {
+    align-self: center;
+    width: 36px;
+    min-height: 36px;
     justify-content: center;
-    gap: 8px;
+    padding: 0;
     margin: 0;
+    border: 1px solid var(--line-strong);
+    background: var(--panel);
   }
+  .subject-switch-label { display: none; }
+
+  /* Hoist theme + sign-out into the top bar; drop dashboard-redundant cards. */
+  .sidebar-foot { display: contents; }
   .level-card, .bank-note { display: none; }
-  .theme-toggle { width: 40px; justify-content: center; padding: 0; }
+  .theme-toggle {
+    width: 36px;
+    min-height: 36px;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--line-strong);
+    background: var(--panel);
+  }
   .theme-toggle span:last-child { display: none; }
   .sign-out {
-    max-width: 44%;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--line-strong);
+    background: var(--panel);
+    white-space: nowrap;
+  }
+  .sign-out-user { display: none; }
+
+  /* Fixed bottom tab bar with safe-area padding. */
+  .sidebar nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--line-strong);
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+  }
+  @supports not (backdrop-filter: blur(1px)) {
+    .sidebar nav { background: var(--panel); }
+  }
+  .nav-item {
+    position: relative;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    min-height: 50px;
+    padding: 5px 2px;
+    text-align: center;
+    border-radius: 6px;
+  }
+  .nav-item:active { transform: scale(0.95); }
+  .nav-item:focus-visible { outline: 2px solid var(--subject-ink, var(--ink)); outline-offset: -2px; }
+  .nav-item.active {
+    background: var(--subject-tint);
+    box-shadow: none;
+    color: var(--subject-ink);
+  }
+  .nav-item.active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 26px;
+    height: 2px;
+    background: var(--subject-ink);
+  }
+  .nav-icon { display: block; width: auto; font-size: 10px; opacity: 0.5; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .sidebar nav .nav-item .nav-label {
+    display: block;
+    max-width: 100%;
     overflow: hidden;
-    padding: 0 8px;
+    font-size: 8px;
+    line-height: 1.25;
+    letter-spacing: 0.02em;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .content { padding: 28px 16px 64px; }
-  .page-head { align-items: start; gap: 18px; }
-  h1, .page-head h1 { font-size: clamp(42px, 13vw, 58px); }
-  .panel { padding: 22px 18px; }
+  .nav-item.active .nav-label { overflow: visible; }
+
+  .content { padding: 20px 16px calc(78px + env(safe-area-inset-bottom, 0px)); }
+  .page-head { align-items: start; gap: 14px; }
+  h1, .page-head h1 { font-size: clamp(30px, 8.5vw, 40px); }
+  .panel { padding: 20px 16px; }
+  .chat-box { height: calc(100dvh - 252px); min-height: 420px; }
   .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .stat-card { border-width: 0 1px 1px 0; }
-  .stat-card:nth-child(2n) { border-right: 0; }
-  .stat-card:nth-last-child(-n + 2) { border-bottom: 0; }
   .papers-grid.two { grid-template-columns: 1fr; }
   .paper-actions, .q-actions, .adhoc-cta, .adhoc-row { align-items: stretch; }
   .paper-actions .btn, .q-actions .btn { flex: 1; }
@@ -1207,13 +1300,12 @@ textarea:focus-visible,
 @media print { .sidebar, .no-print { display: none !important; }.content { padding: 0; }.page { max-width: none; }.weekly-summary { color: #000; }.weekly-summary .panel, .weekly-summary .stat-card { background: #fff; } }
 
 @media (max-width: 420px) {
-  .logo-name { font-size: 16px; }
-  .logo-sub { display: none; }
-  .subject-switch-label { display: none; }
-  .subject-switch { width: 36px; justify-content: center; padding: 0; }
-  .nav-label { font-size: 9px; }
+  .logo-name { font-size: 15px; }
+  .subject-switch { width: 34px; min-height: 34px; }
+  .theme-toggle { width: 34px; min-height: 34px; }
+  .sign-out { padding: 0 8px; }
   .stat-num { font-size: 32px; }
-  .stat-card { min-height: 104px; padding: 16px; }
+  .stat-card { min-height: 104px; padding: 14px 16px; }
   .head-chip { align-self: stretch; justify-content: center; }
 }
 

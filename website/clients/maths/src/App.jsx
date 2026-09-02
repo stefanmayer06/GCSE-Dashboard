@@ -1,19 +1,39 @@
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import Dashboard from './pages/Dashboard.jsx';
-import Practice from './pages/Practice.jsx';
-import Results from './pages/Results.jsx';
-import Learn from './pages/Learn.jsx';
-import Topic from './pages/Topic.jsx';
-import Chat from './pages/Chat.jsx';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { api } from './api.js';
 import { clearSupabaseSession } from '../../shared/supabase.js';
+import { clearResourceCache } from '../../shared/resource-cache.js';
 import LoginScreen from '../../shared/login.jsx';
-import { Notebook, WeeklySummary } from '../../shared/StudyTools.jsx';
+
+// Route pages are code-split: the app shell renders first and each page
+// chunk streams in on demand. Chunks are prefetched during idle time after
+// sign-in so the first visit to a page never waits on the network either.
+const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
+const Practice = lazy(() => import('./pages/Practice.jsx'));
+const Results = lazy(() => import('./pages/Results.jsx'));
+const Learn = lazy(() => import('./pages/Learn.jsx'));
+const Topic = lazy(() => import('./pages/Topic.jsx'));
+const Chat = lazy(() => import('./pages/Chat.jsx'));
+const Notebook = lazy(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.Notebook })));
+const WeeklySummary = lazy(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.WeeklySummary })));
+
+const PAGE_LOADERS = [
+  () => import('./pages/Dashboard.jsx'),
+  () => import('./pages/Practice.jsx'),
+  () => import('./pages/Results.jsx'),
+  () => import('./pages/Learn.jsx'),
+  () => import('./pages/Topic.jsx'),
+  () => import('./pages/Chat.jsx'),
+  () => import('../../shared/StudyTools.jsx'),
+];
+
+function PageFallback() {
+  return <div className="page"><div className="loading">Loading…</div></div>;
+}
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: '01' },
-  { to: '/practice', label: 'Practice Exam', icon: '02' },
+  { to: '/practice', label: 'Practice', icon: '02' },
   { to: '/learn', label: 'Learn', icon: '03' },
   { to: '/notebook', label: 'Notebook', icon: '04' },
   { to: '/summary', label: 'Summary', icon: '05' },
@@ -59,6 +79,18 @@ export default function App() {
     });
   }, [location.pathname, auth]);
 
+  useEffect(() => {
+    if (!auth) return undefined;
+    // A fresh identity must never inherit another session's cached resources.
+    clearResourceCache();
+    const schedule = window.requestIdleCallback ?? ((cb) => window.setTimeout(cb, 250));
+    const cancel = window.cancelIdleCallback ?? ((id) => window.clearTimeout(id));
+    const handle = schedule(() => {
+      for (const load of PAGE_LOADERS) load().catch(() => {});
+    });
+    return () => cancel(handle);
+  }, [auth]);
+
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     localStorage.setItem('gcse-theme', next);
@@ -69,6 +101,7 @@ export default function App() {
     try {
       await api.auth.logout();
     } catch {}
+    clearResourceCache();
     for (const key of ['mathsmate-active-test', 'mathsmate-higher-active-test', 'mathsmate-last-result', 'mathsmate-higher-last-result', 'englishmate-active-test', 'englishmate-last-result']) {
       localStorage.removeItem(key);
     }
@@ -131,7 +164,8 @@ export default function App() {
             <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
           </button>
           <button type="button" className="sign-out" onClick={signOut}>
-            Sign out · {auth.username}
+            <span className="sign-out-label">Sign out</span>
+            <span className="sign-out-user">&middot; {auth.username}</span>
           </button>
           {progress && (
             <div className="level-card">
@@ -153,16 +187,18 @@ export default function App() {
         </div>
       </aside>
       <main className="content">
-        <Routes>
-           <Route path="/" element={<Dashboard health={health} progress={progress} higherTier={higherTier} userId={auth.id || auth.username} />} />
-          <Route path="/practice" element={<Practice onProgress={setProgress} />} />
-          <Route path="/results" element={<Results userId={auth.id || auth.username} />} />
-          <Route path="/learn" element={<Learn />} />
-          <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} userId={auth.id || auth.username} />} />
-          <Route path="/notebook" element={<Notebook userId={auth.id || auth.username} subject={higherTier ? 'maths-higher' : 'maths'} api={api} />} />
-          <Route path="/summary" element={<WeeklySummary userId={auth.id || auth.username} subject={higherTier ? 'maths-higher' : 'maths'} progress={progress} api={api} username={auth.username} />} />
-          <Route path="/chat" element={<Chat health={health} />} />
-        </Routes>
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            <Route path="/" element={<Dashboard health={health} progress={progress} higherTier={higherTier} userId={auth.id || auth.username} />} />
+            <Route path="/practice" element={<Practice onProgress={setProgress} userId={auth.id || auth.username} />} />
+            <Route path="/results" element={<Results userId={auth.id || auth.username} />} />
+            <Route path="/learn" element={<Learn userId={auth.id || auth.username} />} />
+            <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} userId={auth.id || auth.username} />} />
+            <Route path="/notebook" element={<Notebook userId={auth.id || auth.username} subject={higherTier ? 'maths-higher' : 'maths'} api={api} />} />
+            <Route path="/summary" element={<WeeklySummary userId={auth.id || auth.username} subject={higherTier ? 'maths-higher' : 'maths'} progress={progress} api={api} username={auth.username} />} />
+            <Route path="/chat" element={<Chat health={health} userId={auth.id || auth.username} />} />
+          </Routes>
+        </Suspense>
       </main>
     </div>
   );

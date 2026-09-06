@@ -15,8 +15,79 @@
         {
           "key": "Cache-Control",
           "value": "no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
         }
       ]
+    },
+    {
+      "source": "/maths/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    },
+    {
+      "source": "/maths-higher/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    },
+    {
+      "source": "/english/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    },
+    {
+      "source": "/delete-account.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    },
+    {
+      "source": "/feedback.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/subjects.html",
+      "destination": "/subjects",
+      "permanent": true
+    },
+    {
+      "source": "/gcse-maths-foundation.html",
+      "destination": "/gcse-maths-foundation",
+      "permanent": true
+    },
+    {
+      "source": "/gcse-maths-higher.html",
+      "destination": "/gcse-maths-higher",
+      "permanent": true
+    },
+    {
+      "source": "/gcse-english-language.html",
+      "destination": "/gcse-english-language",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -51,6 +122,18 @@
     {
       "source": "/subjects",
       "destination": "/subjects.html"
+    },
+    {
+      "source": "/gcse-maths-foundation",
+      "destination": "/gcse-maths-foundation.html"
+    },
+    {
+      "source": "/gcse-maths-higher",
+      "destination": "/gcse-maths-higher.html"
+    },
+    {
+      "source": "/gcse-english-language",
+      "destination": "/gcse-english-language.html"
     }
   ]
 }

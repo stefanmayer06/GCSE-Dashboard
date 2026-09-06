@@ -5,7 +5,8 @@ import { useResource } from '../../../shared/resource-cache.js';
 
 export default function Learn({ userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
-  const { data, error } = useResource(userId ? `topics:${userId}` : null, () => api.topics());
+  const subject = higherTier ? 'maths-higher' : 'maths';
+  const { data, error } = useResource(userId ? `topics:${subject}:${userId}` : null, () => api.topics());
   const [open, setOpen] = useState({ number: true });
 
   return (

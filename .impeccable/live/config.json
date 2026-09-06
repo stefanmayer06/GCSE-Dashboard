@@ -1,0 +1,10 @@
+{
+  "files": [
+    "website/selector/**/*.html",
+    "website/clients/maths/index.html",
+    "website/clients/english/index.html"
+  ],
+  "insertBefore": "</body>",
+  "commentSyntax": "html",
+  "cspChecked": true
+}

@@ -9,6 +9,7 @@
   --source-ink: #34291d;
   --source-bg: #fffaf0;
   --source-tabs-bg: #f5ead4;
+  --on-accent: var(--ink);
   --desk-pattern:
     linear-gradient(rgba(62, 41, 17, 0.045) 1px, transparent 1px);
 }
@@ -24,6 +25,7 @@
   --source-ink: #f4e7d0;
   --source-bg: #241d14;
   --source-tabs-bg: #2c2417;
+  --on-accent: #0c0d0a;
   --desk-pattern:
     linear-gradient(rgba(227, 191, 126, 0.05) 1px, transparent 1px);
 }
@@ -63,7 +65,7 @@ body { background-size: 100% 28px; }
 
 .source-tabs { border-color: var(--source-line); background: var(--source-tabs-bg); }
 .source-tab { border-radius: 0; color: var(--quiet); }
-.source-tab.on { color: #fff; background: var(--accent); box-shadow: none; }
+.source-tab.on { color: var(--on-accent); background: var(--accent); box-shadow: none; }
 
 .mark-chip.auto { color: var(--positive); background: var(--positive-wash); }
 .mark-chip.ai { color: var(--subject-ink); background: var(--accent-wash); }

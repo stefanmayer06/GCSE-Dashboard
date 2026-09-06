@@ -4,7 +4,7 @@ import { api } from '../api.js';
 import { useResource } from '../../../shared/resource-cache.js';
 
 export default function Learn({ userId }) {
-  const { data, error } = useResource(userId ? `topics:${userId}` : null, () => api.topics());
+  const { data, error } = useResource(userId ? `topics:english:${userId}` : null, () => api.topics());
   const [open, setOpen] = useState({ reading: true });
 
   return (

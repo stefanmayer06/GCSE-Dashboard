@@ -145,6 +145,20 @@ h1 {
   letter-spacing: -0.055em;
 }
 
+.headline-hierarchy {
+  max-width: 820px;
+  font-size: clamp(48px, 7.4vw, 94px);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+
+.headline-hierarchy em {
+  display: inline-block;
+  margin-top: 0.04em;
+  font-size: 1.06em;
+  font-style: italic;
+}
+
 .intro-copy {
   margin: 0 0 4px;
   color: var(--quiet);
@@ -246,6 +260,17 @@ h2 {
   font-size: 16px;
   line-height: 1.6;
 }
+
+.course-guide-link {
+  width: fit-content;
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 750;
+  text-underline-offset: 4px;
+}
+
+.course-guide-link:hover { text-decoration-thickness: 2px; }
+.course-guide-link:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
 
 .subject-facts {
   display: grid;

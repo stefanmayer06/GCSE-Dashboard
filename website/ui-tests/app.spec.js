@@ -2,6 +2,10 @@ import { test, expect } from '@playwright/test';
 
 const BASE = process.env.UI_BASE || 'http://localhost:3000';
 
+function scopedKey(subject, name) {
+  return `gcse-admin-${subject}-${name}`;
+}
+
 async function signIn(page) {
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
   const username = page.locator('input[name="username"]');
@@ -30,6 +34,9 @@ async function completeMathsLessonQuiz(page) {
 const pages = [
   ['selector', '/', ['#page-title', '.maths-card', '.english-card']],
   ['subjects-directory', '/subjects', ['.subject-directory', '.dir-maths', '.dir-english', '.dir-coming']],
+  ['maths-foundation-guide', '/gcse-maths-foundation', ['#course-title', '.course-stats', '.faq-list']],
+  ['maths-higher-guide', '/gcse-maths-higher', ['#course-title', '.course-stats', '.faq-list']],
+  ['english-language-guide', '/gcse-english-language', ['#course-title', '.course-stats', '.faq-list']],
   ['maths-dashboard', '/maths/', ['h1', '.subject-switch']],
   ['maths-practice', '/maths/practice', ['h1']],
   ['maths-exam', '/maths/practice?paper=1&type=short', ['.exam-bar', '.q-card']],
@@ -84,14 +91,25 @@ test('login gate accepts the admin account and rejects a bad password', async ({
 
 test('signing out returns to the login gate', async ({ page }) => {
   await signIn(page);
+  const storageKeys = [
+    'mathsmate-active-test',
+    'mathsmate-last-result',
+    'englishmate-last-result',
+    scopedKey('maths', 'active-test'),
+    scopedKey('maths', 'last-result'),
+    scopedKey('english', 'last-result'),
+  ];
   await page.evaluate(() => {
     localStorage.setItem('mathsmate-active-test', 'private draft');
     localStorage.setItem('mathsmate-last-result', 'private result');
     localStorage.setItem('englishmate-last-result', 'other private result');
+    localStorage.setItem('gcse-admin-maths-active-test', 'private scoped draft');
+    localStorage.setItem('gcse-admin-maths-last-result', 'private scoped result');
+    localStorage.setItem('gcse-admin-english-last-result', 'other scoped result');
   });
   await page.locator('.sign-out').click();
   await expect(page.locator('.login-card')).toBeVisible();
-  await expect.poll(() => page.evaluate(() => [localStorage.getItem('mathsmate-active-test'), localStorage.getItem('mathsmate-last-result'), localStorage.getItem('englishmate-last-result')])).toEqual([null, null, null]);
+  await expect.poll(() => page.evaluate((keys) => keys.map((key) => localStorage.getItem(key)), storageKeys)).toEqual(storageKeys.map(() => null));
 });
 
 test('subject selector links and live status', async ({ page }) => {
@@ -101,6 +119,36 @@ test('subject selector links and live status', async ({ page }) => {
   await expect(page.locator('a[href="/maths/"]')).toBeVisible();
   await expect(page.locator('a[href="/english/"]')).toBeVisible();
   await expect(page.locator('a[href="/subjects"]')).toBeVisible();
+});
+
+test('public GCSE guides expose indexable SEO metadata and structured data', async ({ page }) => {
+  const guides = ['/gcse-maths-foundation', '/gcse-maths-higher', '/gcse-english-language'];
+  for (const path of guides) {
+    await page.goto(BASE + path);
+    const title = await page.title();
+    const description = await page.locator('meta[name="description"]').getAttribute('content');
+    const robots = await page.locator('meta[name="robots"]').getAttribute('content');
+    const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
+    const structuredData = await page.locator('script[type="application/ld+json"]').textContent();
+
+    expect(title.length).toBeLessThanOrEqual(60);
+    expect(description.length).toBeLessThanOrEqual(160);
+    expect(robots).toContain('index, follow');
+    expect(new URL(canonical).pathname).toBe(path);
+    expect(structuredData).toBeTruthy();
+    const schema = JSON.parse(structuredData);
+    expect(schema['@graph']).toEqual(expect.arrayContaining([
+      expect.objectContaining({ '@type': 'LearningResource' }),
+      expect.objectContaining({ '@type': 'FAQPage' }),
+    ]));
+  }
+});
+
+test('authenticated subject shells are excluded from search indexing', async ({ page }) => {
+  for (const path of ['/maths/', '/maths-higher/', '/english/', '/feedback.html', '/delete-account.html', '/api/health']) {
+    const response = await page.goto(BASE + path);
+    expect(response.headers()['x-robots-tag'], path).toContain('noindex');
+  }
 });
 
 test('subject directory links to both subjects and tolerates more rows', async ({ page }) => {
@@ -177,9 +225,9 @@ test('Higher Maths exposes three 8300H papers with Higher grade boundaries', asy
 });
 
 for (const [subject, route, storageKey] of [
-  ['Maths', 'maths', 'mathsmate-active-test'],
-  ['Higher Maths', 'maths-higher', 'mathsmate-higher-active-test'],
-  ['English', 'english', 'englishmate-active-test'],
+  ['Maths', 'maths', scopedKey('maths', 'active-test')],
+  ['Higher Maths', 'maths-higher', scopedKey('maths-higher', 'active-test')],
+  ['English', 'english', scopedKey('english', 'active-test')],
 ]) {
   test(`${subject} clears an expired saved paper after a restart`, async ({ page }) => {
     await signIn(page);
@@ -199,9 +247,9 @@ for (const [subject, route, storageKey] of [
 }
 
 for (const [subject, route, apiRoute, storageKey] of [
-  ['Maths', 'maths', 'maths', 'mathsmate-active-test'],
-  ['Higher Maths', 'maths-higher', 'maths-higher', 'mathsmate-higher-active-test'],
-  ['English', 'english', 'english', 'englishmate-active-test'],
+  ['Maths', 'maths', 'maths', scopedKey('maths', 'active-test')],
+  ['Higher Maths', 'maths-higher', 'maths-higher', scopedKey('maths-higher', 'active-test')],
+  ['English', 'english', 'english', scopedKey('english', 'active-test')],
 ]) {
   test(`${subject} can quit a paper without changing progress`, async ({ page }) => {
     if (route === 'maths-higher') await page.setViewportSize({ width: 390, height: 844 });
@@ -230,10 +278,10 @@ for (const [subject, route, apiRoute, storageKey] of [
 test('Higher Maths renders an accessible graph question in the exam runner', async ({ page }) => {
   await signIn(page);
   await page.goto(`${BASE}/maths-higher/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
-  const graphIndex = await page.evaluate(() => {
-    const saved = JSON.parse(localStorage.getItem('mathsmate-higher-active-test'));
-    return saved.test.questions.findIndex((question) => question.stimulus?.type === 'cartesian' || question.stimulus?.type === 'histogram');
-  });
+   const graphIndex = await page.evaluate((key) => {
+     const saved = JSON.parse(localStorage.getItem(key));
+     return saved.test.questions.findIndex((question) => question.stimulus?.type === 'cartesian' || question.stimulus?.type === 'histogram');
+   }, scopedKey('maths-higher', 'active-test'));
   expect(graphIndex).toBeGreaterThanOrEqual(0);
   await page.locator('.q-dot').nth(graphIndex).click();
   await expect(page.locator('.graph-stimulus svg')).toBeVisible();
@@ -246,10 +294,10 @@ test('Higher Maths renders a structured visual at mobile width', async ({ page }
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page);
   await page.goto(`${BASE}/maths-higher/practice?paper=2&type=short`, { waitUntil: 'networkidle' });
-  const visualIndex = await page.evaluate(() => {
-    const saved = JSON.parse(localStorage.getItem('mathsmate-higher-active-test'));
-    return saved.test.questions.findIndex((question) => question.stimulus && !['cartesian', 'histogram'].includes(question.stimulus.type));
-  });
+   const visualIndex = await page.evaluate((key) => {
+     const saved = JSON.parse(localStorage.getItem(key));
+     return saved.test.questions.findIndex((question) => question.stimulus && !['cartesian', 'histogram'].includes(question.stimulus.type));
+   }, scopedKey('maths-higher', 'active-test'));
   expect(visualIndex).toBeGreaterThanOrEqual(0);
   await page.locator('.q-dot').nth(visualIndex).click();
   await expect(page.locator('.maths-visual')).toBeVisible();
@@ -270,16 +318,38 @@ test('Maths recovers if a paper expires while it is open', async ({ page }) => {
   await page.getByRole('button', { name: 'Submit', exact: true }).click();
   await expect(page.locator('.error-banner')).toContainText('no longer active');
   await expect(page.locator('h1')).toContainText('Practice exam');
-  await expect.poll(() => page.evaluate(() => localStorage.getItem('mathsmate-active-test'))).toBeNull();
+  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), scopedKey('maths', 'active-test'))).toBeNull();
+});
+
+test('paper confirmation dialog traps focus and restores it on Escape', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/maths/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
+  const submitPaper = page.getByRole('button', { name: 'Submit paper', exact: true });
+  await submitPaper.click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toHaveAttribute('aria-modal', 'true');
+  await expect(dialog).toHaveAttribute('aria-labelledby', /.+/);
+  await expect(dialog).toHaveAttribute('aria-describedby', /.+/);
+  await expect(dialog.getByRole('button', { name: 'Keep working', exact: true })).toBeFocused();
+
+  await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('button', { name: 'Submit', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('button', { name: 'Keep working', exact: true })).toBeFocused();
+  await page.keyboard.press('Escape');
+
+  await expect(dialog).toHaveCount(0);
+  await expect(submitPaper).toBeFocused();
 });
 
 test('Foundation Maths renders an accessible visual question in the exam runner', async ({ page }) => {
   await signIn(page);
   await page.goto(`${BASE}/maths/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
-  const visualIndex = await page.evaluate(() => {
-    const saved = JSON.parse(localStorage.getItem('mathsmate-active-test'));
-    return saved.test.questions.findIndex((question) => question.stimulus);
-  });
+   const visualIndex = await page.evaluate((key) => {
+     const saved = JSON.parse(localStorage.getItem(key));
+     return saved.test.questions.findIndex((question) => question.stimulus);
+   }, scopedKey('maths', 'active-test'));
   expect(visualIndex).toBeGreaterThanOrEqual(0);
   await page.locator('.q-dot').nth(visualIndex).click();
   await expect(page.locator('.maths-visual')).toBeVisible();
@@ -324,6 +394,70 @@ test('dark mode toggles, persists and reaches every surface', async ({ page }) =
 
   await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
+test('tablet navigation keeps account controls and accessible names', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 900 });
+  await signIn(page);
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.theme-toggle')).toBeVisible();
+  await expect(page.locator('.sign-out')).toBeVisible();
+  await expect(page.locator('.sidebar nav a')).toHaveCount(6);
+  await expect.poll(() => page.locator('.sidebar nav a').evaluateAll((links) => links.map((link) => link.getAttribute('aria-label')))).toEqual([
+    'Dashboard', 'Practice', 'Learn', 'Notebook', 'Summary', 'AI Tutor',
+  ]);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('mobile header controls meet the touch target', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await signIn(page);
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  const sizes = await page.locator('.subject-switch, .theme-toggle, .sign-out').evaluateAll((controls) => controls.map((control) => {
+    const rect = control.getBoundingClientRect();
+    return { width: rect.width, height: rect.height };
+  }));
+  expect(sizes.every(({ width, height }) => width >= 44 && height >= 44)).toBeTruthy();
+});
+
+test('save-data connections skip non-critical route prefetches', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'connection', {
+      configurable: true,
+      value: { saveData: true, effectiveType: '2g' },
+    });
+  });
+  const assetRequests = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/assets/') && request.url().endsWith('.js')) assetRequests.push(request.url());
+  });
+
+  await signIn(page);
+  await page.waitForTimeout(400);
+  expect(assetRequests.some((url) => /\/(Practice|Results|Learn|Topic|Chat)-[^/]+\.js$/.test(url))).toBeFalsy();
+});
+
+test('landscape tablet keeps collapsed sidebar controls reachable', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await signIn(page);
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+
+  const metrics = await page.locator('.sidebar').evaluate((sidebar) => ({
+    documentHeight: document.documentElement.scrollHeight,
+    viewportHeight: window.innerHeight,
+    sidebarHeight: sidebar.clientHeight,
+    sidebarScrollHeight: sidebar.scrollHeight,
+  }));
+  expect(metrics.documentHeight).toBeLessThanOrEqual(metrics.viewportHeight);
+  expect(metrics.sidebarScrollHeight).toBeGreaterThan(metrics.sidebarHeight);
+
+  await page.locator('.sidebar').evaluate((sidebar) => { sidebar.scrollTop = sidebar.scrollHeight; });
+  const controlsInViewport = await page.evaluate(() => ['.theme-toggle', '.sign-out'].every((selector) => {
+    const rect = document.querySelector(selector).getBoundingClientRect();
+    return rect.top >= 0 && rect.bottom <= window.innerHeight;
+  }));
+  expect(controlsInViewport).toBeTruthy();
 });
 
 test('a new visitor can create an account and sign in with it', async ({ page }) => {
@@ -540,7 +674,7 @@ test('English quick-fire shows extracts and enables true-false marking', async (
   const rows = question.locator('.tf-row');
   expect(await rows.count()).toBeGreaterThan(0);
   for (let index = 0; index < await rows.count(); index += 1) {
-    await rows.nth(index).getByRole('button', { name: 'TRUE' }).click();
+     await rows.nth(index).getByRole('button', { name: /True$/ }).click();
   }
   await expect(check).toBeEnabled();
   await check.click();
@@ -550,6 +684,9 @@ test('English quick-fire shows extracts and enables true-false marking', async (
 for (const [name, url] of [
   ['mobile-selector', '/'],
   ['mobile-subjects', '/subjects'],
+  ['mobile-maths-foundation-guide', '/gcse-maths-foundation'],
+  ['mobile-maths-higher-guide', '/gcse-maths-higher'],
+  ['mobile-english-language-guide', '/gcse-english-language'],
   ['mobile-maths', '/maths/'],
   ['mobile-maths-higher', '/maths-higher/'],
   ['mobile-english', '/english/'],

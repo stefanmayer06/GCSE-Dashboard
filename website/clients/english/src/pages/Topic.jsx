@@ -171,7 +171,7 @@ export default function Topic({ onProgress, userId }) {
           <div className="quiz">
             {session.questions.map((q, i) => (
               <QuestionCard
-                key={q.id}
+                key={`${session.sessionId}:${q.id}`}
                 q={q}
                 index={i}
                 value={answers[q.id]}
@@ -185,7 +185,7 @@ export default function Topic({ onProgress, userId }) {
               <div className="quiz-done">
                 <h3>You scored {done.correct}/{done.total}</h3>
                 <RewardSummary reward={done.reward} progress={done.progress} />
-                {quizError && <div className="error-banner">{quizError}</div>}
+                {quizError && <div className="error-banner" role="alert">{quizError}</div>}
                 <button className="btn btn-primary" onClick={startQuiz}>Another 3</button>
               </div>
             ) : (

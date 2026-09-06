@@ -31,13 +31,24 @@ function toMessages(r) {
 }
 
 export default function Chat({ health, userId }) {
-  const chatKey = userId ? `chat:${userId}` : null;
+  const chatKey = userId ? `chat:english:${userId}` : null;
   const { data: history, error } = useResource(chatKey, () => api.chatHistory().then(toMessages));
   const [messages, setMessagesState] = useState(null);
   const [applied, setApplied] = useState(false);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const endRef = useRef(null);
+  const chatKeyRef = useRef(chatKey);
+  const requestRef = useRef(0);
+  chatKeyRef.current = chatKey;
+
+  useEffect(() => {
+    requestRef.current += 1;
+    setMessagesState(null);
+    setApplied(false);
+    setInput('');
+    setBusy(false);
+  }, [chatKey]);
 
   useEffect(() => {
     if (applied || messages != null) return;
@@ -52,7 +63,8 @@ export default function Chat({ health, userId }) {
   const loaded = messages != null;
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    endRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' });
   }, [messages, busy]);
 
   // Every transcript change is written through to the shared cache so the
@@ -65,14 +77,18 @@ export default function Chat({ health, userId }) {
   async function send(text) {
     const content = (text ?? input).trim();
     if (!content || busy || !loaded) return;
+    const requestId = ++requestRef.current;
+    const requestKey = chatKey;
     setInput('');
     const next = [...messages, { role: 'user', content }];
     setMessages(next);
     setBusy(true);
     try {
       const out = await api.chat(next);
+      if (requestRef.current !== requestId || chatKeyRef.current !== requestKey) return;
       setMessages([...next, { role: 'assistant', content: out.reply, model: out.model }]);
     } catch (e) {
+      if (requestRef.current !== requestId || chatKeyRef.current !== requestKey) return;
       setMessages([...next, { role: 'assistant', content: `Sorry — something broke: ${e.message}` }]);
     } finally {
       setBusy(false);
@@ -80,7 +96,10 @@ export default function Chat({ health, userId }) {
   }
 
   async function reset() {
+    const requestId = ++requestRef.current;
+    const requestKey = chatKey;
     await api.clearChat();
+    if (requestRef.current !== requestId || chatKeyRef.current !== requestKey) return;
     setMessages([{ role: 'assistant', content: 'Fresh start! What shall we work on?' }]);
   }
 
@@ -132,6 +151,7 @@ export default function Chat({ health, userId }) {
         <div className="chat-input-row">
           <input
             className="chat-input"
+            aria-label="Ask the English AI tutor"
             placeholder="Ask about any question type, skill or technique…"
             value={input}
             onChange={(e) => setInput(e.target.value)}

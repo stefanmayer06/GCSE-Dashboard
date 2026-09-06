@@ -11,7 +11,7 @@ export default function Dashboard({ health, progress, userId }) {
   const navigate = useNavigate();
   const overall = progress?.overallPercent;
   // Cached per user: returning from Learn/Practice renders instantly.
-  const { data: topics } = useResource(userId ? `topics:${userId}` : null, () => api.topics());
+  const { data: topics } = useResource(userId ? `topics:english:${userId}` : null, () => api.topics());
 
   const mastery = useMemo(() => {
     if (!topics || !progress) return null;

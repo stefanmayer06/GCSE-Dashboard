@@ -9,10 +9,11 @@ import { recordLessonResult } from '../../../shared/study-personal.js';
 
 export default function Topic({ onProgress, userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
+  const subject = higherTier ? 'maths-higher' : 'maths';
   const { topicId } = useParams();
   const navigate = useNavigate();
   const { data: fetchedTopic } = useResource(
-    userId && topicId ? `topic:${userId}:${topicId}` : null,
+     userId && topicId ? `topic:${subject}:${userId}:${topicId}` : null,
     () => api.topic(topicId),
   );
   const [topicOverride, setTopicOverride] = useState(null);
@@ -125,7 +126,7 @@ export default function Topic({ onProgress, userId }) {
 
       <section className="panel">
         <h2>Notes</h2>
-        <LessonVisual topicId={topicId} />
+        <LessonVisual key={topicId} topicId={topicId} />
         <div className="notes">
           {topic.notes.map((n, i) => {
             if (n.t === 'p') return <p key={i} className="note-p">{n.text}</p>;
@@ -172,21 +173,22 @@ export default function Topic({ onProgress, userId }) {
             {quiz.map((q, i) => {
               const fb = feedback[q.id];
               return (
-                <div key={q.id} className={`quiz-q ${fb ? (fb.correct ? 'right' : 'wrong') : ''}`}>
+                <div key={`${sessionId}:${q.id}`} className={`quiz-q ${fb ? (fb.correct ? 'right' : 'wrong') : ''}`}>
                   <div className="quiz-q-meta">
                     <span>Q{i + 1}</span>
                     <span>{q.marks} mark{q.marks > 1 ? 's' : ''}</span>
                   </div>
                   <div className="quiz-q-text">{q.text.split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
-                  <MathsVisual stimulus={q.stimulus} />
+                   <MathsVisual key={`${sessionId}:${q.id}`} stimulus={q.stimulus} />
 
-                  {q.input.type === 'mcq' ? (
-                    <div className="choices">
+                   {q.input.type === 'mcq' ? (
+                     <div className="choices" role="group" aria-label={`Answer to question ${i + 1}`}>
                       {q.input.choices.map((c) => (
                         <button
-                          key={c.label}
-                          disabled={!!fb}
-                          className={`choice ${answers[q.id] === c.label ? 'selected' : ''}`}
+                           key={c.label}
+                           disabled={!!fb}
+                           className={`choice ${answers[q.id] === c.label ? 'selected' : ''}`}
+                           aria-pressed={answers[q.id] === c.label}
                           onClick={() => setAnswers((a) => ({ ...a, [q.id]: c.label }))}
                         >
                           <span className="choice-letter">{c.label}</span>
@@ -195,9 +197,10 @@ export default function Topic({ onProgress, userId }) {
                       ))}
                     </div>
                   ) : (
-                    <input
-                      className="answer-input"
-                      type="text"
+                     <input
+                       className="answer-input"
+                       aria-label={`Answer to question ${i + 1}`}
+                       type="text"
                       inputMode={q.input.type === 'number' ? 'decimal' : 'text'}
                       disabled={!!fb}
                       placeholder={q.input.placeholder || 'Your answer'}
@@ -233,12 +236,12 @@ export default function Topic({ onProgress, userId }) {
               <div className="quiz-done">
                 <h3>You scored {done.correct}/{done.total}</h3>
                 <RewardSummary reward={done.reward} progress={done.progress} />
-                {quizError && <div className="error-banner">{quizError}</div>}
+                {quizError && <div className="error-banner" role="alert">{quizError}</div>}
                 <button className="btn btn-primary" onClick={startQuiz}>Another 5</button>
               </div>
             ) : (
               <>
-                {quizError && <div className="error-banner">{quizError}</div>}
+                {quizError && <div className="error-banner" role="alert">{quizError}</div>}
                 <button
                   className="btn btn-finish"
                   disabled={busy || Object.keys(feedback).length < quiz.length}

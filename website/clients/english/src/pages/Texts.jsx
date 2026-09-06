@@ -4,7 +4,7 @@ import { useResource } from '../../../shared/resource-cache.js';
 
 export default function Texts() {
   // Static course content: cached for the whole session, no user scope needed.
-  const { data, error } = useResource('texts', () => api.texts());
+  const { data, error } = useResource('texts:english', () => api.texts());
   const texts = data?.texts ?? null;
 
   return (

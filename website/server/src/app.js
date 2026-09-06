@@ -47,6 +47,10 @@ function availableDist(...candidates) {
 
 function mountSubject(app, subject, dist) {
   if (!dist) return;
+  app.use(`/${subject}`, (req, res, next) => {
+    res.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    next();
+  });
   app.use((req, res, next) => {
     if (req.path === `/${subject}/`) return res.sendFile(path.join(dist, 'index.html'));
     return next();
@@ -79,6 +83,7 @@ export function createApp({ serveStatic = true } = {}) {
 
   app.use('/api', (req, res, next) => {
     res.set('Cache-Control', 'no-store');
+    res.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
     next();
   });
   app.use(express.json({ limit: '2mb' }));
@@ -119,9 +124,20 @@ export function createApp({ serveStatic = true } = {}) {
     mountSubject(app, 'maths-higher', mathsHigherDist);
     mountSubject(app, 'english', englishDist);
 
+    app.get('/subjects.html', (req, res) => res.redirect(308, '/subjects'));
+    app.get('/gcse-maths-foundation.html', (req, res) => res.redirect(308, '/gcse-maths-foundation'));
+    app.get('/gcse-maths-higher.html', (req, res) => res.redirect(308, '/gcse-maths-higher'));
+    app.get('/gcse-english-language.html', (req, res) => res.redirect(308, '/gcse-english-language'));
+    app.use(['/delete-account.html', '/feedback.html'], (req, res, next) => {
+      res.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+      next();
+    });
     app.use(express.static(selector));
     app.get('/', (req, res) => res.sendFile(path.join(selector, 'index.html')));
     app.get('/subjects', (req, res) => res.sendFile(path.join(selector, 'subjects.html')));
+    app.get('/gcse-maths-foundation', (req, res) => res.sendFile(path.join(selector, 'gcse-maths-foundation.html')));
+    app.get('/gcse-maths-higher', (req, res) => res.sendFile(path.join(selector, 'gcse-maths-higher.html')));
+    app.get('/gcse-english-language', (req, res) => res.sendFile(path.join(selector, 'gcse-english-language.html')));
   }
 
   app.use((req, res) => {

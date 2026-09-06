@@ -845,11 +845,14 @@ export function createSupabaseStorage(options = {}) {
     deleteAuthSession: (...args) => unsupported('deleteAuthSession', ...args),
     putOAuthState: (...args) => unsupported('putOAuthState', ...args),
     consumeOAuthState: (...args) => unsupported('consumeOAuthState', ...args),
-    getPersonal: async (userId, subject) => ({
-      preferences: await getPreferences(userId, subject),
-      plan: await getPlan(userId, subject),
-      mistakes: await getMistakes(userId, subject),
-    }),
+    getPersonal: async (userId, subject) => {
+      const [preferences, plan, mistakes] = await Promise.all([
+        getPreferences(userId, subject),
+        getPlan(userId, subject),
+        getMistakes(userId, subject),
+      ]);
+      return { preferences, plan, mistakes };
+    },
     savePreferences,
     savePlan,
     saveMistakes,

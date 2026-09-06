@@ -1,12 +1,55 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="AQA GCSE Maths Foundation, Maths Higher and English Language revision in one focused study dashboard." />
-    <title>GCSE Study Desk | Maths, Higher Maths and English</title>
+    <meta name="description" content="Free GCSE revision for AQA Maths Foundation, Maths Higher and English Language, with exam-style practice, worked solutions and focused study plans." />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#f3f0e8" />
+    <link rel="canonical" href="https://gcse-dashboard-server.vercel.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:site_name" content="GCSE Study Desk" />
+    <meta property="og:title" content="Free GCSE Revision for Maths and English" />
+    <meta property="og:description" content="Practise AQA GCSE Maths and English Language with exam-style questions, worked solutions and a clear study plan." />
+    <meta property="og:url" content="https://gcse-dashboard-server.vercel.app/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Free GCSE Revision for Maths and English" />
+    <meta name="twitter:description" content="AQA GCSE Maths and English Language revision with exam-style practice and worked support." />
+    <title>Free GCSE Revision | Maths &amp; English | Study Desk</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 fill=%22%23161713%22/><text x=%225%22 y=%2221%22 font-size=%2212%22 fill=%22%23f3f0e8%22>SD</text></svg>" />
     <link rel="stylesheet" href="/selector.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://gcse-dashboard-server.vercel.app/#website",
+            "url": "https://gcse-dashboard-server.vercel.app/",
+            "name": "GCSE Study Desk",
+            "description": "Free AQA GCSE Maths and English Language revision and exam practice.",
+            "inLanguage": "en-GB"
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://gcse-dashboard-server.vercel.app/#app",
+            "url": "https://gcse-dashboard-server.vercel.app/",
+            "name": "GCSE Study Desk",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Any",
+            "isAccessibleForFree": true,
+            "educationalLevel": "GCSE",
+            "educationalUse": ["revision", "practice", "assessment"],
+            "audience": {
+              "@type": "EducationalAudience",
+              "educationalRole": "student"
+            },
+            "isPartOf": { "@id": "https://gcse-dashboard-server.vercel.app/#website" }
+          }
+        ]
+      }
+    </script>
     <script>
       try {
         var t = localStorage.getItem('gcse-theme');
@@ -41,12 +84,13 @@
       </header>
 
       <section class="intro" aria-labelledby="page-title">
-        <p class="eyebrow">Revision, without the guesswork</p>
-        <h1 id="page-title">What are you<br />working on today?</h1>
-        <p class="intro-copy">Choose a subject to pick up your progress, practise real paper formats, or get help from your tutor.</p>
+        <p class="eyebrow">AQA Maths and English practice</p>
+        <h1 id="page-title" class="headline-hierarchy"><span>GCSE revision,</span><br /><em>without the guesswork</em></h1>
+        <p class="intro-copy">Choose a subject to revise key topics, practise realistic paper formats, review worked solutions and get help from your tutor.</p>
       </section>
 
       <section class="subject-grid" aria-label="Choose a subject">
+
         <article class="subject-card maths-card">
           <div class="card-topline">
             <span class="course-code">AQA 8300</span>
@@ -60,6 +104,7 @@
             </div>
           </div>
           <p class="subject-copy">Build reliable methods across Number, Algebra, Ratio, Geometry, Probability and Statistics.</p>
+          <a class="course-guide-link" href="/gcse-maths-foundation">Explore the Foundation revision guide</a>
           <dl class="subject-facts">
             <div><dt>Practice</dt><dd id="maths-bank">1,730+ questions</dd></div>
             <div><dt>Exam</dt><dd>3 papers</dd></div>
@@ -67,6 +112,7 @@
           </dl>
           <a class="enter-link" href="/maths/">Open MathsMate <span aria-hidden="true">→</span></a>
         </article>
+
 
         <article class="subject-card english-card">
           <div class="card-topline">
@@ -81,6 +127,7 @@
             </div>
           </div>
           <p class="subject-copy">Read sources closely, shape stronger responses and practise both papers with examiner-style support.</p>
+          <a class="course-guide-link" href="/gcse-english-language">Explore the English revision guide</a>
           <dl class="subject-facts">
             <div><dt>Sources</dt><dd id="english-texts">10 texts</dd></div>
             <div><dt>Exam</dt><dd>2 papers</dd></div>

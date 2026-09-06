@@ -2,6 +2,14 @@
 
 Aligned with [`MARKET_COMPARISON.md`](MARKET_COMPARISON.md). Covers the **website only** — the mobile app is not mentioned in any post, link or reply until it is released.
 
+> **Current status - 2026-09-02:** Week 1 launch preparation. The five community-specific Reddit drafts are in [`REDDIT_DRAFTS.md`](REDDIT_DRAFTS.md). No post, tester, feedback submission or activation result is recorded here yet.
+>
+> **Current blocker:** Reddit's anonymous API and the permitted web fallback both returned HTTP 403 while live subreddit rules were being checked. The drafts are therefore not cleared for posting. Verify each community's current rules, self-promotion policy, link/flair requirements and any megathread before publishing.
+>
+> **URL correction:** The live public feedback page is `/feedback.html`; `/feedback` currently returns 404 on production. The API endpoint remains `/api/feedback`. Draft links use the working page.
+>
+> **Keep-current routine:** On Fridays, update this status block and the measurement table from `/feedback.html` and product events. Record the last rule check beside each draft, keep each `src` tag unchanged, and only write the planned Reddit Post 2 after a user-requested fix has shipped. Treat any draft as expired if the product, URL or claims change.
+
 Goal: recruit the first free beta testers and learn from them. This is the "months 0–3" work from the market plan: **a small free beta, activation measurement and structured feedback — no payments, no paid ads.**
 
 ## 1. What we are recruiting for
@@ -12,7 +20,7 @@ Goal: recruit the first free beta testers and learn from them. This is the "mont
 | Learner interviews | 20 | Short call or async Q&A after ~2 weeks of use | Market plan, months 0–3 |
 | Parent interviews | 15 | Same | Market plan, months 0–3 |
 | Teacher interviews | 15 | Same; later design-partner candidates | Market plan, months 0–3 |
-| Feedback form submissions | 50+ in first 6 weeks | Via the built-in form at `/feedback` | This plan |
+| Feedback form submissions | 50+ in first 6 weeks | Via the built-in form at `/feedback.html` | This plan |
 
 An "activated learner" is worth far more than a signup. Never optimise a post for clicks; optimise it for someone completing the diagnostic + one marked session.
 
@@ -39,6 +47,7 @@ An "activated learner" is worth far more than a signup. Never optimise a post fo
 - Do **not** call the readiness indicator a predicted grade.
 - Do **not** invent outcome claims ("boost your grade") — no evidence exists yet.
 - Always disclose that you built it. Honesty is the differentiator against incumbent astroturfing and the only sustainable voice in student communities.
+- If discussing the project's future, disclose that it began as something built for the creator's brother and may become a small business while the creator is at university. Never present the creator as an unrelated user.
 
 ## 3. Links and tracking
 
@@ -46,17 +55,17 @@ Every public link carries a `src` tag so each channel's feedback can be traced. 
 
 | Channel | Link to post |
 | --- | --- |
-| Reddit r/GCSE | `https://<site>/feedback?src=reddit-rgcse` (post) and `?src=reddit-rgcse-c1`, `-c2` per comment |
-| The Student Room | `https://<site>/feedback?src=tsr-forum` |
-| Study Discords | `https://<site>/feedback?src=discord-<server>` |
-| Parent groups (Facebook/Mumsnet) | `https://<site>/feedback?src=parents-<group>` |
-| TikTok/IG/YouTube Shorts bio | `https://<site>/feedback?src=social-bio` |
-| Teacher communities | `https://<site>/feedback?src=teacher-<place>` |
-| Direct DMs / friends & family | `https://<site>/feedback?src=direct` |
+| Reddit r/GCSE | `https://<site>/feedback.html?src=reddit-rgcse` (post) and `?src=reddit-rgcse-c1`, `-c2` per comment |
+| The Student Room | `https://<site>/feedback.html?src=tsr-forum` |
+| Study Discords | `https://<site>/feedback.html?src=discord-<server>` |
+| Parent groups (Facebook/Mumsnet) | `https://<site>/feedback.html?src=parents-<group>` |
+| TikTok/IG/YouTube Shorts bio | `https://<site>/feedback.html?src=social-bio` |
+| Teacher communities | `https://<site>/feedback.html?src=teacher-<place>` |
+| Direct DMs / friends & family | `https://<site>/feedback.html?src=direct` |
 
 Two-step funnel for posts: the post links to the **subject page** (`/maths/`, `/maths-higher/` or `/english/`) for the product, and to the **feedback page** for the form. Ask people to use the feedback link even if they only looked at the site for two minutes — early "why I left" feedback is the most valuable.
 
-## 4. The feedback form (already built at `/feedback`)
+## 4. The feedback form (already built at `/feedback.html`)
 
 Five questions, under two minutes, stored server-side (`beta_feedback` table / local `feedback.json`), rate-limited, spam-protected:
 
@@ -129,7 +138,7 @@ Post 2–3 organic TikTok / Instagram Reels / YouTube Shorts per week. Formats t
 3. "Your revision plan if your exam is in N weeks" — 20-second plan built on the site.
 4. React to a marked answer: "This got 3/6. Here's the missing mark." (Never claim it's an official mark.)
 
-Bio link: `[site]/feedback?src=social-bio`. Never claim grades or outcomes.
+Bio link: `[site]/feedback.html?src=social-bio`. Never claim grades or outcomes.
 
 ### Channel G — Friends, family and existing users (day 1)
 
@@ -168,7 +177,7 @@ Give each creator their own `?src=creator-<name>` link and judge them on activat
 
 | Metric | Where it comes from | Healthy signal after 8 weeks |
 | --- | --- | --- |
-| Feedback submissions by `src` | `/feedback` storage | ≥ 50 total; ≥ 5 from your best channel |
+| Feedback submissions by `src` | `/feedback.html` storage | ≥ 50 total; ≥ 5 from your best channel |
 | Average rating 1–5 | form | trending up week over week |
 | Top improvement tags | manual tag of question 4 | each week's fix ships from last week's top tag |
 | Signups | Vercel Insights + Supabase | growing, not spiking-and-dying |

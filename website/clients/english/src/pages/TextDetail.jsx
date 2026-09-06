@@ -5,7 +5,7 @@ import { useResource } from '../../../shared/resource-cache.js';
 
 export default function TextDetail() {
   const { textId } = useParams();
-  const { data: text } = useResource(textId ? `text:${textId}` : null, () => api.text(textId));
+  const { data: text } = useResource(textId ? `text:english:${textId}` : null, () => api.text(textId));
   const [tab, setTab] = useState('A');
 
   useEffect(() => {

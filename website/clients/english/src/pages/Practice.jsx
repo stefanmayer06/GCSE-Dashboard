@@ -1,10 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
 import { RewardSummary } from '../../../shared/rewards.jsx';
+import { personalKey } from '../../../shared/study-personal.js';
 
-const LS_KEY = 'englishmate-active-test';
+function activeTestKey(userId) {
+  return userId ? personalKey(userId, 'english', 'active-test') : null;
+}
+
+function lastResultKey(userId) {
+  return userId ? personalKey(userId, 'english', 'last-result') : null;
+}
 
 function fmtTime(total) {
   const m = Math.floor(total / 60);
@@ -12,26 +19,28 @@ function fmtTime(total) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-function loadSaved() {
+function loadSaved(key) {
+  if (!key) return null;
   try {
-    const raw = localStorage.getItem(LS_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (!data?.test?.id || !Array.isArray(data.test.questions) || data.secondsLeft <= 0) {
-      localStorage.removeItem(LS_KEY);
+      localStorage.removeItem(key);
       return null;
     }
     return data;
   } catch {
-    localStorage.removeItem(LS_KEY);
+    localStorage.removeItem(key);
     return null;
   }
 }
 
 export default function Practice({ health, onProgress, userId }) {
+  const storageKey = activeTestKey(userId);
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const saved = useRef(loadSaved());
+  const saved = useRef(loadSaved(storageKey));
   const [phase, setPhase] = useState(saved.current ? 'restoring' : 'setup');
   const [test, setTest] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -42,9 +51,12 @@ export default function Practice({ health, onProgress, userId }) {
   const [quitOpen, setQuitOpen] = useState(false);
   const [quitting, setQuitting] = useState(false);
   const [error, setError] = useState('');
-  const { data: papersData } = useResource(userId ? `papers:${userId}` : null, () => api.papers());
+  const { data: papersData } = useResource(userId ? `papers:english:${userId}` : null, () => api.papers());
   const papersMeta = papersData?.papers ?? null;
   const submitting = useRef(false);
+  const answersRef = useRef({});
+  const elapsedRef = useRef(0);
+  const secondsLeftRef = useRef(null);
 
   useEffect(() => {
     if (saved.current) resumeSaved();
@@ -58,7 +70,11 @@ export default function Practice({ health, onProgress, userId }) {
     try {
       await api.testStatus(s.test.id);
       setTest(s.test);
-      setAnswers(s.answers || {});
+      const restoredAnswers = s.answers || {};
+      answersRef.current = restoredAnswers;
+      elapsedRef.current = s.elapsed || 0;
+      secondsLeftRef.current = s.secondsLeft;
+      setAnswers(restoredAnswers);
       setSecondsLeft(s.secondsLeft);
       setElapsed(s.elapsed || 0);
       setCurrent(s.current || 0);
@@ -73,10 +89,13 @@ export default function Practice({ health, onProgress, userId }) {
   }
 
   function clearExpiredTest(message) {
-    localStorage.removeItem(LS_KEY);
+    if (storageKey) localStorage.removeItem(storageKey);
     saved.current = null;
     autoStart.current = { paper: null, type: null };
     setTest(null);
+    answersRef.current = {};
+    elapsedRef.current = 0;
+    secondsLeftRef.current = null;
     setAnswers({});
     setCurrent(0);
     setSecondsLeft(null);
@@ -93,37 +112,38 @@ export default function Practice({ health, onProgress, userId }) {
   useEffect(() => {
     if (!test || phase !== 'running') return;
     const t = setInterval(() => {
-      setElapsed((e) => {
-        const next = e + 1;
-        setSecondsLeft((sl) => {
-          const nsl = (sl ?? test.minutes * 60) - 1;
-          if (nsl <= 0) {
-            clearInterval(t);
-            doSubmit({}, next, true);
-          }
-          return Math.max(0, nsl);
-        });
-        return next;
-      });
+      const next = elapsedRef.current + 1;
+      const nsl = Math.max(0, (secondsLeftRef.current ?? test.minutes * 60) - 1);
+      elapsedRef.current = next;
+      secondsLeftRef.current = nsl;
+      setElapsed(next);
+      setSecondsLeft(nsl);
+      if (nsl <= 0) {
+        clearInterval(t);
+        doSubmit({}, next, true);
+      }
     }, 1000);
     return () => clearInterval(t);
   }, [test, phase]);
 
   useEffect(() => {
-    if (test && phase === 'running') {
+    if (test && phase === 'running' && storageKey) {
       localStorage.setItem(
-        LS_KEY,
+        storageKey,
         JSON.stringify({ test, answers, current, secondsLeft, elapsed })
       );
     }
-  }, [test, answers, current, secondsLeft, elapsed, phase]);
+  }, [test, answers, current, secondsLeft, elapsed, phase, storageKey]);
 
   async function start(type, paperId) {
     setError('');
     try {
       const t = await api.newTest(type, paperId);
-      localStorage.removeItem(LS_KEY);
+      if (storageKey) localStorage.removeItem(storageKey);
       saved.current = null;
+      answersRef.current = {};
+      elapsedRef.current = 0;
+      secondsLeftRef.current = t.minutes * 60;
       setTest(t);
       setAnswers({});
       setCurrent(0);
@@ -138,7 +158,8 @@ export default function Practice({ health, onProgress, userId }) {
   const autoStart = useRef({ paper: params.get('paper'), type: params.get('type') });
   useEffect(() => {
     if (window.location.hash === '#adhoc') {
-      document.getElementById('adhoc')?.scrollIntoView({ behavior: 'smooth' });
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      document.getElementById('adhoc')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' });
     }
     if (autoStart.current.paper && autoStart.current.type && !saved.current && phase === 'setup' && papersMeta) {
       const next = autoStart.current;
@@ -148,7 +169,9 @@ export default function Practice({ health, onProgress, userId }) {
   }, [papersMeta]);
 
   function setAnswer(qid, value) {
-    setAnswers((a) => ({ ...a, [qid]: value }));
+    const next = { ...answersRef.current, [qid]: value };
+    answersRef.current = next;
+    setAnswers(next);
   }
 
   function goTo(i) {
@@ -161,17 +184,19 @@ export default function Practice({ health, onProgress, userId }) {
     setConfirmOpen(false);
     setPhase('submitting');
     try {
+      const currentAnswers = answersRef.current;
       const list = test.questions.map((q) => ({
         qid: q.id,
-        value: ansOverride[q.id] ?? answers[q.id] ?? null,
+        value: ansOverride[q.id] ?? currentAnswers[q.id] ?? null,
       }));
-      const result = await api.submitTest(test.id, list, dur ?? elapsed);
+      const result = await api.submitTest(test.id, list, dur ?? elapsedRef.current);
       onProgress?.(result.progress);
       invalidateResources('attempts');
       invalidateResources('topics:');
       invalidateResources('personal:');
-      localStorage.removeItem(LS_KEY);
-      localStorage.setItem('englishmate-last-result', JSON.stringify(result));
+      if (storageKey) localStorage.removeItem(storageKey);
+      const resultKey = lastResultKey(userId);
+      if (resultKey) localStorage.setItem(resultKey, JSON.stringify(result));
       navigate('/results');
     } catch (e) {
       if (e.code === 'TEST_EXPIRED') clearExpiredTest(e.message);
@@ -179,7 +204,10 @@ export default function Practice({ health, onProgress, userId }) {
         submitting.current = false;
         setError(e.message);
         setPhase('running');
-        if (auto) setSecondsLeft(30);
+        if (auto) {
+          secondsLeftRef.current = 30;
+          setSecondsLeft(30);
+        }
       }
     }
   }
@@ -191,10 +219,13 @@ export default function Practice({ health, onProgress, userId }) {
     try {
       await api.discardTest(test.id);
     } catch {}
-    localStorage.removeItem(LS_KEY);
+    if (storageKey) localStorage.removeItem(storageKey);
     saved.current = null;
     autoStart.current = { paper: null, type: null };
     setTest(null);
+    answersRef.current = {};
+    elapsedRef.current = 0;
+    secondsLeftRef.current = null;
     setAnswers({});
     setCurrent(0);
     setSecondsLeft(null);
@@ -284,7 +315,7 @@ export default function Practice({ health, onProgress, userId }) {
           schemes. {health?.aiMarking ? 'AI marking is ready.' : 'No OpenRouter key set — you\u2019ll self-mark against model answers and rubrics instead.'}
         </p>
         {error && (
-          <div className="error-banner">
+          <div className="error-banner" role="alert">
             {error}
             {saved.current && <button className="btn" onClick={resumeSaved}>Retry saved paper</button>}
           </div>
@@ -403,6 +434,8 @@ export function useExtendedCheck(sessionId) {
 function AdhocRunner({ set, onExit, onNew, onProgress }) {
   const [answers, setAnswers] = useState({});
   const [done, setDone] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   const { feedback, aiResults, checkText, checkAuto } = useExtendedCheck(set.sessionId);
   const sessionId = set.sessionId;
 
@@ -412,12 +445,21 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
   }
 
   async function finish() {
-    const res = await api.adhocSubmit(sessionId, set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null })), aiResults);
-    onProgress?.(res.progress);
-    invalidateResources('attempts');
-    invalidateResources('topics:');
-    invalidateResources('personal:');
-    setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const res = await api.adhocSubmit(sessionId, set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null })), aiResults);
+      onProgress?.(res.progress);
+      invalidateResources('attempts');
+      invalidateResources('topics:');
+      invalidateResources('personal:');
+      setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
+    } catch (cause) {
+      setError(cause.message || 'Could not score this round. Try again.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   const allDone = set.questions.every((q) => feedback[q.id]);
@@ -429,7 +471,7 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
           <h2>🎲 Quick-fire round</h2>
           <p className="sub">{set.questions.length} questions from the text bank</p>
         </div>
-        <button className="btn" onClick={onExit}>Back to setup</button>
+        <button className="btn" onClick={onExit} disabled={busy}>Back to setup</button>
       </div>
       <AdhocSourcePanel questions={set.questions} />
       <div className="quiz">
@@ -454,7 +496,12 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
             </div>
           </div>
         ) : (
-          <button className="btn btn-finish" disabled={!allDone} onClick={finish}>Finish & score</button>
+          <>
+            {error && <div className="error-banner" role="alert">{error}</div>}
+            <button className="btn btn-finish" disabled={busy || !allDone} onClick={finish}>
+              {busy ? 'Scoring…' : 'Finish & score'}
+            </button>
+          </>
         )}
       </div>
     </section>
@@ -552,6 +599,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
         <>
           <textarea
             className="answer-area list"
+            aria-label={`Answer to question ${index + 1}`}
             placeholder={q.input?.placeholder || 'One point per line…'}
             disabled={!!fb && !fb.ai}
             value={value ?? ''}
@@ -564,20 +612,24 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
     if (q.type === 'truefalse') {
       const v = value || {};
       return (
-        <div className="tf-grid">
+        <div className="tf-grid" role="group" aria-label={`Answer to question ${index + 1}`}>
           {q.input.statements.map((s, i) => (
             <div key={i} className="tf-row">
               <span className="tf-text">{s.text}</span>
               <div className="tf-buttons">
                 <button
+                  type="button"
                   className={`tf-btn ${v[i] === true ? 'on-true' : ''}`}
+                  aria-label={`${s.text}: True`}
                   disabled={!!fb}
                   onClick={() => onAnswer({ ...v, [i]: true })}
                 >
                   TRUE
                 </button>
                 <button
+                  type="button"
                   className={`tf-btn ${v[i] === false ? 'on-false' : ''}`}
+                  aria-label={`${s.text}: False`}
                   disabled={!!fb}
                   onClick={() => onAnswer({ ...v, [i]: false })}
                 >
@@ -592,11 +644,13 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
     return (
       <>
         {q.options?.length > 0 && (
-          <div className="option-cards">
+          <div className="option-cards" role="group" aria-label={`Answer to question ${index + 1}`}>
             {q.options.map((o) => (
               <button
                 key={o.id}
+                type="button"
                 className={`option-card ${value?.option === o.id ? 'selected' : ''}`}
+                aria-pressed={value?.option === o.id}
                 disabled={!!fb && !fb.ai}
                 onClick={() => onAnswer({ ...(value || {}), option: o.id, optionText: o.text })}
               >
@@ -608,6 +662,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
         )}
         <textarea
           className={`answer-area ${q.type === 'essay' ? 'essay' : ''}`}
+          aria-label={`Answer to question ${index + 1}`}
           placeholder={q.input?.placeholder || 'Write your answer here…'}
           disabled={!!fb && !fb.ai}
           value={value?.text ?? ''}
@@ -808,6 +863,10 @@ function TestScreen(props) {
     confirmOpen, setConfirmOpen, doConfirm, quitOpen, setQuitOpen, doQuit, quitting,
     error, markingReady, busy,
   } = props;
+  const submitDialogRef = useRef(null);
+  const quitDialogRef = useRef(null);
+  const submitTitleId = useId();
+  const quitTitleId = useId();
   const q = test.questions[current];
   const lowTime = secondsLeft < 600;
   const elapsedMins = elapsed / 60;
@@ -818,6 +877,39 @@ function TestScreen(props) {
     return v && String(typeof v === 'object' ? v.text ?? '' : v).trim().length > 0;
   }).length;
   const unanswered = test.questions.length - answeredCount;
+
+  useEffect(() => {
+    const dialog = confirmOpen ? submitDialogRef.current : quitOpen ? quitDialogRef.current : null;
+    if (!dialog) return undefined;
+    const previousFocus = document.activeElement;
+    const controls = [...dialog.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled), textarea:not(:disabled)')];
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    first?.focus();
+
+    function onKeyDown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (confirmOpen) setConfirmOpen(false);
+        else setQuitOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab' || !controls.length) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      if (previousFocus?.isConnected && previousFocus !== document.body) previousFocus.focus();
+    };
+  }, [confirmOpen, quitOpen, setConfirmOpen, setQuitOpen]);
   const behind = elapsedMins > doneBefore + q.targetMins * 0.6 && elapsedMins > doneBefore;
 
   return (
@@ -913,6 +1005,7 @@ function TestScreen(props) {
               <>
                 <textarea
                   className="answer-area list"
+                  aria-label={`Answer to question ${current + 1}`}
                   placeholder="Write one thing per line…"
                   value={answers[q.id] ?? ''}
                   onChange={(e) => onAnswer(q.id, e.target.value)}
@@ -934,6 +1027,7 @@ function TestScreen(props) {
                 )}
                 <textarea
                   className="answer-area"
+                  aria-label={`Answer to question ${current + 1}`}
                   placeholder="Write your answer here…"
                   value={answers[q.id] ?? ''}
                   onChange={(e) => onAnswer(q.id, e.target.value)}
@@ -947,6 +1041,7 @@ function TestScreen(props) {
                 <EssayOptions q={q} value={answers[q.id]} onAnswer={(v) => onAnswer(q.id, v)} />
                 <textarea
                   className="answer-area essay"
+                  aria-label={`Answer to question ${current + 1}`}
                   placeholder="Plan first, then write your response…"
                   value={answers[q.id]?.text ?? ''}
                   onChange={(e) => onAnswer(q.id, { ...(answers[q.id] || {}), text: e.target.value })}
@@ -973,9 +1068,9 @@ function TestScreen(props) {
 
       {confirmOpen && (
         <div className="modal-back">
-          <div className="modal">
-            <h3>Submit your paper?</h3>
-            <p>
+          <div ref={submitDialogRef} className="modal" role="dialog" aria-modal="true" aria-labelledby={submitTitleId} aria-describedby={`${submitTitleId}-description`}>
+            <h3 id={submitTitleId}>Submit your paper?</h3>
+            <p id={`${submitTitleId}-description`}>
               {unanswered === 0
                 ? 'All questions answered. Time to see your mark.'
                 : `You still have ${unanswered} question${unanswered === 1 ? '' : 's'} unanswered. Submit anyway?`}
@@ -994,9 +1089,9 @@ function TestScreen(props) {
       )}
       {quitOpen && (
         <div className="modal-back">
-          <div className="modal">
-            <h3>Quit this paper?</h3>
-            <p>Your answers on this unfinished paper will be discarded. Quitting will not affect your scores or progress.</p>
+          <div ref={quitDialogRef} className="modal" role="dialog" aria-modal="true" aria-labelledby={quitTitleId} aria-describedby={`${quitTitleId}-description`}>
+            <h3 id={quitTitleId}>Quit this paper?</h3>
+            <p id={`${quitTitleId}-description`}>Your answers on this unfinished paper will be discarded. Quitting will not affect your scores or progress.</p>
             <div className="modal-actions">
               <button className="btn" disabled={quitting} onClick={() => setQuitOpen(false)}>Keep working</button>
               <button className="btn btn-submit" disabled={quitting} onClick={doQuit}>{quitting ? 'Quitting...' : 'Quit paper'}</button>
@@ -1004,7 +1099,7 @@ function TestScreen(props) {
           </div>
         </div>
       )}
-      {error && <div className="error-banner">{error}</div>}
+      {error && <div className="error-banner" role="alert">{error}</div>}
     </div>
   );
 }
@@ -1012,21 +1107,25 @@ function TestScreen(props) {
 function TrueFalseBlock({ q, value, onAnswer }) {
   const v = value || {};
   return (
-    <div className="tf-grid">
+    <div className="tf-grid" role="group" aria-label="True or false answers">
       {q.input.statements.map((s, i) => (
         <div key={i} className="tf-row">
           <span className="tf-text">{s.text}</span>
           <div className="tf-buttons">
             <button
+              type="button"
               className={`tf-btn ${v[i] === true ? 'on-true' : ''}`}
               aria-pressed={v[i] === true}
+              aria-label={`${s.text}: True`}
               onClick={() => onAnswer({ ...v, [i]: true })}
             >
               TRUE
             </button>
             <button
+              type="button"
               className={`tf-btn ${v[i] === false ? 'on-false' : ''}`}
               aria-pressed={v[i] === false}
+              aria-label={`${s.text}: False`}
               onClick={() => onAnswer({ ...v, [i]: false })}
             >
               FALSE
@@ -1045,6 +1144,7 @@ function EssayOptions({ q, value, onAnswer }) {
         <button
           key={o.id}
           className={`option-card ${value?.option === o.id ? 'selected' : ''}`}
+          aria-pressed={value?.option === o.id}
           onClick={() => onAnswer({ ...(value || {}), option: o.id })}
         >
           <div className="option-label">{o.label}</div>

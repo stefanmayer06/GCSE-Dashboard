@@ -38,9 +38,12 @@ export function invalidateResources(prefix) {
 }
 
 export function clearResourceCache() {
+  // Invalidate promises already in flight before dropping their bookkeeping.
+  // Otherwise an old response could repopulate a key after sign-out.
+  const keys = new Set([...store.keys(), ...inflight.keys(), ...listeners.keys()]);
+  for (const key of keys) generations.set(key, (generations.get(key) ?? 0) + 1);
   store.clear();
   inflight.clear();
-  generations.clear();
   for (const key of [...listeners.keys()]) emit(key);
 }
 

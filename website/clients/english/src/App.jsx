@@ -6,8 +6,8 @@ import { clearResourceCache } from '../../shared/resource-cache.js';
 import LoginScreen from '../../shared/login.jsx';
 
 // Route pages are code-split: the app shell renders first and each page
-// chunk streams in on demand. Chunks are prefetched during idle time after
-// sign-in so the first visit to a page never waits on the network either.
+// chunk streams in on demand. The core revision loop is prefetched during
+// idle time on capable connections; save-data and 2G users stay on demand.
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
 const Practice = lazy(() => import('./pages/Practice.jsx'));
 const Results = lazy(() => import('./pages/Results.jsx'));
@@ -20,16 +20,15 @@ const Notebook = lazy(() => import('../../shared/StudyTools.jsx').then((m) => ({
 const WeeklySummary = lazy(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.WeeklySummary })));
 
 const PAGE_LOADERS = [
-  () => import('./pages/Dashboard.jsx'),
   () => import('./pages/Practice.jsx'),
   () => import('./pages/Results.jsx'),
   () => import('./pages/Learn.jsx'),
-  () => import('./pages/Topic.jsx'),
-  () => import('./pages/Texts.jsx'),
-  () => import('./pages/TextDetail.jsx'),
-  () => import('./pages/Chat.jsx'),
-  () => import('../../shared/StudyTools.jsx'),
 ];
+
+function shouldPrefetchRoutes() {
+  const connection = navigator.connection;
+  return !connection?.saveData && !['slow-2g', '2g'].includes(connection?.effectiveType);
+}
 
 function PageFallback() {
   return <div className="page"><div className="loading">Loading…</div></div>;
@@ -60,6 +59,7 @@ export default function App() {
   const [theme, setTheme] = useState(initialTheme);
   const [auth, setAuth] = useState(null);
   const location = useLocation();
+  const userId = auth?.id || auth?.username;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -76,24 +76,35 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!auth) return;
+    if (!userId) return undefined;
+    let active = true;
     Promise.allSettled([api.progress(), api.health()]).then(([p, h]) => {
+      if (!active) return;
       if (p.status === 'fulfilled') setProgress(p.value);
       if (h.status === 'fulfilled') setHealth(h.value);
     });
-  }, [location.pathname, auth]);
+    return () => { active = false; };
+  }, [location.pathname, userId]);
 
   useEffect(() => {
-    if (!auth) return undefined;
+    // Do not let the previous account's shell data remain visible during a
+    // sign-in transition while its replacement is loading.
+    setProgress(null);
+    setHealth(null);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return undefined;
     // A fresh identity must never inherit another session's cached resources.
     clearResourceCache();
     const schedule = window.requestIdleCallback ?? ((cb) => window.setTimeout(cb, 250));
     const cancel = window.cancelIdleCallback ?? ((id) => window.clearTimeout(id));
     const handle = schedule(() => {
+      if (!shouldPrefetchRoutes()) return;
       for (const load of PAGE_LOADERS) load().catch(() => {});
     });
     return () => cancel(handle);
-  }, [auth]);
+  }, [userId]);
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
@@ -106,7 +117,20 @@ export default function App() {
       await api.auth.logout();
     } catch {}
     clearResourceCache();
-    for (const key of ['mathsmate-active-test', 'mathsmate-higher-active-test', 'mathsmate-last-result', 'mathsmate-higher-last-result', 'englishmate-active-test', 'englishmate-last-result']) {
+    for (const key of [
+      'mathsmate-active-test',
+      'mathsmate-higher-active-test',
+      'mathsmate-last-result',
+      'mathsmate-higher-last-result',
+      'englishmate-active-test',
+      'englishmate-last-result',
+      `gcse-${encodeURIComponent(userId || 'anonymous')}-maths-active-test`,
+      `gcse-${encodeURIComponent(userId || 'anonymous')}-maths-higher-active-test`,
+      `gcse-${encodeURIComponent(userId || 'anonymous')}-maths-last-result`,
+      `gcse-${encodeURIComponent(userId || 'anonymous')}-maths-higher-last-result`,
+      `gcse-${encodeURIComponent(userId || 'anonymous')}-english-active-test`,
+      `gcse-${encodeURIComponent(userId || 'anonymous')}-english-last-result`,
+    ]) {
       localStorage.removeItem(key);
     }
     setProgress(null);
@@ -150,7 +174,7 @@ export default function App() {
         </a>
         <nav>
           {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <NavLink key={n.to} to={n.to} end={n.to === '/'} aria-label={n.label} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <span className="nav-icon" aria-hidden="true">{n.icon}</span>
               <span className="nav-label">{n.label}</span>
             </NavLink>
@@ -167,7 +191,7 @@ export default function App() {
             <span className="theme-toggle-icon" aria-hidden="true">{theme === 'dark' ? '◑' : '◐'}</span>
             <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
           </button>
-          <button type="button" className="sign-out" onClick={signOut}>
+          <button type="button" className="sign-out" onClick={signOut} aria-label="Sign out">
             <span className="sign-out-label">Sign out</span>
             <span className="sign-out-user">&middot; {auth.username}</span>
           </button>
@@ -193,16 +217,16 @@ export default function App() {
       <main className="content">
         <Suspense fallback={<PageFallback />}>
           <Routes>
-            <Route path="/" element={<Dashboard health={health} progress={progress} userId={auth.id || auth.username} />} />
-            <Route path="/practice" element={<Practice health={health} onProgress={setProgress} userId={auth.id || auth.username} />} />
-            <Route path="/results" element={<Results userId={auth.id || auth.username} />} />
-            <Route path="/learn" element={<Learn userId={auth.id || auth.username} />} />
-            <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} userId={auth.id || auth.username} />} />
+            <Route path="/" element={<Dashboard health={health} progress={progress} userId={userId} />} />
+            <Route path="/practice" element={<Practice health={health} onProgress={setProgress} userId={userId} />} />
+            <Route path="/results" element={<Results userId={userId} />} />
+            <Route path="/learn" element={<Learn userId={userId} />} />
+            <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} userId={userId} />} />
             <Route path="/texts" element={<Texts />} />
             <Route path="/texts/:textId" element={<TextDetail />} />
-            <Route path="/notebook" element={<Notebook userId={auth.id || auth.username} subject="english" api={api} />} />
-            <Route path="/summary" element={<WeeklySummary userId={auth.id || auth.username} subject="english" progress={progress} api={api} username={auth.username} />} />
-            <Route path="/chat" element={<Chat health={health} userId={auth.id || auth.username} />} />
+            <Route path="/notebook" element={<Notebook userId={userId} subject="english" api={api} />} />
+            <Route path="/summary" element={<WeeklySummary userId={userId} subject="english" progress={progress} api={api} username={auth.username} />} />
+            <Route path="/chat" element={<Chat health={health} userId={userId} />} />
           </Routes>
         </Suspense>
       </main>

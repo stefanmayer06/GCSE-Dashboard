@@ -46,9 +46,9 @@ function formatDate(iso) {
 
 // One return ping per local calendar day, deduplicated in localStorage
 // (see ANALYTICS.md: week_return feeds the retention model).
-function noteReturn(api) {
+function noteReturn(api, userId, subject) {
   try {
-    const key = `gcse-week-return-noted:${dateKey()}`;
+    const key = `gcse-${encodeURIComponent(userId || 'anonymous')}-${subject}-week-return-noted:${dateKey()}`;
     if (localStorage.getItem(key)) return;
     localStorage.setItem(key, '1');
     api.track?.('week_return');
@@ -149,7 +149,7 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
     const onPersonalUpdated = (event) => {
       if (event.detail?.userId === userId && event.detail?.subject === subject) refreshPersonal();
     };
-    noteReturn(api);
+    noteReturn(api, userId, subject);
     window.addEventListener(PERSONAL_UPDATED_EVENT, onPersonalUpdated);
     return () => window.removeEventListener(PERSONAL_UPDATED_EVENT, onPersonalUpdated);
   }, [api, userId, subject, refreshPersonal]);

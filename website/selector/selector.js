@@ -29,6 +29,7 @@ if (themeToggle) {
 
 async function setSubjectStatus(subject, endpoint, update) {
   const status = document.getElementById(`${subject}-status`);
+  if (!status) return;
   try {
     const response = await fetch(endpoint);
     if (!response.ok) throw new Error('unavailable');

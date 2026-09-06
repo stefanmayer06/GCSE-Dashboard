@@ -144,7 +144,7 @@ See `FOUNDATION_AUDIT.md` for the Foundation bank review and remaining content b
 | --- | --- |
 | `/` | Subject selector |
 | `/subjects` | Subject directory (catalogue of available subjects) |
-| `/feedback` | Public beta-tester feedback form (stores to the `beta_feedback` table / local `feedback.json`) |
+| `/feedback.html` | Public beta-tester feedback form (stores to the `beta_feedback` table / local `feedback.json`) |
 | `/maths/*` | MathsMate client (sign-in gated) |
 | `/maths-higher/*` | MathsMate Higher client (sign-in gated) |
 | `/english/*` | EnglishMate client (sign-in gated) |

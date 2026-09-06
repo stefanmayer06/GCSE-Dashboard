@@ -5,44 +5,57 @@ import { invalidateResources, useResource } from '../../../shared/resource-cache
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 import { TriagePanel } from '../../../shared/StudyTools.jsx';
-import { mergeMistakeRows, mistakeRowsFromResult } from '../../../shared/study-personal.js';
+import { mergeMistakeRows, mistakeRowsFromResult, personalKey } from '../../../shared/study-personal.js';
 
 export default function Results({ userId }) {
   const navigate = useNavigate();
+  const higherTier = window.location.pathname.startsWith('/maths-higher');
+  const subject = higherTier ? 'maths-higher' : 'maths';
   const [result, setResult] = useState(null);
-  const { data: attemptsData } = useResource(userId ? `attempts:${userId}` : null, () => api.attempts());
+  const { data: attemptsData } = useResource(userId ? `attempts:${subject}:${userId}` : null, () => api.attempts());
   const attempts = attemptsData?.attempts ?? null;
   const [open, setOpen] = useState({});
   const [savedCount, setSavedCount] = useState(null);
 
   useEffect(() => {
+    let active = true;
+    setResult(null);
+    setSavedCount(null);
     try {
-      const higherTier = window.location.pathname.startsWith('/maths-higher');
-      const key = higherTier ? 'mathsmate-higher-last-result' : 'mathsmate-last-result';
+      const key = personalKey(userId, subject, 'last-result');
       const raw = localStorage.getItem(key);
       if (raw) {
         const parsed = JSON.parse(raw);
+        if (!active) return undefined;
         setResult(parsed);
-        const subject = higherTier ? 'maths-higher' : 'maths';
         const built = mistakeRowsFromResult(parsed, subject, parsed.test?.id ?? parsed.sessionId ?? 'paper', {});
         setSavedCount(built.length);
         if (built.length) {
           api.personal()
-            .then(({ mistakes }) => api.saveMistakes(mergeMistakeRows(mistakes, built)))
-            .then(() => invalidateResources('personal:'))
-            .catch((error) => console.error('[notebook] mistake capture failed', error));
+            .then(({ mistakes }) => {
+              if (!active) return null;
+              return api.saveMistakes(mergeMistakeRows(mistakes, built));
+            })
+            .then(() => { if (active) invalidateResources('personal:'); })
+            .catch((error) => { if (active) console.error('[notebook] mistake capture failed', error); });
         }
       }
     } catch {
       /* noop */
     }
-  }, [userId]);
+    return () => { active = false; };
+  }, [userId, subject]);
+
+  useEffect(() => {
+    setOpen({});
+  }, [result?.id]);
 
   const openSession = (sessionId) => {
     const found = attempts?.find((attempt) => attempt.sessionId === sessionId);
     if (found?.result) {
       setResult(found.result);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
     }
   };
 
@@ -65,7 +78,7 @@ export default function Results({ userId }) {
     { grade: 5, boundary: 55 }, { grade: 4, boundary: 42 }, { grade: 3, boundary: 28 },
     { grade: 2, boundary: 18 }, { grade: 1, boundary: 10 },
   ];
-  const higherTier = result.tier === 'higher';
+  const isHigherResult = result.tier === 'higher';
 
   return (
     <div className="page results">
@@ -91,7 +104,7 @@ export default function Results({ userId }) {
               ? 'Below grade 1 this time — head to the topic fixes below and go again. You\u2019ve got this.'
               : result.nextBoundary
                 ? `Just ${result.nextBoundary.marksToGo} more mark${result.nextBoundary.marksToGo === 1 ? '' : 's'} to reach a grade ${result.nextBoundary.grade}.`
-                : higherTier ? 'Top of the predicted Higher range on this paper. 🏆' : 'Top of foundation tier — you can\u2019t do better than a 5 on this paper. 🏆'}
+                : isHigherResult ? 'Top of the predicted Higher range on this paper. 🏆' : 'Top of foundation tier — you can\u2019t do better than a 5 on this paper. 🏆'}
           </div>
         </div>
         <div className="actions-col">
@@ -124,7 +137,7 @@ export default function Results({ userId }) {
                   <td>{attempt.correctMarks}/{attempt.totalMarks} ({attempt.percent ?? '—'}%)</td>
                   <td>{attempt.grade ?? '—'}</td>
                   <td>{attempt.durationSec ? `${Math.floor(attempt.durationSec / 60)}m` : '—'}</td>
-                  <td>{attempt.sessionId === result.id
+                <td>{attempt.sessionId === result.id
                     ? <span className="sub small">viewing</span>
                     : <button type="button" className="link link-button" onClick={() => openSession(attempt.sessionId)}>Review</button>}</td>
                 </tr>
@@ -155,7 +168,7 @@ export default function Results({ userId }) {
             </tbody>
           </table>
           <p className="sub small">
-            Rounded predicted boundaries for AQA 8300{higherTier ? 'H' : 'F'} practice. Real boundaries move each
+             Rounded predicted boundaries for AQA 8300{isHigherResult ? 'H' : 'F'} practice. Real boundaries move each
             exam series — this is a prediction, not a promise.
           </p>
         </div>
@@ -216,7 +229,7 @@ export default function Results({ userId }) {
             {open[q.qid] && (
               <div className="review-body">
                 <div className="review-q">{q.text.split('\n').map((l, i) => <p key={i}>{l}</p>)}</div>
-                <MathsVisual stimulus={q.stimulus} />
+                <MathsVisual key={`${result.id || 'result'}:${q.qid}`} stimulus={q.stimulus} />
                 {!q.correct && (
                   <>
                     <div className="review-you">Your answer: <b>{q.value ?? '(blank)'}</b></div>

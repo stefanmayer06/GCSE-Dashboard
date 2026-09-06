@@ -5,41 +5,50 @@ import { invalidateResources, useResource } from '../../../shared/resource-cache
 import { RubricBands } from './Practice.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 import { TriagePanel } from '../../../shared/StudyTools.jsx';
-import { mergeMistakeRows, mistakeRowsFromResult } from '../../../shared/study-personal.js';
+import { mergeMistakeRows, mistakeRowsFromResult, personalKey } from '../../../shared/study-personal.js';
 
 export default function Results({ userId }) {
   const navigate = useNavigate();
   const [result, setResult] = useState(null);
-  const { data: attemptsData } = useResource(userId ? `attempts:${userId}` : null, () => api.attempts());
+  const { data: attemptsData } = useResource(userId ? `attempts:english:${userId}` : null, () => api.attempts());
   const attempts = attemptsData?.attempts ?? null;
   const [open, setOpen] = useState({});
   const [savedCount, setSavedCount] = useState(null);
 
   useEffect(() => {
+    let active = true;
+    setResult(null);
+    setSavedCount(null);
     try {
-      const raw = localStorage.getItem('englishmate-last-result');
+      const raw = localStorage.getItem(personalKey(userId, 'english', 'last-result'));
       if (raw) {
         const parsed = JSON.parse(raw);
+        if (!active) return undefined;
         setResult(parsed);
         const built = mistakeRowsFromResult(parsed, 'english', parsed.test?.id ?? parsed.sessionId ?? 'paper', {});
         setSavedCount(built.length);
         if (built.length) {
           api.personal()
-            .then(({ mistakes }) => api.saveMistakes(mergeMistakeRows(mistakes, built)))
-            .then(() => invalidateResources('personal:'))
-            .catch((error) => console.error('[notebook] mistake capture failed', error));
+            .then(({ mistakes }) => {
+              if (!active) return null;
+              return api.saveMistakes(mergeMistakeRows(mistakes, built));
+            })
+            .then(() => { if (active) invalidateResources('personal:'); })
+            .catch((error) => { if (active) console.error('[notebook] mistake capture failed', error); });
         }
       }
     } catch {
       /* noop */
     }
+    return () => { active = false; };
   }, [userId]);
 
   const openSession = (sessionId) => {
     const found = attempts?.find((attempt) => attempt.sessionId === sessionId);
     if (found?.result) {
       setResult(found.result);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
     }
   };
 

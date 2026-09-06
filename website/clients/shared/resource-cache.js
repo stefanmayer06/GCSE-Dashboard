@@ -139,7 +139,10 @@ export function useResource(key, fetcher) {
     emit(key);
   }, [key]);
 
-  return state.key === key
-    ? state
-    : { key, data: store.get(key) ?? null, loading: key != null && !store.has(key), error: null };
+  return {
+    ...(state.key === key
+      ? state
+      : { key, data: store.get(key) ?? null, loading: key != null && !store.has(key), error: null }),
+    refresh,
+  };
 }

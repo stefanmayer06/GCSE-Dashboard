@@ -204,9 +204,23 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
   };
 }
 
-export function strengthLabel(accuracy) {
-  if (accuracy == null) return { text: 'Not tried', tone: 'quiet' };
-  if (accuracy >= 70) return { text: 'Secure', tone: 'good' };
-  if (accuracy >= 40) return { text: 'Developing', tone: 'mid' };
-  return { text: 'Focus', tone: 'low' };
+// V3 mastery scale: New → Learning → Developing → Secure → Mastered,
+// plus a Needs-revision flag for due/regressed rows. Tones stay back-compat
+// (good/mid/low/quiet) so old CSS keeps working; V3 adds stage ids.
+export function masteryStage(accuracy, answered = 0, needsRevision = false) {
+  if (needsRevision) return { id: 'revision', text: 'Needs revision', tone: 'low' };
+  if (accuracy == null) return { id: 'new', text: 'New', tone: 'quiet' };
+  if (accuracy >= 90 && answered >= 5) return { id: 'mastered', text: 'Mastered', tone: 'good' };
+  if (accuracy >= 70) return { id: 'secure', text: 'Secure', tone: 'good' };
+  if (accuracy >= 40) return { id: 'developing', text: 'Developing', tone: 'mid' };
+  return { id: 'learning', text: 'Learning', tone: 'low' };
+}
+
+export function strengthLabel(accuracy, answered = 0) {
+  const stage = masteryStage(accuracy, answered, false);
+  // Back-compat: old callers expect Secure/Developing/Focus/Not tried.
+  if (stage.id === 'mastered' || stage.id === 'secure') return { text: stage.text, tone: 'good' };
+  if (stage.id === 'developing') return { text: 'Developing', tone: 'mid' };
+  if (stage.id === 'learning') return { text: 'Focus', tone: 'low' };
+  return { text: 'Not tried', tone: 'quiet' };
 }

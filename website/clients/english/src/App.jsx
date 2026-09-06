@@ -206,7 +206,7 @@ export default function App() {
 
   return (
     <AppShell
-      tierClass=""
+      tierClass="english-tier"
       brand={{ letter: 'E', name: 'EnglishMate', sub: 'AQA English Language' }}
       nav={NAV}
       auth={auth}

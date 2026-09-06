@@ -3,16 +3,16 @@ import { ExpertisePath } from './rewards.jsx';
 import { MemRiCard, StudyDashboard } from './StudyTools.jsx';
 import { MilestoneShelf } from './Milestones.jsx';
 import { NextStepCard } from './NextStep.jsx';
-import { strengthLabel } from './next-step.js';
+import { masteryStage } from './next-step.js';
 
-// v3 Command Desk — shared dashboard home for Maths + English.
+// V3 Trailhead — Today view shared by Maths + English.
 //
 // One hierarchy for every subject:
-//   01 Up next (NextStep command card with readiness ring)
-//   02 Today (mission + readiness + 7-day plan via StudyDashboard)
-//   03 Papers (timed exam dockets + mixed practice CTA)
-//   04 Mastery (single ranked panel — replaces the duplicated
-//      "Current focus" + "Topic mastery" pair)
+//   01 Up next (hero: readiness ring, streak, exam countdown, weakest-3)
+//   02 Today (mission + readiness + 7-day trail via StudyDashboard)
+//   03 Mastery path (journey nodes, weakest-first, labelled stages)
+//   04 Timed papers (exam dockets + mixed practice)
+//   05 Evidence (expertise, memory, milestones)
 // Class names stay on the frozen contract (.page, .page-head, .stat-row,
 // .stat-card, .panel, .paper-card, .btn) so Playwright keeps passing.
 
@@ -23,12 +23,24 @@ function examTone(days) {
   return 'settled';
 }
 
-function examCopy(days) {
+function formatExamMonth(dateStr) {
+  const at = Date.parse(dateStr ? `${dateStr}T12:00:00` : '');
+  if (!Number.isFinite(at)) return null;
+  return new Date(at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+}
+
+function examCopy(days, dateStr) {
   if (days == null) return 'Set your exam date to start the countdown';
   if (days < 0) return 'Exam date passed — keep evidence for resits or next steps';
   if (days === 0) return 'Exams today — good luck. Warm up, don’t cram';
   if (days === 1) return '1 day to go — short, sharp review only';
   if (days <= 14) return `${days} days to go — every session counts now`;
+  // Far-future dates (e.g. a placeholder year) would read as absurd day
+  // counts — show the month instead. Plenty of runway is the message.
+  if (days > 365) {
+    const month = formatExamMonth(dateStr);
+    return month ? `Exams ${month} — plenty of runway, build the habit now` : 'Exam date set — steady progress beats last-minute rush';
+  }
   return `${days} days to go — steady progress beats last-minute rush`;
 }
 
@@ -74,11 +86,14 @@ export default function DashboardHome({
   const days = nextStep.examDays;
   const tone = examTone(days);
 
+  const streakCap = progress?.streak > 0
+    ? 'Paused days don’t erase progress — freezes have you covered'
+    : 'One mission starts the trail — rest days are part of the plan';
   const stats = [
-    { value: progress?.testsTaken ?? '—', label: 'Practice papers completed', cap: 'Full timed attempts, marked and reviewable' },
-    { value: overall != null ? `${overall}%` : '—', label: 'Average paper score', cap: 'Across marked papers, not a predicted grade' },
-    { value: progress?.practiceAnswered ?? '—', label: 'Topic questions answered', cap: 'Lessons, drills and mixed rounds' },
-    { value: progress?.streak ?? '—', label: 'Day streak', cap: progress?.streak > 1 ? 'Keep it alive with today’s mission' : 'One mission a day keeps it alive' },
+    { value: progress?.testsTaken ?? '—', label: 'Timed papers sat', cap: 'Marked, reviewable, with worked methods' },
+    { value: overall != null ? `${overall}%` : '—', label: 'Average paper score', cap: 'Evidence so far — not a predicted grade' },
+    { value: progress?.practiceAnswered ?? '—', label: 'Questions answered', cap: 'Lessons, drills and mixed rounds' },
+    { value: progress?.streak > 0 ? progress.streak : '—', label: 'Day streak', cap: streakCap },
   ];
 
   const ranked = (masteryRows || [])
@@ -91,14 +106,14 @@ export default function DashboardHome({
         <div>
           <h1>{title}</h1>
           <p className="sub">{subtitle}</p>
-          <p className={`exam-countdown ${tone}`} role="status">{examCopy(days)}</p>
+          <p className={`exam-countdown ${tone}`} role="status">{examCopy(days, nextStep.examDate)}</p>
         </div>
         {headChip}
       </header>
 
       <ContinueStrip subjectKey={subjectKey} learnBase={learnBase} />
 
-      <p className="section-label"><span className="section-num">01</span> Your numbers</p>
+      <p className="section-label"><span className="section-num">01</span> Your trail so far</p>
       <section className="stat-row" aria-label="Your revision numbers">
         {stats.map((s) => (
           <div className="stat-card" key={s.label}>
@@ -110,6 +125,7 @@ export default function DashboardHome({
       </section>
 
       <p className="section-label"><span className="section-num">02</span> Up next — do this first</p>
+      <p className="sub" style={{ marginTop: -6 }}>One clear step. Everything else can wait.</p>
       <NextStepCard
         step={nextStep.step}
         weak={nextStep.weak}
@@ -117,6 +133,7 @@ export default function DashboardHome({
         streak={progress?.streak}
         readinessScore={nextStep.readinessScore}
         examDays={nextStep.examDays}
+        examDate={nextStep.examDate}
       />
 
       <p className="section-label"><span className="section-num">03</span> Today — mission, readiness, week</p>
@@ -130,12 +147,53 @@ export default function DashboardHome({
         api={api}
       />
 
-      <ExpertisePath progress={progress} onChooseLesson={() => navigate(learnBase)} />
-
-      <MemRiCard userId={userId} subject={subjectKey} api={api} />
-
-      <p className="section-label"><span className="section-num">04</span> Milestones worth sharing</p>
-      <MilestoneShelf progress={progress} subjectName={title.replace('Your ', '')} api={api} />
+      <p className="section-label"><span className="section-num">04</span> Mastery path — weakest first</p>
+      <section className="panel" aria-labelledby="mastery-title">
+        <h2 id="mastery-title">{masteryTitle}</h2>
+        <p className="sub">New → Learning → Developing → Secure → Mastered. Every step shows its evidence — never colour alone.</p>
+        {masteryLoading ? (
+          <div className="skeleton-block" role="status" aria-label="Loading mastery"> </div>
+        ) : !ranked.some((m) => m.answered > 0) ? (
+          <div className="empty-state">
+            <h3>Your trail starts here</h3>
+            <p>{masteryEmptyHint || 'Answer questions in papers, lessons or mixed rounds and your path appears here, weakest first.'}</p>
+            <button className="btn btn-primary" onClick={() => navigate('/practice')}>Start a paper</button>
+          </div>
+        ) : (
+          <div>
+            <div className="v3-mastery">
+              {ranked.map((m) => {
+                const stage = masteryStage(m.percent, m.answered);
+                return (
+                  <Link key={m.id} to={`${learnBase}`} className="v3-mastery-row" aria-label={`${m.name}: ${m.percent != null ? `${m.percent} percent over ${m.answered} questions` : 'not tried yet'}, stage ${stage.text}`}>
+                    <span className="v3-mastery-name">{m.name}</span>
+                    <span className={`v3-stage ${stage.id}`}>{stage.text}</span>
+                    <span className="v3-mastery-track" role="img" aria-hidden="true">
+                      <span className="v3-mastery-fill" style={{ width: `${m.percent ?? 0}%` }} />
+                    </span>
+                    <span className="v3-mastery-meta">{m.percent != null ? `${m.percent}% · ${m.answered} answered` : 'Not tried yet'}</span>
+                  </Link>
+                );
+              })}
+            </div>
+            {/* Legacy rows kept hidden for back-compat selectors */}
+            <div className="mastery-leader" hidden aria-hidden="true">
+              {ranked.map((m) => (
+                <div key={m.id} className="mastery-leader-row">
+                  <span className="mastery-leader-name">{m.name}</span>
+                  <span className="mastery-leader-bar"><i style={{ width: `${m.percent ?? 0}%` }} /></span>
+                  <span className="mastery-leader-pct">{m.percent != null ? `${m.percent}%` : '—'}</span>
+                  <Link className="mastery-leader-cta" to={`${learnBase}`}>Practise →</Link>
+                </div>
+              ))}
+            </div>
+            <p className="sub small">
+              Built from every answer across papers, lessons and mixed rounds. Drill a weak step in{' '}
+              <button type="button" className="link link-button" onClick={() => navigate(learnBase)}>Learn</button>.
+            </p>
+          </div>
+        )}
+      </section>
 
       <p className="section-label"><span className="section-num">05</span> Sit a timed paper</p>
       <section className="panel start-panel" aria-labelledby="papers-title">
@@ -174,42 +232,12 @@ export default function DashboardHome({
         ) : null}
       </section>
 
-      <p className="section-label"><span className="section-num">06</span> Mastery — weakest first</p>
-      <section className="panel" aria-labelledby="mastery-title">
-        <h2 id="mastery-title">{masteryTitle}</h2>
-        {masteryLoading ? (
-          <div className="skeleton-block" role="status" aria-label="Loading mastery"> </div>
-        ) : !ranked.some((m) => m.answered > 0) ? (
-          <div className="empty-state">
-            <h3>No mastery data yet</h3>
-            <p>{masteryEmptyHint || 'Answer questions in papers, lessons or mixed rounds and your accuracy appears here, weakest first.'}</p>
-            <button className="btn btn-primary" onClick={() => navigate('/practice')}>Start a paper</button>
-          </div>
-        ) : (
-          <div>
-            <div className="mastery-leader">
-              {ranked.map((m) => {
-                const strength = strengthLabel(m.percent);
-                return (
-                  <div key={m.id} className="mastery-leader-row">
-                    <span className="mastery-leader-name">{m.name}</span>
-                    <span className="mastery-leader-bar" role="img" aria-label={`${m.name}: ${m.percent != null ? `${m.percent} percent` : 'not tried'}, ${strength.text}`}>
-                      <i style={{ width: `${m.percent ?? 0}%` }} />
-                    </span>
-                    <span className="mastery-leader-pct">{m.percent != null ? `${m.percent}%` : '—'}</span>
-                    <Link className="mastery-leader-cta" to={`${learnBase}`}>Practise →</Link>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="sub small">
-              Built from every answer across papers, lessons and mixed rounds. Labels never rely on colour alone —{' '}
-              <strong>Secure / Developing / Focus</strong> is always written out. Drill a weak row in{' '}
-              <button type="button" className="link link-button" onClick={() => navigate(learnBase)}>Learn</button>.
-            </p>
-          </div>
-        )}
-      </section>
+      <p className="section-label"><span className="section-num">06</span> Evidence — levels, memory, milestones</p>
+      <ExpertisePath progress={progress} onChooseLesson={() => navigate(learnBase)} />
+
+      <MemRiCard userId={userId} subject={subjectKey} api={api} />
+
+      <MilestoneShelf progress={progress} subjectName={title.replace('Your ', '')} api={api} />
     </div>
   );
 }

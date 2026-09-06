@@ -39,6 +39,7 @@ export default function Dashboard({ health, progress, higherTier = false, userId
       weak: weakTopics(flatTopics, progress, 3),
       dueCount,
       examDays,
+      examDate: examDate || null,
       readinessScore: evidence.ready ? evidence.score : null,
     };
   }, [flatTopics, progress, personal]);

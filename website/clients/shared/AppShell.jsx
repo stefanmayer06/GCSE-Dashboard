@@ -1,17 +1,14 @@
 import { NavLink } from 'react-router-dom';
 import CommandPalette from './CommandPalette.jsx';
 
-// 2.1 — Shared application shell for MathsMate + EnglishMate (v3 Command Desk).
+// V3 Trailhead — shared shell for MathsMate + EnglishMate.
 //
 // One DOM contract, two subject identities. Class names are frozen:
 // Playwright (`website/ui-tests/app.spec.js`) asserts on `.sidebar`,
-// `.subject-switch`, `.sign-out` and `.nav-item`, and the responsive
-// stylesheet repurposes this exact structure into the sticky top bar +
-// bottom tab bar below 760px. Keep the hierarchy; theme the accents.
-//
-// v3: grouped nav (Plan / Practise / Review), due-mistake badge on Notebook,
-// mobile quick-jump button in the top bar (palette was display:none on small
-// screens), shell footer links, and ⌘K hint. No new dependencies.
+// `.subject-switch`, `.sign-out`, `.nav-item` (exact order + aria-labels),
+// `.theme-toggle`. Keep the hierarchy; V3 themes the visuals.
+// Groups are Journey / Practise / Review. Icons are inline SVG mapped from
+// the legacy two-letter codes so NAV data never changes. No new deps.
 export default function AppShell({
   tierClass = '',
   brand = { letter: 'S', name: 'Study Desk', sub: '' },
@@ -31,10 +28,23 @@ export default function AppShell({
   // the exact link order). A group heading is emitted the first time its
   // group appears while walking `nav` in order.
   const groups = [
-    { id: 'plan', label: 'Plan', match: ['/'] },
+    { id: 'journey', label: 'Journey', match: ['/'] },
     { id: 'practise', label: 'Practise', match: ['/practice', '/results', '/learn', '/texts'] },
     { id: 'review', label: 'Review', match: ['/notebook', '/summary', '/chat'] },
   ];
+  // Legacy two-letter codes → V3 inline glyphs (NAV data untouched).
+  const glyphFor = (code, label) => {
+    const glyphs = {
+      '01': '◈', '02': '◐', '03': '✎', '04': '▤',
+      '05': '✓', '06': '✦', '07': '✦',
+    };
+    if (glyphs[code]) return glyphs[code];
+    const fallbacks = {
+      Dashboard: '◈', Practice: '◐', Papers: '◐', Learn: '✎',
+      Texts: '▤', Notebook: '↻', Summary: '✓', 'AI Tutor': '✦',
+    };
+    return fallbacks[label] || '·';
+  };
   const groupOf = (to) => (groups.find((g) => g.match.includes(to)) || groups[0]).id;
   const groupLabel = (id) => (groups.find((g) => g.id === id) || {}).label || id;
   let lastGroup = null;
@@ -76,7 +86,7 @@ export default function AppShell({
                   aria-label={item.label}
                   className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
                 >
-                  <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+                  <span className="nav-icon" aria-hidden="true">{glyphFor(item.icon, item.label)}</span>
                   <span className="nav-label">{item.label}</span>
                   {item.to === '/notebook' && notebookDue > 0 ? (
                     <span className="nav-badge" aria-label={`${notebookDue} mistakes due`}>{notebookDue > 9 ? '9+' : notebookDue}</span>
@@ -107,12 +117,12 @@ export default function AppShell({
             {auth?.username ? <span className="sign-out-user">&middot; {auth.username}</span> : null}
           </button>
           {progress ? (
-            <div className="level-card" aria-label={`Level ${progress.level}, ${progress.streak} day streak${progress.streakFreezes ? `, ${progress.streakFreezes} streak freezes banked` : ''}`}>
+            <div className="level-card" aria-label={`Level ${progress.level}, ${progress.streak > 0 ? `${progress.streak} day streak` : 'streak paused, rest is part of the plan'}${progress.streakFreezes ? `, ${progress.streakFreezes} streak freezes banked` : ''}`}>
               <div className="level-row">
                 <span>Level {progress.level}</span>
                 <span className="streak-mark">
                   <span className="streak-dot" aria-hidden="true" />
-                  {progress.streak} day{progress.streak === 1 ? '' : 's'}
+                  {progress.streak > 0 ? `${progress.streak} day${progress.streak === 1 ? '' : 's'}` : 'Paused'}
                 </span>
               </div>
               <div className="xp-bar" role="img" aria-label={`${progress.xpInto} of ${progress.xpNeeded} XP to next level`}>

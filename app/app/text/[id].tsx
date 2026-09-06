@@ -7,6 +7,7 @@ import { useTheme } from '@/theme';
 import { queryKeys } from '@/query-cache';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as Speech from 'expo-speech';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
@@ -22,7 +23,9 @@ export default function TextReader() {
   const { width } = useWindowDimensions();
   const [sizeIndex, setSizeIndex] = useState(1);
   const [source, setSource] = useState<'A' | 'B'>('A');
+  const [speaking, setSpeaking] = useState(false);
   useEffect(() => { void AsyncStorage.getItem(SIZE_KEY).then((value) => { const parsed = Number(value); if (parsed >= 0 && parsed < sizes.length) setSizeIndex(parsed); }); }, []);
+  useEffect(() => () => { try { Speech.stop(); } catch { /* no speech session */ } }, []);
   const setSize = (next: number) => { const safe = Math.max(0, Math.min(sizes.length - 1, next)); setSizeIndex(safe); void AsyncStorage.setItem(SIZE_KEY, String(safe)); };
   const query = useQuery({ queryKey: queryKeys.text('english', textId), queryFn: () => new ApiClient('english').text(textId) as Promise<unknown>, enabled: !!textId && subject === 'english', staleTime: 30 * 60_000 });
   const item = asRecord(query.data);
@@ -32,6 +35,22 @@ export default function TextReader() {
   const paragraphs = body.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
   const title = pair ? asText(meta.title) || asText(item.title) : asText(item.title);
   const practiceSupported = item.practiceSupported === true && !!asText(item.practiceTopicId);
+
+  function toggleSpeech() {
+    if (speaking) {
+      setSpeaking(false);
+      try { Speech.stop(); } catch { /* no speech session */ }
+      return;
+    }
+    const passage = paragraphs.join('\n\n').slice(0, 8000);
+    if (!passage) return;
+    setSpeaking(true);
+    try {
+      Speech.speak(passage, { language: 'en-GB', rate: 1, onDone: () => setSpeaking(false), onStopped: () => setSpeaking(false), onError: () => setSpeaking(false) });
+    } catch {
+      setSpeaking(false);
+    }
+  }
 
   if (subject !== 'english') return <ScrollScreen><DeskHeader title="English source reader" eyebrow="SOURCE SHEET"/><Notice title="ENGLISH COURSE ONLY">Switch the active subject to English Language to open this source.</Notice><Button variant="secondary" onPress={() => router.back()}>Go back</Button></ScrollScreen>;
   if (query.isPending && !query.data) return <ScrollScreen><DeskHeader title="Opening source sheet" eyebrow="ENGLISH READING"/><Notice kind="loading" title="FETCHING THE SOURCE">Preparing the text for close reading.</Notice></ScrollScreen>;
@@ -44,7 +63,7 @@ export default function TextReader() {
     {!online && Boolean(query.data) && <Text style={[styles.cache, { color: colors.quiet }]}>Last source held in this session. It has not been downloaded.</Text>}
     <View style={styles.metadata}><Text style={[styles.meta, { color: tokens.accent }]}>{asText(item.kind) || 'READING SOURCE'}</Text><Text style={[styles.metaCopy, { color: colors.ink }]}>{pair ? `${asText(meta.author)}, ${asText(meta.year)}` : [asText(item.author), asText(item.year), asText(item.century)].filter(Boolean).join(' · ')}</Text>{!!asText(item.source) && <Text style={[styles.sourceRole, { color: colors.quiet }]}>Source role: {asText(item.source)}</Text>}{!!asText(item.theme) && <Text style={[styles.sourceRole, { color: colors.quiet }]}>Comparison focus: {asText(item.theme)}</Text>}</View>
     {pair && <View accessibilityRole="tablist" style={[styles.tabs, { borderColor: colors.strong }]}>{(['A', 'B'] as const).map((value) => { const tabMeta = asRecord(value === 'A' ? item.textMetaA : item.textMetaB); const selected = source === value; return <Pressable key={value} accessibilityRole="tab" accessibilityState={{ selected }} onPress={() => setSource(value)} style={[styles.tab, { backgroundColor: selected ? tokens.accent : colors.raised }]}><Text style={[styles.tabText, { color: selected ? '#fff' : colors.ink }]}>SOURCE {value}</Text><Text numberOfLines={1} style={[styles.tabTitle, { color: selected ? '#fff' : colors.quiet }]}>{asText(tabMeta.title)}</Text></Pressable>; })}</View>}
-    <View style={styles.readerTools}><Text style={[styles.meta, { color: colors.quiet }]}>READING SIZE</Text><View style={styles.sizeButtons}><Button variant="secondary" disabled={sizeIndex === 0} onPress={() => setSize(sizeIndex - 1)}>A−</Button><Text accessibilityLiveRegion="polite" style={[styles.sizeLabel, { color: colors.ink }]}>{['Small', 'Standard', 'Large'][sizeIndex]}</Text><Button variant="secondary" disabled={sizeIndex === sizes.length - 1} onPress={() => setSize(sizeIndex + 1)}>A+</Button></View></View>
+    <View style={styles.readerTools}><Text style={[styles.meta, { color: colors.quiet }]}>READING SIZE</Text><View style={styles.sizeButtons}><Button variant="secondary" disabled={sizeIndex === 0} onPress={() => setSize(sizeIndex - 1)}>A−</Button><Text accessibilityLiveRegion="polite" style={[styles.sizeLabel, { color: colors.ink }]}>{['Small', 'Standard', 'Large'][sizeIndex]}</Text><Button variant="secondary" disabled={sizeIndex === sizes.length - 1} onPress={() => setSize(sizeIndex + 1)}>A+</Button><Button variant="secondary" accessibilityLabel={speaking ? 'Stop reading aloud' : 'Listen to this extract'} onPress={toggleSpeech}>{speaking ? 'STOP' : 'LISTEN'}</Button></View></View>
     <View accessibilityLabel={`${source === 'A' ? 'Source A' : 'Source B'}: ${title}`} style={[styles.sheet, { backgroundColor: colors.raised, borderColor: colors.strong }]}><Text accessibilityRole="header" style={[styles.sourceTitle, { color: colors.ink }]}>{title}</Text><Text style={[styles.byline, { color: colors.quiet }]}>{pair ? [asText(meta.author), asText(meta.year), asText(meta.century)].filter(Boolean).join(' · ') : [asText(item.author), asText(item.year)].filter(Boolean).join(' · ')}</Text>{paragraphs.length ? paragraphs.map((paragraph, index) => <Text key={index} selectable style={[styles.body, { color: colors.ink, fontSize: sizes[sizeIndex], lineHeight: Math.round(sizes[sizeIndex] * 1.62) }]}>{paragraph}</Text>) : <Notice title="SOURCE BODY EMPTY">The server returned metadata but no readable body.</Notice>}</View>
     {practiceSupported && <Button onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: asText(item.practiceTopicId) } })}>Practise with this text</Button>}
   </ScrollScreen>;

@@ -1,5 +1,5 @@
 import { ApiClient } from '@/api';
-import { DeskHeader, Notice, OfflineBanner, ScrollScreen } from '@/components';
+import { DeskHeader, Notice, OfflineBanner, ScrollScreen, SubjectStrip } from '@/components';
 import { useNetwork, usePreferences } from '@/providers';
 import { useTheme } from '@/theme';
 import { filterTopicGroups, mergeTopicProgress, parseTopicGroups, asRecord, asText } from '@/learn';
@@ -36,6 +36,7 @@ export default function Learn() {
 
   return <ScrollScreen contentContainerStyle={[styles.content, width >= 760 && styles.tablet]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={tokens.accent} />}>
     <DeskHeader title={subject === 'english' ? 'Skills and source library' : 'Learn by topic'} eyebrow={subject === 'english' ? 'AQA 8700 SOURCE DESK' : 'COURSE NOTES'} />
+    <SubjectStrip spec={subject === 'english' ? 'AQA 8700 · no tiers' : subject === 'maths-higher' ? 'AQA 8300H · Higher, grades 4–9' : 'AQA 8300 · Foundation, grades 1–5'} />
     <OfflineBanner />
     {!online && hasTopics && <Text accessibilityRole="alert" style={[styles.cacheNote, { color: colors.quiet }]}>Showing a session copy of the course index. This copy is only available until the app session ends.</Text>}
     {topics.isError && hasTopics && <Text accessibilityRole="alert" style={[styles.cacheNote, { color: colors.quiet }]}>The course index could not be refreshed. The session copy remains available until the app session ends.</Text>}

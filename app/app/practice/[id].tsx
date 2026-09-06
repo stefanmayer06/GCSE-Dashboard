@@ -40,6 +40,7 @@ import { mergeMistakes, mistakesFromResult } from "@/notebook";
 import { hydratePersonal } from "@/personal";
 import { completeMission, missionResultFromServer } from "@/planning";
 import { MathsVisual } from "@/practice/MathsVisual";
+import { joinNumbers, rubricLines } from "@/review-format";
 
 const rec = (value: unknown): UnknownRecord =>
   value && typeof value === "object" && !Array.isArray(value)
@@ -343,14 +344,16 @@ export default function ActivePractice() {
   }
   function confirmSubmit(auto = false) {
     if (submitting.current) return;
-    const missing = questions.length - answered;
+    const unanswered = questions
+      .map((q, index) => (hasQuestionAnswer(q, answers[questionId(q, index)]) ? undefined : index + 1))
+      .filter((n): n is number => n !== undefined);
     Alert.alert(
       auto ? "Time is up" : "Submit session?",
-      missing
-        ? `${missing} question${missing === 1 ? "" : "s"} are incomplete. The server will mark only what you submit.`
-        : "Your answers will be sent for final server marking.",
+      unanswered.length
+        ? `Question ${joinNumbers(unanswered)} ${unanswered.length === 1 ? "has" : "have"} no answer yet — use the numbered map below to go back, or submit and the server will mark only what you sent.`
+        : "Every question has an answer. Your work will be sent for final server marking.",
       [
-        { text: auto ? "Keep frozen draft" : "Cancel", style: "cancel" },
+        { text: auto ? "Keep frozen draft" : "Review answers", style: "cancel" },
         { text: "Submit now", onPress: () => void submit() },
       ],
     );
@@ -383,7 +386,7 @@ export default function ActivePractice() {
                 list,
                 subject === "english" ? aiResults : undefined,
               );
-const cached = cacheResult(result, answers);
+const cached = cacheResult(result, answers, active.session.title);
        await AsyncStorage.multiSet([
           [resultId(auth?.user.id, subject, id), JSON.stringify(cached)],
          [activeId(auth?.user.id, subject), ""],
@@ -393,6 +396,21 @@ const cached = cacheResult(result, answers);
          const personal = await hydratePersonal(api, auth?.user.id, subject);
          const mistakes = mistakesFromResult(result, cached.submittedAnswers, id, subject);
          if (mistakes.length) await api.saveMistakes(mergeMistakes(personal.mistakes, mistakes));
+         // Fix-Up / memory-check evidence: a stored payload names resurrected rows.
+         try {
+           const payloadRaw = await AsyncStorage.getItem(`fixup:${id}`);
+           if (payloadRaw) {
+             await AsyncStorage.removeItem(`fixup:${id}`);
+             const payload = JSON.parse(payloadRaw) as { mode?: string; touch?: string[] };
+             if (payload.mode === 'fixup') api.trackEvent('fixup_complete', {});
+             if (Array.isArray(payload.touch) && payload.touch.length) {
+               const { touchMistakes } = await import('@/notebook');
+               const refreshed = await hydratePersonal(api, auth?.user.id, subject);
+               await api.saveMistakes(touchMistakes(refreshed.mistakes, payload.touch));
+               if (payload.mode === 'memri') api.trackEvent('memri_complete', { count: payload.touch.length });
+             }
+           }
+         } catch { /* evidence best-effort only */ }
          if (active.session.kind === "practice" && personal.plan) {
            const updated = completeMission(personal.plan, active.session.topicId, missionResultFromServer(result));
            if (updated !== personal.plan) await api.savePlan(updated);
@@ -1073,10 +1091,13 @@ function Feedback({
         </Text>
       )}
       {guidance && <Text selectable style={{ color: colors.ink, lineHeight: 21 }}>Guidance: {guidance}</Text>}
-      {Object.keys(rubric).length > 0 && (
-        <Text selectable style={{ color: colors.quiet }}>
-          Rubric: {JSON.stringify(rubric, null, 2)}
-        </Text>
+      {rubricLines(rubric).length > 0 && (
+        <View style={{ gap: 4 }}>
+          <Text style={[styles.meta, { color: colors.quiet }]}>RUBRIC</Text>
+          {rubricLines(rubric).map((line, index) => (
+            <Text key={index} selectable style={{ color: colors.ink, lineHeight: 21 }}>• {line}</Text>
+          ))}
+        </View>
       )}
       {value.correct != null && (
         <Text

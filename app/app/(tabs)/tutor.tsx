@@ -27,9 +27,11 @@ export default function Tutor() {
   const { online } = useNetwork();
   const { colors, subject: subjectTheme } = useTheme();
   const queryClient = useQueryClient();
-  const params = useLocalSearchParams<{ context?: string | string[]; topic?: string | string[]; lesson?: string | string[]; result?: string | string[]; question?: string | string[]; prompt?: string | string[] }>();
+  const params = useLocalSearchParams<{ context?: string | string[]; topic?: string | string[]; topicId?: string | string[]; lesson?: string | string[]; result?: string | string[]; question?: string | string[]; prompt?: string | string[] }>();
   const context = one(params.context) || one(params.question) || one(params.topic) || one(params.lesson) || one(params.result) || '';
-  const lessonId = one(params.lesson) || one(params.topic) || 'sample';
+  // Lesson screens hand over { topicId, topic: title }; the id must win so the
+  // offline "cached lesson framework" link opens the real lesson, not a title.
+  const lessonId = one(params.topicId) || one(params.lesson) || one(params.topic) || 'sample';
   const [messages, setMessages] = useState<TutorMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [loadedKey, setLoadedKey] = useState<string | null>(null);

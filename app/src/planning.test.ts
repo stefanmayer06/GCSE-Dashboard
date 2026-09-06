@@ -1,6 +1,6 @@
-import { buildPlan, completeMission, dateKey, daysToExam, missionForToday, missionResultFromServer, nextMission, parsePlanState, parsePlanningPreferences, planStateKey, planningKey, readinessEvidence, stablePlan, startMission } from './planning';
+import { buildPlan, completeMission, dateKey, daysToExam, fixupEnglishPlan, fixupTargets, milestonesFor, missionForToday, missionResultFromServer, movePlanDay, nextMission, parsePlanState, parsePlanningPreferences, planStateKey, planningKey, readinessEvidence, stablePlan, startMission } from './planning';
 
-test('parses only supported local planning preferences',()=>{expect(parsePlanningPreferences(JSON.stringify({examDate:'2027-06-01',targetGrade:'5',passMode:'foundation-pass'}))).toEqual({examDate:'2027-06-01',targetGrade:'5',passMode:'foundation-pass'});expect(parsePlanningPreferences('{bad').passMode).toBe('balanced')});
+test('parses only supported local planning preferences',()=>{expect(parsePlanningPreferences(JSON.stringify({examDate:'2027-06-01',targetGrade:'5',passMode:'foundation-pass'}))).toEqual({examDate:'2027-06-01',targetGrade:'5',passMode:'foundation-pass',restDays:[],minutesPerDay:null});expect(parsePlanningPreferences('{bad').passMode).toBe('balanced')});
 test('counts calendar days to an exam without going negative',()=>{expect(daysToExam('2026-09-04',new Date(2026,8,1))).toBe(3);expect(daysToExam('2020-01-01',new Date(2026,8,1))).toBe(0)});
 test('scopes plans and waits for enough readiness evidence',()=>{expect(planningKey('u1','english')).toBe('planning:u1:english');expect(planStateKey('u1','maths')).toBe('planning:u1:maths:plan');expect(readinessEvidence({tests:1,practiceAnswered:50,accuracy:70}).ready).toBe(false);expect(readinessEvidence({tests:2,practiceAnswered:20,accuracy:70})).toMatchObject({ready:true,score:70})});
 
@@ -72,4 +72,19 @@ test('next mission is the first unfinished day and plan survives storage round-t
   expect(parsePlanState(JSON.stringify(done))).toEqual(done);
   expect(parsePlanState('{bad')).toBeNull();
   expect(parsePlanState(JSON.stringify({ from: dateKey(new Date(2026, 8, 1)), days: [] }))).toBeNull();
+});
+
+test('rest days, per-day minutes and day moves shape the week', () => {
+  const focus = [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }];
+  const prefs = { examDate: '', targetGrade: '', passMode: 'balanced' as const, restDays: [6], minutesPerDay: 25 };
+  const plan = buildPlan('maths', 'balanced', focus, new Date(2026, 8, 1, 10, 0), prefs);
+  const sunday = plan.days.find((d: { date: string }) => d.date === '2026-09-06')!;
+  expect(sunday.rest).toBe(true);
+  expect(plan.days.filter((d: { rest?: boolean }) => !d.rest).every((d: { minutes: number }) => d.minutes === 25)).toBe(true);
+  const moved = movePlanDay(plan, '2026-09-02', '2026-09-04', '2026-09-01');
+  expect(moved).not.toBeNull();
+  expect(movePlanDay(plan, '2026-09-02', '2026-09-06', '2026-09-01')).toBeNull();
+  expect(milestonesFor({ streak: 30, testsTaken: 10, lessonsCompleted: 5 }).filter((m: { reached: boolean }) => m.reached).map((m: { id: string }) => m.id)).toEqual(['streak-7', 'streak-30', 'papers-1', 'papers-10', 'lessons-5']);
+  expect(fixupTargets([{ id: 'a', accuracy: 20, answered: 5 }, { id: 'b', accuracy: 90, answered: 5 }], [])).toEqual(['a', 'b']);
+  expect(fixupEnglishPlan(['creative-writing', 'listing']).lessons).toEqual(['creative-writing']);
 });

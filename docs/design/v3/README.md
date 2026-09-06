@@ -1,5 +1,9 @@
 # V3 — Trailhead: the revision trail
 
+> Canonical design language (tokens, components, voice): **`DESIGN.md`** at the
+> repo root. This file is the V3 product brief; DESIGN.md owns the look, feel
+> and tone.
+
 Branch: `v3` (from `version-2.1`, the 2.1 line). Source commit `1402467`.
 
 ## 1. Vision

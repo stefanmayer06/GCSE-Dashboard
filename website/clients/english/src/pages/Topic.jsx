@@ -1,3 +1,4 @@
+import LessonJourney from '../../../shared/v2/LessonJourney.jsx';
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
@@ -114,6 +115,7 @@ export default function Topic({ onProgress, userId }) {
         </div>
       </header>
 
+      <LessonJourney topic={topic.name}/>
       <div className="editorial-note" aria-label="Editorial metadata">
         <span>AQA 8700{topic.specRefs?.length ? ` · ${topic.specRefs.join(', ')}` : ''}</span>
         <span>·</span>
@@ -123,7 +125,7 @@ export default function Topic({ onProgress, userId }) {
       </div>
 
       <section className="panel">
-        <h2>Notes</h2>
+        <h2 id="understand">Understand the idea</h2>
         <div className="notes">
           {topic.notes.map((n, i) => {
             if (n.t === 'p') return <p key={i} className="note-p">{n.text}</p>;
@@ -155,7 +157,7 @@ export default function Topic({ onProgress, userId }) {
       <section className="panel">
         <div className="quiz-head">
           <div>
-            <h2>Quick practice</h2>
+            <h2 id="retrieve">Try it from memory</h2>
             <p className="sub">
               Real-bank questions, instant checking — AI-marked against the AQA rubric when a key is set.
             </p>

@@ -48,7 +48,7 @@ export default function Chat({ health, userId }) {
     requestRef.current += 1;
     setMessagesState(null);
     setApplied(false);
-    setInput('');
+    setInput(new URLSearchParams(window.location.search).get('prompt') || '');
     setBusy(false);
   }, [chatKey]);
 
@@ -105,24 +105,19 @@ export default function Chat({ health, userId }) {
     setMessages([{ role: 'assistant', content: 'Fresh start! What shall we work on?' }]);
   }
 
-  const modelName = health?.model || 'qwen/qwen3.7-flash';
 
   return (
     <div className="page chat-page">
       <header className="page-head">
         <div>
-          <h1>AI Tutor</h1>
-          <p className="sub">
-            Patient, step-by-step help powered by{' '}
-            <span className="model-chip">{modelName}</span>
-            {!health?.chatReady && ' — running in offline mode (set OPENROUTER_API_KEY to unlock the AI)'}
-          </p>
+          <h1>Let’s make it make sense.</h1>
+          <p className="sub">Ask about the method, share where you got stuck, or try another explanation. {!health?.chatReady && 'Live tutoring is unavailable right now; your course notes and worked examples are still available in Learn.'}</p>
         </div>
         <button className="btn" onClick={reset}>Clear chat</button>
       </header>
 
       <div className="chat-box">
-        <div className="chat-scroll">
+        <div className="chat-scroll" role="log" aria-label="Tutor conversation" aria-live="polite">
           {(messages ?? []).map((m, i) => (
             <div key={i} className={`msg ${m.role}`}>
               <div className="msg-avatar">{m.role === 'user' ? '🧑' : '🤖'}</div>
@@ -143,6 +138,7 @@ export default function Chat({ health, userId }) {
           <div ref={endRef} />
         </div>
 
+        <div className="chat-suggest" role="group" aria-label="Explain differently">{['Explain more simply','Give me a worked example','Guide me step by step','Quiz me on this'].map(label => <button key={label} className="suggest-chip" disabled={busy || !loaded} onClick={() => setInput(`${label}. ${[...(messages || [])].reverse().find(m=>m.role==='user')?.content || 'I am studying this GCSE course.'}`)}>{label}</button>)}</div>
         <div className="chat-suggest">
           {SUGGESTIONS.slice(0, 4).map((s) => (
             <button key={s} className="suggest-chip" onClick={() => send(s)} disabled={busy}>

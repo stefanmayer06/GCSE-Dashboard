@@ -15,3 +15,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </React.StrictMode>
 );
+
+import '../../shared/v2/studio.css';

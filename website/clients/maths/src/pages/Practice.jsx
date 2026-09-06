@@ -291,7 +291,7 @@ export default function Practice({ onProgress, userId }) {
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>Practice exam</h1>
+          <h1>Put your understanding to work</h1>
           <p className="sub">
              All three AQA {higherTier ? 'Higher' : 'Foundation'} papers — 8300/{higherTier ? '1H' : '1F'} (non-calculator),
              8300/{higherTier ? '2H' : '2F'} and 8300/{higherTier ? '3H' : '3F'} (calculator) — built fresh from the question bank every time.
@@ -396,7 +396,7 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
     <section className="panel" id="adhoc">
       <div className="quiz-head">
         <div>
-          <h2>🎲 Ad-hoc questions</h2>
+          <h2>Mixed practice</h2>
           <p className="sub">
              A quick mixed bag drawn from any combination of the three {higherTier ? 'Higher' : 'Foundation'} papers — great for keeping
             every topic sharp between full mocks.
@@ -489,7 +489,7 @@ function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false }) {
     <section className="panel">
       <div className="quiz-head">
         <div>
-          <h2>🎲 Ad-hoc round</h2>
+          <h2>Your mixed practice</h2>
           <p className="sub">Mixed from {set.papersIncluded.join(' + ')} · {set.questions.length} questions</p>
         </div>
         <button className="btn" onClick={onExit}>Back to setup</button>

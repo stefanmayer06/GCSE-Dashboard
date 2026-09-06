@@ -1,3 +1,4 @@
+import LessonJourney from '../../../shared/v2/LessonJourney.jsx';
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
@@ -116,6 +117,7 @@ export default function Topic({ onProgress, userId }) {
         </div>
       </header>
 
+      <LessonJourney topic={topic.name}/>
       <div className="editorial-note" aria-label="Editorial metadata">
         <span>AQA 8300{higherTier ? 'H' : ''}{topic.specSection ? ` · spec section ${topic.specSection} ${topic.specArea}` : ''}</span>
         <span>·</span>
@@ -125,7 +127,7 @@ export default function Topic({ onProgress, userId }) {
       </div>
 
       <section className="panel">
-        <h2>Notes</h2>
+        <h2 id="understand">Understand the idea</h2>
         <LessonVisual key={topicId} topicId={topicId} />
         <div className="notes">
           {topic.notes.map((n, i) => {
@@ -158,7 +160,7 @@ export default function Topic({ onProgress, userId }) {
       <section className="panel">
         <div className="quiz-head">
           <div>
-            <h2>Quick practice</h2>
+            <h2 id="retrieve">Try it from memory</h2>
             <p className="sub">5 questions on this topic. Instant marking with worked solutions.</p>
           </div>
           {!quiz && (

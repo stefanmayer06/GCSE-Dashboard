@@ -20,13 +20,15 @@ export default function Learn() {
   const { colors, subject: tokens } = useTheme();
   const { online } = useNetwork();
   const { width } = useWindowDimensions();
+  const [evidenceFilter,setEvidenceFilter] = useState('All topics');
+  const evidence = (accuracy:number|null) => accuracy===null?'Not practised':accuracy<40?'Needs attention':accuracy<70?'Developing':'Strong';
   const [search, setSearch] = useState('');
   const [closed, setClosed] = useState<Record<string, boolean>>({});
   const api = new ApiClient(subject);
   const topics = useQuery({ queryKey: queryKeys.topics(subject), queryFn: () => api.topics() as Promise<unknown>, staleTime: 10 * 60_000 });
   const progress = useQuery({ queryKey: queryKeys.progress(subject), queryFn: () => api.progress() as Promise<unknown> });
   const texts = useQuery({ queryKey: queryKeys.texts(subject), queryFn: () => api.texts() as Promise<unknown>, enabled: subject === 'english', staleTime: 30 * 60_000 });
-  const groups = filterTopicGroups(mergeTopicProgress(parseTopicGroups(topics.data), progress.data), search);
+  const groups = filterTopicGroups(mergeTopicProgress(parseTopicGroups(topics.data), progress.data), search).map(group=>({...group,topics:group.topics.filter(topic=>evidenceFilter==='All topics'||evidence(topic.accuracy)===evidenceFilter)})).filter(group=>group.topics.length);
   const library = Array.isArray(asRecord(texts.data).texts) ? asRecord(texts.data).texts as unknown[] : [];
   const hasTopics = topics.data !== undefined;
   const hasProgress = progress.data !== undefined;
@@ -36,6 +38,8 @@ export default function Learn() {
 
   return <ScrollScreen contentContainerStyle={[styles.content, width >= 760 && styles.tablet]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={tokens.accent} />}>
     <DeskHeader title={subject === 'english' ? 'Skills and source library' : 'Learn by topic'} eyebrow={subject === 'english' ? 'AQA 8700 SOURCE DESK' : 'COURSE NOTES'} />
+    <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>{['All topics','Needs attention','Not practised','Strong'].map(label=><Pressable key={label} accessibilityRole="button" accessibilityState={{selected:label===evidenceFilter}} onPress={()=>setEvidenceFilter(label)} style={{minHeight:44,padding:12,borderRadius:8,backgroundColor:label===evidenceFilter?tokens.tint:colors.muted}}><Text style={{color:label===evidenceFilter?tokens.accent:colors.ink}}>{label}</Text></Pressable>)}</View>
+    <Text style={{color:colors.quiet,fontSize:13,lineHeight:20}}>Accuracy describes your marked answers: needs attention below 40%, developing below 70%, strong from 70%. Completing a lesson is a separate step.</Text>
     <OfflineBanner />
     {!online && hasTopics && <Text accessibilityRole="alert" style={[styles.cacheNote, { color: colors.quiet }]}>Showing a session copy of the course index. This copy is only available until the app session ends.</Text>}
     {topics.isError && hasTopics && <Text accessibilityRole="alert" style={[styles.cacheNote, { color: colors.quiet }]}>The course index could not be refreshed. The session copy remains available until the app session ends.</Text>}
@@ -54,7 +58,7 @@ export default function Learn() {
         <Text style={[styles.index, { color: colors.quiet }]}>{String(index + 1).padStart(2, '0')}</Text>
         <View style={styles.grow}><Text style={[styles.topicTitle, { color: colors.ink }]}>{topic.title}</Text>{!!topic.description && <Text style={[styles.copy, { color: colors.quiet }]}>{topic.description}</Text>}<View style={styles.markers}>
           <Text style={[styles.marker, { color: topic.completed ? colors.positive : colors.quiet }]}>{topic.completed ? 'COMPLETED' : 'NOT COMPLETED'}</Text>
-          <Text style={[styles.marker, { color: colors.quiet }]}>{topic.accuracy === null ? 'NO ACCURACY YET' : `${topic.accuracy}% ACCURACY`}</Text>
+          <Text style={[styles.marker, { color: colors.quiet }]}>{topic.accuracy === null ? 'Not practised' : `${evidence(topic.accuracy)} · ${topic.accuracy}%`}</Text>
           {topic.recommended && <Text style={[styles.marker, { color: tokens.accent }]}>RECOMMENDED NEXT</Text>}
         </View></View><Text style={[styles.arrow, { color: colors.quiet }]}>›</Text>
       </Pressable>)}
@@ -71,4 +75,4 @@ export default function Learn() {
   </ScrollScreen>;
 }
 
-const styles = StyleSheet.create({ content:{padding:20,paddingBottom:108,gap:18},tablet:{width:'100%',maxWidth:900,alignSelf:'center',paddingHorizontal:36},search:{minHeight:52,borderWidth:1,paddingHorizontal:16,fontSize:16,borderRadius:16},cacheNote:{fontSize:13,lineHeight:19},recovery:{gap:10,alignItems:'flex-start'},retry:{minHeight:44,borderWidth:1,paddingHorizontal:14,justifyContent:'center',borderRadius:12},retryText:{fontFamily:'monospace',fontSize:11,fontWeight:'800',letterSpacing:.5},section:{borderWidth:1,backgroundColor:'transparent',borderRadius:20,overflow:'hidden'},sectionHead:{minHeight:76,padding:16,flexDirection:'row',alignItems:'center',gap:12},grow:{flex:1,gap:4},sectionTitle:{fontSize:24,fontWeight:'800',letterSpacing:-.4},copy:{fontSize:14,lineHeight:20},count:{fontFamily:'monospace',fontSize:11,fontWeight:'800'},topic:{minHeight:94,borderTopWidth:1,padding:15,flexDirection:'row',alignItems:'flex-start',gap:12},index:{fontFamily:'monospace',fontSize:11,paddingTop:4},topicTitle:{fontSize:17,fontWeight:'700',lineHeight:22},markers:{flexDirection:'row',flexWrap:'wrap',gap:9,marginTop:7},marker:{fontFamily:'monospace',fontSize:10,fontWeight:'800',letterSpacing:.5},arrow:{fontSize:24},library:{gap:13,marginTop:12},libraryTitle:{fontSize:29,fontWeight:'900'},source:{paddingVertical:15,borderBottomWidth:1,gap:5},excerpt:{fontFamily:'serif',fontSize:15,lineHeight:22,marginTop:4}});
+const styles = StyleSheet.create({ content:{padding:20,paddingBottom:108,gap:18},tablet:{width:'100%',maxWidth:900,alignSelf:'center',paddingHorizontal:36},search:{minHeight:52,borderWidth:1,paddingHorizontal:16,fontSize:16,borderRadius:16},cacheNote:{fontSize:13,lineHeight:19},recovery:{gap:10,alignItems:'flex-start'},retry:{minHeight:44,borderWidth:1,paddingHorizontal:14,justifyContent:'center',borderRadius:12},retryText:{fontFamily:'DMSans',fontSize:11,fontWeight:'800',letterSpacing:.5},section:{borderWidth:0,backgroundColor:'transparent',borderRadius:0,overflow:'hidden'},sectionHead:{minHeight:76,padding:16,flexDirection:'row',alignItems:'center',gap:12},grow:{flex:1,gap:4},sectionTitle:{fontSize:24,fontWeight:'800',letterSpacing:-.4},copy:{fontSize:14,lineHeight:20},count:{fontFamily:'DMSans',fontSize:11,fontWeight:'800'},topic:{minHeight:94,borderTopWidth:1,padding:15,flexDirection:'row',alignItems:'flex-start',gap:12},index:{fontFamily:'DMSans',fontSize:11,paddingTop:4},topicTitle:{fontSize:17,fontWeight:'700',lineHeight:22},markers:{flexDirection:'row',flexWrap:'wrap',gap:9,marginTop:7},marker:{fontFamily:'DMSans',fontSize:10,fontWeight:'800',letterSpacing:.5},arrow:{fontSize:24},library:{gap:13,marginTop:12},libraryTitle:{fontSize:29,fontWeight:'900'},source:{paddingVertical:15,borderBottomWidth:1,gap:5},excerpt:{fontFamily:'Fraunces',fontSize:15,lineHeight:22,marginTop:4}});

@@ -1,3 +1,4 @@
+import { useFonts } from 'expo-font';
 import { Redirect, router, Stack, useSegments } from "expo-router";
 import type { Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -15,11 +16,12 @@ export function authRedirect(session: Session | null, segments: string[]): Href 
 }
 
 function Navigation() {
+  const [fontsLoaded, fontError] = useFonts({ DMSans: require('../assets/fonts/DMSans_400Regular.ttf'), Fraunces: require('../assets/fonts/Fraunces_400Regular.ttf') });
   const { session, loading } = useAuth();
   const { hydrated: preferencesHydrated } = usePreferences();
   const segments = useSegments() as string[];
   const { isDark } = useTheme();
-  if (loading || !preferencesHydrated)
+  if (loading || !preferencesHydrated || (!fontsLoaded && !fontError))
     return (
       <Screen style={{ justifyContent: "center", padding: 20 }}>
         <Notice kind="loading" title="OPENING YOUR DESK">

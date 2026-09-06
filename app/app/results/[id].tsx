@@ -1,3 +1,4 @@
+import { ApiClient } from '@/api';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -42,22 +43,27 @@ export default function Results() {
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   useEffect(() => {
-    AsyncStorage.getItem(resultId(session?.user.id, subject, id)).then(
-      (value) => {
-        if (value) {
-          try {
-            setRaw(JSON.parse(value));
-          } catch {}
-        }
-        setLoaded(true);
-      },
-    );
+    let active=true;
+    setLoaded(false);
+    setRaw(undefined);
+    (async()=>{
+      try {
+        const attempts=await new ApiClient(subject).attempts();
+        const found=attempts.attempts.find(attempt=>attempt.sessionId===id);
+        if(found?.result){if(active)setRaw(found.result);return;}
+      } catch { /* A disposable local result remains useful without a network. */ }
+      try {
+        const value=await AsyncStorage.getItem(resultId(session?.user.id,subject,id));
+        if(value&&active)setRaw(JSON.parse(value));
+      } catch { /* No usable result available. */ }
+    })().finally(()=>{if(active)setLoaded(true);});
+    return ()=>{active=false;};
   }, [id, session?.user.id, subject]);
   if (!loaded)
     return (
       <ScrollScreen>
         <Notice kind="loading" title="OPENING MARK RECORD">
-          Reading the locally cached server result.
+          Opening your marked answers.
         </Notice>
       </ScrollScreen>
     );
@@ -66,8 +72,7 @@ export default function Results() {
       <ScrollScreen>
         <DeskHeader title="No result found" eyebrow="MARK RECORD" />
         <Notice title="RESULT UNAVAILABLE">
-          Results are shown only from a cached server submission. No values have
-          been estimated.
+          This result could not be loaded from your account or this device. Reconnect and try your marked-paper history.
         </Notice>
         <Button onPress={() => router.replace("/practice")}>
           Start practice

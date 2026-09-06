@@ -1,4 +1,5 @@
-import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import StudioShell from '../../shared/v2/StudioShell.jsx';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { api } from './api.js';
 import { clearSupabaseSession } from '../../shared/supabase.js';
@@ -8,6 +9,10 @@ import LoginScreen from '../../shared/login.jsx';
 // Route pages are code-split: the app shell renders first and each page
 // chunk streams in on demand. The core revision loop is prefetched during
 // idle time on capable connections; save-data and 2G users stay on demand.
+const LearningHome = lazy(() => import('../../shared/v2/LearningHome.jsx'));
+const Reflect = lazy(() => import('../../shared/v2/Reflect.jsx'));
+const Search = lazy(() => import('../../shared/v2/Search.jsx'));
+const Settings = lazy(() => import('../../shared/v2/Settings.jsx'));
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
 const Practice = lazy(() => import('./pages/Practice.jsx'));
 const Results = lazy(() => import('./pages/Results.jsx'));
@@ -33,16 +38,6 @@ function shouldPrefetchRoutes() {
 function PageFallback() {
   return <div className="page"><div className="loading">Loading…</div></div>;
 }
-
-const NAV = [
-  { to: '/', label: 'Dashboard', icon: '01' },
-  { to: '/practice', label: 'Papers', icon: '02' },
-  { to: '/learn', label: 'Learn', icon: '03' },
-  { to: '/texts', label: 'Texts', icon: '04' },
-  { to: '/notebook', label: 'Notebook', icon: '05' },
-  { to: '/summary', label: 'Summary', icon: '06' },
-  { to: '/chat', label: 'AI Tutor', icon: '07' },
-];
 
 function initialTheme() {
   try {
@@ -161,63 +156,14 @@ export default function App() {
 
   return (
     <div className="app">
-      <aside className="sidebar">
-        <div className="logo">
-          <span className="logo-icon" aria-hidden="true">E</span>
-          <div>
-            <div className="logo-name">EnglishMate</div>
-            <div className="logo-sub">AQA English Language</div>
-          </div>
-        </div>
-        <a className="subject-switch" href="/" aria-label="Return to all subjects">
-          <span aria-hidden="true">←</span><span className="subject-switch-label">All subjects</span>
-        </a>
-        <nav>
-          {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.to === '/'} aria-label={n.label} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <span className="nav-icon" aria-hidden="true">{n.icon}</span>
-              <span className="nav-label">{n.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <div className="sidebar-foot">
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-pressed={theme === 'dark'}
-            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          >
-            <span className="theme-toggle-icon" aria-hidden="true">{theme === 'dark' ? '◑' : '◐'}</span>
-            <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-          </button>
-          <button type="button" className="sign-out" onClick={signOut} aria-label="Sign out">
-            <span className="sign-out-label">Sign out</span>
-            <span className="sign-out-user">&middot; {auth.username}</span>
-          </button>
-          {progress && (
-            <div className="level-card">
-              <div className="level-row">
-                <span>Level {progress.level}</span>
-                <span>🔥 {progress.streak} day{progress.streak === 1 ? '' : 's'}</span>
-              </div>
-              <div className="xp-bar">
-                <div className="xp-fill" style={{ width: `${Math.min(100, (progress.xpInto / progress.xpNeeded) * 100)}%` }} />
-              </div>
-              <div className="xp-note">{progress.xpInto}/{progress.xpNeeded} XP to next level</div>
-            </div>
-          )}
-          {health && (
-            <div className="bank-note">
-              {health.texts} source texts · {health.aiMarking ? 'AI marking on' : 'AI marking off (no key)'}
-            </div>
-          )}
-        </div>
-      </aside>
-      <main className="content">
+      <StudioShell subject={'english'} auth={auth} theme={theme} toggleTheme={toggleTheme} signOut={signOut}>
         <Suspense fallback={<PageFallback />}>
           <Routes>
-            <Route path="/" element={<Dashboard health={health} progress={progress} userId={userId} />} />
+            <Route path="/" element={<LearningHome api={api} subject={'english'} userId={userId} progress={progress} />} />
+            <Route path="/reflect" element={<Reflect progress={progress} />} />
+            <Route path="/search" element={<Search api={api} subject={'english'} userId={userId} />} />
+            <Route path="/settings" element={<Settings api={api} subject={'english'} userId={userId} auth={auth} theme={theme} toggleTheme={toggleTheme} signOut={signOut} />} />
+            <Route path="/insights" element={<Dashboard health={health} progress={progress} userId={userId} />} />
             <Route path="/practice" element={<Practice health={health} onProgress={setProgress} userId={userId} />} />
             <Route path="/results" element={<Results userId={userId} />} />
             <Route path="/learn" element={<Learn userId={userId} />} />
@@ -229,7 +175,7 @@ export default function App() {
             <Route path="/chat" element={<Chat health={health} userId={userId} />} />
           </Routes>
         </Suspense>
-      </main>
+      </StudioShell>
     </div>
   );
 }

@@ -1,0 +1,8 @@
+{
+  "light": {"paper":"#f5f6f2","raised":"#ffffff","muted":"#e9eeea","ink":"#183c37","quiet":"#52665f","line":"#cdd8d1","strong":"#81998c","positive":"#216342","positiveWash":"#e2f0e5","warning":"#815613","warningWash":"#fbefd5","negative":"#a33538","negativeWash":"#f9e5e5","info":"#315f86","infoWash":"#e5edf6"},
+  "dark": {"paper":"#112b29","raised":"#183633","muted":"#21443e","ink":"#eff5ed","quiet":"#b4c9bf","line":"#395b50","strong":"#77978a","positive":"#96dbad","positiveWash":"#234939","warning":"#f0cc83","warningWash":"#4d4026","negative":"#ffaaa6","negativeWash":"#513232","info":"#a7c9ee","infoWash":"#253d52"},
+  "spacing": [4,8,12,16,20,24,32,48,64],
+  "radius": {"control":8,"surface":14},
+  "motion": {"quick":120,"standard":180},
+  "minimumTarget": {"web":44,"native":48}
+}

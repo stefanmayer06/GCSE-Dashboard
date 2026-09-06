@@ -84,20 +84,20 @@ export default function Notebook() {
         const label = errorTypeLabel(row.errorType);
         return (
           <View key={row.id} style={{ borderWidth: 1, borderLeftWidth: due.has(row.id) ? 6 : 1, borderColor: due.has(row.id) ? tokens.accent : colors.strong, backgroundColor: colors.raised, padding: 14, gap: 8 }}>
-            <Text style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: '800', color: tokens.accent }}>
+            <Text style={{ fontFamily: 'DMSans', fontSize: 11, fontWeight: '800', color: tokens.accent }}>
               {due.has(row.id) ? 'DUE TO RETRY' : 'SCHEDULED'} / {row.topicName}{label ? ` / ${label.toUpperCase()}` : ''}
             </Text>
-            <Text style={{ fontFamily: 'serif', fontSize: 20, color: colors.ink }}>{row.prompt}</Text>
+            <Text style={{ fontFamily: 'Fraunces', fontSize: 20, color: colors.ink }}>{row.prompt}</Text>
             {row.answer !== undefined && <Text style={{ color: colors.quiet }}>Your answer: {typeof row.answer === 'string' ? row.answer : JSON.stringify(row.answer)}</Text>}
             {row.correctAnswer && <Text style={{ color: colors.ink }}>Correct answer: {row.correctAnswer}</Text>}
             <Text style={{ color: colors.quiet }}>Retry {reviewIndex}/{row.dueDates.length}{row.warmupCount ? ` · warm-ups ${row.warmupCount}` : ''}{dueDate ? ` · next review ${new Date(dueDate).toLocaleDateString()}` : ''}</Text>
             {(row.workedSolution?.length ?? 0) > 0 && (
               <View style={{ borderWidth: 1, borderColor: colors.strong, backgroundColor: colors.paper, padding: 10, gap: 2 }}>
-                <Text style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: '800', color: colors.quiet }}>WORKED METHOD</Text>
+                <Text style={{ fontFamily: 'DMSans', fontSize: 10, fontWeight: '800', color: colors.quiet }}>WORKED METHOD</Text>
                 {row.workedSolution!.map((step, index) => <Text key={index} style={{ color: colors.ink, fontSize: 13 }}>Step {index + 1}: {step}</Text>)}
               </View>
             )}
-            <Text style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: '800', color: colors.quiet }}>WHY DID YOU MISS IT?</Text>
+            <Text style={{ fontFamily: 'DMSans', fontSize: 10, fontWeight: '800', color: colors.quiet }}>WHY DID YOU MISS IT?</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {CLASSIFY_REASONS.map(reason => {
                 const on = row.errorType === reason.id;
@@ -119,8 +119,8 @@ export default function Notebook() {
       )}
       {mastered.slice(0, 10).map(row => (
         <View key={row.id} style={{ borderWidth: 1, borderColor: colors.strong, backgroundColor: colors.raised, padding: 14, gap: 4, opacity: 0.8 }}>
-          <Text style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: '800', color: colors.positive }}>MASTERED / {row.topicName}</Text>
-          <Text style={{ fontFamily: 'serif', fontSize: 16, color: colors.ink }}>{row.prompt}</Text>
+          <Text style={{ fontFamily: 'DMSans', fontSize: 11, fontWeight: '800', color: colors.positive }}>MASTERED / {row.topicName}</Text>
+          <Text style={{ fontFamily: 'Fraunces', fontSize: 16, color: colors.ink }}>{row.prompt}</Text>
           {row.lastReviewedAt && <Text style={{ color: colors.quiet }}>Proven {new Date(row.lastReviewedAt).toLocaleDateString()}</Text>}
         </View>
       ))}

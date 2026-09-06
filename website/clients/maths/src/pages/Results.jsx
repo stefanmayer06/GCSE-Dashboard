@@ -191,7 +191,7 @@ export default function Results({ userId }) {
 
       {result.weakTopics.length > 0 && (
         <section className="panel">
-          <h2>Fix these first 🎯</h2>
+          <h2>Give these methods another look</h2>
           <p className="sub">Your weakest topics this paper, with free revision resources for each.</p>
           <div className="weak-grid">
             {result.weakTopics.map((t) => (

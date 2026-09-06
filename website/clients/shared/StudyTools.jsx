@@ -57,12 +57,12 @@ function noteReturn(api, userId, subject) {
 
 /* ---------------- Onboarding: exam date, target, diagnostic ---------------- */
 
-export function Onboarding({ personal, progress, preferences, updatePreferences, diagnosticUrl, foundation = false }) {
+export function Onboarding({ personal, progress, preferences, updatePreferences, diagnosticUrl, foundation = false, api }) {
   const [step, setStep] = useState(0);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => Boolean(preferences.examDate));
   if (dismissed || !personal) return null;
   const existingStudy = progress && (progress.testsTaken > 0 || progress.practiceAnswered > 0);
-  if (preferences.examDate || existingStudy) return null;
+  if (step === 0 && existingStudy) return null;
 
   const grades = foundation ? ['4', '5'] : ['4', '5', '6', '7', '8', '9'];
   const steps = [
@@ -110,7 +110,7 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
 
   return (
     <section className="panel onboarding-card" aria-label="Set up your revision">
-      <div className="eyebrow">Welcome · three quick steps</div>
+      <div className="onboarding-progress">Your plan, in three small steps</div>
       <h2>{current.title}</h2>
       <p className="sub">{current.body}</p>
       {current.control && <div className="onboarding-control">{current.control}</div>}
@@ -208,27 +208,28 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
         updatePreferences={updatePreferences}
         diagnosticUrl={diagnosticUrl}
         foundation={foundation}
+        api={api}
       />
       <section className="study-grid" aria-label="Revision planner">
         <div className={`panel mission-card${todayDone ? ' mission-done' : ''}`}>
-          <div className="eyebrow">Today&apos;s mission</div>
+          <div className="mission-context">Your next session</div>
           <h2>{mission ? mission.task : todayDone ? `✓ ${todayDone.task} done` : doneCount === 7 ? 'Every mission done' : 'Pick your first mission'}</h2>
           <p className="sub">{mission ? (mission.topicId ? `${mission.minutes} focused minutes · learn it, then finish the short practice to lock today in.` : mission.task === 'Mistake retry' ? 'No lesson today. Clear the mistakes that are due, then the day is yours.' : 'This day has no lesson — use the practice desk to keep your plan on track.') : todayDone ? (todayDone.result ? `Score ${todayDone.result.percent}% · ${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks${todayDone.result.xpEarned != null ? ` · +${todayDone.result.xpEarned} XP` : ''} recorded. Come back tomorrow — the rest of the week stays locked.` : 'Come back tomorrow — the rest of the week stays locked.') : doneCount === 7 ? 'Enjoy the break, or keep practising freely. A fresh plan starts on Monday.' : 'Complete today\u2019s row in the exam plan below; future days stay locked until then.'}</p>
           <div className="study-actions">
-            {mission?.topicId && <Link className="btn btn-primary" to={`/learn/${mission.topicId}`} onClick={() => startMission(mission.date, mission.topicId)}>Start mission</Link>}
+            {mission?.topicId && <Link className="btn btn-primary" to={`/learn/${mission.topicId}`} onClick={() => startMission(mission.date, mission.topicId)}>Begin this session →</Link>}
             {mission && !mission.topicId && <Link className="btn btn-primary" to={mission.task === 'Mistake retry' ? '/notebook' : '/practice'}>Open {mission.task}</Link>}
             <Link className="btn" to={diagnosticUrl}>Fast diagnostic · 10 questions</Link>
           </div>
         </div>
         <div className="panel readiness-card">
-          <div className="eyebrow">Readiness score</div>
+          <h2>Building understanding</h2>
           <div className="readiness-number">{evidence.ready ? `${evidence.score}%` : 'Not enough evidence'}</div>
           <p className="sub">{evidence.ready ? `Based on ${evidence.answered} marked answers across ${evidence.topics} topics. Accuracy is a guide, not a predicted grade.` : `${evidence.answered}/20 marked answers across ${evidence.topics}/3 topics. The score appears only when both thresholds are met.`}</p>
         </div>
         <div className="panel plan-card">
-          <div className="plan-head"><div><div className="eyebrow">Exam plan</div><h2>{days == null ? 'Set your exam date' : days < 0 ? 'Exam date passed' : `${days} day${days === 1 ? '' : 's'} to go`}</h2></div><input aria-label="Exam date" type="date" value={preferences.examDate} onChange={(e) => updatePreferences({ examDate: e.target.value })} /></div>
+          <div className="plan-head"><div><h2>{days == null ? 'Set your exam date' : days < 0 ? 'Exam date passed' : `${days} day${days === 1 ? '' : 's'} to go`}</h2></div><input aria-label="Exam date" type="date" value={preferences.examDate} onChange={(e) => updatePreferences({ examDate: e.target.value })} /></div>
           {foundation && <label className="pass-toggle"><input type="checkbox" checked={preferences.passMode === 'foundation-pass'} onChange={(e) => updatePreferences({ passMode: e.target.checked ? 'foundation-pass' : 'balanced' })} /><span><strong>Pass mode · grade 4 goal</strong><small>Prioritise core and weak Foundation topics.</small></span></label>}
-          <div className="week-plan">{!personal ? <p className="empty">Loading your plan…</p> : plan?.days.length ? plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < today; const canStart = !done && !past && day.topicId && day.date === today; const locked = !done && !canStart && !past; return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done" title={day.result ? `Done: ${day.result.percent}% · ${day.result.correctMarks}/${day.result.totalMarks} marks` : undefined}><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : canStart ? <Link key={day.date} to={`/learn/${day.topicId}`} onClick={() => startMission(day.date, day.topicId)} title="Today's mission"><b>{day.label}</b><span>{day.task}</span><small>Start ★</small></Link> : <span key={day.date} className={past ? 'past' : 'locked'} title={past ? 'That day has passed' : 'Completes when a new day starts'}><b>{day.label}</b><span>{day.task}</span>{past ? <small>Missed</small> : locked ? <small>Locked</small> : null}</span>); }) : <p className="empty">Complete a lesson to build your 7-day plan.</p>}</div>
+          <div className="week-plan">{!personal ? <p className="empty">Loading your plan…</p> : plan?.days.length ? plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < today; const canStart = !done && !past && day.topicId && day.date === today; const locked = !done && !canStart && !past; return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done" title={day.result ? `Done: ${day.result.percent}% · ${day.result.correctMarks}/${day.result.totalMarks} marks` : undefined}><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : canStart ? <Link key={day.date} to={`/learn/${day.topicId}`} onClick={() => startMission(day.date, day.topicId)} title="Today's mission"><b>{day.label}</b><span>{day.task}</span><small>Start ★</small></Link> : <span key={day.date} className={past ? 'past' : 'locked'} title={past ? 'That day has passed' : 'Completes when a new day starts'}><b>{day.label}</b><span>{day.task}</span>{past ? <small>Past day</small> : locked ? <small>Coming up</small> : null}</span>); }) : <p className="empty">Complete a lesson to build your 7-day plan.</p>}</div>
           {plan?.days?.length ? (
             <div className="week-track" role="img" aria-label={`${doneCount} of 7 days done this week`}>
               {plan.days.map((day) => (

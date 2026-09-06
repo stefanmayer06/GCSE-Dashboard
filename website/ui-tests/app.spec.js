@@ -165,17 +165,15 @@ test('subject directory links to both subjects and tolerates more rows', async (
   ]);
 });
 
-test('subject themes share the desk system but keep distinct accents', async ({ page }) => {
+test('subject shells share the studio and retain explicit course context', async ({ page }) => {
   await signIn(page);
-  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
-  const maths = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
-  await expect(page.locator('h1')).toHaveCSS('font-family', /Georgia/);
-  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(243, 240, 232)');
-
-  await page.goto(`${BASE}/english/`, { waitUntil: 'networkidle' });
-  const english = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
-  await expect(page.locator('h1')).toHaveCSS('font-family', /Georgia/);
-  expect(maths).not.toEqual(english);
+  for (const [subject,label] of [['maths','Maths · Foundation'],['maths-higher','Maths · Higher'],['english','English Language']]) {
+    await page.goto(`${BASE}/${subject}/`, {waitUntil:'networkidle'});
+    await expect(page.locator('.studio-subject select')).toHaveValue(subject);
+    await expect(page.locator('.studio-subject select option:checked')).toHaveText(label);
+    await expect(page.locator('h1')).toHaveCSS('font-family', /Fraunces/);
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(245, 246, 242)');
+  }
 });
 
 test('English tutor renders Markdown response structure', async ({ page }) => {
@@ -402,9 +400,9 @@ test('tablet navigation keeps account controls and accessible names', async ({ p
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
   await expect(page.locator('.theme-toggle')).toBeVisible();
   await expect(page.locator('.sign-out')).toBeVisible();
-  await expect(page.locator('.sidebar nav a')).toHaveCount(6);
-  await expect.poll(() => page.locator('.sidebar nav a').evaluateAll((links) => links.map((link) => link.getAttribute('aria-label')))).toEqual([
-    'Dashboard', 'Practice', 'Learn', 'Notebook', 'Summary', 'AI Tutor',
+  await expect(page.locator('.sidebar nav a')).toHaveCount(5);
+  await expect.poll(() => page.locator('.sidebar nav a').evaluateAll((links) => links.map((link) => link.textContent))).toEqual([
+    'Today', 'Learn', 'Practice', 'Reflect', 'Tutor',
   ]);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
@@ -414,7 +412,7 @@ test('mobile header controls meet the touch target', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 });
   await signIn(page);
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
-  const sizes = await page.locator('.subject-switch, .theme-toggle, .sign-out').evaluateAll((controls) => controls.map((control) => {
+  const sizes = await page.locator('.studio-tools a, .studio-subject select, .studio-nav').evaluateAll((controls) => controls.map((control) => {
     const rect = control.getBoundingClientRect();
     return { width: rect.width, height: rect.height };
   }));
@@ -443,21 +441,12 @@ test('landscape tablet keeps collapsed sidebar controls reachable', async ({ pag
   await signIn(page);
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
 
-  const metrics = await page.locator('.sidebar').evaluate((sidebar) => ({
-    documentHeight: document.documentElement.scrollHeight,
-    viewportHeight: window.innerHeight,
-    sidebarHeight: sidebar.clientHeight,
-    sidebarScrollHeight: sidebar.scrollHeight,
-  }));
-  expect(metrics.documentHeight).toBeLessThanOrEqual(metrics.viewportHeight);
-  expect(metrics.sidebarScrollHeight).toBeGreaterThan(metrics.sidebarHeight);
-
-  await page.locator('.sidebar').evaluate((sidebar) => { sidebar.scrollTop = sidebar.scrollHeight; });
-  const controlsInViewport = await page.evaluate(() => ['.theme-toggle', '.sign-out'].every((selector) => {
-    const rect = document.querySelector(selector).getBoundingClientRect();
-    return rect.top >= 0 && rect.bottom <= window.innerHeight;
-  }));
-  expect(controlsInViewport).toBeTruthy();
+  await page.getByRole('link', {name:'Profile and settings'}).click();
+  await expect(page.getByRole('heading',{name:'Make this space yours.'})).toBeVisible();
+  await page.getByRole('button',{name:'Use dark appearance'}).scrollIntoViewIfNeeded();
+  await expect(page.getByRole('button',{name:'Use dark appearance'})).toBeVisible();
+  await page.getByRole('button',{name:'Sign out',exact:true}).scrollIntoViewIfNeeded();
+  await expect(page.getByRole('button',{name:'Sign out',exact:true})).toBeVisible();
 });
 
 test('a new visitor can create an account and sign in with it', async ({ page }) => {
@@ -595,7 +584,7 @@ test('lesson rewards persist, update levels live and cannot be claimed twice', a
   expect(repeat.reward.completionXp).toBe(0);
   await expect(page.locator('.reward-dialog')).toHaveCount(0);
 
-  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/maths/reflect`, { waitUntil: 'networkidle' });
   await expect(page.locator('.expertise-path')).toContainText('1 lesson completed');
   await page.getByRole('button', { name: 'View badge collection' }).click();
   await expect(page.locator('.badge-collection')).toBeVisible();

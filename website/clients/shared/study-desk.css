@@ -4447,3 +4447,92 @@ body { margin: 0; line-height: 1.5; -webkit-font-smoothing: antialiased; }
   .skeleton-block::after { animation: none; }
   .mastery-leader-bar > i, .nextstep-ring .ring-fg { transition: none; }
 }
+
+/* ================= v3 feature styles =================
+   Fix-Up 5, MemRi memory checks, FSRS-lite grades, correction ritual,
+   flexible planning, milestones + share cards, read-aloud. Square
+   surfaces, ink rules, one accent — same desk, new drawers. */
+
+.fixup-row { margin-bottom: 14px; }
+
+.memri-card { border-left: 5px solid var(--positive); }
+
+.classify-row { margin-top: 12px; }
+
+.correction-row { display: grid; gap: 6px; margin-top: 12px; }
+.correction-row small {
+  color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.correction-input { width: 100%; min-height: 64px; resize: vertical; }
+
+.plan-flex {
+  display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end;
+  margin: 14px 0; padding: 12px 14px;
+  border: 1px solid var(--line); background: var(--panel2);
+}
+.plan-rest { display: grid; gap: 6px; }
+.plan-rest .chip-row { display: flex; gap: 6px; }
+.plan-rest .suggest-chip { min-width: 40px; min-height: 40px; padding: 0 8px; }
+.plan-minutes { display: grid; gap: 6px; }
+.minutes-stepper { display: inline-flex; align-items: center; gap: 10px; }
+.minutes-stepper strong { font-variant-numeric: tabular-nums; font-size: 15px; min-width: 64px; text-align: center; }
+
+.week-plan .rest-day {
+  display: block; min-width: 0; padding: 10px;
+  border-right: 1px solid var(--line);
+  color: var(--quiet); background: var(--panel2);
+}
+.week-plan .rest-day:last-child { border-right: 0; }
+.week-plan .rest-day b { display: block; margin-bottom: 5px; font-size: 10px; text-transform: uppercase; }
+.week-plan .rest-day span { font-size: 11px; font-style: italic; }
+.week-plan .rest-day small { display: block; margin-top: 4px; font-size: 10px; font-weight: 600; }
+.move-target {
+  min-width: 0; padding: 10px; border: 1px dashed var(--subject-ink, var(--ink));
+  border-right: 1px solid var(--line);
+  background: var(--subject-tint, var(--panel2)); color: inherit;
+  font: inherit; text-align: left; cursor: pointer;
+}
+.move-target b, .move-target span { display: block; overflow: hidden; text-overflow: ellipsis; }
+.move-target b { margin-bottom: 5px; font-size: 10px; text-transform: uppercase; }
+.move-target span { font-size: 11px; }
+.move-target small { display: block; margin-top: 4px; font-size: 10px; font-weight: 800; }
+
+.milestone-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.milestone {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border: 1px solid var(--line-strong); background: var(--panel2);
+}
+.milestone-seal {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: 38px; height: 38px; border: 1px solid var(--subject-ink, var(--ink)); border-radius: 50%;
+  color: var(--subject-ink, var(--ink)); background: var(--subject-tint, var(--panel));
+  font-size: 16px;
+}
+.milestone-text { min-width: 0; flex: 1; }
+.milestone-text strong, .milestone-text small { display: block; }
+.milestone-text strong { font-size: 14px; }
+.milestone-text small { color: var(--quiet); font-size: 12px; }
+
+.share-card { text-align: left; }
+.share-stamp {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase;
+}
+.share-stamp strong {
+  display: grid; place-items: center; width: 44px; height: 44px;
+  border: 2px solid var(--accent); border-radius: 50%;
+  color: var(--subject-ink); background: var(--accent-wash); font-size: 20px;
+}
+.share-card h3 { margin: 14px 0 4px; font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: 30px; letter-spacing: -0.03em; }
+.share-proof { font-weight: 700; font-size: 14px; }
+
+.read-aloud.on { border-color: var(--subject-ink); color: var(--subject-ink); background: var(--subject-tint); }
+.freeze-note { color: var(--positive); font-weight: 700; }
+
+@media (max-width: 760px) {
+  .plan-flex { flex-direction: column; align-items: stretch; }
+  .week-plan .rest-day { border-right: 0; border-bottom: 1px solid var(--line); }
+  .week-plan .rest-day:last-child { border-bottom: 0; }
+}

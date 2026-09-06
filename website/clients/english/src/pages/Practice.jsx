@@ -57,6 +57,9 @@ export default function Practice({ health, onProgress, userId }) {
   const answersRef = useRef({});
   const elapsedRef = useRef(0);
   const secondsLeftRef = useRef(null);
+  const [q5First, setQ5First] = useState(() => {
+    try { return localStorage.getItem('gcse-english-q5first') === '1'; } catch { return false; }
+  });
 
   useEffect(() => {
     if (saved.current) resumeSaved();
@@ -144,7 +147,12 @@ export default function Practice({ health, onProgress, userId }) {
       answersRef.current = {};
       elapsedRef.current = 0;
       secondsLeftRef.current = t.minutes * 60;
-      setTest(t);
+      // Q5-first mode: the 40-mark writing task opens the paper while fresh.
+      // Ordering is display-only — marking maps every answer by question id.
+      const ordered = q5First && Array.isArray(t.questions)
+        ? [...t.questions.filter((q) => q.type === 'essay'), ...t.questions.filter((q) => q.type !== 'essay')]
+        : t.questions;
+      setTest({ ...t, questions: ordered, q5First: q5First && ordered !== t.questions });
       setAnswers({});
       setCurrent(0);
       setSecondsLeft(t.minutes * 60);
@@ -153,6 +161,13 @@ export default function Practice({ health, onProgress, userId }) {
     } catch (e) {
       setError(e.message);
     }
+  }
+
+  function toggleQ5First() {
+    setQ5First((value) => {
+      try { localStorage.setItem('gcse-english-q5first', value ? '0' : '1'); } catch {}
+      return !value;
+    });
   }
 
   const autoStart = useRef({ paper: params.get('paper'), type: params.get('type') });
@@ -293,7 +308,7 @@ export default function Practice({ health, onProgress, userId }) {
               <div key={p.id} className="paper-card pick">
                 <div className="paper-top">
                   <span className="paper-type">{p.code}</span>
-                  <span className="calc-badge yes">{p.id === 1 ? '📖 Fiction extract' : '📰 Two sources'}</span>
+                  <span className="calc-badge yes">{p.id === 1 ? 'Fiction extract' : 'Two sources'}</span>
                 </div>
                 <div className="paper-desc">{p.blurb}</div>
                 <div className="paper-actions">
@@ -314,6 +329,10 @@ export default function Practice({ health, onProgress, userId }) {
            Long answers are marked by the AI tutor (Qwen 3.7 Flash) against summarised AQA mark
           schemes. {health?.aiMarking ? 'AI marking is ready.' : 'No OpenRouter key set — you\u2019ll self-mark against model answers and rubrics instead.'}
         </p>
+        <label className="pass-toggle">
+          <input type="checkbox" checked={q5First} onChange={toggleQ5First} />
+          <span><strong>Q5 first · 40 marks while fresh</strong><small>Open timed papers on the big writing task, then work back through Q1–Q4. Marking is unaffected.</small></span>
+        </label>
         {error && (
           <div className="error-banner" role="alert">
             {error}
@@ -322,24 +341,30 @@ export default function Practice({ health, onProgress, userId }) {
         )}
       </section>
 
-      <AdhocSection onProgress={onProgress} diagnostic={params.get('diagnostic') === '1'} />
+      <AdhocSection onProgress={onProgress} diagnostic={params.get('diagnostic') === '1'} fixup={params.get('fixup') === '1'} memri={params.get('memri') === '1'} userId={userId} />
     </div>
   );
 }
 
 /* ---------------- ad-hoc quick fire ---------------- */
 
-function AdhocSection({ onProgress, diagnostic = false }) {
+function AdhocSection({ onProgress, diagnostic = false, fixup = false, memri = false, userId = null }) {
   const diagnosticStarted = useRef(false);
+  const fixupStarted = useRef(false);
   const [kinds, setKinds] = useState(['listing', 'truefalse', 'analysis']);
   const [count, setCount] = useState(10);
   const [running, setRunning] = useState(null);
+  const [fixupMeta, setFixupMeta] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  async function startAdhoc(countOverride) {
+  async function startAdhoc(countOverride, kindsOverride, skillIds) {
     setBusy(true);
     try {
-      const set = await api.adhoc(typeof countOverride === 'number' ? countOverride : count, kinds);
+      const set = await api.adhoc(
+        typeof countOverride === 'number' ? countOverride : count,
+        Array.isArray(kindsOverride) ? kindsOverride : kinds,
+        skillIds,
+      );
       setRunning(set);
     } finally {
       setBusy(false);
@@ -353,6 +378,20 @@ function AdhocSection({ onProgress, diagnostic = false }) {
     startAdhoc(10);
   }, [diagnostic]);
 
+  // Fix-Up 5 / memory-check entry: a stored payload names the weak skills.
+  useEffect(() => {
+    if ((!fixup && !memri) || fixupStarted.current) return;
+    fixupStarted.current = true;
+    let payload = null;
+    try {
+      payload = JSON.parse(localStorage.getItem('gcse-fixup:english') || 'null');
+    } catch {}
+    try { localStorage.removeItem('gcse-fixup:english'); } catch {}
+    setCount(5);
+    setFixupMeta(payload?.mode === 'memri' ? { touchIds: payload?.touchIds || [] } : null);
+    startAdhoc(5, payload?.kinds || kinds, payload?.skillIds || []);
+  }, [fixup, memri]);
+
   function toggleKind(k) {
     setKinds((s) => {
       if (s.includes(k)) {
@@ -364,8 +403,10 @@ function AdhocSection({ onProgress, diagnostic = false }) {
   }
 
   if (running) {
-    return <AdhocRunner key={running.sessionId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} />;
+    return <AdhocRunner key={running.sessionId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} fixupMeta={fixupMeta} userId={userId} />;
   }
+
+  const fixupActive = fixup || memri;
 
   const labels = { listing: 'List four things', truefalse: 'True or false', analysis: 'Language analysis' };
 
@@ -373,10 +414,12 @@ function AdhocSection({ onProgress, diagnostic = false }) {
     <section className="panel" id="adhoc">
       <div className="quiz-head">
         <div>
-          <h2>Quick-fire round</h2>
+          <h2>{fixupActive ? 'Fix-Up round' : 'Quick-fire round'}</h2>
           <p className="sub">
-            Mixed mini-questions drawn from any text in the bank. Instant feedback; language
-            analysis gets AI marking when a key is configured.
+            {fixupActive
+              ? 'Five questions drawn from your due mistakes and weakest skills — grade every retry honestly.'
+              : `Mixed mini-questions drawn from any text in the bank. Instant feedback; language
+            analysis gets AI marking when a key is configured.`}
           </p>
         </div>
       </div>
@@ -431,7 +474,7 @@ export function useExtendedCheck(sessionId) {
   return { feedback, setFeedback, aiResults, checkText, checkAuto };
 }
 
-function AdhocRunner({ set, onExit, onNew, onProgress }) {
+function AdhocRunner({ set, onExit, onNew, onProgress, fixupMeta = null, userId = null }) {
   const [answers, setAnswers] = useState({});
   const [done, setDone] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -454,6 +497,18 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
       invalidateResources('attempts');
       invalidateResources('topics:');
       invalidateResources('personal:');
+      if (set.targeted) {
+        api.track?.('fixup_complete', { correctMarks: res.correctMarks, totalMarks: res.totalMarks, memri: Boolean(fixupMeta?.touchIds?.length) });
+      }
+      if (fixupMeta?.touchIds?.length) {
+        try {
+          const { hydratePersonal, touchMistakeRows } = await import('../../../shared/study-personal.js');
+          const personal = await hydratePersonal(api, userId, 'english');
+          await api.saveMistakes(touchMistakeRows(personal.mistakes ?? [], fixupMeta.touchIds));
+          invalidateResources('personal:');
+          api.track?.('memri_complete', { count: fixupMeta.touchIds.length });
+        } catch {}
+      }
       setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
     } catch (cause) {
       setError(cause.message || 'Could not score this round. Try again.');
@@ -935,7 +990,8 @@ function TestScreen(props) {
       <header className="exam-bar">
         <div className="exam-title">
           <span className="exam-paper">{test.paperCode} · {test.paperName}</span>
-          <span className="calc-badge yes">✍️ {test.paperTitle}</span>
+          <span className="calc-badge yes">{test.paperTitle}</span>
+          {test.q5First && <span className="calc-badge yes">Q5 first</span>}
         </div>
         <div className="exam-timers">
           <div className={`timer big ${lowTime ? 'low' : ''}`}>

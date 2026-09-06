@@ -40,3 +40,7 @@ test('Supabase progress row reports null average before any paper is marked', ()
   assert.equal(progress.overallPercent, null);
   assert.equal(progress.level, 1);
 });
+test('Supabase progress rows expose banked streak freezes', () => {
+  assert.equal(rowToProgress({ xp: 0, streak: 4, streak_freezes: 2, last_active_date: null, tests_taken: 0, practice_answered: 0, total_test_marks: 0, total_test_correct: 0, topic_stats: {}, completed_lessons: [] }).streakFreezes, 2);
+  assert.equal(rowToProgress({ xp: 0, streak: 0, last_active_date: null, tests_taken: 0, practice_answered: 0, total_test_marks: 0, total_test_correct: 0, topic_stats: {}, completed_lessons: [] }).streakFreezes, 1);
+});

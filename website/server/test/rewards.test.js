@@ -328,3 +328,40 @@ test('Supabase finalization submits the server operation without a stale state c
     operation,
   });
 });
+
+test('a single missed day spends a banked freeze instead of resetting the streak', async (t) => {
+  const { storage } = await temporaryStorage(t);
+  const db = () => createDb('freeze-user', 'maths', storage);
+  const dayBefore = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+  await storage.mutateProgress('freeze-user', 'maths', () => ({
+    state: { xp: 0, streakFreezes: 1, streak: 9, lastActiveDate: dayBefore, testsTaken: 0, practiceAnswered: 0, totalTestMarks: 0, totalTestCorrect: 0, topicStats: {}, completedLessons: [], history: [], chat: [] },
+    value: null,
+  }));
+  const first = await db().rewardActivity({ scoreXp: 5, lessonId: 'fractions' });
+  assert.equal(first.streakFreezeUsed, true);
+  assert.equal(first.progress.streak, 9);
+  assert.equal(first.progress.streakFreezes, 0);
+
+  // A second missed day with an empty bank resets to one.
+  const twoBefore = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+  await storage.mutateProgress('freeze-user', 'maths', (stored) => ({
+    state: { ...stored, lastActiveDate: twoBefore },
+    value: null,
+  }));
+  const second = await db().rewardActivity({ scoreXp: 1, lessonId: 'ratio' });
+  assert.equal(second.streakFreezeUsed, false);
+  assert.equal(second.progress.streak, 1);
+});
+
+test('every seventh streak day earns a freeze up to the cap of two', async (t) => {
+  const { storage } = await temporaryStorage(t);
+  const db = () => createDb('earn-user', 'maths', storage);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  await storage.mutateProgress('earn-user', 'maths', () => ({
+    state: { xp: 0, streakFreezes: 0, streak: 6, lastActiveDate: yesterday, testsTaken: 0, practiceAnswered: 0, totalTestMarks: 0, totalTestCorrect: 0, topicStats: {}, completedLessons: [], history: [], chat: [] },
+    value: null,
+  }));
+  const seventh = await db().rewardActivity({ scoreXp: 1, lessonId: 'decimals' });
+  assert.equal(seventh.progress.streak, 7);
+  assert.equal(seventh.progress.streakFreezes, 1);
+});

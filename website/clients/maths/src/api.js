@@ -78,7 +78,7 @@ export const api = {
   check: (qid, value) => req('/check', { method: 'POST', body: { qid, value } }),
   practiceSubmit: (sessionId, topicId, answers) =>
     req('/practice/submit', { method: 'POST', body: { sessionId, topicId, answers } }),
-  adhoc: (count, papers) => req('/adhoc', { method: 'POST', body: { count, papers } }),
+  adhoc: (count, papers, topicIds) => req('/adhoc', { method: 'POST', body: { count, papers, ...(Array.isArray(topicIds) && topicIds.length ? { topicIds } : {}) } }),
   adhocSubmit: (roundId, answers) => req('/adhoc/submit', { method: 'POST', body: { roundId, answers } }),
   progress: () => req('/progress'),
   chat: (messages) => req('/chat', { method: 'POST', body: { messages } }),

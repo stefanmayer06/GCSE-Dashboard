@@ -346,24 +346,26 @@ export default function Practice({ onProgress, userId }) {
         )}
       </section>
 
-       <AdhocSection higherTier={higherTier} onProgress={onProgress} diagnostic={params.get('diagnostic') === '1'} />
+       <AdhocSection higherTier={higherTier} onProgress={onProgress} diagnostic={params.get('diagnostic') === '1'} fixup={params.get('fixup') === '1'} memri={params.get('memri') === '1'} userId={userId} />
     </div>
   );
 }
 
 /* ---------------- Ad-hoc: mixed questions from any papers ---------------- */
 
-function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
+function AdhocSection({ higherTier = false, onProgress, diagnostic = false, fixup = false, memri = false, userId }) {
   const diagnosticStarted = useRef(false);
+  const fixupStarted = useRef(false);
   const [sources, setSources] = useState([1, 2, 3]);
   const [count, setCount] = useState(15);
   const [running, setRunning] = useState(null);
+  const [fixupMeta, setFixupMeta] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  async function startAdhoc(countOverride) {
+  async function startAdhoc(countOverride, topicIds) {
     setBusy(true);
     try {
-      const set = await api.adhoc(typeof countOverride === 'number' ? countOverride : count, sources);
+      const set = await api.adhoc(typeof countOverride === 'number' ? countOverride : count, sources, topicIds);
       setRunning(set);
     } finally {
       setBusy(false);
@@ -378,6 +380,21 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
     startAdhoc(10);
   }, [diagnostic]);
 
+  // Fix-Up 5 / memory-check entry: a stored payload names the weak topics.
+  useEffect(() => {
+    if ((!fixup && !memri) || fixupStarted.current) return;
+    fixupStarted.current = true;
+    const subject = higherTier ? 'maths-higher' : 'maths';
+    let payload = null;
+    try {
+      payload = JSON.parse(localStorage.getItem(`gcse-fixup:${subject}`) || 'null');
+    } catch {}
+    try { localStorage.removeItem(`gcse-fixup:${subject}`); } catch {}
+    setCount(5);
+    setFixupMeta(payload?.mode === 'memri' ? { touchIds: payload?.touchIds || [] } : null);
+    startAdhoc(5, payload?.topicIds || []);
+  }, [fixup, memri, higherTier]);
+
   function toggleSource(id) {
     setSources((s) => {
       if (s.includes(id)) {
@@ -389,17 +406,20 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
   }
 
   if (running) {
-    return <AdhocRunner key={running.roundId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} diagnostic={diagnostic} />;
+    return <AdhocRunner key={running.roundId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} diagnostic={diagnostic} fixupMeta={fixupMeta} userId={userId} higherTier={higherTier} />;
   }
+
+  const fixupActive = fixup || memri;
 
   return (
     <section className="panel" id="adhoc">
       <div className="quiz-head">
         <div>
-          <h2>Ad-hoc questions</h2>
+          <h2>{fixupActive ? 'Fix-Up round' : 'Ad-hoc questions'}</h2>
           <p className="sub">
-             A quick mixed bag drawn from any combination of the three {higherTier ? 'Higher' : 'Foundation'} papers — great for keeping
-            every topic sharp between full mocks.
+            {fixupActive
+              ? 'Five questions drawn from your due mistakes and weakest topics — grade every retry honestly.'
+              : `A quick mixed bag drawn from any combination of the three ${higherTier ? 'Higher' : 'Foundation'} papers — great for keeping every topic sharp between full mocks.`}
           </p>
         </div>
       </div>
@@ -440,7 +460,7 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
   );
 }
 
-function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false }) {
+function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false, fixupMeta = null, userId = null, higherTier = false }) {
   const [answers, setAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
   const [done, setDone] = useState(null);
@@ -467,6 +487,20 @@ function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false }) {
       invalidateResources('personal:');
       if (diagnostic) {
         api.track?.('diagnostic_complete', { correctMarks: res.correctMarks, totalMarks: res.totalMarks });
+      }
+      if (set.targeted) {
+        api.track?.('fixup_complete', { correctMarks: res.correctMarks, totalMarks: res.totalMarks, memri: Boolean(fixupMeta?.touchIds?.length) });
+      }
+      if (fixupMeta?.touchIds?.length) {
+        // Memory check evidence: proving faded mastery refreshes the stamp.
+        try {
+          const subject = higherTier ? 'maths-higher' : 'maths';
+          const { hydratePersonal, touchMistakeRows } = await import('../../../shared/study-personal.js');
+          const personal = await hydratePersonal(api, userId, subject);
+          await api.saveMistakes(touchMistakeRows(personal.mistakes ?? [], fixupMeta.touchIds));
+          invalidateResources('personal:');
+          api.track?.('memri_complete', { count: fixupMeta.touchIds.length });
+        } catch {}
       }
       setFeedback((f) => {
         const out = { ...f };

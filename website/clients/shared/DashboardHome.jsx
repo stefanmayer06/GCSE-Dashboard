@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ExpertisePath } from './rewards.jsx';
-import { StudyDashboard } from './StudyTools.jsx';
+import { MemRiCard, StudyDashboard } from './StudyTools.jsx';
+import { MilestoneShelf } from './Milestones.jsx';
 import { NextStepCard } from './NextStep.jsx';
 import { strengthLabel } from './next-step.js';
 
@@ -131,7 +132,12 @@ export default function DashboardHome({
 
       <ExpertisePath progress={progress} onChooseLesson={() => navigate(learnBase)} />
 
-      <p className="section-label"><span className="section-num">04</span> Sit a timed paper</p>
+      <MemRiCard userId={userId} subject={subjectKey} api={api} />
+
+      <p className="section-label"><span className="section-num">04</span> Milestones worth sharing</p>
+      <MilestoneShelf progress={progress} subjectName={title.replace('Your ', '')} api={api} />
+
+      <p className="section-label"><span className="section-num">05</span> Sit a timed paper</p>
       <section className="panel start-panel" aria-labelledby="papers-title">
         <h2 id="papers-title">Start a practice paper</h2>
         <p className="sub">{papers.blurb}</p>
@@ -168,7 +174,7 @@ export default function DashboardHome({
         ) : null}
       </section>
 
-      <p className="section-label"><span className="section-num">05</span> Mastery — weakest first</p>
+      <p className="section-label"><span className="section-num">06</span> Mastery — weakest first</p>
       <section className="panel" aria-labelledby="mastery-title">
         <h2 id="mastery-title">{masteryTitle}</h2>
         {masteryLoading ? (

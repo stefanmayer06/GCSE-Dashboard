@@ -17,6 +17,101 @@ export const ERROR_TYPES = [
 
 export const ERROR_TYPE_IDS = ERROR_TYPES.map((type) => type.id);
 
+// FSRS-lite recall grading for retries. Each grade moves the next review:
+// Again holds the card for tomorrow, Hard shortens the step, Good keeps the
+// ladder, Easy stretches it by the card's ease factor.
+export const GRADES = [
+  { id: 'again', label: 'Again', hint: 'Missed it — see it again tomorrow.' },
+  { id: 'hard', label: 'Hard', hint: 'Correct with real effort — sooner than planned.' },
+  { id: 'good', label: 'Good', hint: 'Solid recall — keep the normal schedule.' },
+  { id: 'easy', label: 'Easy', hint: 'Too easy — push it much further out.' },
+];
+
+export const GRADE_IDS = GRADES.map((grade) => grade.id);
+
+const clampEase = (ease) => {
+  const value = Number.isFinite(Number(ease)) ? Number(ease) : 2.5;
+  return Math.max(1.3, Math.min(3.0, value));
+};
+
+function withDueDate(row, index, iso) {
+  const dueDates = Array.isArray(row.dueDates) ? [...row.dueDates] : [];
+  dueDates[index] = iso;
+  return { ...row, dueDates };
+}
+
+export function gradeMistakeRow(row, grade, now = Date.now()) {
+  if (!row || !GRADE_IDS.includes(grade)) return row;
+  const at = new Date(now).toISOString();
+  const ease = clampEase(row.ease);
+  const reviewIndex = Number.isInteger(row.reviewIndex) ? row.reviewIndex : 0;
+  if (grade === 'again') {
+    const next = new Date(now + DAY).toISOString();
+    return {
+      ...withDueDate(row, reviewIndex, next),
+      ease: Math.max(1.3, +(ease - 0.2).toFixed(2)),
+      lastGrade: 'again',
+      lastReviewedAt: at,
+    };
+  }
+  const nextIndex = Math.min(4, reviewIndex + 1);
+  const prev = Date.parse(row.lastReviewedAt || row.capturedAt || at);
+  const baseDays = Number.isFinite(prev)
+    ? Math.max(1, Math.round((now - prev) / DAY))
+    : [1, 3, 7, 21][Math.min(3, nextIndex)] || 7;
+  const intervalDays = grade === 'easy'
+    ? Math.min(60, Math.max(2, Math.round(baseDays * ease)))
+    : grade === 'hard'
+      ? Math.max(1, Math.round(baseDays * 0.6))
+      : Math.max(1, baseDays);
+  return {
+    ...withDueDate(row, nextIndex, new Date(now + intervalDays * DAY).toISOString()),
+    reviewIndex: nextIndex,
+    ease: grade === 'hard'
+      ? Math.max(1.3, +(ease - 0.15).toFixed(2))
+      : grade === 'easy'
+        ? Math.min(3.0, +(ease + 0.15).toFixed(2))
+        : ease,
+    lastGrade: grade,
+    lastReviewedAt: at,
+    mastered: nextIndex >= 4,
+  };
+}
+
+// Memory-check evidence: proving a mastered mistake again refreshes its
+// review stamp and counts the resurrection without reopening the ladder.
+export function touchMistakeRows(rows, ids, now = Date.now()) {
+  const set = new Set(Array.isArray(ids) ? ids : [ids]);
+  const at = new Date(now).toISOString();
+  return (Array.isArray(rows) ? rows : []).map((row) => (set.has(row.id)
+    ? { ...row, lastReviewedAt: at, resurrectedCount: Math.min(99, (row.resurrectedCount ?? 0) + 1) }
+    : row));
+}
+
+// Mastered rows whose proof has faded (default 30 days) are due a memory
+// check — the MemRi loop that keeps old mastery honest.
+export function memriDueRows(rows, now = Date.now(), olderThanDays = 30) {
+  const cutoff = now - olderThanDays * DAY;
+  return (Array.isArray(rows) ? rows : []).filter((row) => {
+    if (!row || !row.mastered) return false;
+    const at = Date.parse(row.lastReviewedAt || row.capturedAt || '');
+    return Number.isFinite(at) && at <= cutoff;
+  });
+}
+
+export function saveCorrection(rows, id, correction) {
+  const value = typeof correction === 'string' ? correction.trim().slice(0, 500) : '';
+  return (Array.isArray(rows) ? rows : []).map((row) => {
+    if (row.id !== id) return row;
+    if (!value) {
+      const next = { ...row };
+      delete next.correction;
+      return next;
+    }
+    return { ...row, correction: value };
+  });
+}
+
 function notifyPersonalUpdated(userId, subject) {
   if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return;
   window.dispatchEvent(new CustomEvent(PERSONAL_UPDATED_EVENT, { detail: { userId, subject } }));
@@ -185,6 +280,10 @@ export function mergeMistakeRows(existing, incoming) {
           ...(prior.errorType ? { errorType: prior.errorType } : {}),
           ...(prior.warmupCount ? { warmupCount: prior.warmupCount } : {}),
           ...(prior.lastReviewedAt ? { lastReviewedAt: prior.lastReviewedAt } : {}),
+          ...(Number.isFinite(Number(prior.ease)) ? { ease: prior.ease } : {}),
+          ...(prior.lastGrade ? { lastGrade: prior.lastGrade } : {}),
+          ...(prior.correction ? { correction: prior.correction } : {}),
+          ...(prior.resurrectedCount ? { resurrectedCount: prior.resurrectedCount } : {}),
         }
       : row);
   }

@@ -438,7 +438,11 @@ app.post('/adhoc', asyncRoute(async (req, res) => {
   const papers = Array.isArray(req.body?.papers) && req.body.papers.length
     ? req.body.papers
      : [1, 2, 3];
-  const set = fns.buildAdhoc(count, papers);
+  // Fix-Up sets: optional topic targeting for weak-area repair rounds.
+  const topicIds = Array.isArray(req.body?.topicIds)
+    ? req.body.topicIds.filter((t) => typeof t === 'string' && t.trim()).map((t) => t.trim()).slice(0, 20)
+    : [];
+  const set = fns.buildAdhoc(count, papers, topicIds);
   const roundId = crypto.randomUUID();
   const created = await defaultStorage.createStudySession({
     ...sessionCriteria(req, roundId, 'adhoc'),

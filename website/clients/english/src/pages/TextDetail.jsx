@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useResource } from '../../../shared/resource-cache.js';
+import { ReadAloud } from '../../../shared/ReadAloud.jsx';
 
 export default function TextDetail() {
   const { textId } = useParams();
@@ -26,7 +27,7 @@ export default function TextDetail() {
         </div>
         {text.gutenberg && (
           <a className="btn" href={text.gutenberg} target="_blank" rel="noreferrer">
-            📖 Full text on Project Gutenberg
+            Full text on Project Gutenberg
           </a>
         )}
       </header>
@@ -52,6 +53,7 @@ export default function TextDetail() {
                   : `${text.textMetaB.author}, ${text.textMetaB.year}`}
               </span>
               <span className="source-flag">{text.source}</span>
+              <ReadAloud text={tab === 'A' ? text.textA : text.textB} />
             </div>
             <div className="text-detail-source">
               {(tab === 'A' ? text.textA : text.textB).split('\n\n').map((p, i) => (
@@ -66,6 +68,7 @@ export default function TextDetail() {
             <span className="source-title">{text.title}</span>
             <span className="source-byline">{text.author}, {text.year}</span>
             <span className="source-flag">{text.source}</span>
+            <ReadAloud text={text.text} />
           </div>
           <div className="text-detail-source">
             {text.text.split('\n\n').map((p, i) => (

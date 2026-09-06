@@ -3,6 +3,7 @@ import { defaultStorage } from './storage/index.js';
 const defaultState = () => ({
   xp: 0,
   streak: 0,
+  streakFreezes: 1,
   lastActiveDate: null,
   testsTaken: 0,
   practiceAnswered: 0,
@@ -49,6 +50,9 @@ function normalizeState(stored) {
       && !Array.isArray(storedCompletions)
       && Object.values(storedCompletions).every((value) => typeof value === 'boolean'));
   const state = { ...defaultState(), ...source };
+  state.streakFreezes = Number.isInteger(state.streakFreezes)
+    ? Math.max(0, Math.min(5, state.streakFreezes))
+    : 1;
   state.completedLessons = normalizeCompletedLessons(
     state.completedLessons,
     hasCompletedLessons ? null : state.topicStats,
@@ -67,6 +71,7 @@ function progressFor(state, { includeHistory = true } = {}) {
     xpInto,
     xpNeeded,
     streak: state.streak,
+    streakFreezes: state.streakFreezes,
     testsTaken: state.testsTaken,
     practiceAnswered: state.practiceAnswered,
     overallPercent: state.totalTestMarks
@@ -80,13 +85,29 @@ function progressFor(state, { includeHistory = true } = {}) {
   return result;
 }
 
+// Streak freezes: one missed day is forgiven while a freeze is banked
+// (streak preserved, freeze consumed); every 7-day streak earns one back,
+// capped at two banked. Returns whether a freeze was spent so clients can
+// celebrate the save instead of silently resetting to zero.
+const FREEZE_CAP = 2;
+
 function applyActivity(state) {
   const today = new Date().toISOString().slice(0, 10);
-  if (state.lastActiveDate === today) return state.streak;
+  if (state.lastActiveDate === today) return { streak: state.streak, freezeUsed: false };
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  state.streak = state.lastActiveDate === yesterday ? state.streak + 1 : 1;
+  const dayBefore = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+  let freezeUsed = false;
+  if (state.lastActiveDate === yesterday) {
+    state.streak += 1;
+    if (state.streak % 7 === 0) state.streakFreezes = Math.min(FREEZE_CAP, state.streakFreezes + 1);
+  } else if (state.lastActiveDate === dayBefore && state.streakFreezes > 0 && state.streak > 0) {
+    state.streakFreezes -= 1;
+    freezeUsed = true;
+  } else {
+    state.streak = 1;
+  }
   state.lastActiveDate = today;
-  return state.streak;
+  return { streak: state.streak, freezeUsed };
 }
 
 function applyReward(state, { scoreXp = 0, lessonId = null } = {}, includeHistory = true) {
@@ -101,13 +122,14 @@ function applyReward(state, { scoreXp = 0, lessonId = null } = {}, includeHistor
 
   if (firstCompletion) state.completedLessons.push(normalizedLessonId);
   state.xp += xpAwarded;
-  applyActivity(state);
+  const activity = applyActivity(state);
 
   return {
     scoreXp: safeScoreXp,
     completionXp,
     xpAwarded,
     firstCompletion,
+    streakFreezeUsed: activity.freezeUsed,
     levelBefore,
     levelAfter: levelForXp(state.xp),
     progress: progressFor(state, { includeHistory }),

@@ -125,3 +125,16 @@ test('known Foundation content regressions remain corrected', () => {
     assert.ok(paper.questions.every((question) => !(question.topicId === 'trigonometry' && Number(question.id.split('-').at(-1)) % 6 === 3)));
   }
 });
+
+test('targeted Fix-Up adhoc sets draw weak topics first and still reach full size', async () => {
+  const { buildAdhoc } = await import('../src/subjects/maths/bank/index.js');
+  const topics = ['fractions', 'ratio'];
+  const set = buildAdhoc(5, [1, 2, 3], topics);
+  assert.equal(set.questions.length, 5);
+  assert.equal(set.targeted, true);
+  assert.ok(set.targetedCount >= 1, 'at least one targeted question expected');
+  assert.ok(set.questions.every((q) => q.topicId && q.text && q.input), 'targeted questions stay fully formed');
+  const plain = buildAdhoc(5, [1, 2, 3]);
+  assert.equal(plain.questions.length, 5);
+  assert.equal(plain.targeted, undefined);
+});

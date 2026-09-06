@@ -79,7 +79,7 @@ export const api = {
     req('/check', { method: 'POST', body: { sessionId, qid, value } }),
   practiceSubmit: (sessionId, answers, aiResults) =>
     req('/practice/submit', { method: 'POST', body: { sessionId, answers, aiResults } }),
-  adhoc: (count, kinds) => req('/adhoc', { method: 'POST', body: { count, kinds } }),
+  adhoc: (count, kinds, skillIds) => req('/adhoc', { method: 'POST', body: { count, kinds, ...(Array.isArray(skillIds) && skillIds.length ? { skillIds } : {}) } }),
   adhocSubmit: (sessionId, answers, aiResults) =>
     req('/adhoc/submit', { method: 'POST', body: { sessionId, answers, aiResults } }),
   mark: (sessionId, qid, answer) =>

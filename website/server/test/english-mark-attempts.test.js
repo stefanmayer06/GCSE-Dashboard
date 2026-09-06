@@ -71,3 +71,10 @@ test('English mark attempt payloads remain immutable and preserve the latest com
   assert.equal(saved.markAttempts.q1[0].feedback.marks, 2);
   assert.equal(saved.markAttempts.q1[0].answer, 'First answer');
 });
+
+test('targeted English Fix-Up adhoc prefers weak skills and keeps full size', async () => {
+  const { buildAdhoc } = await import('../src/subjects/english/bank/index.js');
+  const set = buildAdhoc(5, ['listing', 'truefalse', 'analysis'], ['structure', 'comparing']);
+  assert.equal(set.length, 5);
+  assert.ok(set.some((q) => (q.skillIds || []).some((s) => ['structure', 'comparing'].includes(s))), 'expected a skill-targeted question');
+});

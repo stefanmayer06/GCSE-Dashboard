@@ -20,12 +20,16 @@ async function temporaryStorage(t) {
 }
 
 test('personal model normalizes preferences, plans and mistake rows defensively', () => {
-  assert.deepEqual(normalizePreferences(null), { examDate: '', targetGrade: '', passMode: 'balanced' });
+  assert.deepEqual(normalizePreferences(null), { examDate: '', targetGrade: '', passMode: 'balanced', restDays: [], minutesPerDay: null });
   assert.deepEqual(normalizePreferences({ examDate: '2027-06-01', targetGrade: '6', passMode: 'foundation-pass' }), {
-    examDate: '2027-06-01', targetGrade: '6', passMode: 'foundation-pass',
+    examDate: '2027-06-01', targetGrade: '6', passMode: 'foundation-pass', restDays: [], minutesPerDay: null,
   });
   assert.equal(normalizePreferences({ examDate: 'nonsense' }).examDate, '');
   assert.equal(normalizePreferences({ passMode: 'chaos' }).passMode, 'balanced');
+  assert.deepEqual(normalizePreferences({ restDays: [0, 6, 6, 9, -1, 'sat'] }).restDays, [0, 6]);
+  assert.equal(normalizePreferences({ minutesPerDay: 25 }).minutesPerDay, 25);
+  assert.equal(normalizePreferences({ minutesPerDay: 500 }).minutesPerDay, 120);
+  assert.equal(normalizePreferences({}).minutesPerDay, null);
 
   assert.equal(normalizePlan(null), undefined);
   assert.throws(() => normalizePlan({ from: 'nonsense' }), /valid start date/);
@@ -215,4 +219,18 @@ test('JSON storage records and summarises the product event trail', async (t) =>
   assert.equal(pruned, 0, 'fresh events are kept');
   const after = await storage.getEventSummary('user-a');
   assert.equal(after.counts.mistake_retry, 1);
+});
+
+test('mistake rows carry FSRS-lite grading, corrections and resurrection evidence', () => {
+  const rows = normalizeMistakeRows([
+    { id: 'g1', prompt: 'Q', capturedAt: '2026-09-01T10:00:00.000Z', dueDates: [], ease: 9, lastGrade: 'good', correction: '  Write the method first.  ', resurrectedCount: 2 },
+    { id: 'g2', prompt: 'Q', capturedAt: '2026-09-01T10:00:00.000Z', dueDates: [], ease: 0.5, lastGrade: 'nope', resurrectedCount: -3 },
+  ]);
+  assert.equal(rows[0].ease, 3.0);
+  assert.equal(rows[0].lastGrade, 'good');
+  assert.equal(rows[0].correction, 'Write the method first.');
+  assert.equal(rows[0].resurrectedCount, 2);
+  assert.equal(rows[1].ease, 1.3);
+  assert.equal('lastGrade' in rows[1], false);
+  assert.equal('resurrectedCount' in rows[1], false);
 });

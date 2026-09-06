@@ -10,6 +10,12 @@ const EVENT_NAMES = [
   'mistake_saved',
   'mistake_retry',
   'mistake_mastered',
+  'mistake_corrected',
+  'fixup_start',
+  'fixup_complete',
+  'memri_start',
+  'memri_complete',
+  'milestone_shared',
   'onboarding_complete',
   'week_return',
   'evidence_report',
@@ -33,13 +39,19 @@ export function normalizeSubject(subject) {
 
 export function normalizePreferences(payload) {
   if (payload === null || payload === undefined) {
-    return { examDate: '', targetGrade: '', passMode: 'balanced' };
+    return { examDate: '', targetGrade: '', passMode: 'balanced', restDays: [], minutesPerDay: null };
   }
   const raw = record(payload);
   const examDate = typeof raw.examDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.examDate.trim()) ? raw.examDate.trim() : '';
   const targetGrade = typeof raw.targetGrade === 'string' ? raw.targetGrade.trim().slice(0, 1) : '';
   const passMode = raw.passMode === 'foundation-pass' ? 'foundation-pass' : 'balanced';
-  return { examDate, targetGrade, passMode };
+  const restDays = Array.isArray(raw.restDays)
+    ? [...new Set(raw.restDays.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b) => a - b)
+    : [];
+  const minutesPerDay = Number.isInteger(raw.minutesPerDay)
+    ? Math.max(5, Math.min(120, raw.minutesPerDay))
+    : null;
+  return { examDate, targetGrade, passMode, restDays, minutesPerDay };
 }
 
 export function normalizeResult(payload) {
@@ -79,6 +91,7 @@ export function normalizeDay(payload) {
     ...(typeof raw.topicId === 'string' && raw.topicId.trim() ? { topicId: raw.topicId.trim().slice(0, 120) } : {}),
     status: raw.status === 'done' ? 'done' : 'todo',
     ...(result ? { result } : {}),
+    ...(raw.rest === true ? { rest: true } : {}),
   };
 }
 
@@ -98,6 +111,8 @@ export function normalizePlan(payload) {
     : undefined;
   return { from: raw.from.trim(), days: days.map(normalizeDay), ...(intent ? { intent } : {}) };
 }
+
+const GRADES = ['again', 'hard', 'good', 'easy'];
 
 export function normalizeMistakeRows(payload) {
   if (payload === null || payload === undefined) return [];
@@ -138,6 +153,12 @@ export function normalizeMistakeRows(payload) {
       ...(text(raw.lastReviewedAt) ? { lastReviewedAt: text(raw.lastReviewedAt) } : {}),
       ...(raw.correctAnswer !== undefined && raw.correctAnswer !== null ? { correctAnswer: raw.correctAnswer } : {}),
       ...(workedSolution.length ? { workedSolution } : {}),
+      ease: Number.isFinite(Number(raw.ease)) ? Math.max(1.3, Math.min(3.0, Number(raw.ease))) : 2.5,
+      ...(GRADES.includes(raw.lastGrade) ? { lastGrade: raw.lastGrade } : {}),
+      ...(text(raw.correction) ? { correction: text(raw.correction).slice(0, 500) } : {}),
+      ...(Number.isInteger(raw.resurrectedCount) && raw.resurrectedCount > 0
+        ? { resurrectedCount: Math.min(99, raw.resurrectedCount) }
+        : {}),
       mastered: raw.mastered === true || reviewIndex >= dueDates.length && dueDates.length > 0,
     });
   }
@@ -223,6 +244,12 @@ export function mistakeRowToSnake(row, subject, userId) {
     last_reviewed_at: row.lastReviewedAt ?? null,
     correct_answer: row.correctAnswer === undefined ? null : row.correctAnswer,
     worked_solution: row.workedSolution ?? null,
+    ease: Number.isFinite(Number(row.ease)) ? Math.max(1.3, Math.min(3.0, Number(row.ease))) : 2.5,
+    last_grade: GRADES.includes(row.lastGrade) ? row.lastGrade : null,
+    correction: typeof row.correction === 'string' && row.correction.trim()
+      ? row.correction.trim().slice(0, 500)
+      : null,
+    resurrected_count: Number.isInteger(row.resurrectedCount) ? Math.max(0, Math.min(99, row.resurrectedCount)) : 0,
   };
 }
 
@@ -231,6 +258,9 @@ export function progressRowToState(row) {
   return {
     xp: Math.max(0, Number(row.xp) || 0),
     streak: Math.max(0, Number(row.streak) || 0),
+    streakFreezes: row.streak_freezes == null
+      ? 1
+      : Math.max(0, Math.min(5, Number(row.streak_freezes) || 0)),
     lastActiveDate: row.last_active_date ?? null,
     testsTaken: Math.max(0, Number(row.tests_taken) || 0),
     practiceAnswered: Math.max(0, Number(row.practice_answered) || 0),

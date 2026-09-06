@@ -345,26 +345,41 @@ export function buildPaper(type = 'full', paperId = 1) {
 /**
  * Ad-hoc questions drawn from the pools of one or more papers (default: all 3).
  * Mixed topics and difficulty with a few stretch questions sprinkled in.
+ * Pass topicIds (Fix-Up sets) to target weak topics first, topping up from
+ * the general pool so the requested count is always met.
  */
-export function buildAdhoc(count = 15, paperIds = [1, 2, 3]) {
+export function buildAdhoc(count = 15, paperIds = [1, 2, 3], topicIds = []) {
   const ids = paperIds.filter((p) => PAPERS[p]);
   if (!ids.length) ids.push(1, 2, 3);
   const strandIds = [...new Set(ids.flatMap((p) => Object.keys(PAPERS[p].strands)))];
   const pool = [];
   for (const sid of strandIds) pool.push(...strandPool(sid));
   const rng = makeRand('adhoc', Date.now());
+  const wanted = Array.isArray(topicIds) ? topicIds.filter((t) => typeof t === 'string') : [];
+  const targeted = wanted.length ? pool.filter((q) => wanted.includes(q.topicId)) : [];
+  const useTargeted = targeted.length > 0;
 
+  const pick = (source, pred, n, taken) => shuffled(rng, source.filter((q) => pred(q) && !taken.has(q.id))).slice(0, n);
   const stretchN = Math.max(1, Math.round(count * 0.15));
   const easyN = Math.round(count * 0.5);
-  const stretch = shuffled(rng, pool.filter((q) => q.difficulty === 3)).slice(0, stretchN);
+  const base = useTargeted ? targeted : pool;
+  const stretch = pick(base, (q) => q.difficulty === 3, stretchN, new Set());
   const taken = new Set(stretch.map((q) => q.id));
-  const easy = shuffled(rng, pool.filter((q) => q.difficulty === 1 && !taken.has(q.id))).slice(0, easyN);
+  const easy = pick(base, (q) => q.difficulty === 1, easyN, taken);
   for (const q of easy) taken.add(q.id);
-  const mid = shuffled(rng, pool.filter((q) => q.difficulty === 2 && !taken.has(q.id))).slice(0, Math.max(0, count - stretch.length - easy.length));
-  const mix = shuffled(rng, [...stretch, ...easy, ...mid]);
+  const mid = pick(base, (q) => q.difficulty === 2, Math.max(0, count - stretch.length - easy.length), taken);
+  for (const q of mid) taken.add(q.id);
+  let mix = [...stretch, ...easy, ...mid];
+  if (mix.length < count) {
+    // Top up from the general pool so Fix-Up sets always reach full size.
+    const topup = pick(pool, () => true, count - mix.length, taken);
+    mix = [...mix, ...topup];
+  }
+  mix = shuffled(rng, mix);
   return {
     questions: mix.map((q, i) => ({ ...sanitize(q, { withHint: true }), qn: i + 1 })),
     papersIncluded: ids.map((p) => PAPERS[p].code),
+    ...(useTargeted ? { targeted: true, targetedCount: stretch.length + easy.length + mid.length } : {}),
   };
 }
 

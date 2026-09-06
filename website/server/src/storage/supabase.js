@@ -52,6 +52,9 @@ function compactState(value) {
   return {
     xp: Math.max(0, Number(source.xp) || 0),
     streak: Math.max(0, Number(source.streak) || 0),
+    streakFreezes: Number.isInteger(source.streakFreezes)
+      ? Math.max(0, Math.min(5, source.streakFreezes))
+      : 1,
     lastActiveDate: source.lastActiveDate || null,
     testsTaken: Math.max(0, Number(source.testsTaken) || 0),
     practiceAnswered: Math.max(0, Number(source.practiceAnswered) || 0),
@@ -82,6 +85,10 @@ function rowToPreferences(row) {
     examDate: row.exam_date ? dateKey(row.exam_date) ?? '' : '',
     targetGrade: row.target_grade ?? '',
     passMode: row.pass_mode === 'foundation-pass' ? 'foundation-pass' : 'balanced',
+    restDays: Array.isArray(row.rest_days)
+      ? row.rest_days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
+      : [],
+    minutesPerDay: Number.isInteger(row.minutes_per_day) ? Math.max(5, Math.min(120, row.minutes_per_day)) : null,
   };
 }
 
@@ -108,6 +115,12 @@ function rowToMistake(row) {
     ...(row.last_reviewed_at ? { lastReviewedAt: isoDate(row.last_reviewed_at, 'lastReviewedAt') } : {}),
     ...(row.correct_answer != null ? { correctAnswer: row.correct_answer } : {}),
     ...(Array.isArray(row.worked_solution) && row.worked_solution.length ? { workedSolution: row.worked_solution } : {}),
+    ease: Number.isFinite(Number(row.ease)) ? Math.max(1.3, Math.min(3.0, Number(row.ease))) : 2.5,
+    ...(row.last_grade ? { lastGrade: row.last_grade } : {}),
+    ...(row.correction ? { correction: row.correction } : {}),
+    ...(Number.isInteger(row.resurrected_count) && row.resurrected_count > 0
+      ? { resurrectedCount: Math.min(99, row.resurrected_count) }
+      : {}),
     mastered,
   };
 }
@@ -142,6 +155,7 @@ function rowsToPlan(planRow, dayRows) {
       ...(row.topic_id ? { topicId: row.topic_id } : {}),
       status: row.status === 'done' ? 'done' : 'todo',
       ...(row.result != null ? { result: row.result } : {}),
+      ...(row.is_rest ? { rest: true } : {}),
     }));
   const intent = planRow.intent_date
     ? { date: dateKey(planRow.intent_date), ...(planRow.intent_topic_id ? { topicId: planRow.intent_topic_id } : {}) }
@@ -164,6 +178,9 @@ function rowToProgress(row) {
     xpInto,
     xpNeeded,
     streak: row.streak,
+    streakFreezes: row.streak_freezes == null
+      ? 1
+      : Math.max(0, Math.min(5, Number(row.streak_freezes) || 0)),
     lastActiveDate: row.last_active_date,
     testsTaken: row.tests_taken,
     practiceAnswered: row.practice_answered,
@@ -279,7 +296,7 @@ export function createSupabaseStorage(options = {}) {
     await init();
     const { data, error } = await service
       .from('subject_progress')
-      .select('xp, streak, last_active_date, tests_taken, practice_answered, total_test_marks, total_test_correct, topic_stats, completed_lessons')
+      .select('xp, streak, streak_freezes, last_active_date, tests_taken, practice_answered, total_test_marks, total_test_correct, topic_stats, completed_lessons')
       .eq('user_id', requiredString(String(userId), 'userId'))
       .eq('subject', requiredString(subject, 'subject'))
       .maybeSingle();
@@ -627,6 +644,12 @@ export function createSupabaseStorage(options = {}) {
     const examDate = typeof clean.examDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(clean.examDate) ? clean.examDate : null;
     const targetGrade = typeof clean.targetGrade === 'string' && clean.targetGrade.trim() ? clean.targetGrade.trim().slice(0, 1) : null;
     const passMode = clean.passMode === 'foundation-pass' ? 'foundation-pass' : 'balanced';
+    const restDays = Array.isArray(clean.restDays)
+      ? [...new Set(clean.restDays.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort()
+      : [];
+    const minutesPerDay = Number.isInteger(clean.minutesPerDay)
+      ? Math.max(5, Math.min(120, clean.minutesPerDay))
+      : null;
     const { data, error } = await service
       .from('subject_preferences')
       .upsert({
@@ -635,8 +658,10 @@ export function createSupabaseStorage(options = {}) {
         exam_date: examDate,
         target_grade: targetGrade,
         pass_mode: passMode,
+        rest_days: restDays,
+        minutes_per_day: minutesPerDay,
       }, { onConflict: 'user_id,subject' })
-      .select('exam_date, target_grade, pass_mode')
+      .select('exam_date, target_grade, pass_mode, rest_days, minutes_per_day')
       .maybeSingle();
     if (error) throw supabaseStorageError(error);
     return rowToPreferences(data);
@@ -657,7 +682,7 @@ export function createSupabaseStorage(options = {}) {
     if (!plan) return null;
     const { data: days, error: dayError } = await service
       .from('study_plan_days')
-      .select('day_date, label, task, minutes, topic_id, status, result')
+      .select('day_date, label, task, minutes, topic_id, status, result, is_rest')
       .eq('plan_id', plan.id)
       .order('day_date', { ascending: true });
     if (dayError) throw supabaseStorageError(dayError);
@@ -694,7 +719,7 @@ export function createSupabaseStorage(options = {}) {
     await init();
     const { data, error } = await service
       .from('mistake_notebook')
-      .select('legacy_id, session_id, question_id, topic_id, topic_name, prompt, answer, marks, max_marks, due_dates, review_index, status, captured_at, error_type, warmup_count, last_reviewed_at, correct_answer, worked_solution')
+      .select('legacy_id, session_id, question_id, topic_id, topic_name, prompt, answer, marks, max_marks, due_dates, review_index, status, captured_at, error_type, warmup_count, last_reviewed_at, correct_answer, worked_solution, ease, last_grade, correction, resurrected_count')
       .eq('user_id', requiredString(String(userId), 'userId'))
       .eq('subject', requiredString(subject, 'subject'))
       .order('captured_at', { ascending: false });

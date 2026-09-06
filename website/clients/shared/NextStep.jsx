@@ -47,7 +47,6 @@ export function NextStepCard({ step, weak = [], dueCount = 0, streak = null, rea
                 {dueCount === 1 ? '1 mistake due' : `${dueCount} due`} · retry
               </Link>
             )}
-            <span className="nextstep-kbd" title="Press Control or Command and K to jump anywhere">⌘K jump</span>
           </div>
         </div>
       </div>

@@ -107,7 +107,7 @@ export default function AppShell({
             {auth?.username ? <span className="sign-out-user">&middot; {auth.username}</span> : null}
           </button>
           {progress ? (
-            <div className="level-card" aria-label={`Level ${progress.level}, ${progress.streak} day streak`}>
+            <div className="level-card" aria-label={`Level ${progress.level}, ${progress.streak} day streak${progress.streakFreezes ? `, ${progress.streakFreezes} streak freezes banked` : ''}`}>
               <div className="level-row">
                 <span>Level {progress.level}</span>
                 <span className="streak-mark">
@@ -118,7 +118,10 @@ export default function AppShell({
               <div className="xp-bar" role="img" aria-label={`${progress.xpInto} of ${progress.xpNeeded} XP to next level`}>
                 <div className="xp-fill" style={{ width: `${Math.min(100, (progress.xpInto / progress.xpNeeded) * 100)}%` }} />
               </div>
-              <div className="xp-note">{progress.xpInto}/{progress.xpNeeded} XP to next level</div>
+              <div className="xp-note">
+                {progress.xpInto}/{progress.xpNeeded} XP to next level
+                {progress.streakFreezes > 0 ? ` · ${progress.streakFreezes} freeze${progress.streakFreezes === 1 ? '' : 's'} banked` : ''}
+              </div>
             </div>
           ) : null}
           {healthNote ? <div className="bank-note">{healthNote}</div> : null}

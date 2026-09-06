@@ -1,22 +1,29 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { invalidateResources, useResource } from './resource-cache.js';
 import {
-  advanceMistakeRows,
   classifyMistake,
   dueMistakeRows,
   ERROR_TYPES,
   errorTypeCounts,
+  GRADES,
+  gradeMistakeRow,
   hydratePersonal,
   markWarmupDone,
   masteredSince,
+  memriDueRows,
   PERSONAL_UPDATED_EVENT,
+  saveCorrection,
   startPlanDayInState,
+  touchMistakeRows,
 } from './study-personal.js';
-import { buildWeekPlan, dateKey, priorityTopics, readiness } from './study.js';
+import { buildWeekPlan, dateKey, fixupEnglishPlan, fixupTargets, movePlanDay, priorityTopics, readiness } from './study.js';
 
-const defaultPreferences = { examDate: '', targetGrade: '', passMode: 'balanced' };
+const defaultPreferences = { examDate: '', targetGrade: '', passMode: 'balanced', restDays: [], minutesPerDay: null };
+const planMinutesDefault = (subject) => (subject === 'english' ? 20 : 15);
 const DAY = 86400000;
+const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const FIXUP_KEY = (subject) => `gcse-fixup:${subject}`;
 
 // Shared, cached personal-data hydration for the dashboard, notebook and
 // weekly summary. The first component to need it fetches once; every other
@@ -141,9 +148,12 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
 export function StudyDashboard({ userId, subject, topics, progress, diagnosticUrl, foundation = false, api }) {
   const { fetched, personal, loadError, refresh: refreshPersonal, setOverride } = usePersonal(userId, subject, api);
   const [saveError, setSaveError] = useState('');
+  const [moveFrom, setMoveFrom] = useState(null);
   const error = [loadError && `Could not load your saved study data: ${loadError}`, saveError].filter(Boolean).join(' ');
   const evidence = readiness(progress);
-  const priority = priorityTopics(topics, progress, foundation && (personal?.preferences ?? defaultPreferences).passMode === 'foundation-pass');
+  const preferences = personal?.preferences ?? defaultPreferences;
+  const passMode = foundation && preferences.passMode === 'foundation-pass';
+  const priority = priorityTopics(topics, progress, passMode);
 
   useEffect(() => {
     const onPersonalUpdated = (event) => {
@@ -159,16 +169,16 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
     // The plan covers Monday to Sunday; a fresh week is built the first time
     // the saved plan has no row for today (new account or Monday rollover).
     if (personal.plan?.days.some((day) => day.date === dateKey())) return;
-    persistPlan(buildWeekPlan(priority, subject, foundation && preferences.passMode === 'foundation-pass'));
+    persistPlan(buildWeekPlan(priority, subject, passMode, undefined, [], preferences));
     // Seed a first plan once topics are available; the plan stays stable for the whole day.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [personal, topics.length, foundation]);
 
-  const preferences = personal?.preferences ?? defaultPreferences;
   const plan = personal?.plan ?? null;
   const today = dateKey();
   const todayDay = plan?.days.find((day) => day.date === today) || null;
-  const mission = todayDay && todayDay.status === 'todo' ? todayDay : null;
+  const isRestDay = todayDay?.rest === true;
+  const mission = todayDay && todayDay.status === 'todo' && !todayDay.rest ? todayDay : null;
   const todayDone = todayDay && todayDay.status === 'done' ? todayDay : null;
   const doneCount = plan?.days.filter((day) => day.status === 'done').length || 0;
   const days = preferences.examDate ? Math.ceil((new Date(`${preferences.examDate}T12:00:00`) - new Date()) / 86400000) : null;
@@ -212,11 +222,12 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
       <section className="study-grid" aria-label="Revision planner">
         <div className={`panel mission-card${todayDone ? ' mission-done' : ''}`}>
           <div className="eyebrow">Today&apos;s mission</div>
-          <h2>{mission ? mission.task : todayDone ? `✓ ${todayDone.task} done` : doneCount === 7 ? 'Every mission done' : 'Pick your first mission'}</h2>
-          <p className="sub">{mission ? (mission.topicId ? `${mission.minutes} focused minutes · learn it, then finish the short practice to lock today in.` : mission.task === 'Mistake retry' ? 'No lesson today. Clear the mistakes that are due, then the day is yours.' : 'This day has no lesson — use the practice desk to keep your plan on track.') : todayDone ? (todayDone.result ? `Score ${todayDone.result.percent}% · ${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks${todayDone.result.xpEarned != null ? ` · +${todayDone.result.xpEarned} XP` : ''} recorded. Come back tomorrow — the rest of the week stays locked.` : 'Come back tomorrow — the rest of the week stays locked.') : doneCount === 7 ? 'Enjoy the break, or keep practising freely. A fresh plan starts on Monday.' : 'Complete today\u2019s row in the exam plan below; future days stay locked until then.'}</p>
+          <h2>{isRestDay && !todayDone ? 'Rest day — planned recovery' : mission ? mission.task : todayDone ? `✓ ${todayDone.task} done` : doneCount === 7 ? 'Every mission done' : 'Pick your first mission'}</h2>
+          <p className="sub">{isRestDay && !todayDone ? 'No mission today by your plan. Light retrieval only: reread one mastered note, or take the day fully off — the streak keeps what rest protects.' : mission ? (mission.topicId ? `${mission.minutes} focused minutes · learn it, then finish the short practice to lock today in.` : mission.task === 'Mistake retry' ? 'No lesson today. Clear the mistakes that are due, then the day is yours.' : 'This day has no lesson — use the practice desk to keep your plan on track.') : todayDone ? (todayDone.result ? `Score ${todayDone.result.percent}% · ${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks${todayDone.result.xpEarned != null ? ` · +${todayDone.result.xpEarned} XP` : ''} recorded. Come back tomorrow — the rest of the week stays locked.` : 'Come back tomorrow — the rest of the week stays locked.') : doneCount === 7 ? 'Enjoy the break, or keep practising freely. A fresh plan starts on Monday.' : 'Complete today\u2019s row in the exam plan below; future days stay locked until then.'}</p>
           <div className="study-actions">
             {mission?.topicId && <Link className="btn btn-primary" to={`/learn/${mission.topicId}`} onClick={() => startMission(mission.date, mission.topicId)}>Start mission</Link>}
             {mission && !mission.topicId && <Link className="btn btn-primary" to={mission.task === 'Mistake retry' ? '/notebook' : '/practice'}>Open {mission.task}</Link>}
+            {!isRestDay && <FixUpButton subject={subject} api={api} topics={topics} progress={progress} personal={personal} />}
             <Link className="btn" to={diagnosticUrl}>Fast diagnostic · 10 questions</Link>
           </div>
         </div>
@@ -224,11 +235,50 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
           <div className="eyebrow">Readiness score</div>
           <div className="readiness-number">{evidence.ready ? `${evidence.score}%` : 'Not enough evidence'}</div>
           <p className="sub">{evidence.ready ? `Based on ${evidence.answered} marked answers across ${evidence.topics} topics. Accuracy is a guide, not a predicted grade.` : `${evidence.answered}/20 marked answers across ${evidence.topics}/3 topics. The score appears only when both thresholds are met.`}</p>
+          {progress?.streakFreezes > 0 && (
+            <p className="sub small freeze-note">
+              {progress.streakFreezes} streak freeze{progress.streakFreezes === 1 ? '' : 's'} banked — one missed day won&apos;t reset your {progress?.streak ?? 0}-day streak.
+            </p>
+          )}
         </div>
         <div className="panel plan-card">
           <div className="plan-head"><div><div className="eyebrow">Exam plan</div><h2>{days == null ? 'Set your exam date' : days < 0 ? 'Exam date passed' : `${days} day${days === 1 ? '' : 's'} to go`}</h2></div><input aria-label="Exam date" type="date" value={preferences.examDate} onChange={(e) => updatePreferences({ examDate: e.target.value })} /></div>
           {foundation && <label className="pass-toggle"><input type="checkbox" checked={preferences.passMode === 'foundation-pass'} onChange={(e) => updatePreferences({ passMode: e.target.checked ? 'foundation-pass' : 'balanced' })} /><span><strong>Pass mode · grade 4 goal</strong><small>Prioritise core and weak Foundation topics.</small></span></label>}
-          <div className="week-plan">{!personal ? <p className="empty">Loading your plan…</p> : plan?.days.length ? plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < today; const canStart = !done && !past && day.topicId && day.date === today; const locked = !done && !canStart && !past; return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done" title={day.result ? `Done: ${day.result.percent}% · ${day.result.correctMarks}/${day.result.totalMarks} marks` : undefined}><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : canStart ? <Link key={day.date} to={`/learn/${day.topicId}`} onClick={() => startMission(day.date, day.topicId)} title="Today's mission"><b>{day.label}</b><span>{day.task}</span><small>Start ★</small></Link> : <span key={day.date} className={past ? 'past' : 'locked'} title={past ? 'That day has passed' : 'Completes when a new day starts'}><b>{day.label}</b><span>{day.task}</span>{past ? <small>Missed</small> : locked ? <small>Locked</small> : null}</span>); }) : <p className="empty">Complete a lesson to build your 7-day plan.</p>}</div>
+          <div className="plan-flex">
+            <div className="plan-rest" role="group" aria-label="Rest days each week">
+              <span className="adhoc-label">Rest days</span>
+              <div className="chip-row">
+                {WEEKDAYS.map((label, index) => {
+                  const on = (preferences.restDays || []).includes(index);
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      className={`suggest-chip source${on ? ' on' : ''}`}
+                      aria-pressed={on}
+                      title={['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index]}
+                      onClick={() => {
+                        const current = preferences.restDays || [];
+                        const next = on ? current.filter((d) => d !== index) : [...current, index].sort((a, b) => a - b);
+                        updatePreferences({ restDays: next });
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <label className="plan-minutes">
+              <span className="adhoc-label">Minutes a day</span>
+              <span className="minutes-stepper">
+                <button type="button" className="btn small" aria-label="Fewer minutes per day" onClick={() => updatePreferences({ minutesPerDay: Math.max(5, (preferences.minutesPerDay ?? planMinutesDefault(subject)) - 5) })}>−</button>
+                <strong aria-live="polite">{preferences.minutesPerDay ?? planMinutesDefault(subject)} min</strong>
+                <button type="button" className="btn small" aria-label="More minutes per day" onClick={() => updatePreferences({ minutesPerDay: Math.min(120, (preferences.minutesPerDay ?? planMinutesDefault(subject)) + 5) })}>+</button>
+              </span>
+            </label>
+          </div>
+          <div className="week-plan">{!personal ? <p className="empty">Loading your plan…</p> : plan?.days.length ? plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < today; const canStart = !done && !past && day.topicId && day.date === today; const locked = !done && !canStart && !past; const rest = day.rest === true; const moveable = !done && !past && !rest && day.date !== today; if (rest) return (<span key={day.date} className={past ? 'past' : 'rest-day'} title="Planned rest — recovery is part of the plan"><b>{day.label}</b><span>Rest day</span>{past ? <small>Rested</small> : <small>Recovery</small>}</span>); if (moveFrom && moveable && moveFrom !== day.date) return (<button key={day.date} type="button" className="move-target" onClick={() => { const next = movePlanDay(plan, moveFrom, day.date, today); setMoveFrom(null); if (next) persistPlan(next); }}><b>{day.label}</b><span>{day.task}</span><small>Move here</small></button>); return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done" title={day.result ? `Done: ${day.result.percent}% · ${day.result.correctMarks}/${day.result.totalMarks} marks` : undefined}><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : canStart ? <Link key={day.date} to={`/learn/${day.topicId}`} onClick={() => startMission(day.date, day.topicId)} title="Today's mission"><b>{day.label}</b><span>{day.task}</span><small>Start ★</small></Link> : <span key={day.date} className={past ? 'past' : 'locked'} title={past ? 'That day has passed' : 'Completes when a new day starts'}><b>{day.label}</b><span>{day.task}</span>{past ? <small>Missed</small> : locked ? <small>Locked</small> : null}{moveable && (moveFrom === day.date ? <button type="button" className="link link-button" onClick={() => setMoveFrom(null)}>Cancel move</button> : <button type="button" className="link link-button" onClick={() => setMoveFrom(day.date)}>Move</button>)}</span>); }) : <p className="empty">Complete a lesson to build your 7-day plan.</p>}</div>
           {plan?.days?.length ? (
             <div className="week-track" role="img" aria-label={`${doneCount} of 7 days done this week`}>
               {plan.days.map((day) => (
@@ -258,6 +308,109 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
   );
 }
 
+/* ---------------- Fix-Up 5 + memory checks ---------------- */
+
+export function readFixupPayload(subject) {
+  try {
+    const raw = localStorage.getItem(FIXUP_KEY(subject));
+    if (!raw) return null;
+    const payload = JSON.parse(raw);
+    if (!payload || typeof payload !== 'object') return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function clearFixupPayload(subject) {
+  try { localStorage.removeItem(FIXUP_KEY(subject)); } catch {}
+}
+
+// One-tap repair set: five questions drawn from due mistakes and weakest
+// topics (Hegarty proved the Fix-Up-5 shape; ours targets with real data).
+// English writing weaknesses can't be quick-fired, so they surface as lesson
+// links beside the set instead of pretending otherwise.
+export function FixUpButton({ subject, api, topics, progress, personal, mode = 'fixup', touchIds = null, className = 'btn btn-primary' }) {
+  const navigate = useNavigate();
+  const mistakes = personal?.mistakes ?? [];
+  if (subject === 'english') {
+    const plan = fixupEnglishPlan({ topics, progress, mistakes });
+    if (!plan.skillIds.length) {
+      return plan.lessons.length ? (
+        <Link className="btn" to={`/learn/${plan.lessons[0]}`}>Warm up weak writing</Link>
+      ) : null;
+    }
+    const label = mode === 'memri' ? 'Start memory check' : 'Fix-Up 5 · weak spots';
+    return (
+      <>
+        <button
+          type="button"
+          className={className}
+          onClick={() => {
+            try {
+              localStorage.setItem(FIXUP_KEY(subject), JSON.stringify({ mode, count: 5, skillIds: plan.skillIds, kinds: plan.kinds, touchIds, at: Date.now() }));
+            } catch {}
+            api?.track?.(mode === 'memri' ? 'memri_start' : 'fixup_start', { skills: plan.skillIds });
+            navigate(`/practice?${mode}=1#adhoc`);
+          }}
+        >
+          {label}
+        </button>
+        {mode === 'fixup' && plan.lessons.map((id) => (
+          <Link key={id} className="btn" to={`/learn/${id}`}>Study {id.replace(/-/g, ' ')}</Link>
+        ))}
+      </>
+    );
+  }
+  const targets = fixupTargets({ topics, progress, mistakes });
+  if (!targets.length) return null;
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={() => {
+        try {
+          localStorage.setItem(FIXUP_KEY(subject), JSON.stringify({ mode, count: 5, topicIds: targets, touchIds, at: Date.now() }));
+        } catch {}
+        api?.track?.(mode === 'memri' ? 'memri_start' : 'fixup_start', { topics: targets });
+        navigate(`/practice?${mode}=1#adhoc`);
+      }}
+    >
+      {mode === 'memri' ? `Start memory check · ${targets.length} topics` : 'Fix-Up 5 · weak spots'}
+    </button>
+  );
+}
+
+// Memory check: mastered mistakes whose proof has faded get one mixed
+// resurrection set instead of retiring forever.
+export function MemRiCard({ userId, subject, api }) {
+  const { personal } = usePersonal(userId, subject, api);
+  if (!personal) return null;
+  const due = memriDueRows(personal.mistakes ?? []);
+  if (!due.length) return null;
+  return (
+    <section className="panel memri-card" aria-labelledby="memri-title">
+      <div className="eyebrow">Memory check · faded mastery</div>
+      <h2 id="memri-title">{due.length} mastered {due.length === 1 ? 'mistake needs' : 'mistakes need'} re-proof</h2>
+      <p className="sub">
+        Mastered over 30 days ago: {due.slice(0, 3).map((row) => row.topicName).join(' · ')}
+        {due.length > 3 ? ` +${due.length - 3} more` : ''}. One mixed set keeps them honest.
+      </p>
+      <div className="study-actions">
+        <FixUpButton
+          subject={subject}
+          api={api}
+          topics={[]}
+          progress={null}
+          personal={{ mistakes: due.map((row) => ({ ...row, mastered: false, dueDates: [new Date().toISOString()], reviewIndex: 0 })) }}
+          mode="memri"
+          touchIds={due.map((row) => row.id)}
+        />
+      </div>
+    </section>
+  );
+}
+
 /* ---------------- Notebook: classification, detail, warm-up, retry ---------------- */
 
 function MistakeDetail({ row }) {
@@ -284,6 +437,62 @@ function MistakeDetail({ row }) {
           {solution.map((step, index) => <div key={index} className="sol-step">{step}</div>)}
         </div>
       )}
+    </div>
+  );
+}
+
+function GradeChips({ row, onGrade }) {
+  return (
+    <div className="classify-row" role="group" aria-label="How did the retry go?">
+      <small>Retried it? Grade your recall</small>
+      <div className="chip-row">
+        {GRADES.map((grade) => (
+          <button
+            key={grade.id}
+            type="button"
+            title={grade.hint}
+            className={`suggest-chip source${row.lastGrade === grade.id ? ' on' : ''}`}
+            onClick={() => onGrade(row, grade.id)}
+          >
+            {grade.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CorrectionBox({ row, onSave }) {
+  const [draft, setDraft] = useState(row.correction || '');
+  const [savedTick, setSavedTick] = useState(false);
+  useEffect(() => {
+    setDraft(row.correction || '');
+    setSavedTick(false);
+  }, [row.id, row.correction]);
+  return (
+    <div className="correction-row">
+      <label htmlFor={`correction-${row.id}`}>
+        <small>Write the correction in your own words</small>
+      </label>
+      <textarea
+        id={`correction-${row.id}`}
+        className="answer-area correction-input"
+        rows={2}
+        maxLength={500}
+        placeholder="e.g. Cross-multiply first, then solve — I forgot the first step."
+        value={draft}
+        onChange={(e) => { setDraft(e.target.value); setSavedTick(false); }}
+      />
+      <div className="study-actions">
+        <button
+          type="button"
+          className="btn small"
+          disabled={!draft.trim() || draft.trim() === (row.correction || '')}
+          onClick={() => { onSave(row.id, draft); setSavedTick(true); }}
+        >
+          {savedTick ? 'Correction saved ✓' : row.correction ? 'Update correction' : 'Save correction'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -338,12 +547,21 @@ export function Notebook({ userId, subject, api }) {
     }
   }
 
-  function reviewed(row) {
-    save(advanceMistakeRows(rows, row.id), 'mistake_retry', { qid: row.qid, reviewIndex: (row.reviewIndex ?? 0) + 1 });
+  function reviewed(row, grade = 'good') {
+    const next = gradeMistakeRow(row, grade);
+    save(
+      rows.map((r) => (r.id === row.id ? next : r)),
+      'mistake_retry',
+      { qid: row.qid, reviewIndex: next.reviewIndex ?? 0, grade },
+    );
   }
 
   function classify(id, errorType) {
     save(classifyMistake(rows, id, errorType));
+  }
+
+  function saveRowCorrection(id, correction) {
+    save(saveCorrection(rows, id, correction), 'mistake_corrected', { id });
   }
 
   function warmupDone(row) {
@@ -362,7 +580,7 @@ export function Notebook({ userId, subject, api }) {
             <p>{row.prompt}</p>
             <small>
               {row.marks != null && row.maxMarks != null ? `Last mark: ${row.marks}/${row.maxMarks} · ` : ''}
-              Retry {row.reviewIndex ?? 0}/4{row.errorType ? ` · ${ERROR_TYPES.find((type) => type.id === row.errorType)?.label}` : ''}
+              Retry {row.reviewIndex ?? 0}/4{row.errorType ? ` · ${ERROR_TYPES.find((type) => type.id === row.errorType)?.label}` : ''}{row.lastGrade ? ` · last try: ${row.lastGrade}` : ''}{row.correction ? ' · correction written' : ''}
             </small>
           </span>
           <span className="chev" aria-hidden="true">{expanded ? '▾' : '▸'}</span>
@@ -371,15 +589,16 @@ export function Notebook({ userId, subject, api }) {
           <div className="notebook-body">
             <MistakeDetail row={row} />
             <ClassificationChips row={row} onClassify={classify} />
+            <CorrectionBox row={row} onSave={saveRowCorrection} />
+            <GradeChips row={row} onGrade={reviewed} />
             <div className="study-actions">
               {row.topicId && <Link className="btn btn-primary" to={`/learn/${row.topicId}`}>{row.warmupCount ? 'Micro-practice again' : 'Warm-up micro-practice'}</Link>}
               {row.topicId && <button type="button" className="btn" onClick={() => warmupDone(row)}>Warm-up done</button>}
-              <button type="button" className="btn" onClick={() => reviewed(row)}>{row.reviewIndex >= 3 ? 'Mark mastered' : 'I retried this'}</button>
             </div>
             <p className="sub small">
               {row.warmupCount
-                ? 'Warm-up logged — the full retry counts when you can get this right cold.'
-                : 'Do the warm-up first, then retry the question cold. Mastery is proving it, not recognising it.'}
+                ? 'Warm-up logged — grade the cold retry honestly: Again sees it tomorrow, Easy pushes it weeks out.'
+                : 'Do the warm-up first, then retry the question cold and grade your recall. Mastery is proving it, not recognising it.'}
             </p>
           </div>
         )}
@@ -392,7 +611,7 @@ export function Notebook({ userId, subject, api }) {
       <header className="page-head">
         <div>
           <h1>Mistake notebook</h1>
-          <p className="sub">Every missed question is saved to your account, classified by you, and retried after 1, 3, 7 and 21 days until you prove it twice.</p>
+          <p className="sub">Every missed question is saved to your account, classified by you, corrected in your own words, and retried on a schedule that adapts to how honest your grades are.</p>
         </div>
       </header>
       {error && <p className="plan-note error" role="alert">{error}</p>}
@@ -408,9 +627,23 @@ export function Notebook({ userId, subject, api }) {
       <section className="panel notebook-list">
         <h2>Due now</h2>
         {!personal ? <p className="empty">Loading your notebook…</p>
-          : dueRows.length ? dueRows.map((row) => renderRow(row, true))
-            : <p className="empty">Nothing due right now. Come back when a review date arrives.</p>}
+          : dueRows.length ? (
+            <>
+              <div className="study-actions fixup-row">
+                <FixUpButton subject={subject} api={api} topics={[]} progress={null} personal={{ mistakes: rows }} />
+              </div>
+              {dueRows.map((row) => renderRow(row, true))}
+            </>
+          )
+            : (
+              <div className="empty-state">
+                <h3>Nothing due right now</h3>
+                <p>Reviews arrive on their dates. Meanwhile, five mixed questions keep every topic warm.</p>
+                <Link className="btn btn-primary" to="/practice#adhoc">Answer 5 mixed questions →</Link>
+              </div>
+            )}
       </section>
+      <MemRiCard userId={userId} subject={subject} api={api} />
       {upcoming.length > 0 && (
         <section className="panel notebook-list">
           <h2>Coming up</h2>

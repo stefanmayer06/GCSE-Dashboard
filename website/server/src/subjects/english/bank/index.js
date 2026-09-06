@@ -171,13 +171,13 @@ function p1QuestionSet(entry) {
     })
   );
   qs.push(
-    baseQ(entry.id, 5, 'essay', 40, 45, 'Q5 · Creative writing (40 marks)', 'Choose ONE task and write your response.', ['creative-writing', 'accuracy'], {
+    baseQ(entry.id, 5, 'essay', 40, 45, 'Q5 · Creative writing (40 marks)', 'Choose ONE task and write your response. Since 2026 the narrative task asks for a story opening, not a whole story — examiners reward atmosphere and subtle shifts in mood, convincing character and setting, a deliberate structure, precise vocabulary and technical accuracy.', ['creative-writing', 'accuracy'], {
       options: [
         { id: 'a', label: 'Description', text: entry.q5a },
-        { id: 'b', label: 'Story', text: entry.q5b },
+        { id: 'b', label: 'Story opening', text: entry.q5b },
       ],
       image: q5ImageFor(entry),
-      input: { kind: 'textarea', rows: 18, hint: '5 minutes planning, 35 writing, 5 checking. New paragraph per idea!' },
+      input: { kind: 'textarea', rows: 18, hint: '5 planning, 35 writing, 5 checking. Fix one mood, then let vocabulary follow it.' },
       markType: 'ai',
       rubricKey: 'p1q5',
       modelAnswer: ex.q5plan || '',
@@ -429,7 +429,7 @@ function buildPracticeQ(topicId, entry, paperId, idx) {
   }
   if (topicId === 'creative-writing') {
     const e = P1_TEXTS.find((t) => t.id === entry.id);
-    return baseQ(entry.id, idx, 'essay', 40, 30, 'Practice · Creative writing', `Choose ONE:\n\nDescription: ${e.q5a}\n\nStory: ${e.q5b}\n\nWrite your response (aim for 3-4 paragraphs).`, ['creative-writing', 'accuracy'], {
+    return baseQ(entry.id, idx, 'essay', 40, 30, 'Practice · Creative writing', `Choose ONE:\n\nDescription: ${e.q5a}\n\nStory opening (since 2026, narrative means an opening, not a whole story): ${e.q5b}\n\nWrite your response (one sustained mood, 3-4 paragraphs).`, ['creative-writing', 'accuracy'], {
       image: q5ImageFor(e),
       input: { kind: 'textarea', rows: 14 },
       markType: 'ai',
@@ -486,14 +486,17 @@ export function buildPractice(topicId, count = 3) {
   return qs;
 }
 
-export function buildAdhoc(count = 12, kinds = ['listing', 'truefalse', 'analysis']) {
+export function buildAdhoc(count = 12, kinds = ['listing', 'truefalse', 'analysis'], skillIds = []) {
   const rng = makeRand('adhoc', Date.now());
   const qs = [];
+  const wanted = Array.isArray(skillIds) ? skillIds.filter((s) => typeof s === 'string') : [];
+  // Fix-Up sets over-generate so skill-targeted questions survive filtering.
+  const target = wanted.length ? count * 3 : count;
   const p1 = shuffle(rng, [...P1_TEXTS]);
   const p2 = shuffle(rng, [...P2_PAIRS]);
   const usedTexts = new Set();
   let guard = 0;
-  while (qs.length < count && guard < 200) {
+  while (qs.length < target && guard < 600) {
     guard++;
     const kind = kinds[Math.floor(rng() * kinds.length)];
     if (kind === 'listing') {
@@ -538,5 +541,12 @@ export function buildAdhoc(count = 12, kinds = ['listing', 'truefalse', 'analysi
       qs.push(clone);
     }
   }
-  return qs;
+  if (!wanted.length) return qs.slice(0, count);
+  const matches = (q) => Array.isArray(q.skillIds) && q.skillIds.some((s) => wanted.includes(s));
+  const picked = qs.filter(matches).slice(0, count);
+  for (const q of qs) {
+    if (picked.length >= count) break;
+    if (!picked.includes(q)) picked.push(q);
+  }
+  return picked.slice(0, count).map((q, i) => ({ ...q, qn: i + 1 }));
 }

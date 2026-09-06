@@ -77,16 +77,21 @@ export function TodayScreen() {
   const [mistakes, setMistakes] = useState<MistakeRow[]>([]);
   const [planState, setPlanState] = useState<PlanState | null>(null);
   const [planLoaded, setPlanLoaded] = useState(false);
+  const [planScope, setPlanScope] = useState("");
   const [planError, setPlanError] = useState("");
+  const [personalRevision, setPersonalRevision] = useState(0);
   const personalClient = new ApiClient(subject);
   useFocusEffect(
     useCallback(() => {
       let active = true;
       setPlanLoaded(false);
       setPlanError("");
+      setPlanState(null);
+      setMistakes([]);
       queryClient
         .fetchQuery({
           queryKey: queryKeys.personal(subject, session?.user.id),
+          staleTime: 0,
           queryFn: () =>
             hydratePersonal(personalClient, session?.user.id, subject),
         })
@@ -94,6 +99,7 @@ export function TodayScreen() {
           if (!active) return;
           setPlanState(personal.plan);
           setMistakes(personal.mistakes);
+          setPlanScope(`${session?.user.id}:${subject}`);
           setPlanLoaded(true);
           void noteDailyReturn(personalClient);
         })
@@ -102,14 +108,13 @@ export function TodayScreen() {
           setPlanError(
             "Your saved plan could not be loaded. Check your connection and try again.",
           );
-          setPlanLoaded(true);
         });
       return () => {
         active = false;
       };
       // The client is scoped to the active subject; reload whenever either identity changes.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [queryClient, session?.user.id, subject]),
+    }, [queryClient, session?.user.id, subject, personalRevision]),
   );
   const client = new ApiClient(subject);
   const queries = useQueries({
@@ -137,13 +142,11 @@ export function TodayScreen() {
 
   const refresh = async () => {
     setRefreshing(true);
+    setPersonalRevision((revision) => revision + 1);
     await Promise.all([
       queryClient.refetchQueries({ queryKey: queryKeys.progress(subject) }),
       queryClient.refetchQueries({ queryKey: queryKeys.topics(subject) }),
       queryClient.refetchQueries({ queryKey: queryKeys.papers(subject) }),
-      queryClient.refetchQueries({
-        queryKey: queryKeys.personal(subject, session?.user.id),
-      }),
     ]).finally(() => setRefreshing(false));
   };
 
@@ -159,6 +162,7 @@ export function TodayScreen() {
   useEffect(() => {
     if (
       !planLoaded ||
+      planScope !== `${session?.user.id}:${subject}` ||
       loading ||
       !hasAllData ||
       !topicsQuery.data ||
@@ -194,6 +198,7 @@ export function TodayScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     planLoaded,
+    planScope,
     loading,
     hasAllData,
     planState,
@@ -700,6 +705,10 @@ export function TodayScreen() {
             <Button
               variant="secondary"
               onPress={() => {
+                if (!planLoaded) {
+                  setPersonalRevision((revision) => revision + 1);
+                  return;
+                }
                 if (planState)
                   personalClient
                     .savePlan(planState)
@@ -711,7 +720,7 @@ export function TodayScreen() {
                     );
               }}
             >
-              Retry saving plan
+              {planLoaded ? "Retry saving plan" : "Retry loading plan"}
             </Button>
           </>
         )}

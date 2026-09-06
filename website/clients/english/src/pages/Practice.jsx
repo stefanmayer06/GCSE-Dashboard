@@ -375,7 +375,7 @@ function AdhocSection({ onProgress, diagnostic = false }) {
           <h2>🎲 Quick-fire round</h2>
           <p className="sub">
             Mixed mini-questions drawn from any text in the bank. Instant feedback; language
-            analysis gets AI marking when a key is configured.
+            analysis includes AI feedback when available, with a rubric to help you review your answer.
           </p>
         </div>
       </div>
@@ -1077,7 +1077,7 @@ function TestScreen(props) {
             <div className="marking-note">
               <span>{markingReady
                 ? '🤖 Your long answers will be marked by the AI examiner against summarised AQA mark schemes.'
-                : '⚠️ No OpenRouter key is configured — long answers will be returned with model answers and rubrics so you can self-mark.'}</span>
+                : 'Long answers will include model answers and rubrics so you can review and self-mark your work.'}</span>
             </div>
             <div className="modal-actions">
               <button className="btn" onClick={() => setConfirmOpen(false)}>Keep working</button>

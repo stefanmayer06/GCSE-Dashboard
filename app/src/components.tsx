@@ -56,7 +56,11 @@ export function DeskHeader({ title }: { title: string; eyebrow?: string }) {
       <Text
         accessibilityRole="header"
         maxFontSizeMultiplier={1.5}
-        style={[styles.h1, { color: colors.ink }, fontScale > 1.4 && { fontSize: 30, lineHeight: 38 }]}
+        style={[
+          styles.h1,
+          { color: colors.ink },
+          fontScale > 1.4 && { fontSize: 30, lineHeight: 38 },
+        ]}
       >
         {title}
       </Text>

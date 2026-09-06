@@ -4315,6 +4315,32 @@ body { margin: 0; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 .nav-item.active .nav-badge { border-color: currentColor; }
 .shell-foot-links { display: flex; gap: 12px; flex-wrap: wrap; color: var(--quiet); font-size: 11px; }
 .shell-foot-links a { color: inherit; text-underline-offset: 3px; }
+
+/* Nav hover must never mimic selection: the active docket owns the boxed
+   language (tint fill + ink border). Hover only tints text and lifts the
+   background, with no border box — verified: a parked cursor over Notebook
+   used to read as a second selected item. */
+.nav-item:hover {
+  border-color: transparent;
+  color: var(--ink);
+  background: var(--paper-raised);
+}
+
+/* Touch screens: :hover sticks after tap and would leave a phantom state
+   behind — drop hover styling where hover doesn't exist. :active and the
+   active docket still answer taps. */
+@media (hover: none), (pointer: coarse) {
+  .nav-item:hover {
+    border-color: transparent;
+    color: var(--quiet);
+    background: transparent;
+  }
+  .nav-item.active:hover {
+    border-color: var(--subject-ink);
+    color: var(--subject-ink);
+    background: var(--subject-tint);
+  }
+}
 .mobile-palette-btn {
   display: none; align-items: center; justify-content: center; gap: 6px;
   min-width: 44px; min-height: 44px; padding: 0 10px; flex-shrink: 0;

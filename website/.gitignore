@@ -1,5 +1,6 @@
 node_modules/
 clients/*/dist/
+clients/*/dist-higher/
 server/data/
 .env
 .DS_Store

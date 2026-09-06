@@ -1,12 +1,30 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// 2.1 — Global quick jump (Ctrl/⌘+K).
+// 2.1 — Global quick jump (Ctrl/⌘+K), v3 Command Desk.
 //
 // Dependency-free command palette over routes the learner can already
 // reach. Topics are passed in by the shell (already cached); filtering
 // is a local substring match capped for speed. Fully keyboard
 // operable, announces result counts, respects reduced motion via CSS.
+// v3: grouped results (Go / Lessons), recent picks in localStorage,
+// footer hints, Escape + focus restore.
+const RECENT_KEY = 'gcse-palette-recent';
+function readRecent() {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list.slice(0, 3) : [];
+  } catch {
+    return [];
+  }
+}
+function writeRecent(href) {
+  try {
+    const list = [href, ...readRecent().filter((h) => h !== href)].slice(0, 3);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+  } catch {}
+}
 export default function CommandPalette({ items = [] }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -17,11 +35,18 @@ export default function CommandPalette({ items = [] }) {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items.slice(0, 9);
+    if (!q) {
+      const recent = readRecent()
+        .map((href) => items.find((i) => i.href === href))
+        .filter(Boolean)
+        .slice(0, 3);
+      const rest = items.filter((i) => !recent.some((r) => r.href === i.href)).slice(0, 9 - recent.length);
+      return [...recent, ...rest];
+    }
     return items
       .filter((item) => `${item.label} ${item.group || ''} ${item.keywords || ''}`.toLowerCase().includes(q))
       .slice(0, 9);
-  }, [items, query]);
+  }, [items, query, open]);
 
   useEffect(() => {
     setActive(0);
@@ -74,6 +99,7 @@ export default function CommandPalette({ items = [] }) {
   }
 
   const go = (href) => {
+    if (href) writeRecent(href);
     setOpen(false);
     if (href) navigate(href);
   };
@@ -120,20 +146,31 @@ export default function CommandPalette({ items = [] }) {
           {results.length === 0 ? 'No matches — try a topic or page name.' : `${results.length} match${results.length === 1 ? '' : 'es'}`}
         </p>
         <ul id="palette-list" ref={listRef} role="listbox" aria-label="Matches" className="palette-list">
-          {results.map((item, index) => (
-            <li key={`${item.group || ''}:${item.href}:${item.label}`} role="option" aria-selected={index === active}>
-              <button
-                type="button"
-                className={`palette-item${index === active ? ' active' : ''}`}
-                onClick={() => go(item.href)}
-                onMouseEnter={() => setActive(index)}
-              >
-                <span className="palette-item-label">{item.label}</span>
-                <span className="palette-item-meta">{item.group}{item.hint ? ` · ${item.hint}` : ''}</span>
-              </button>
-            </li>
-          ))}
+          {results.map((item, index) => {
+            const showGroup = index === 0 || results[index - 1].group !== item.group;
+            return (
+              <li key={`${item.group || ''}:${item.href}:${item.label}`}>
+                {showGroup && item.group ? <p className="palette-group" aria-hidden="true">{item.group}</p> : null}
+                <div role="option" aria-selected={index === active}>
+                  <button
+                    type="button"
+                    className={`palette-item${index === active ? ' active' : ''}`}
+                    onClick={() => go(item.href)}
+                    onMouseEnter={() => setActive(index)}
+                  >
+                    <span className="palette-item-label">{item.label}</span>
+                    <span className="palette-item-meta">{item.group}{item.hint ? ` · ${item.hint}` : ''}</span>
+                  </button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
+        <div className="palette-foot" aria-hidden="true">
+          <span><kbd>↑</kbd><kbd>↓</kbd> move</span>
+          <span><kbd>↵</kbd> open</span>
+          <span><kbd>esc</kbd> close</span>
+        </div>
       </div>
     </div>
   );

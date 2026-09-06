@@ -110,15 +110,15 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
 
   return (
     <section className="panel onboarding-card" aria-label="Set up your revision">
-      <div className="eyebrow">Welcome · three quick steps</div>
+      <div className="eyebrow">Welcome · step {step + 1} of {steps.length}</div>
       <h2>{current.title}</h2>
       <p className="sub">{current.body}</p>
       {current.control && <div className="onboarding-control">{current.control}</div>}
-      <div className="study-actions">
+      <div className="study-actions" role="group" aria-label={`Setup step ${step + 1} of ${steps.length}`}>
         {step > 0 && <button type="button" className="btn" onClick={() => setStep(step - 1)}>Back</button>}
         {step === 1 && <button type="button" className="btn" onClick={() => setStep(step + 1)}>Skip for now</button>}
         {current.canNext && step < steps.length - 1 && (
-          <button type="button" className="btn btn-primary" onClick={() => setStep(step + 1)}>Next</button>
+          <button type="button" className="btn btn-primary" onClick={() => setStep(step + 1)}>Continue →</button>
         )}
         {step === steps.length - 1 && (
           <>
@@ -126,12 +126,12 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
               className="btn btn-primary"
               to={diagnosticUrl}
               onClick={() => { setDismissed(true); api.track?.('onboarding_complete', { withExamDate: Boolean(preferences.examDate), targetGrade: preferences.targetGrade || null }); }}
-            >Start diagnostic</Link>
+            >Start my diagnostic →</Link>
             <button type="button" className="btn" onClick={() => setDismissed(true)}>I&apos;ll do it later</button>
           </>
         )}
       </div>
-      <p className="sub small">Step {step + 1} of {steps.length} · saved to your account, not shared with anyone.</p>
+      <p className="sub small">Step {step + 1} of {steps.length} · saved to your account, not shared with anyone. You can skip — the diagnostic is always on the Practice desk.</p>
     </section>
   );
 }

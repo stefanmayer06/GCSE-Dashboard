@@ -373,7 +373,7 @@ function AdhocSection({ onProgress, diagnostic = false }) {
     <section className="panel" id="adhoc">
       <div className="quiz-head">
         <div>
-          <h2>🎲 Quick-fire round</h2>
+          <h2>Quick-fire round</h2>
           <p className="sub">
             Mixed mini-questions drawn from any text in the bank. Instant feedback; language
             analysis gets AI marking when a key is configured.
@@ -468,7 +468,7 @@ function AdhocRunner({ set, onExit, onNew, onProgress }) {
     <section className="panel">
       <div className="quiz-head">
         <div>
-          <h2>🎲 Quick-fire round</h2>
+          <h2>Quick-fire round</h2>
           <p className="sub">{set.questions.length} questions from the text bank</p>
         </div>
         <button className="btn" onClick={onExit} disabled={busy}>Back to setup</button>
@@ -781,7 +781,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
       {showSource && q.sourceRef && <SourceBox ref_={q.sourceRef} />}
 
       {q.type === 'text' && !q.sourceRef && q.input?.hint && (
-        <div className="input-hint">💡 {q.input.hint}</div>
+        <div className="input-hint">{q.input.hint}</div>
       )}
       {answerControl()}
 
@@ -877,6 +877,24 @@ function TestScreen(props) {
     return v && String(typeof v === 'object' ? v.text ?? '' : v).trim().length > 0;
   }).length;
   const unanswered = test.questions.length - answeredCount;
+
+  // v3: arrow-key question navigation (skipped while typing or when a dialog is open).
+  useEffect(() => {
+    if (confirmOpen || quitOpen) return undefined;
+    function onArrows(event) {
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        onGo(current + 1);
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        onGo(current - 1);
+      }
+    }
+    document.addEventListener('keydown', onArrows);
+    return () => document.removeEventListener('keydown', onArrows);
+  }, [confirmOpen, quitOpen, current, onGo]);
 
   useEffect(() => {
     const dialog = confirmOpen ? submitDialogRef.current : quitOpen ? quitDialogRef.current : null;
@@ -1010,7 +1028,7 @@ function TestScreen(props) {
                   value={answers[q.id] ?? ''}
                   onChange={(e) => onAnswer(q.id, e.target.value)}
                 />
-                <div className="input-hint">💡 {q.input?.hint}</div>
+                <div className="input-hint">{q.input?.hint}</div>
               </>
             )}
 
@@ -1032,7 +1050,7 @@ function TestScreen(props) {
                   value={answers[q.id] ?? ''}
                   onChange={(e) => onAnswer(q.id, e.target.value)}
                 />
-                <div className="input-hint">💡 {q.input?.hint}</div>
+                <div className="input-hint">{q.input?.hint}</div>
               </>
             )}
 
@@ -1049,14 +1067,14 @@ function TestScreen(props) {
                 <div className="word-watch">
                   {((answers[q.id]?.text || '').match(/\S+/g) || []).length} words · aim 500+
                 </div>
-                <div className="input-hint">💡 {q.input?.hint}</div>
+                <div className="input-hint">{q.input?.hint}</div>
               </>
             )}
           </div>
 
           <div className="q-actions">
             <button className="btn" disabled={current === 0} onClick={() => onGo(current - 1)}>← Previous</button>
-            <span className="q-pos">{current + 1} of {test.questions.length}</span>
+            <span className="q-pos">Question {current + 1} of {test.questions.length} · {answeredCount} answered · autosaved</span>
             {current < test.questions.length - 1 ? (
               <button className="btn btn-primary" onClick={() => onGo(current + 1)}>Next →</button>
             ) : (

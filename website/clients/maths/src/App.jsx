@@ -4,6 +4,7 @@ import { api } from './api.js';
 import { clearSupabaseSession } from '../../shared/supabase.js';
 import { clearResourceCache, useResource } from '../../shared/resource-cache.js';
 import { flattenTopics } from '../../shared/study.js';
+import { dueMistakeRows, hydratePersonal } from '../../shared/study-personal.js';
 import AppShell from '../../shared/AppShell.jsx';
 import LoginScreen from '../../shared/login.jsx';
 
@@ -66,6 +67,15 @@ export default function App() {
 
   // Shared with Dashboard via resource-cache: no extra network request.
   const { data: topicCatalog } = useResource(userId ? `topics:${subject}:${userId}` : null, () => api.topics());
+  // Same personal cache as the dashboard: feeds the Notebook due badge.
+  const { data: personal } = useResource(userId ? `personal:${userId}:${subject}` : null, () => hydratePersonal(api, userId, subject));
+  const notebookDue = (() => {
+    try {
+      return dueMistakeRows(personal?.mistakes ?? []).length;
+    } catch {
+      return 0;
+    }
+  })();
 
   const paletteItems = useMemo(() => {
     const routes = [
@@ -93,6 +103,12 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('gcse-last-subject', higherTier ? '/maths-higher/' : '/maths/');
+    } catch {}
+  }, [higherTier]);
 
   useEffect(() => {
     api.auth
@@ -200,6 +216,7 @@ export default function App() {
       onToggleTheme={toggleTheme}
       onSignOut={signOut}
       paletteItems={paletteItems}
+      notebookDue={notebookDue}
     >
       <Suspense fallback={<PageFallback />}>
         <Routes>

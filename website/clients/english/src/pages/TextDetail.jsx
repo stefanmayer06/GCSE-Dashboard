@@ -86,7 +86,7 @@ export default function TextDetail() {
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <Link className="btn btn-primary" to="/practice">Start a paper →</Link>
-          <Link className="btn" to="/practice#adhoc">Quick-fire round →</Link>
+          <Link className="btn" to="/practice#adhoc">Quick practice →</Link>
         </div>
       </section>
     </div>

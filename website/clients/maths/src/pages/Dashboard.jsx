@@ -70,7 +70,7 @@ export default function Dashboard({ health, progress, higherTier = false, userId
   const papers = higherTier
     ? {
         blurb:
-          'All three AQA Higher papers — built from the bank with balanced 8300H coverage, a difficulty ramp and stretch questions. Predicted grade from averaged past boundaries, worked solutions and revision links for everything you miss.',
+          'Practise all three Higher papers with 80 marks and 90 minutes per paper. After you finish, you’ll get a grade estimate, worked solutions and links to topics worth revisiting.',
         items: [
           { id: 1, code: '8300/1H', calc: false, blurb: 'Non-calculator. Exact methods, Number, Algebra and proof.', meta: '80 marks · 90 min', fullHref: '/practice?paper=1&type=full', shortHref: '/practice?paper=1&type=short', fullLabel: 'Full · 80 marks', shortLabel: 'Quick · 40 marks' },
           { id: 2, code: '8300/2H', calc: true, blurb: 'Calculator. Algebra, proportion, geometry and statistics.', meta: '80 marks · 90 min', fullHref: '/practice?paper=2&type=full', shortHref: '/practice?paper=2&type=short', fullLabel: 'Full · 80 marks', shortLabel: 'Quick · 40 marks' },
@@ -79,7 +79,7 @@ export default function Dashboard({ health, progress, higherTier = false, userId
       }
     : {
         blurb:
-          'All three AQA Foundation papers — built from the bank with per-paper topic allocation, a difficulty ramp and stretch questions. Predicted grade from averaged past boundaries, worked solutions and revision links for everything you miss.',
+          'Practise all three Foundation papers with 80 marks and 90 minutes per paper. After you finish, you’ll get a grade estimate, worked solutions and links to topics worth revisiting.',
         items: [
           { id: 1, code: '8300/1F', calc: false, blurb: 'Non-calculator. Number, Algebra, Ratio, Probability & Statistics.', meta: '80 marks · 90 min', fullHref: '/practice?paper=1&type=full', shortHref: '/practice?paper=1&type=short', fullLabel: 'Full · 80 marks', shortLabel: 'Quick · 40 marks' },
           { id: 2, code: '8300/2F', calc: true, blurb: 'Calculator. Algebra, Ratio, Geometry, Probability & Statistics.', meta: '80 marks · 90 min', fullHref: '/practice?paper=2&type=full', shortHref: '/practice?paper=2&type=short', fullLabel: 'Full · 80 marks', shortLabel: 'Quick · 40 marks' },
@@ -91,7 +91,7 @@ export default function Dashboard({ health, progress, higherTier = false, userId
     <DashboardHome
       subjectKey={subject}
       title="Your Maths revision"
-      subtitle={`AQA GCSE Maths ${higherTier ? 'Higher' : 'Foundation'} — train like it’s exam day.`}
+      subtitle={`AQA GCSE Maths ${higherTier ? 'Higher' : 'Foundation'}. Pick up where you left off or choose what to revise next.`}
       headChip={
         health ? (
           <div className="head-chip">
@@ -109,12 +109,12 @@ export default function Dashboard({ health, progress, higherTier = false, userId
       masteryRows={mastery}
       masteryLoading={!mastery && !!progress}
       masteryEmptyHint="Answer questions in papers, lessons or mixed rounds to see your topic accuracy here."
-      masteryTitle="Mastery by strand — weakest first"
+      masteryTitle="How you’re doing by topic"
       papers={papers}
       adhoc={{
         title: 'Mixed practice',
-        copy: 'Ad-hoc questions mixed from all three papers — 10, 15 or 20 at a time.',
-        cta: 'Start a mixed round →',
+        copy: 'Choose 10, 15 or 20 questions from across all three papers.',
+        cta: 'Choose questions →',
         href: '/practice#adhoc',
       }}
     />

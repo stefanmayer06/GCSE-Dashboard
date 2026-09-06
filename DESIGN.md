@@ -275,6 +275,18 @@ All of this lives in `website/clients/shared/v3.css` (the app) and `website/sele
 - **Navigation.** Desktop gets a 264px paper rail grouped into Journey / Practise / Review, with a due-mistakes badge on Notebook. Tablet gets a slim icon rail. Mobile gets a sticky top bar and a thumb-friendly bottom tab bar that respects the gesture area.
 - **Dialogs and celebrations.** Ink scrim, pebble card, spring entrance, focus trapped and returned. The reward moment (level up, first completion) is the one place the app gets genuinely celebratory — earned confetti, not random confetti.
 
+## The dashboard edition (V4)
+
+The subject dashboard wears its own layer on top of the system: `website/clients/shared/v4-dashboard.css`, loaded after `v3.css` by both clients. V3 set the rules of the desk; V4 makes the desk feel lived-in. The dashboard's job is the same — one screen that answers "what do I do now?" — but the delivery is warmer:
+
+- **Hero first.** "Your next move" leads the page (01), ahead of the numbers. The biggest decision gets the biggest card: 2px ink border, subject-hue gradient rule, a hard offset "cut paper" shadow, a dotted readiness ring, and one handwritten margin note — *"One step is enough today."* Streak, readiness and exams sit under it as three slightly-rotated sticker tiles.
+- **Numbers earn their hue.** The four stat cards each wear a colour of their own (indigo papers, rose score, teal answered, amber streak) plus a so-what caption. Colour always means something: the tile's hue is its topic.
+- **The mastery trail is a scoreboard, not a spreadsheet.** Every strand card wears its strand colour — dot, border, wash and fill — with the stage pill in its honest wash. A one-line legend teaches the stage language (New → Mastered) right where it's used.
+- **Week as a trail.** The 7-day plan is drawn as pebble cells: done days wash green, today gets the subject border and a lift, rest days wash lavender with a moon, future days stay dashed. Rest is visibly part of the plan.
+- **Papers are tickets.** Paper codes set in Fraunces, calculator status as a pill, a dashed perforation above the actions, subject-hue band on top.
+- **Handwritten margins, used twice a page, maximum.** Caveat appears only where the app itself would whisper (the hero note). Everything else stays Inter; labels stay Plex Mono. Fraunces loads with its SOFT and WONK axes so headings keep their wonk.
+- **Nothing in the contract bends.** Wash + word on every state, the frozen class names, 3px focus rings, dark mode as a first-class mood, reduced-motion kills every rotation. Maths Foundation wears Trail Indigo `#4338CA` (the legacy purple is retired).
+
 ## The screens
 
 Every subject follows the same path, numbered like trail markers:
@@ -329,6 +341,7 @@ A learner with dyslexia, a learner on a cracked phone at 10pm, a learner re-sitt
 ## Where things live
 
 - `website/clients/shared/v3.css` — the system itself: tokens, base, shell, components, motion, responsive rules, accessibility.
+- `website/clients/shared/v4-dashboard.css` — the dashboard edition: sticker shadows, stat hues, strand colours, week trail, paper tickets, scrawl. Loaded after V3 by both subject clients.
 - `website/selector/v3-launchpad.css` — the public launchpad and course guides.
 - `docs/design/v3/` — the research, the decision log, and what changed.
 - `PRODUCT.md` — what the product *is*. This file — what it *feels like*.

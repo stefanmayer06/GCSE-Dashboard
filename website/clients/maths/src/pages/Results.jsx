@@ -101,16 +101,16 @@ export default function Results({ userId }) {
           <div className="score-pct">{result.percent}%</div>
           <div className="score-note">
             {result.grade === null
-              ? 'Below grade 1 this time — head to the topic fixes below and go again. You\u2019ve got this.'
+              ? 'This score is below grade 1. Review the topics below before your next paper.'
               : result.nextBoundary
                 ? `Just ${result.nextBoundary.marksToGo} more mark${result.nextBoundary.marksToGo === 1 ? '' : 's'} to reach a grade ${result.nextBoundary.grade}.`
-                : isHigherResult ? 'Top of the predicted Higher range on this paper.' : 'Top of foundation tier — you can\u2019t do better than a 5 on this paper.'}
+                : isHigherResult ? 'This score is at the top of the estimated Higher range.' : 'This score is at the top of the Foundation tier.'}
           </div>
         </div>
         <div className="actions-col">
           <button className="btn btn-primary" onClick={() => navigate('/practice')}>Try another paper</button>
           <Link className="btn" to="/learn">Study my weak topics</Link>
-          <Link className="btn" to="/practice#adhoc">Quick ad-hoc round</Link>
+          <Link className="btn" to="/practice#adhoc">Mixed practice</Link>
         </div>
       </div>
 
@@ -126,7 +126,7 @@ export default function Results({ userId }) {
       {attempts?.length > 0 && (
         <section className="panel attempts-panel">
           <h2>Your past papers</h2>
-          <p className="sub">Saved to your account — reopen any attempt to review every question.</p>
+          <p className="sub">Your past papers are saved here. Open one to review your answers.</p>
           <table className="bound-table attempts-table">
             <thead><tr><th>Date</th><th>Paper</th><th>Score</th><th>Grade</th><th>Time</th><th></th></tr></thead>
             <tbody>
@@ -191,8 +191,8 @@ export default function Results({ userId }) {
 
       {result.weakTopics.length > 0 && (
         <section className="panel">
-          <h2>Fix these first</h2>
-          <p className="sub">Your weakest topics this paper, with free revision resources for each.</p>
+          <h2>Topics to revisit</h2>
+          <p className="sub">These were your lowest-scoring topics on this paper.</p>
           <div className="weak-grid">
             {result.weakTopics.map((t) => (
               <div key={t.id} className="weak-card">
@@ -215,7 +215,7 @@ export default function Results({ userId }) {
       )}
 
       <section className="panel">
-        <h2>Full review — every question</h2>
+        <h2>Review every question</h2>
         {result.perQuestion.map((q) => (
           <div key={q.qid} className={`review ${q.correct ? 'right' : 'wrong'}`}>
             <button className="review-head" onClick={() => setOpen((o) => ({ ...o, [q.qid]: !o[q.qid] }))}>

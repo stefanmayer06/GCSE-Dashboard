@@ -36,7 +36,7 @@ export function RewardSummary({ reward, progress, label = 'Study XP earned' }) {
       </div>
       <div className="reward-summary-detail">
         {reward.scoreXp} score XP
-        {reward.completionXp > 0 ? ` + ${reward.completionXp} first-completion XP` : ''}
+        {reward.completionXp > 0 ? ` + ${reward.completionXp} XP for finishing the lesson` : ''}
       </div>
       <div className="reward-summary-rank">Level {level} - {rankForLevel(level)}</div>
     </div>
@@ -56,7 +56,7 @@ export function ExpertisePath({ progress, onChooseLesson }) {
     <section className="panel expertise-path" aria-labelledby="expertise-path-title">
       <div className="expertise-head">
         <div>
-          <div className="eyebrow">Your expertise path</div>
+          <div className="eyebrow">Your level</div>
           <h2 id="expertise-path-title">{rank}</h2>
           <p className="sub">
             Level {level} - {progress.lessonsCompleted || 0} lesson{progress.lessonsCompleted === 1 ? '' : 's'} completed
@@ -70,7 +70,7 @@ export function ExpertisePath({ progress, onChooseLesson }) {
 
       <div className="expertise-progress">
         <div className="expertise-progress-copy">
-          <span>{atSme ? 'Subject Matter Expert reached' : `Next: ${rankForLevel(nextLevel)}`}</span>
+          <span>{atSme ? 'Highest level reached' : `Next: ${rankForLevel(nextLevel)}`}</span>
           <span>{progress.xpInto}/{progress.xpNeeded} XP</span>
         </div>
         <div className="expertise-track" role="progressbar" aria-valuemin="0" aria-valuemax={progress.xpNeeded} aria-valuenow={progress.xpInto}>
@@ -158,14 +158,14 @@ export function RewardCelebration({ reward, lessonName, onClose, onPracticeAgain
           <span>{levelUp ? 'LEVEL' : 'DONE'}</span>
           <strong>{levelUp ? reward.levelAfter : '+20'}</strong>
         </div>
-        <div className="eyebrow">{levelUp ? 'New expertise badge unlocked' : 'Lesson stamp earned'}</div>
+        <div className="eyebrow">{levelUp ? 'New badge unlocked' : 'Lesson complete'}</div>
         <h2 id={titleId}>{levelUp ? rank : `${lessonName} complete`}</h2>
         <p>
           {levelUp
             ? reward.levelAfter >= EXPERTISE_RANKS.length
               ? `You reached Study Desk level ${reward.levelAfter} and earned the Subject Matter Expert badge.`
               : `You reached Study Desk level ${reward.levelAfter}. Your next lessons now build towards ${rankForLevel(reward.levelAfter + 1)}.`
-            : 'The first-completion bonus is yours. Correct answers still earn extra XP every time you practise.'}
+            : 'You earned XP for finishing this lesson. Keep practising to earn more.'}
         </p>
         <RewardSummary reward={reward} />
         <div className="reward-dialog-actions">

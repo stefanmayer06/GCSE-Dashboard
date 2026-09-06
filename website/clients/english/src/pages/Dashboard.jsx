@@ -61,7 +61,7 @@ export default function Dashboard({ health, progress, userId }) {
     <DashboardHome
       subjectKey="english"
       title="Your English revision"
-      subtitle="AQA GCSE English Language (8700) — both papers, real timings, real mark schemes."
+      subtitle="AQA GCSE English Language (8700). Practise both papers with the correct timings and AQA-style marking."
       headChip={
         health ? (
           <div className="head-chip">
@@ -78,10 +78,10 @@ export default function Dashboard({ health, progress, userId }) {
       masteryRows={mastery}
       masteryLoading={!mastery && !!progress}
       masteryEmptyHint="Answer questions in papers, drills or quick-fire rounds to see your topic accuracy here."
-      masteryTitle="Skill accuracy — weakest first"
+      masteryTitle="How you’re doing by skill"
       papers={{
         blurb:
-          'Two papers, exactly like the real exam: 1 hour 45 minutes each, five questions from 4 to 40 marks. Reading answers are AI-marked against AQA-style mark schemes; 40-mark writing tasks get full AO5 + AO6 marking with model answers and targets.',
+          'Practise either English Language paper with the correct marks and 1 hour 45 minute timing. You’ll get AQA-style feedback, model answers and clear areas to work on next.',
         items: [
           { id: 1, code: '8700/1', calc: true, calcLabel: 'Fiction extract', blurb: 'Explorations in Creative Reading and Writing. Q1 list (4) · Q2 language (8) · Q3 structure (8) · Q4 evaluate (20) · Q5 creative writing (40).', meta: '80 marks · 1h 45', fullHref: '/practice?paper=1&type=full', shortHref: '/practice?paper=1&type=short', fullLabel: 'Full · 80 marks · 1h45', shortLabel: 'Quick · Q1+Q5 · 50 min' },
           { id: 2, code: '8700/2', calc: true, calcLabel: 'Two sources', blurb: 'Writers’ Viewpoints and Perspectives. Q1 true/false (4) · Q2 summary (8) · Q3 language (12) · Q4 compare (16) · Q5 writing to argue (40).', meta: '80 marks · 1h 45', fullHref: '/practice?paper=2&type=full', shortHref: '/practice?paper=2&type=short', fullLabel: 'Full · 80 marks · 1h45', shortLabel: 'Quick · Q1+Q5 · 50 min' },
@@ -89,8 +89,8 @@ export default function Dashboard({ health, progress, userId }) {
       }}
       adhoc={{
         title: 'Quick-fire practice',
-        copy: 'Quick-fire rounds: list four things, true/false and language analysis from any text in the bank.',
-        cta: 'Start a quick-fire round →',
+        copy: 'Try a short set of list, true or false, and language questions using texts from the bank.',
+        cta: 'Choose questions →',
         href: '/practice#adhoc',
       }}
     />

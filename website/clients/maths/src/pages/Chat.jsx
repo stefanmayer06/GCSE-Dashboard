@@ -21,7 +21,7 @@ function toMessages(r, higherTier) {
         {
           role: 'assistant',
           content:
-            "Hey! I'm your AI maths tutor, tuned for AQA GCSE Foundation.\n\nAsk me to explain any topic, walk you through a question, or check your method — I'll guide you step by step without just giving answers away. 💪",
+            "Hi, I’m your Maths tutor for AQA GCSE Foundation.\n\nSend me a question or tell me the topic you’re stuck on. I can explain the method, check your working or give you a hint.",
         },
       ];
   return higherTier
@@ -58,7 +58,7 @@ export default function Chat({ health, userId }) {
       setMessagesState(history);
       setApplied(true);
     } else if (error) {
-      setMessagesState([{ role: 'assistant', content: 'Hey! Ask me any maths question — I\u2019m here to help you revise.' }]);
+      setMessagesState([{ role: 'assistant', content: 'Hi. Send me a Maths question or tell me which topic you need help with.' }]);
       setApplied(true);
     }
   }, [applied, history, error, messages]);
@@ -91,7 +91,7 @@ export default function Chat({ health, userId }) {
       setMessages([...next, { role: 'assistant', content: out.reply, model: out.model }]);
     } catch (e) {
       if (requestRef.current !== requestId || chatKeyRef.current !== requestKey) return;
-      setMessages([...next, { role: 'assistant', content: `Sorry — something broke: ${e.message}` }]);
+      setMessages([...next, { role: 'assistant', content: `I couldn’t send that. Please try again. ${e.message}` }]);
     } finally {
       setBusy(false);
     }
@@ -113,9 +113,9 @@ export default function Chat({ health, userId }) {
         <div>
           <h1>AI Tutor</h1>
           <p className="sub">
-            Patient, step-by-step help powered by{' '}
+            Step-by-step help with AQA GCSE Maths, powered by{' '}
             <span className="model-chip">{modelName}</span>
-            {!health?.chatReady && ' — running in offline mode (set OPENROUTER_API_KEY to unlock the AI)'}
+            {!health?.chatReady && '. AI help is unavailable right now'}
           </p>
         </div>
         <button className="btn" onClick={reset}>Clear chat</button>

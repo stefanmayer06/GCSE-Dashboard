@@ -60,7 +60,8 @@
     </script>
   </head>
   <body>
-    <main class="desk">
+    <a class="skip-link" href="#page-title">Skip to subjects</a>
+    <main class="desk" id="main">
       <header class="masthead">
         <a class="brand" href="/" aria-label="GCSE Study Desk home">
           <span class="brand-mark" aria-hidden="true">SD</span>
@@ -85,8 +86,8 @@
 
       <section class="intro" aria-labelledby="page-title">
         <p class="eyebrow">AQA Maths and English practice</p>
-        <h1 id="page-title" class="headline-hierarchy"><span>GCSE revision,</span><br /><em>without the guesswork</em></h1>
-        <p class="intro-copy">Choose a subject to revise key topics, practise realistic paper formats, review worked solutions and get help from your tutor.</p>
+        <h1 id="page-title" class="headline-hierarchy" tabindex="-1"><span>GCSE revision,</span><br /><em>without the guesswork</em></h1>
+        <p class="intro-copy">Choose a subject to revise key topics, practise realistic paper formats, review worked solutions and get help from your tutor. Three live routes — Foundation, Higher and English — one clear next step in each.</p>
       </section>
 
       <section class="subject-grid" aria-label="Choose a subject">
@@ -113,6 +114,27 @@
           <a class="enter-link" href="/maths/">Open MathsMate <span aria-hidden="true">→</span></a>
         </article>
 
+        <article class="subject-card higher-card">
+          <div class="card-topline">
+            <span class="course-code">AQA 8300H</span>
+            <span class="availability" id="higher-status"><i></i> Checking</span>
+          </div>
+          <div class="subject-lockup">
+            <span class="subject-letter" aria-hidden="true">H</span>
+            <div>
+              <p class="subject-kicker">Higher tier</p>
+              <h2>Mathematics</h2>
+            </div>
+          </div>
+          <p class="subject-copy">Stretch beyond Foundation with Higher-only methods, proof and grade 4–9 paper practice.</p>
+          <a class="course-guide-link" href="/gcse-maths-higher">Explore the Higher revision guide</a>
+          <dl class="subject-facts">
+            <div><dt>Practice</dt><dd id="higher-bank">2,600+ questions</dd></div>
+            <div><dt>Exam</dt><dd>3 papers</dd></div>
+            <div><dt>Grades</dt><dd>4–9</dd></div>
+          </dl>
+          <a class="enter-link" href="/maths-higher/">Open Higher Maths <span aria-hidden="true">→</span></a>
+        </article>
 
         <article class="subject-card english-card">
           <div class="card-topline">
@@ -138,7 +160,7 @@
       </section>
 
       <footer class="desk-note">
-        <strong>One place. Two subjects. A clear next step.</strong>
+        <strong>One place. Three subjects. A clear next step.</strong>
         <span><a href="/privacy.html">Privacy</a> · <a href="/support.html">Support</a> · <a href="/feedback.html">Feedback</a> · <a href="/delete-account.html">Delete account</a></span>
       </footer>
     </main>

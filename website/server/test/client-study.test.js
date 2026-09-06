@@ -208,3 +208,22 @@ test('recordLessonResult distinguishes a notebook failure after the mission is s
 test('dateKey is stable calendar-local', () => {
   assert.equal(dateKey(new Date(2026, 8, 1, 10, 0)), '2026-09-01');
 });
+
+test('buildWeekPlan honours rest days and per-day minutes', async () => {
+  const { buildWeekPlan, movePlanDay } = await import('../../clients/shared/study.js');
+  const priority = [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }, { id: 'c', name: 'C' }];
+  const prefs = { restDays: [6], minutesPerDay: 25 };
+  const plan = buildWeekPlan(priority, 'maths', false, new Date(2026, 8, 1, 9, 0), [], prefs);
+  const sunday = plan.days.find((d) => d.date === '2026-09-06');
+  assert.equal(sunday.rest, true);
+  assert.equal(sunday.task, 'Rest day');
+  assert.ok(plan.days.filter((d) => !d.rest).every((d) => d.minutes === 25));
+  // Rest days never consume a lesson topic: Monday still starts at A.
+  assert.equal(plan.days[0].topicId, 'a');
+
+  const moved = movePlanDay(plan, '2026-09-02', '2026-09-04', '2026-09-01');
+  assert.ok(moved, 'future swap allowed');
+  assert.equal(moved.days.find((d) => d.date === '2026-09-04').task, plan.days.find((d) => d.date === '2026-09-02').task);
+  assert.equal(movePlanDay(plan, '2026-09-02', '2026-09-06', '2026-09-01'), null, 'cannot move into a rest day');
+  assert.equal(movePlanDay(plan, '2026-08-31', '2026-09-02', '2026-09-01'), null, 'cannot move a past day');
+});

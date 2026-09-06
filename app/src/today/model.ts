@@ -24,6 +24,7 @@ export type TodayProgress = {
   xpInto: number;
   xpNeeded: number;
   streak: number;
+  streakFreezes: number;
   accuracy: number | null;
   lessons: number;
   tests: number;
@@ -83,6 +84,9 @@ export function parseProgress(value: Progress): TodayProgress {
     xpInto: finite(value.xpInto),
     xpNeeded: finite(value.xpNeeded),
     streak: finite(value.streak),
+    streakFreezes: typeof value.streakFreezes === 'number' && Number.isFinite(value.streakFreezes)
+      ? Math.max(0, Math.min(5, Math.round(value.streakFreezes)))
+      : 1,
     accuracy: typeof value.overallPercent === 'number' ? value.overallPercent : null,
     lessons: finite(value.lessonsCompleted),
     tests: finite(value.testsTaken),

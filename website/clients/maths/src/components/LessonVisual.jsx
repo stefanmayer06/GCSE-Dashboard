@@ -28,7 +28,7 @@ const LESSON_VISUALS = {
   },
   'area-perimeter': {
     title: 'Separate parallel sides and height',
-    prompt: 'The perpendicular height is not the sloping side.',
+    prompt: 'Use the perpendicular height: the line at a right angle to the parallel sides.',
     stimulus: { type: 'shape', kind: 'trapezium', labels: [{ text: '5 cm', x: 210, y: 62 }, { text: '9 cm', x: 210, y: 225 }, { text: '4 cm', x: 125, y: 140 }], alt: 'Trapezium with parallel sides five and nine centimetres and perpendicular height four centimetres.' },
   },
   circles: {
@@ -78,7 +78,7 @@ const LESSON_VISUALS = {
   },
   scatter: {
     title: 'Read the overall trend',
-    prompt: 'Select any point to inspect it. Correlation describes the pattern, not one point.',
+    prompt: 'Select any point to inspect it. Judge correlation from the overall pattern.',
     stimulus: { type: 'scatter', points: [{ x: 1, y: 2 }, { x: 2, y: 2.7 }, { x: 3, y: 4 }, { x: 4, y: 3.6 }, { x: 5, y: 5.8 }, { x: 6, y: 6.3 }], alt: 'Scatter graph with positive correlation.' },
   },
 };

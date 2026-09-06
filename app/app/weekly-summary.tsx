@@ -2,7 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { ApiClient } from '@/api';
-import { DeskHeader, Notice, ScrollScreen, SectionHeader } from '@/components';
+import { BackLink, DeskHeader, Notice, ScrollScreen, SectionHeader } from '@/components';
 import { dueMistakes, errorTypeLabel, masteredSince, type MistakeRow } from '@/notebook';
 import { hydratePersonal } from '@/personal';
 import { daysToExam, type PlanState } from '@/planning';
@@ -31,6 +31,7 @@ export default function WeeklySummary() {
   const masteredWeek = masteredSince(rows, 7 * 86_400_000, now);
   const countdown = daysToExam(planning.examDate, now);
   return <ScrollScreen>
+    <BackLink label="BACK" />
     <DeskHeader title="Weekly summary" eyebrow="STUDENT-CONTROLLED SHARE VIEW" />
     <Notice title="FOR A CONVERSATION">Show this screen when you choose. It creates no parent account, sends no email and shares nothing automatically.</Notice>
     {query.isError && <Notice kind="error" title="SERVER PROGRESS UNAVAILABLE">Pull to refresh from Today, then reopen this summary.</Notice>}

@@ -6,6 +6,7 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [confirm, setConfirm] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newConfirm, setNewConfirm] = useState('');
@@ -144,15 +145,26 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
           )}
           <label className="login-field">
               <span>{isClaim ? 'Old password' : 'Password'}</span>
-            <input
-              name="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={isSignup ? 'new-password' : 'current-password'}
-              minLength={isSignup ? 8 : undefined}
-              required
-            />
+            <span className="login-passwrap">
+              <input
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={isSignup ? 'new-password' : 'current-password'}
+                minLength={isSignup ? 8 : undefined}
+                required
+              />
+              <button
+                type="button"
+                className="login-show"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-pressed={showPassword}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </span>
           </label>
           {isClaim && (
             <>
@@ -224,6 +236,7 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
         <p className="login-local">
           {authDriver === 'supabase' ? 'Secure account · shared across subjects' : 'Local account · data stored on this device'}
         </p>
+        <p className="login-trust">Your progress is private and follows your account.</p>
       </div>
     </div>
   );

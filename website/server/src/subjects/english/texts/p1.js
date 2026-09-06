@@ -59,7 +59,7 @@ I was dreadfully frightened, and so giddy that I clung to him with both hands.`,
       focus: 'To what extent do you agree? In your response, you could:\n• consider your own impressions of the stranger\n• evaluate how the writer makes the character terrifying and pitiful\n• support your opinions with references to the text.',
     },
     q5a: 'Write a description of a place that feels threatening, as suggested by this picture or your own idea. Focus on the senses to make the scene vivid for your reader.',
-    q5b: 'Write a story about a young person who meets a stranger in an isolated place. Focus on creating tension from the very first line.',
+    q5b: 'Write the opening of a story about a young person who meets a stranger in an isolated place. Establish a tense atmosphere and a convincing character — you do not need to finish the story.',
     q5Image: {
       file: 'Low tide off the Graveney Marshes - geograph.org.uk - 3300392.jpg',
       alt: 'A wide grey salt marsh at low tide under a heavy sky, cut through by dark winding channels of water.',
@@ -115,7 +115,7 @@ To me, watching from the roadside, the arrival of the Martians seemed like a dre
       alt: 'Low rolling mist drifting across empty open moorland on a grey day, with a single distant track.',
       credit: 'Wikimedia Commons · geograph.org.uk',
     },
-    q5b: 'Write a story about a discovery that changes everything. Focus on building suspense before the discovery is revealed.',
+    q5b: 'Write the opening of a story about a discovery that changes everything. Build suspense through setting and mood before the discovery is revealed — you do not need to finish the story.',
     skillsNote: 'listing, language analysis, structure, evaluation, creative writing',
   },
   {
@@ -166,7 +166,7 @@ This room was chill, because it seldom had a fire; it was silent, because remote
       alt: 'A grand old bedroom with tall windows, heavy dark drapes and an ornate canopied bed in dim afternoon light.',
       credit: 'Wikimedia Commons',
     },
-    q5b: 'Write a story about a child who is shut in a room they have been forbidden to enter. Focus on what they see, hear and feel.',
+    q5b: 'Write the opening of a story about a child who is shut in a room they have been forbidden to enter. Focus on what they see, hear and feel — you do not need to finish the story.',
     skillsNote: 'listing, language analysis, structure, evaluation, creative writing',
   },
   {
@@ -222,7 +222,7 @@ And all the time he lived with us in the inn the captain seemed never to vary fr
       alt: 'A tall sailing ship gliding past chalk sea stacks under a wide coastal sky.',
       credit: 'Wikimedia Commons · geograph.org.uk',
     },
-    q5b: 'Write a story about a secret a child is paid to keep. Focus on the tension between curiosity and fear.',
+    q5b: 'Write the opening of a story about a secret a child is paid to keep. Focus on the tension between curiosity and fear — you do not need to finish the story.',
     skillsNote: 'listing, language analysis, structure, evaluation, creative writing',
   },
   {
@@ -281,7 +281,7 @@ I must have slept again, for I was woken by the creak of the wheels stopping. Th
       alt: 'A narrow tree-lined lane in fading evening light, soft and empty, disappearing into darkness.',
       credit: 'Wikimedia Commons · geograph.org.uk',
     },
-    q5b: 'Write a story that ends with a building appearing "like a crouching beast" out of the darkness.',
+    q5b: 'Write the opening of a story in which a building will appear "like a crouching beast" out of the darkness. Foreshadow its arrival through atmosphere and setting — you do not need to reach the ending.',
     skillsNote: 'listing, language analysis, structure, evaluation, creative writing',
   },
   {
@@ -330,7 +330,7 @@ Unable to endure the aspect of the being I had created, I rushed out of the room
       alt: 'Dark storm clouds boiling over a city skyline with a single bolt of lightning splitting the sky.',
       credit: 'Wikimedia Commons',
     },
-    q5b: 'Write a story about a creator and their creation meeting again, years later. Focus on the emotions of the reunion.',
+    q5b: 'Write the opening of a story about a creator and their creation meeting again, years later. Establish character and mood as the reunion approaches — you do not need to finish the story.',
     skillsNote: 'listing, language analysis, structure, evaluation, creative writing',
   },
 ];

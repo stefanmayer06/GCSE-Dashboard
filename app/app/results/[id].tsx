@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import {
   Button,
+  BackLink,
   DeskHeader,
   Notice,
   ProgressMeter,
@@ -22,6 +23,12 @@ import {
 } from "@/practice/core";
 import { useTheme } from "@/theme";
 import { MathsVisual } from "@/practice/MathsVisual";
+import {
+  formatAnswerValue,
+  listResultLines,
+  rubricLines,
+  trueFalseLines,
+} from "@/review-format";
 
 const rec = (value: unknown): UnknownRecord =>
   value && typeof value === "object" && !Array.isArray(value)
@@ -86,6 +93,7 @@ export default function Results() {
     text(result.raw.paperName) ?? text(result.raw.title) ?? "Session result";
   return (
     <ScrollScreen>
+      <BackLink label="PRACTICE DESK" href="/practice" />
       <DeskHeader title={title} eyebrow="SERVER MARK RECORD" />
       {result.incomplete && (
         <Notice kind="offline" title="SELF-MARKING NEEDED">
@@ -272,10 +280,7 @@ export default function Results() {
                 <MathsVisual stimulus={question.stimulus} colors={colors} accent={tokens.accent} />
                 <Text style={{ color: colors.quiet }}>
                   Your submitted answer:{" "}
-                  {show(answer) ??
-                    (answer == null
-                      ? "(blank)"
-                      : JSON.stringify(answer))}
+                  {answer == null ? "(blank)" : formatAnswerValue(answer)}
                 </Text>
                 {text(question.answerText) && (
                   <Text style={{ color: colors.positive }}>
@@ -292,7 +297,7 @@ export default function Results() {
                         key={i}
                         style={{ color: colors.ink, lineHeight: 21 }}
                       >
-                        {i + 1}. {show(step) ?? JSON.stringify(step)}
+                        {i + 1}. {formatAnswerValue(step)}
                       </Text>
                     ))}
                   </View>
@@ -315,20 +320,55 @@ export default function Results() {
                     Model answer: {model}
                   </Text>
                 )}
-                {Object.keys(rubric).length > 0 && (
-                  <Text selectable style={{ color: colors.quiet }}>
-                    Rubric: {JSON.stringify(rubric, null, 2)}
-                  </Text>
+                {rubricLines(rubric).length > 0 && (
+                  <View style={{ gap: 4 }}>
+                    <Text style={[styles.meta, { color: colors.quiet }]}>
+                      MARKING RUBRIC
+                    </Text>
+                    {rubricLines(rubric).map((line, i) => (
+                      <Text key={i} selectable style={{ color: colors.ink, lineHeight: 21 }}>
+                        • {line}
+                      </Text>
+                    ))}
+                  </View>
                 )}
-                {question.listResult != null && (
-                  <Text selectable style={{ color: colors.ink }}>
-                    {JSON.stringify(question.listResult, null, 2)}
-                  </Text>
+                {listResultLines(question.listResult).length > 0 && (
+                  <View style={{ gap: 4 }}>
+                    <Text style={[styles.meta, { color: colors.quiet }]}>
+                      WHAT THE MARKER FOUND
+                    </Text>
+                    {listResultLines(question.listResult).map((line, i) => (
+                      <Text
+                        key={i}
+                        selectable
+                        style={{
+                          color: line.kind === "matched" ? colors.positive : colors.warning,
+                          lineHeight: 21,
+                        }}
+                      >
+                        {line.kind === "matched" ? "✓ " : "• "}{line.text}
+                      </Text>
+                    ))}
+                  </View>
                 )}
-                {question.tfResult != null && (
-                  <Text selectable style={{ color: colors.ink }}>
-                    {JSON.stringify(question.tfResult, null, 2)}
-                  </Text>
+                {trueFalseLines(question.tfResult).length > 0 && (
+                  <View style={{ gap: 4 }}>
+                    <Text style={[styles.meta, { color: colors.quiet }]}>
+                      STATEMENT BY STATEMENT
+                    </Text>
+                    {trueFalseLines(question.tfResult).map((line, i) => (
+                      <Text
+                        key={i}
+                        selectable
+                        style={{
+                          color: line.correct ? colors.positive : colors.ink,
+                          lineHeight: 21,
+                        }}
+                      >
+                        {line.correct ? "✓ " : "• "}{line.text}
+                      </Text>
+                    ))}
+                  </View>
                 )}
               </View>
             )}

@@ -94,7 +94,7 @@ export default function Results({ userId }) {
                 ? 'Below grade 1 this time — check the targets below and go again. You\u2019ve got this.'
                 : result.nextBoundary
                   ? `Just ${result.nextBoundary.marksToGo} more mark${result.nextBoundary.marksToGo === 1 ? '' : 's'} to reach a grade ${result.nextBoundary.grade}.`
-                  : 'Outstanding — right at the top of the boundaries. 🏆'}
+                  : 'Outstanding — right at the top of the boundaries.'}
           </div>
         </div>
         <div className="actions-col">
@@ -181,7 +181,7 @@ export default function Results({ userId }) {
 
       {result.weakTopics.length > 0 && (
         <section className="panel">
-          <h2>Fix these skills first 🎯</h2>
+          <h2>Fix these skills first</h2>
           <p className="sub">Your weakest skills this paper, with free revision resources for each.</p>
           <div className="weak-grid">
             {result.weakTopics.map((t) => (
@@ -191,10 +191,10 @@ export default function Results({ userId }) {
                   <span className="weak-pct">{t.percent}%</span>
                 </div>
                 <div className="weak-links">
-                  <Link to={t.internal} className="weak-link internal">📚 Lesson & practice (in app)</Link>
+                  <Link to={t.internal} className="weak-link internal">Lesson & practice (in app)</Link>
                   {t.resources.map((res) => (
                     <a key={res.label} href={res.url} target="_blank" rel="noreferrer" className="weak-link">
-                      🔗 {res.label} — {res.why}
+                      {res.label} — {res.why}
                     </a>
                   ))}
                 </div>

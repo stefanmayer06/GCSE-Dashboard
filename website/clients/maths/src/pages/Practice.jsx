@@ -313,7 +313,7 @@ export default function Practice({ onProgress, userId }) {
                 <div className="paper-top">
                   <span className="paper-type">{p.code}</span>
                   <span className={`calc-badge ${p.calculator ? 'yes' : 'no'}`}>
-                    {p.calculator ? '🧮 Calculator' : '🚫 No calculator'}
+                    {p.calculator ? 'Calculator' : 'No calculator'}
                   </span>
                 </div>
                 <div className="paper-desc">{p.blurb}</div>
@@ -346,24 +346,26 @@ export default function Practice({ onProgress, userId }) {
         )}
       </section>
 
-       <AdhocSection higherTier={higherTier} onProgress={onProgress} diagnostic={params.get('diagnostic') === '1'} />
+       <AdhocSection higherTier={higherTier} onProgress={onProgress} diagnostic={params.get('diagnostic') === '1'} fixup={params.get('fixup') === '1'} memri={params.get('memri') === '1'} userId={userId} />
     </div>
   );
 }
 
 /* ---------------- Ad-hoc: mixed questions from any papers ---------------- */
 
-function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
+function AdhocSection({ higherTier = false, onProgress, diagnostic = false, fixup = false, memri = false, userId }) {
   const diagnosticStarted = useRef(false);
+  const fixupStarted = useRef(false);
   const [sources, setSources] = useState([1, 2, 3]);
   const [count, setCount] = useState(15);
   const [running, setRunning] = useState(null);
+  const [fixupMeta, setFixupMeta] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  async function startAdhoc(countOverride) {
+  async function startAdhoc(countOverride, topicIds) {
     setBusy(true);
     try {
-      const set = await api.adhoc(typeof countOverride === 'number' ? countOverride : count, sources);
+      const set = await api.adhoc(typeof countOverride === 'number' ? countOverride : count, sources, topicIds);
       setRunning(set);
     } finally {
       setBusy(false);
@@ -378,6 +380,21 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
     startAdhoc(10);
   }, [diagnostic]);
 
+  // Fix-Up 5 / memory-check entry: a stored payload names the weak topics.
+  useEffect(() => {
+    if ((!fixup && !memri) || fixupStarted.current) return;
+    fixupStarted.current = true;
+    const subject = higherTier ? 'maths-higher' : 'maths';
+    let payload = null;
+    try {
+      payload = JSON.parse(localStorage.getItem(`gcse-fixup:${subject}`) || 'null');
+    } catch {}
+    try { localStorage.removeItem(`gcse-fixup:${subject}`); } catch {}
+    setCount(5);
+    setFixupMeta(payload?.mode === 'memri' ? { touchIds: payload?.touchIds || [] } : null);
+    startAdhoc(5, payload?.topicIds || []);
+  }, [fixup, memri, higherTier]);
+
   function toggleSource(id) {
     setSources((s) => {
       if (s.includes(id)) {
@@ -389,17 +406,20 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
   }
 
   if (running) {
-    return <AdhocRunner key={running.roundId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} diagnostic={diagnostic} />;
+    return <AdhocRunner key={running.roundId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} diagnostic={diagnostic} fixupMeta={fixupMeta} userId={userId} higherTier={higherTier} />;
   }
+
+  const fixupActive = fixup || memri;
 
   return (
     <section className="panel" id="adhoc">
       <div className="quiz-head">
         <div>
-          <h2>🎲 Ad-hoc questions</h2>
+          <h2>{fixupActive ? 'Fix-Up round' : 'Ad-hoc questions'}</h2>
           <p className="sub">
-             A quick mixed bag drawn from any combination of the three {higherTier ? 'Higher' : 'Foundation'} papers — great for keeping
-            every topic sharp between full mocks.
+            {fixupActive
+              ? 'Five questions drawn from your due mistakes and weakest topics — grade every retry honestly.'
+              : `A quick mixed bag drawn from any combination of the three ${higherTier ? 'Higher' : 'Foundation'} papers — great for keeping every topic sharp between full mocks.`}
           </p>
         </div>
       </div>
@@ -440,7 +460,7 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false }) {
   );
 }
 
-function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false }) {
+function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false, fixupMeta = null, userId = null, higherTier = false }) {
   const [answers, setAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
   const [done, setDone] = useState(null);
@@ -468,6 +488,20 @@ function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false }) {
       if (diagnostic) {
         api.track?.('diagnostic_complete', { correctMarks: res.correctMarks, totalMarks: res.totalMarks });
       }
+      if (set.targeted) {
+        api.track?.('fixup_complete', { correctMarks: res.correctMarks, totalMarks: res.totalMarks, memri: Boolean(fixupMeta?.touchIds?.length) });
+      }
+      if (fixupMeta?.touchIds?.length) {
+        // Memory check evidence: proving faded mastery refreshes the stamp.
+        try {
+          const subject = higherTier ? 'maths-higher' : 'maths';
+          const { hydratePersonal, touchMistakeRows } = await import('../../../shared/study-personal.js');
+          const personal = await hydratePersonal(api, userId, subject);
+          await api.saveMistakes(touchMistakeRows(personal.mistakes ?? [], fixupMeta.touchIds));
+          invalidateResources('personal:');
+          api.track?.('memri_complete', { count: fixupMeta.touchIds.length });
+        } catch {}
+      }
       setFeedback((f) => {
         const out = { ...f };
         for (const row of res.perQ) {
@@ -489,7 +523,7 @@ function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false }) {
     <section className="panel">
       <div className="quiz-head">
         <div>
-          <h2>🎲 Ad-hoc round</h2>
+          <h2>Ad-hoc round</h2>
           <p className="sub">Mixed from {set.papersIncluded.join(' + ')} · {set.questions.length} questions</p>
         </div>
         <button className="btn" onClick={onExit}>Back to setup</button>
@@ -503,7 +537,7 @@ function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false }) {
                 <span>Q{i + 1}</span>
                 <span>{q.marks} mark{q.marks > 1 ? 's' : ''}</span>
                 <span>{q.topic}</span>
-                {q.stretch && !q.exceptional && <span className="q-tag stretch">⚡ Stretch</span>}
+                {q.stretch && !q.exceptional && <span className="q-tag stretch">Stretch</span>}
                 {q.exceptional && <span className="q-tag stretch">Synoptic challenge</span>}
               </div>
               <div className="quiz-q-text">{q.text.split('\n').map((l, j) => <p key={j}>{l}</p>)}</div>
@@ -610,6 +644,24 @@ function TestScreen(props) {
   const behind = answeredMarks < paceTargetMarks - 0.5;
   const unanswered = test.questions.length - marksAnswered;
 
+  // v3: arrow-key question navigation (skipped while typing or when a dialog is open).
+  useEffect(() => {
+    if (confirmOpen || quitOpen) return undefined;
+    function onArrows(event) {
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        onGo(current + 1);
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        onGo(current - 1);
+      }
+    }
+    document.addEventListener('keydown', onArrows);
+    return () => document.removeEventListener('keydown', onArrows);
+  }, [confirmOpen, quitOpen, current, onGo]);
+
   useEffect(() => {
     const dialog = confirmOpen ? submitDialogRef.current : quitOpen ? quitDialogRef.current : null;
     if (!dialog) return undefined;
@@ -649,7 +701,7 @@ function TestScreen(props) {
         <div className="exam-title">
           <span className="exam-paper">{test.paperCode} · {test.paperName}</span>
           <span className={`calc-badge ${test.calculator ? 'yes' : 'no'}`}>
-            {test.calculator ? '🧮 Calculator allowed' : '🚫 Non-calculator — no calculator!'}
+            {test.calculator ? 'Calculator allowed' : 'Non-calculator'}
           </span>
         </div>
         <div className="exam-timers">
@@ -694,14 +746,14 @@ function TestScreen(props) {
               >
                 <span className="q-num">{i + 1}</span>
                 <span className="q-marks">{x.marks}m</span>
-                {x.stretch && <span className="q-stretch">⚡</span>}
+                {x.stretch && <span className="q-stretch" aria-hidden="true">★</span>}
               </button>
             );
           })}
           <div className="q-nav-legend">
             <span><i className="dot done" /> answered</span>
             <span><i className="dot" /> to do</span>
-            <span>⚡ stretch</span>
+            <span>★ stretch</span>
           </div>
         </aside>
 
@@ -711,7 +763,7 @@ function TestScreen(props) {
               <span className="q-tag">Q{current + 1}</span>
               <span className="q-tag marks">{q.marks} mark{q.marks > 1 ? 's' : ''}</span>
               <span className="q-tag topic">{q.topic}</span>
-              {q.stretch && !q.exceptional && <span className="q-tag stretch">⚡ Stretch</span>}
+              {q.stretch && !q.exceptional && <span className="q-tag stretch">Stretch</span>}
               {q.exceptional && <span className="q-tag stretch">Synoptic challenge</span>}
             </div>
             <div className="q-text">{q.text.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>
@@ -746,13 +798,14 @@ function TestScreen(props) {
 
           <div className="q-actions">
             <button className="btn" disabled={current === 0} onClick={() => onGo(current - 1)}>← Previous</button>
-            <span className="q-pos">{current + 1} of {test.questions.length}</span>
+            <span className="q-pos">Question {current + 1} of {test.questions.length} · {answeredMarks}/{test.totalMarks} marks banked · autosaved</span>
             {current < test.questions.length - 1 ? (
               <button className="btn btn-primary" onClick={() => onGo(current + 1)}>Next →</button>
             ) : (
               <button className="btn btn-finish" disabled={busy} onClick={() => onSubmit(false)}>Finish & submit ✓</button>
             )}
           </div>
+          <p className="autosave-note" aria-hidden="true">Tip: use ← → keys to move between questions.</p>
         </div>
       </div>
 

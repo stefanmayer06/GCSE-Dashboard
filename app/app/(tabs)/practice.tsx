@@ -1,17 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, LayoutAnimation, Platform, Pressable, StyleSheet, Text, UIManager, View } from 'react-native';
 import { ApiClient } from '@/api';
-import { Button, DeskHeader, Notice, OfflineBanner, ScrollScreen, SectionHeader } from '@/components';
+import { Button, DeskHeader, Notice, OfflineBanner, PressableRow, ScrollScreen, SectionHeader, SubjectStrip } from '@/components';
 import { useAuth, useNetwork, usePreferences } from '@/providers';
-import { activeId, draftId, finite, parseDraft, parsePapers, parseTopics, persistNewSession, sessionFromResponse, text, type PracticeKind, type UnknownRecord } from '@/practice/core';
+import { activeId, draftId, finite, parseDraft, parsePapers, parseResult, parseTopics, persistNewSession, readCachedResult, resultKeyPrefix, sessionFromResponse, text, type PracticeKind, type UnknownRecord } from '@/practice/core';
 import { useTheme } from '@/theme';
 import { queryKeys } from '@/query-cache';
 
 const label = (item: UnknownRecord) => text(item.name) ?? text(item.title) ?? text(item.blurb) ?? text(item.id) ?? 'Untitled';
-type Selection = { kind: PracticeKind; title: string; paper?: number; type?: string; topicId?: string; count?: number; sources?: string[] };
+type Selection = { kind: PracticeKind; title: string; paper?: number; type?: string; topicId?: string; count?: number; sources?: string[]; targets?: string[]; touch?: string[]; mode?: 'fixup' | 'memri' };
+const Q5_FIRST_KEY = 'english:q5-first';
 
 if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true);
 
@@ -31,7 +32,7 @@ export default function PracticeHome() {
   const { online } = useNetwork();
   const { colors, subject: tokens } = useTheme();
   const router = useRouter();
-  const params = useLocalSearchParams<{ diagnostic?: string; topicId?: string }>();
+  const params = useLocalSearchParams<{ diagnostic?: string; topicId?: string; fixup?: string; memri?: string; targets?: string; touch?: string }>();
   const api = new ApiClient(subject);
   const papers = useQuery({ queryKey: queryKeys.papers(subject), queryFn: () => api.papers(), staleTime: 10 * 60_000 });
   const topics = useQuery({ queryKey: queryKeys.topics(subject), queryFn: () => api.topics() as Promise<unknown>, staleTime: 10 * 60_000 });
@@ -41,6 +42,52 @@ export default function PracticeHome() {
   const [recoveryError, setRecoveryError] = useState('');
   const [recoverySession, setRecoverySession] = useState('');
   const [selected, setSelected] = useState<Selection | null>(null);
+  const [recent, setRecent] = useState<{ id: string; title: string; detail: string }[]>([]);
+  const [q5First, setQ5First] = useState(false);
+  useEffect(() => { void AsyncStorage.getItem(Q5_FIRST_KEY).then(value => { if (value === '1') setQ5First(true); }).catch(() => undefined); }, []);
+  const toggleQ5First = () => { setQ5First(previous => { const next = !previous; void AsyncStorage.setItem(Q5_FIRST_KEY, next ? '1' : '0').catch(() => undefined); return next; }); };
+  // Recent mark records live only in the on-device result cache, so refresh
+  // them whenever the desk regains focus (e.g. returning from a results page).
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    const prefix = resultKeyPrefix(session?.user.id, subject);
+    void AsyncStorage.getAllKeys().then(async (keys) => {
+      const matches = keys.filter((key) => key.startsWith(prefix)).slice(-20);
+      if (!matches.length) { if (active) setRecent([]); return; }
+      const pairs = await AsyncStorage.multiGet(matches);
+      if (!active) return;
+      const rows: { id: string; title: string; detail: string; at: string }[] = [];
+      for (const [key, value] of pairs) {
+        if (!value) continue;
+        try {
+          const raw = JSON.parse(value) as { title?: unknown; savedAt?: unknown };
+          const cached = readCachedResult(raw);
+          const parsed = parseResult(cached.serverResult);
+          const outcome = parsed.raw as UnknownRecord;
+          const title =
+            text(outcome.paperName) ?? text(outcome.title) ??
+            text(raw.title) ?? "Session result";
+          const score =
+            parsed.percent != null
+              ? `${parsed.percent}%`
+              : parsed.correctMarks != null
+                ? `${parsed.correctMarks}${parsed.totalMarks != null ? `/${parsed.totalMarks}` : ""} marks`
+                : "Marked";
+          const when = text(raw.savedAt);
+          const date = when ? new Date(when) : undefined;
+          rows.push({
+            id: key.slice(prefix.length),
+            title,
+            detail: `${score}${date && !Number.isNaN(date.getTime()) ? ` · ${date.toLocaleDateString()}` : ""}`,
+            at: when ?? "",
+          });
+        } catch { /* A damaged cache row hides instead of breaking the desk. */ }
+      }
+      rows.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+      setRecent(rows.slice(0, 5).map(({ id, title, detail }) => ({ id, title, detail })));
+    }).catch(() => { if (active) setRecent([]); });
+    return () => { active = false; };
+  }, [session?.user.id, subject]));
   const choose=(next:Selection|null)=>{LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);setError('');setSelected(next)};
   useEffect(() => {
     let mounted = true;
@@ -68,9 +115,19 @@ export default function PracticeHome() {
         ? await api.newTest(selected.type ?? 'full', selected.paper ?? 1)
         : selected.kind === 'practice'
           ? await api.practice(selected.topicId!, selected.count)
-          : await api.adhoc(selected.count ?? (subject === 'english' ? 10 : 15), selected.sources ?? (subject === 'english' ? ['listing', 'truefalse', 'analysis'] : ['1', '2', '3']));
+          : await api.adhoc(selected.count ?? (subject === 'english' ? 10 : 15), selected.sources ?? (subject === 'english' ? ['listing', 'truefalse', 'analysis'] : ['1', '2', '3']), selected.targets);
       const local = sessionFromResponse(subject, selected.kind, response, selected.title, selected.topicId);
+      // Q5-first mode (English papers): the 40-mark writing task opens while
+      // fresh. Display-only — every answer is still marked by question id.
+      if (selected.kind === 'paper' && subject === 'english' && q5First) {
+        const essays = local.questions.filter(q => String((q as UnknownRecord).type) === 'essay');
+        const rest = local.questions.filter(q => String((q as UnknownRecord).type) !== 'essay');
+        if (essays.length && rest.length) local.questions = [...essays, ...rest];
+      }
       await persistNewSession(AsyncStorage, session?.user.id, local);
+      if ((selected.mode === 'fixup' || selected.mode === 'memri') && (selected.touch?.length || selected.mode === 'fixup')) {
+        await AsyncStorage.setItem(`fixup:${local.id}`, JSON.stringify({ mode: selected.mode, touch: selected.touch ?? [] }));
+      }
       setActiveSession(local.id);
       router.push({ pathname: '/practice/[id]', params: { id: local.id } });
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not start this session.'); }
@@ -81,16 +138,31 @@ export default function PracticeHome() {
   const topicList = parseTopics(topics.data);
   // Route parameters intentionally initialize the preparation panel.
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(()=>{const available=parseTopics(topics.data);const topic=available.find(item=>text(item.id)===params.topicId);if(params.diagnostic==='1')setSelected({kind:'adhoc',count:10,sources:subject==='english'?['listing','truefalse','analysis']:['1','2','3'],title:'Diagnostic mixed check'});else if(params.topicId&&topic)setSelected({kind:'practice',topicId:params.topicId,count:subject==='english'?3:8,title:label(topic)});},[params.diagnostic,params.topicId,subject,topics.data]);
+  useEffect(()=>{const available=parseTopics(topics.data);const topic=available.find(item=>text(item.id)===params.topicId);const targets=typeof params.targets==='string'&&params.targets?params.targets.split(',').map(s=>s.trim()).filter(Boolean):[];const touch=typeof params.touch==='string'&&params.touch?params.touch.split(',').map(s=>s.trim()).filter(Boolean):[];if(params.diagnostic==='1')setSelected({kind:'adhoc',count:10,sources:subject==='english'?['listing','truefalse','analysis']:['1','2','3'],title:'Diagnostic mixed check'});else if(params.fixup==='1'||params.memri==='1'){const mode=params.memri==='1'?'memri':'fixup';setSelected({kind:'adhoc',count:5,sources:subject==='english'?['listing','truefalse','analysis']:['1','2','3'],targets,touch,mode,title:mode==='memri'?'Memory check':'Fix-Up 5'});}else if(params.topicId&&topic)setSelected({kind:'practice',topicId:params.topicId,count:subject==='english'?3:8,title:label(topic)});},[params.diagnostic,params.topicId,params.fixup,params.memri,params.targets,params.touch,subject,topics.data]);
   return <ScrollScreen contentContainerStyle={styles.content}>
     <DeskHeader title="Practice desk" eyebrow="PAPERS AND TARGETED ROUNDS" />
+    <SubjectStrip spec={subject === 'english' ? 'AQA 8700 · no tiers' : subject === 'maths-higher' ? 'AQA 8300H · Higher, grades 4–9' : 'AQA 8300 · Foundation, grades 1–5'} />
     <OfflineBanner />
     {activeSession && <Notice title="SAVED SESSION">A draft for this subject is stored on this device.</Notice>}
     {activeSession && <Button variant="secondary" onPress={() => router.push({ pathname: '/practice/[id]', params: { id: activeSession } })}>Resume saved session</Button>}
     {recoveryError && <Notice kind="error" title="SAVED DRAFT UNUSABLE">{recoveryError}</Notice>}
     {recoveryError && <Button variant="secondary" onPress={async () => { await AsyncStorage.multiRemove([activeId(session?.user.id, subject), ...(recoverySession ? [draftId(session?.user.id, subject, recoverySession)] : [])]); setActiveSession(''); setRecoverySession(''); setRecoveryError(''); }}>Remove unusable draft</Button>}
     <Text style={[styles.intro, { color: colors.quiet }]}>Choose a real paper structure, a shorter paper, or a focused round. Questions and marks come from the server.</Text>
+    {recent.length > 0 && (
+      <View>
+        <SectionHeader title="Recent mark records" meta={`${recent.length} ON THIS DEVICE`} />
+        {recent.map((row) => (
+          <PressableRow key={row.id} title={row.title} detail={row.detail} href={`/results/${row.id}`} />
+        ))}
+      </View>
+    )}
     <SectionHeader title="Exam papers" meta={papers.isFetching ? 'LOADING' : `${paperList.length} AVAILABLE`} />
+    {subject === 'english' && (
+      <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: q5First }} accessibilityLabel="Q5 first: open timed papers on the 40-mark writing task" onPress={toggleQ5First} style={{ borderWidth: 1, borderColor: colors.strong, backgroundColor: q5First ? colors.muted : colors.raised, padding: 14, gap: 4 }}>
+        <Text style={{ fontWeight: '800', color: colors.ink }}>Q5 FIRST · 40 MARKS WHILE FRESH {q5First ? '· ON' : '· OFF'}</Text>
+        <Text style={{ color: colors.quiet }}>Open timed papers on the big writing task, then work back through Q1–Q4. Marking is unaffected.</Text>
+      </Pressable>
+    )}
     {papers.isError && <><Notice kind="error" title="PAPERS UNAVAILABLE">Paper definitions could not be loaded.</Notice><Button variant="secondary" disabled={papers.isFetching} onPress={() => void papers.refetch()}>Retry papers</Button></>}
     {papers.isFetching && <ActivityIndicator color={tokens.accent} accessibilityLabel="Loading paper definitions" />}
     {paperList.map((paper, index) => {

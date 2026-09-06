@@ -169,12 +169,13 @@ test('subject themes share the desk system but keep distinct accents', async ({ 
   await signIn(page);
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
   const maths = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
-  await expect(page.locator('h1')).toHaveCSS('font-family', /Georgia/);
-  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(243, 240, 232)');
+  // V3 Trailhead system: Fraunces display type on shared warm paper.
+  await expect(page.locator('h1')).toHaveCSS('font-family', /Fraunces/);
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(247, 244, 236)');
 
   await page.goto(`${BASE}/english/`, { waitUntil: 'networkidle' });
   const english = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
-  await expect(page.locator('h1')).toHaveCSS('font-family', /Georgia/);
+  await expect(page.locator('h1')).toHaveCSS('font-family', /Fraunces/);
   expect(maths).not.toEqual(english);
 });
 
@@ -624,6 +625,32 @@ test('Maths lesson quick practice completes today in the exam plan', async ({ pa
   await expect(page.locator('.week-plan .done')).toContainText('Fractions');
   await expect(page.locator('.mission-card')).toContainText('Fractions done');
   await expect(page.locator('.plan-note').last()).toContainText('1/7 days done this week');
+});
+
+test('saving exam preferences refreshes personal data without an error', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  const input = page.locator('.plan-card input[aria-label="Exam date"]');
+  await expect(input).toBeVisible();
+
+  // State-independent: pick a date different from the saved one so the
+  // controlled input actually changes and issues the PUT. Filling the
+  // already-saved value fires no React change event (by design — no save
+  // needed), which would leave both response waiters hanging.
+  const current = await input.inputValue();
+  const nextDate = current === '2099-05-14' ? '2099-05-15' : '2099-05-14';
+  const saveResponse = page.waitForResponse((response) => (
+    response.url().endsWith('/api/maths/personal/preferences')
+    && response.request().method() === 'PUT'
+  ));
+  const refreshResponse = page.waitForResponse((response) => (
+    response.url().endsWith('/api/maths/personal')
+    && response.request().method() === 'GET'
+  ));
+  await input.fill(nextDate);
+  expect((await saveResponse).ok()).toBeTruthy();
+  expect((await refreshResponse).ok()).toBeTruthy();
+  await expect(page.locator('.plan-note.error')).toHaveCount(0);
 });
 
 test('English offline lesson completion earns the same first-completion reward', async ({ page }) => {

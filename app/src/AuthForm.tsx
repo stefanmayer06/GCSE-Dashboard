@@ -47,6 +47,7 @@ export function AuthForm({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [recoveryReady, setRecoveryReady] = useState(mode !== "recover");
   const titles = {
     signin: "Sign in",
@@ -104,11 +105,58 @@ export function AuthForm({
     recovery?.errorDescription,
   ]);
 
+  const emailValid = (value: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
+  const clearField = (name: string) =>
+    setFieldErrors((current) => {
+      if (!current[name]) return current;
+      const next = { ...current };
+      delete next[name];
+      return next;
+    });
+  const fieldError = (name: string) =>
+    fieldErrors[name] ? (
+      <Text accessibilityLiveRegion="polite" style={{ color: colors.negative, lineHeight: 20 }}>
+        {fieldErrors[name]}
+      </Text>
+    ) : null;
+
+  function validate(): boolean {
+    const problems: Record<string, string> = {};
+    if (mode === "signin" || mode === "signup" || mode === "forgot" || mode === "claim") {
+      if (!email.trim()) problems.email = "Enter your email address.";
+      else if (!emailValid(email)) problems.email = "That email does not look complete — check for a typo.";
+    }
+    if (mode === "signup" || mode === "claim") {
+      if (username.trim().length < 3 || username.trim().length > 32)
+        problems.username = "Usernames need 3–32 characters.";
+    }
+    if (mode === "claim" && !oldPassword)
+      problems.oldPassword = "Enter your current account password.";
+    if (mode !== "forgot") {
+      const min = mode === "signin" ? 1 : 8;
+      if (!password) problems.password = "Enter your password.";
+      else if (password.length < min)
+        problems.password =
+          mode === "signin"
+            ? "Enter your password."
+            : "Use at least 8 characters for a new password.";
+    }
+    setFieldErrors(problems);
+    if (Object.keys(problems).length) {
+      setError("Check the highlighted fields below before continuing.");
+      return false;
+    }
+    return true;
+  }
+
   async function submit() {
     setBusy(true);
     setError("");
     setMessage("");
     try {
+      if (!validate()) return;
       if (!supabase)
         throw new Error("Supabase environment variables are not configured.");
       if (mode === "signin") {
@@ -173,40 +221,66 @@ export function AuthForm({
         </Notice>
       )}
       {(mode === "signin" || mode === "signup" || mode === "forgot") && (
-        <Field
-          label="Email"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
+        <>
+          <Field
+            label="Email"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+            value={email}
+            onChangeText={(value) => {
+              setEmail(value);
+              clearField("email");
+            }}
+          />
+          {fieldError("email")}
+        </>
       )}
       {(mode === "signup" || mode === "claim") && (
-        <Field
-          label="Username"
-          autoCapitalize="none"
-          value={username}
-          onChangeText={setUsername}
-        />
+        <>
+          <Field
+            label="Username"
+            autoCapitalize="none"
+            value={username}
+            onChangeText={(value) => {
+              setUsername(value);
+              clearField("username");
+            }}
+          />
+          {fieldError("username")}
+        </>
       )}
       {mode === "claim" && (
-        <Field
-          label="Current password"
-          secureTextEntry
-          value={oldPassword}
-          onChangeText={setOldPassword}
-        />
+        <>
+          <Field
+            label="Current password"
+            secureTextEntry
+            value={oldPassword}
+            onChangeText={(value) => {
+              setOldPassword(value);
+              clearField("oldPassword");
+            }}
+          />
+          {fieldError("oldPassword")}
+        </>
       )}
       {(mode === "signin" ||
         mode === "signup" ||
         mode === "recover" ||
         mode === "claim") && (
-        <Field
-          label={mode === "recover" ? "New password" : "Password"}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <>
+          <Field
+            label={mode === "recover" ? "New password" : "Password"}
+            secureTextEntry
+            autoComplete={mode === "recover" ? "new-password" : "current-password"}
+            value={password}
+            onChangeText={(value) => {
+              setPassword(value);
+              clearField("password");
+            }}
+          />
+          {fieldError("password")}
+        </>
       )}
       {error && (
         <Notice kind="error" title="NOT COMPLETED">
@@ -246,6 +320,14 @@ export function AuthForm({
           style={{ color: colors.info, fontWeight: "700" }}
         >
           Forgot password?
+        </Link>
+      )}
+      {mode === "signin" && (
+        <Link
+          href="/auth/claim"
+          style={{ color: colors.info, fontWeight: "700" }}
+        >
+          Move an old username account to email sign-in
         </Link>
       )}
     </ScrollScreen>

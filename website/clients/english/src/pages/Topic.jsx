@@ -34,6 +34,19 @@ export default function Topic({ onProgress, userId }) {
     setCelebration(null);
   }, [topicId]);
 
+  // v3 continue-strip: remember the last skill per subject.
+  useEffect(() => {
+    try {
+      if (topicId) {
+        const name = topic?.name || topic?.title || topicId;
+        localStorage.setItem(
+          'gcse-continue:english',
+          JSON.stringify({ href: `/learn/${topicId}`, label: String(name), detail: 'Skill lesson', at: Date.now() }),
+        );
+      }
+    } catch {}
+  }, [topicId, topic?.name, topic?.title]);
+
   async function startQuiz() {
     setBusy(true);
     setQuizError('');
@@ -207,7 +220,7 @@ export default function Topic({ onProgress, userId }) {
         <div className="res-grid">
           {topic.resources.map((res) => (
             <a key={res.label} className="res-card" href={res.url} target="_blank" rel="noreferrer">
-              <div className="res-name">🔗 {res.label}</div>
+              <div className="res-name">{res.label}</div>
               <div className="res-why">{res.why}</div>
             </a>
           ))}

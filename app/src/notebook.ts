@@ -1,6 +1,6 @@
 import type { Subject } from './theme';
 
-export type MistakeRow = { id: string; sessionId?: string; subject: Subject; qid: string; topicId?: string; topicName: string; prompt: string; answer?: unknown; capturedAt: string; dueDates: string[]; reviewIndex: number; mastered: boolean; errorType?: string; correctAnswer?: string; workedSolution?: string[]; warmupCount?: number; lastReviewedAt?: string };
+export type MistakeRow = { id: string; sessionId?: string; subject: Subject; qid: string; topicId?: string; topicName: string; prompt: string; answer?: unknown; capturedAt: string; dueDates: string[]; reviewIndex: number; mastered: boolean; errorType?: string; correctAnswer?: string; workedSolution?: string[]; warmupCount?: number; lastReviewedAt?: string; ease?: number; lastGrade?: string; correction?: string; resurrectedCount?: number };
 
 export const ERROR_TYPES = [
   { id: 'knowledge', label: 'Didn\u2019t know it' },
@@ -13,6 +13,17 @@ export const ERROR_TYPES = [
 
 export const ERROR_TYPE_IDS: string[] = ERROR_TYPES.map(type => type.id);
 export function errorTypeLabel(id: string | undefined) { return ERROR_TYPES.find(type => type.id === id)?.label ?? null; }
+
+export const GRADES = [
+  { id: 'again', label: 'AGAIN' },
+  { id: 'hard', label: 'HARD' },
+  { id: 'good', label: 'GOOD' },
+  { id: 'easy', label: 'EASY' },
+] as const;
+export const GRADE_IDS: string[] = GRADES.map(grade => grade.id);
+
+const DAY_MS = 86_400_000;
+const clampEase = (ease: unknown) => { const value = typeof ease === 'number' && Number.isFinite(ease) ? ease : 2.5; return Math.max(1.3, Math.min(3.0, value)); };
 
 const rec = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const text = (value: unknown) => typeof value === 'string' && value.trim() ? value.trim() : undefined;
@@ -43,12 +54,71 @@ export function mergeMistakes(existing: MistakeRow[], incoming: MistakeRow[]) {
   const byId = new Map(rows.map(row => [row.id, { ...row, reviewIndex: Number.isInteger(row.reviewIndex) ? row.reviewIndex : 0, mastered: row.mastered === true }]));
   incoming.forEach(row => {
     const prior = byId.get(row.id);
-    byId.set(row.id, prior ? { ...row, capturedAt: prior.capturedAt, dueDates: prior.dueDates.length ? prior.dueDates : row.dueDates, reviewIndex: prior.reviewIndex, mastered: prior.mastered, ...(prior.errorType ? { errorType: prior.errorType } : {}), ...(prior.warmupCount ? { warmupCount: prior.warmupCount } : {}), ...(prior.lastReviewedAt ? { lastReviewedAt: prior.lastReviewedAt } : {}) } : row);
+    byId.set(row.id, prior ? { ...row, capturedAt: prior.capturedAt, dueDates: prior.dueDates.length ? prior.dueDates : row.dueDates, reviewIndex: prior.reviewIndex, mastered: prior.mastered, ...(prior.errorType ? { errorType: prior.errorType } : {}), ...(prior.warmupCount ? { warmupCount: prior.warmupCount } : {}), ...(prior.lastReviewedAt ? { lastReviewedAt: prior.lastReviewedAt } : {}), ...(Number.isFinite(prior.ease) ? { ease: prior.ease } : {}), ...(prior.lastGrade ? { lastGrade: prior.lastGrade } : {}), ...(prior.correction ? { correction: prior.correction } : {}), ...(prior.resurrectedCount ? { resurrectedCount: prior.resurrectedCount } : {}) } : row);
   });
   return [...byId.values()].sort((a, b) => b.capturedAt.localeCompare(a.capturedAt));
 }
 export function dueMistakes(rows: MistakeRow[], now = new Date()) { const stamp = now.getTime(); return rows.filter(row => { if (row.mastered) return false; const index=Number.isInteger(row.reviewIndex)?row.reviewIndex:0; return index < row.dueDates.length && Date.parse(row.dueDates[index]) <= stamp; }); }
 export function advanceMistake(rows: MistakeRow[], id: string, now = new Date()) { return rows.map(row => { if (row.id !== id) return row; const index = Math.min((Number.isInteger(row.reviewIndex)?row.reviewIndex:0) + 1, row.dueDates.length || 4); return { ...row, reviewIndex: index, lastReviewedAt: now.toISOString(), mastered: index >= (row.dueDates.length || 4) }; }); }
+
+// FSRS-lite recall grading: Again holds the card for tomorrow, Hard shortens
+// the step, Good keeps the ladder, Easy stretches by the card's ease factor.
+export function gradeMistake(rows: MistakeRow[], id: string, grade: string, now = new Date()): MistakeRow[] {
+  if (!GRADE_IDS.includes(grade)) return rows;
+  const at = now.toISOString();
+  return rows.map(row => {
+    if (row.id !== id) return row;
+    const ease = clampEase(row.ease);
+    const reviewIndex = Number.isInteger(row.reviewIndex) ? row.reviewIndex : 0;
+    if (grade === 'again') {
+      const dueDates = [...row.dueDates];
+      dueDates[reviewIndex] = new Date(now.getTime() + DAY_MS).toISOString();
+      return { ...row, dueDates, ease: Math.max(1.3, +(ease - 0.2).toFixed(2)), lastGrade: 'again', lastReviewedAt: at };
+    }
+    const nextIndex = Math.min(4, reviewIndex + 1);
+    const prev = Date.parse(row.lastReviewedAt || row.capturedAt || at);
+    const baseDays = Number.isFinite(prev) ? Math.max(1, Math.round((now.getTime() - prev) / DAY_MS)) : 7;
+    const intervalDays = grade === 'easy'
+      ? Math.min(60, Math.max(2, Math.round(baseDays * ease)))
+      : grade === 'hard'
+        ? Math.max(1, Math.round(baseDays * 0.6))
+        : Math.max(1, baseDays);
+    const dueDates = [...row.dueDates];
+    dueDates[nextIndex] = new Date(now.getTime() + intervalDays * DAY_MS).toISOString();
+    return {
+      ...row, dueDates, reviewIndex: nextIndex,
+      ease: grade === 'hard' ? Math.max(1.3, +(ease - 0.15).toFixed(2)) : grade === 'easy' ? Math.min(3.0, +(ease + 0.15).toFixed(2)) : ease,
+      lastGrade: grade, lastReviewedAt: at, mastered: nextIndex >= 4,
+    };
+  });
+}
+
+// Memory-check evidence: proving faded mastery refreshes the stamp without
+// reopening the ladder.
+export function touchMistakes(rows: MistakeRow[], ids: string[], now = new Date()): MistakeRow[] {
+  const set = new Set(ids);
+  const at = now.toISOString();
+  return rows.map(row => set.has(row.id) ? { ...row, lastReviewedAt: at, resurrectedCount: Math.min(99, (row.resurrectedCount ?? 0) + 1) } : row);
+}
+
+// Mastered rows whose proof faded (default 30 days) are due a memory check.
+export function memriDue(rows: MistakeRow[], now = new Date(), olderThanDays = 30): MistakeRow[] {
+  const cutoff = now.getTime() - olderThanDays * DAY_MS;
+  return rows.filter(row => {
+    if (!row.mastered) return false;
+    const at = Date.parse(row.lastReviewedAt || row.capturedAt || '');
+    return Number.isFinite(at) && at <= cutoff;
+  });
+}
+
+export function saveCorrection(rows: MistakeRow[], id: string, correction: string): MistakeRow[] {
+  const value = typeof correction === 'string' ? correction.trim().slice(0, 500) : '';
+  return rows.map(row => {
+    if (row.id !== id) return row;
+    if (!value) { const next = { ...row }; delete next.correction; return next; }
+    return { ...row, correction: value };
+  });
+}
 
 // Learner classification of a mistake; unknown reasons are ignored, never guessed.
 export function classifyMistake(rows: MistakeRow[], id: string, errorType: string) { if (!ERROR_TYPE_IDS.includes(errorType)) return rows; return rows.map(row => row.id === id ? { ...row, errorType } : row); }
@@ -80,6 +150,10 @@ export function parseMistakeRows(value: string | null, subject: Subject): Mistak
         ...(ERROR_TYPE_IDS.includes(String(row.errorType)) ? { errorType: String(row.errorType) } : {}),
         ...(typeof row.warmupCount === 'number' && Number.isFinite(row.warmupCount) ? { warmupCount: Math.max(0, Math.min(99, Math.round(row.warmupCount))) } : {}),
         ...(text(row.lastReviewedAt) ? { lastReviewedAt: text(row.lastReviewedAt)! } : {}),
+        ...(typeof row.ease === 'number' && Number.isFinite(row.ease) ? { ease: Math.max(1.3, Math.min(3.0, row.ease)) } : {}),
+        ...(typeof row.lastGrade === 'string' && GRADE_IDS.includes(row.lastGrade) ? { lastGrade: row.lastGrade } : {}),
+        ...(text(row.correction) ? { correction: text(row.correction)!.slice(0, 500) } : {}),
+        ...(typeof row.resurrectedCount === 'number' && Number.isInteger(row.resurrectedCount) && row.resurrectedCount > 0 ? { resurrectedCount: Math.min(99, row.resurrectedCount) } : {}),
         capturedAt: text(row.capturedAt) ?? new Date().toISOString(),
         dueDates: Array.isArray(row.dueDates) ? row.dueDates.map(String) : [],
         reviewIndex: typeof row.reviewIndex === 'number' && Number.isInteger(row.reviewIndex) ? Math.max(0, Math.min(4, row.reviewIndex)) : 0,

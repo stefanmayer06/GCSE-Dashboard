@@ -112,6 +112,13 @@ body { background-size: 100% 28px; }
   text-transform: uppercase;
 }
 
+/* v3 — migrated from the retired neon bundle + squared per the Ruled
+   Notebook system (web working surfaces are square; pills stay pill). */
+.review.pending { border-left: 3px solid var(--amber); }
+.tf-row,
+.model-answer,
+.marking-note { border-radius: 0; }
+
 :root[data-theme='dark'] .q-image { background: var(--paper-muted); }
 
 @media (max-width: 1100px) {

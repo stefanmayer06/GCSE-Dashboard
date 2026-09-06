@@ -103,9 +103,12 @@ export function parseDraft(value: string | null, subject: Subject, sessionId?: s
   }
 }
 
-export function cacheResult(payload: unknown, answers: Record<string, AnswerValue>) {
-  return { serverResult: payload, submittedAnswers: Object.fromEntries(Object.entries(answers).map(([id, value]) => [id, normalizeAnswer(value)])) };
+export function cacheResult(payload: unknown, answers: Record<string, AnswerValue>, title?: string, now = new Date().toISOString()) {
+  return { serverResult: payload, submittedAnswers: Object.fromEntries(Object.entries(answers).map(([id, value]) => [id, normalizeAnswer(value)])), title, savedAt: now };
 }
+
+export const resultKeyPrefix = (userId: string | undefined, subject: Subject) =>
+  `practice:result:${userId || 'anonymous'}:${subject}:`;
 
 export function readCachedResult(payload: unknown) {
   const cached = record(payload);

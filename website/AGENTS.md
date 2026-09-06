@@ -137,7 +137,10 @@ Features should strengthen that trail, not replace it.
 
 - Every mistake row can carry a learner-chosen `errorType` (`knowledge`, `method`,
   `misread`, `arithmetic`, `timing`, `incomplete`), the `correctAnswer`, a
-  `workedSolution`, warm-up count and `lastReviewedAt` retry evidence. The
+  `workedSolution`, warm-up count and `lastReviewedAt` retry evidence. Retries are
+  graded `again`/`hard`/`good`/`easy` (FSRS-lite: the grade moves the next review
+  via the row `ease` factor), each row can hold a learner-written `correction`,
+  and mastered rows collect `resurrectedCount` memory-check evidence. The
   notebook UI shows the original answer, the marked issue, the corrected method
   and the next review together.
 - Re-capturing a mistake (e.g. reopening an old results page) refreshes the

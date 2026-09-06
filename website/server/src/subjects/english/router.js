@@ -430,7 +430,11 @@ app.post('/adhoc', asyncRoute(async (req, res) => {
   const kinds = Array.isArray(req.body?.kinds) && req.body.kinds.length
     ? req.body.kinds.filter((k) => ['listing', 'truefalse', 'analysis'].includes(k))
     : ['listing', 'truefalse', 'analysis'];
-  const full = buildAdhoc(count, kinds);
+  // Fix-Up sets: optional skill targeting for weak-area repair rounds.
+  const skillIds = Array.isArray(req.body?.skillIds)
+    ? req.body.skillIds.filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim()).slice(0, 20)
+    : [];
+  const full = buildAdhoc(count, kinds, skillIds);
   const sessionId = crypto.randomUUID();
   const created = await defaultStorage.createStudySession({
     ...sessionCriteria(req, sessionId, 'adhoc'),
@@ -439,7 +443,7 @@ app.post('/adhoc', asyncRoute(async (req, res) => {
   if (created.status !== 'created') {
     return res.status(503).json({ error: 'Could not start the round. Please try again.' });
   }
-  res.json({ sessionId, questions: full.map(stripMarkCtx) });
+  res.json({ sessionId, questions: full.map(stripMarkCtx), ...(skillIds.length ? { targeted: true } : {}) });
 }));
 
 app.post('/check', asyncRoute(async (req, res) => {

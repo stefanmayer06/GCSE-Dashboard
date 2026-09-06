@@ -1,8 +1,11 @@
-import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { api } from './api.js';
 import { clearSupabaseSession } from '../../shared/supabase.js';
-import { clearResourceCache } from '../../shared/resource-cache.js';
+import { clearResourceCache, useResource } from '../../shared/resource-cache.js';
+import { flattenTopics } from '../../shared/study.js';
+import { dueMistakeRows, hydratePersonal } from '../../shared/study-personal.js';
+import AppShell from '../../shared/AppShell.jsx';
 import LoginScreen from '../../shared/login.jsx';
 
 // Route pages are code-split: the app shell renders first and each page
@@ -61,9 +64,51 @@ export default function App() {
   const location = useLocation();
   const userId = auth?.id || auth?.username;
 
+  // Shared with Dashboard via resource-cache: no extra network request.
+  const { data: topicCatalog } = useResource(userId ? `topics:english:${userId}` : null, () => api.topics());
+  // Same personal cache as the dashboard: feeds the Notebook due badge.
+  const { data: personal } = useResource(userId ? `personal:${userId}:english` : null, () => hydratePersonal(api, userId, 'english'));
+  const notebookDue = (() => {
+    try {
+      return dueMistakeRows(personal?.mistakes ?? []).length;
+    } catch {
+      return 0;
+    }
+  })();
+
+  const paletteItems = useMemo(() => {
+    const routes = [
+      { href: '/', label: 'Dashboard', group: 'Go', hint: 'command centre' },
+      { href: '/practice', label: 'Exam papers', group: 'Go', hint: 'exam desk' },
+      { href: '/practice?diagnostic=1#adhoc', label: 'Diagnostic · 10 questions', group: 'Go', hint: 'start here' },
+      { href: '/learn', label: 'Learn skills', group: 'Go', hint: 'lessons' },
+      { href: '/texts', label: 'Source texts', group: 'Go', hint: 'library' },
+      { href: '/notebook', label: 'Mistake notebook', group: 'Go', hint: 'retries' },
+      { href: '/summary', label: 'Weekly summary', group: 'Go', hint: 'progress' },
+      { href: '/results', label: 'Latest results', group: 'Go', hint: 'marking' },
+      { href: '/chat', label: 'AI tutor', group: 'Go', hint: 'help' },
+    ];
+    const lessons = flattenTopics(topicCatalog, 'sections')
+      .slice(0, 60)
+      .map((topic) => ({
+        href: `/learn/${topic.id}`,
+        label: topic.name || topic.id,
+        group: 'Skill',
+        hint: topic.section || 'English',
+        keywords: topic.id,
+      }));
+    return [...routes, ...lessons];
+  }, [topicCatalog]);
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('gcse-last-subject', '/english/');
+    } catch {}
+  }, []);
 
   useEffect(() => {
     api.auth
@@ -160,76 +205,33 @@ export default function App() {
   }
 
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <div className="logo">
-          <span className="logo-icon" aria-hidden="true">E</span>
-          <div>
-            <div className="logo-name">EnglishMate</div>
-            <div className="logo-sub">AQA English Language</div>
-          </div>
-        </div>
-        <a className="subject-switch" href="/" aria-label="Return to all subjects">
-          <span aria-hidden="true">←</span><span className="subject-switch-label">All subjects</span>
-        </a>
-        <nav>
-          {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.to === '/'} aria-label={n.label} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <span className="nav-icon" aria-hidden="true">{n.icon}</span>
-              <span className="nav-label">{n.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <div className="sidebar-foot">
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-pressed={theme === 'dark'}
-            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          >
-            <span className="theme-toggle-icon" aria-hidden="true">{theme === 'dark' ? '◑' : '◐'}</span>
-            <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-          </button>
-          <button type="button" className="sign-out" onClick={signOut} aria-label="Sign out">
-            <span className="sign-out-label">Sign out</span>
-            <span className="sign-out-user">&middot; {auth.username}</span>
-          </button>
-          {progress && (
-            <div className="level-card">
-              <div className="level-row">
-                <span>Level {progress.level}</span>
-                <span>🔥 {progress.streak} day{progress.streak === 1 ? '' : 's'}</span>
-              </div>
-              <div className="xp-bar">
-                <div className="xp-fill" style={{ width: `${Math.min(100, (progress.xpInto / progress.xpNeeded) * 100)}%` }} />
-              </div>
-              <div className="xp-note">{progress.xpInto}/{progress.xpNeeded} XP to next level</div>
-            </div>
-          )}
-          {health && (
-            <div className="bank-note">
-              {health.texts} source texts · {health.aiMarking ? 'AI marking on' : 'AI marking off (no key)'}
-            </div>
-          )}
-        </div>
-      </aside>
-      <main className="content">
-        <Suspense fallback={<PageFallback />}>
-          <Routes>
-            <Route path="/" element={<Dashboard health={health} progress={progress} userId={userId} />} />
-            <Route path="/practice" element={<Practice health={health} onProgress={setProgress} userId={userId} />} />
-            <Route path="/results" element={<Results userId={userId} />} />
-            <Route path="/learn" element={<Learn userId={userId} />} />
-            <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} userId={userId} />} />
-            <Route path="/texts" element={<Texts />} />
-            <Route path="/texts/:textId" element={<TextDetail />} />
-            <Route path="/notebook" element={<Notebook userId={userId} subject="english" api={api} />} />
-            <Route path="/summary" element={<WeeklySummary userId={userId} subject="english" progress={progress} api={api} username={auth.username} />} />
-            <Route path="/chat" element={<Chat health={health} userId={userId} />} />
-          </Routes>
-        </Suspense>
-      </main>
-    </div>
+    <AppShell
+      tierClass="english-tier"
+      brand={{ letter: 'E', name: 'EnglishMate', sub: 'AQA English Language' }}
+      nav={NAV}
+      auth={auth}
+      progress={progress}
+      healthNote={health ? `${health.texts} source texts · ${health.aiMarking ? 'AI marking on' : 'AI marking off (no key)'}` : null}
+      theme={theme}
+      onToggleTheme={toggleTheme}
+      onSignOut={signOut}
+      paletteItems={paletteItems}
+      notebookDue={notebookDue}
+    >
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route path="/" element={<Dashboard health={health} progress={progress} userId={userId} />} />
+          <Route path="/practice" element={<Practice health={health} onProgress={setProgress} userId={userId} />} />
+          <Route path="/results" element={<Results userId={userId} />} />
+          <Route path="/learn" element={<Learn userId={userId} />} />
+          <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} userId={userId} />} />
+          <Route path="/texts" element={<Texts />} />
+          <Route path="/texts/:textId" element={<TextDetail />} />
+          <Route path="/notebook" element={<Notebook userId={userId} subject="english" api={api} />} />
+          <Route path="/summary" element={<WeeklySummary userId={userId} subject="english" progress={progress} api={api} username={auth.username} />} />
+          <Route path="/chat" element={<Chat health={health} userId={userId} />} />
+        </Routes>
+      </Suspense>
+    </AppShell>
   );
 }

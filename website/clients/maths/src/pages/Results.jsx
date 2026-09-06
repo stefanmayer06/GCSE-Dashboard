@@ -104,7 +104,7 @@ export default function Results({ userId }) {
               ? 'Below grade 1 this time — head to the topic fixes below and go again. You\u2019ve got this.'
               : result.nextBoundary
                 ? `Just ${result.nextBoundary.marksToGo} more mark${result.nextBoundary.marksToGo === 1 ? '' : 's'} to reach a grade ${result.nextBoundary.grade}.`
-                : isHigherResult ? 'Top of the predicted Higher range on this paper. 🏆' : 'Top of foundation tier — you can\u2019t do better than a 5 on this paper. 🏆'}
+                : isHigherResult ? 'Top of the predicted Higher range on this paper.' : 'Top of foundation tier — you can\u2019t do better than a 5 on this paper.'}
           </div>
         </div>
         <div className="actions-col">
@@ -169,7 +169,7 @@ export default function Results({ userId }) {
           </table>
           <p className="sub small">
              Rounded predicted boundaries for AQA 8300{isHigherResult ? 'H' : 'F'} practice. Real boundaries move each
-            exam series — this is a prediction, not a promise.
+             exam series. Use this estimate to plan your next practice.
           </p>
         </div>
 
@@ -191,7 +191,7 @@ export default function Results({ userId }) {
 
       {result.weakTopics.length > 0 && (
         <section className="panel">
-          <h2>Fix these first 🎯</h2>
+          <h2>Fix these first</h2>
           <p className="sub">Your weakest topics this paper, with free revision resources for each.</p>
           <div className="weak-grid">
             {result.weakTopics.map((t) => (
@@ -201,10 +201,10 @@ export default function Results({ userId }) {
                   <span className="weak-pct">{t.percent}%</span>
                 </div>
                 <div className="weak-links">
-                  <Link to={t.internal} className="weak-link internal">📚 Lesson & practice (in app)</Link>
+                  <Link to={t.internal} className="weak-link internal">Lesson & practice (in app)</Link>
                   {t.resources.map((res) => (
                     <a key={res.label} href={res.url} target="_blank" rel="noreferrer" className="weak-link">
-                      🔗 {res.label} — {res.why}
+                      {res.label} — {res.why}
                     </a>
                   ))}
                 </div>
@@ -220,7 +220,7 @@ export default function Results({ userId }) {
           <div key={q.qid} className={`review ${q.correct ? 'right' : 'wrong'}`}>
             <button className="review-head" onClick={() => setOpen((o) => ({ ...o, [q.qid]: !o[q.qid] }))}>
               <span className="review-status">{q.correct ? '✓' : '✗'}</span>
-              <span className="review-title">Q{q.qn} · {q.topic} · {q.marks} mark{q.marks > 1 ? 's' : ''}{q.stretch ? ' ⚡' : ''}</span>
+              <span className="review-title">Q{q.qn} · {q.topic} · {q.marks} mark{q.marks > 1 ? 's' : ''}{q.stretch ? ' · Stretch' : ''}</span>
               <span className="review-result">
                 {q.correct ? `${q.marks}/${q.marks}` : `0/${q.marks}`}
               </span>

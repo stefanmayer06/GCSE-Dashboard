@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Linking, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Button, DeskHeader, Notice, ScrollScreen, SectionHeader } from '@/components';
+import { BackLink, Button, DeskHeader, Notice, ScrollScreen, SectionHeader } from '@/components';
 import { deleteAccount } from '@/api';
 import { useAuth, usePreferences } from '@/providers';
 import { accountLinks, isDisposableAppStorageKey, type AccountLink } from '@/settings';
@@ -22,15 +22,24 @@ export default function Settings(){
   function confirmSignOut(){Alert.alert('Sign out?','Saved drafts will remain on this device so you can continue them when you sign back in.',[{text:'Stay signed in',style:'cancel'},{text:'Sign out',style:'destructive',onPress:()=>void signOut()}])}
   async function signOut(){if(busy)return;setBusy('signout');setError('');try{if(!supabase)throw new Error('Sign out is unavailable because account services are not configured.');const {error:signOutError}=await supabase.auth.signOut();if(signOutError)throw signOutError;router.replace('/auth/sign-in')}catch(cause){setError(cause instanceof Error?cause.message:'Could not sign out. Check your connection and try again.')}finally{setBusy(null)}}
   async function removeAccount(){if(busy||confirmation.trim().toUpperCase()!=='DELETE')return;setBusy('delete');setError('');try{if(!supabase||!session?.access_token)throw new Error('Your session has expired. Sign in again before deleting your account.');await deleteAccount(session.access_token,'DELETE');const keys=await AsyncStorage.getAllKeys();const disposable=keys.filter(isDisposableAppStorageKey);if(disposable.length)await AsyncStorage.multiRemove(disposable);const {error:signOutError}=await supabase.auth.signOut({scope:'local'});if(signOutError)throw signOutError;setDeleteOpen(false);router.replace('/auth/sign-in')}catch(cause){setError(cause instanceof Error?cause.message:'Account deletion failed. Check your connection and try again.');setDeleteOpen(false)}finally{setBusy(null)}}
-  return <ScrollScreen><DeskHeader title="Profile & settings" eyebrow="YOUR STUDY DESK"/>
+  return <ScrollScreen><BackLink label="BACK" /><DeskHeader title="Profile & settings" eyebrow="YOUR STUDY DESK"/>
     <View style={[styles.identity,{backgroundColor:colors.raised,borderColor:colors.strong,borderLeftColor:tokens.accent}]}><Text style={[styles.meta,{color:colors.quiet}]}>SIGNED IN AS</Text><Text selectable style={[styles.email,{color:colors.ink}]}>{session?.user.email??'Email unavailable'}</Text></View>
     <SectionHeader title="Course" meta="ACTIVE SUBJECT"/>{choice('Active subject',subjects,subject,setSubject)}
     <SectionHeader title="Appearance" meta="ON THIS DEVICE"/>{choice('Appearance',appearances,appearance,setAppearance)}
-    <SectionHeader title="Exam plan" meta="PRIVATE ON THIS DEVICE"/>
+    <SectionHeader title="Exam plan" meta="SAVED TO ACCOUNT"/>
     <Text style={[styles.copy,{color:colors.quiet}]}>These unvalidated planning preferences shape suggestions only. Server marks and progress remain authoritative.</Text>
     <TextInput accessibilityLabel="Exam date in YYYY-MM-DD format" value={planning.examDate} onChangeText={examDate=>setPlanning({...planning,examDate})} placeholder="Exam date: YYYY-MM-DD" placeholderTextColor={colors.quiet} style={[styles.input,{color:colors.ink,borderColor:colors.strong,backgroundColor:colors.raised}]}/>
     <TextInput accessibilityLabel="Target grade" value={planning.targetGrade} onChangeText={targetGrade=>setPlanning({...planning,targetGrade})} placeholder="Target grade" placeholderTextColor={colors.quiet} keyboardType="number-pad" style={[styles.input,{color:colors.ink,borderColor:colors.strong,backgroundColor:colors.raised}]}/>
     {choice('Study mode',['balanced','foundation-pass'] as const,planning.passMode,passMode=>setPlanning({...planning,passMode}))}
+    <Text style={[styles.copy,{color:colors.quiet}]}>Rest days each week (Mon–Sun). Rest days never carry a mission and never count as missed.</Text>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      {['M','T','W','T','F','S','S'].map((label, index) => {
+        const on = (planning.restDays ?? []).includes(index);
+        return <Pressable key={index} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={`Rest on ${['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][index]}`} onPress={() => { const current = planning.restDays ?? []; setPlanning({ ...planning, restDays: on ? current.filter(d => d !== index) : [...current, index].sort((a, b) => a - b) }); }} style={{ minWidth: 48, minHeight: 48, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: on ? tokens.accent : colors.strong, backgroundColor: on ? colors.muted : 'transparent' }}><Text style={{ color: on ? tokens.accent : colors.ink, fontWeight: '800' }}>{label}</Text></Pressable>;
+      })}
+    </View>
+    <Text style={[styles.copy,{color:colors.quiet}]}>Focused minutes per mission day (5–120). Leave blank for the subject default.</Text>
+    <TextInput accessibilityLabel="Minutes per mission day" value={planning.minutesPerDay == null ? '' : String(planning.minutesPerDay)} onChangeText={value => { const parsed = Number.parseInt(value.replace(/[^0-9]/g, ''), 10); setPlanning({ ...planning, minutesPerDay: Number.isFinite(parsed) ? Math.max(5, Math.min(120, parsed)) : null }); }} placeholder="Minutes per day (default)" placeholderTextColor={colors.quiet} keyboardType="number-pad" style={[styles.input,{color:colors.ink,borderColor:colors.strong,backgroundColor:colors.raised}]}/>
     <Button variant="secondary" onPress={()=>router.push('/notebook')}>OPEN MISTAKE NOTEBOOK</Button>
     <Button variant="secondary" onPress={()=>router.push('/weekly-summary')}>OPEN WEEKLY SUMMARY</Button>
     <SectionHeader title="Sync & security"/><Text style={[styles.copy,{color:colors.quiet}]}>Your signed-in session lets the study service keep server progress tied to your account. Draft answers are also saved on this device so interrupted sessions can be resumed. Sign out leaves those drafts in place; deleting your account removes local app drafts after the server confirms deletion.</Text>

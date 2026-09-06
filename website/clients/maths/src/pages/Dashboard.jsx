@@ -5,7 +5,10 @@ import { STRAND_COLORS } from '../colors.js';
 import { useResource } from '../../../shared/resource-cache.js';
 import { ExpertisePath } from '../../../shared/rewards.jsx';
 import { StudyDashboard } from '../../../shared/StudyTools.jsx';
-import { flattenTopics } from '../../../shared/study.js';
+import { flattenTopics, readiness } from '../../../shared/study.js';
+import { dueMistakeRows, hydratePersonal } from '../../../shared/study-personal.js';
+import { computeNextStep, weakTopics } from '../../../shared/next-step.js';
+import { NextStepCard } from '../../../shared/NextStep.jsx';
 
 const STRAND_NAMES_LIST = [
   { id: 'number', name: 'Number' },
@@ -20,8 +23,30 @@ export default function Dashboard({ health, progress, higherTier = false, userId
   const navigate = useNavigate();
   const overall = progress?.overallPercent;
   // Cached per user: returning from Learn/Practice renders instantly.
+  // Shared with the app shell palette + StudyDashboard: one fetch, three readers.
   const subject = higherTier ? 'maths-higher' : 'maths';
   const { data: topics } = useResource(userId ? `topics:${subject}:${userId}` : null, () => api.topics());
+  const { data: personal } = useResource(userId ? `personal:${userId}:${subject}` : null, () => hydratePersonal(api, userId, subject));
+
+  // 2.1 command centre: "What should I study next?" from data on hand.
+  const flatTopics = useMemo(() => flattenTopics(topics, 'strands'), [topics]);
+  const nextStep = useMemo(() => {
+    const mistakes = personal?.mistakes ?? [];
+    let dueCount = 0;
+    try {
+      dueCount = dueMistakeRows(mistakes).length;
+    } catch {}
+    const examDate = personal?.preferences?.examDate;
+    const examDays = examDate ? Math.ceil((new Date(`${examDate}T12:00:00`) - new Date()) / 86400000) : null;
+    const evidence = readiness(progress);
+    return {
+      step: computeNextStep({ topics: flatTopics, progress, personal, dueCount, options: { examDays } }),
+      weak: weakTopics(flatTopics, progress, 3),
+      dueCount,
+      examDays,
+      readinessScore: evidence.ready ? evidence.score : null,
+    };
+  }, [flatTopics, progress, personal]);
 
   const mastery = useMemo(() => {
     if (!topics || !progress) return null;
@@ -87,7 +112,16 @@ export default function Dashboard({ health, progress, higherTier = false, userId
         </div>
       </section>
 
-      <StudyDashboard userId={userId} subject={higherTier ? 'maths-higher' : 'maths'} topics={flattenTopics(topics, 'strands')} progress={progress} diagnosticUrl="/practice?diagnostic=1#adhoc" foundation={!higherTier} api={api} />
+      <NextStepCard
+        step={nextStep.step}
+        weak={nextStep.weak}
+        dueCount={nextStep.dueCount}
+        streak={progress?.streak}
+        readinessScore={nextStep.readinessScore}
+        examDays={nextStep.examDays}
+      />
+
+      <StudyDashboard userId={userId} subject={higherTier ? 'maths-higher' : 'maths'} topics={flatTopics} progress={progress} diagnosticUrl="/practice?diagnostic=1#adhoc" foundation={!higherTier} api={api} />
 
       <ExpertisePath progress={progress} onChooseLesson={() => navigate('/learn')} />
 

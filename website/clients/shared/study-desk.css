@@ -4299,6 +4299,22 @@ body { margin: 0; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 
 /* App shell v3: grouped nav, due badge, footer. */
 .nav-group { display: contents; }
+
+/* The sidebar is its own full-height rail: pinned to the viewport with an
+   independent scroll region, so the desk edge, foot controls and level
+   card stay tight on any screen height instead of stretching (or silently
+   clipping) with the content column. */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  flex-shrink: 0;
+}
 .nav-group-label {
   padding: 14px 10px 4px; color: var(--quiet);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -4407,6 +4423,15 @@ body { margin: 0; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 @media (max-width: 760px) {
   .app { display: block; height: auto; }
   .content { overflow: visible; }
+  /* The rail rule above must not apply to the mobile top bar: it loads
+     later in this file and would otherwise keep the bar at 100dvh,
+     overlaying the viewport and intercepting taps. */
+  .sidebar {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
+  }
   .mobile-palette-btn { display: inline-flex; }
   .logo .mobile-palette-btn { margin-left: 6px; }
   .bank-note, .shell-foot-links { display: none; }

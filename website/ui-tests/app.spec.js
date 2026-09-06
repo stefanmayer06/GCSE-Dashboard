@@ -238,7 +238,7 @@ for (const [subject, route, storageKey] of [
     }, { key: storageKey });
     await page.goto(`${BASE}/${route}/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
     await expect(page.locator('.error-banner')).toContainText('no longer active');
-    await expect(page.locator('h1')).toContainText(/Practice/);
+    await expect(page.locator('h1')).toContainText(/Practice|Put your understanding to work/);
     await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), storageKey)).toBeNull();
     await expect(page).toHaveURL(new RegExp(`/${route}/practice$`));
   });
@@ -315,7 +315,7 @@ test('Maths recovers if a paper expires while it is open', async ({ page }) => {
   await page.getByRole('button', { name: 'Submit paper' }).click();
   await page.getByRole('button', { name: 'Submit', exact: true }).click();
   await expect(page.locator('.error-banner')).toContainText('no longer active');
-  await expect(page.locator('h1')).toContainText('Practice exam');
+  await expect(page.locator('h1')).toContainText('Put your understanding to work');
   await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), scopedKey('maths', 'active-test'))).toBeNull();
 });
 

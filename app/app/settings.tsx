@@ -1,47 +1,527 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Alert, Linking, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Button, DeskHeader, Notice, ScrollScreen, SectionHeader } from '@/components';
-import { deleteAccount } from '@/api';
-import { useAuth, usePreferences } from '@/providers';
-import { accountLinks, isDisposableAppStorageKey, type AccountLink } from '@/settings';
-import { supabase } from '@/supabase';
-import { subjectTokens, useTheme, type Appearance, type Subject } from '@/theme';
+import type { PlanningPreferences } from "@/planning";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import { router } from "expo-router";
+import { useState } from "react";
+import {
+  Alert,
+  Linking,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import {
+  Button,
+  DeskHeader,
+  Notice,
+  ScrollScreen,
+  SectionHeader,
+} from "@/components";
+import { deleteAccount } from "@/api";
+import { useAuth, usePreferences } from "@/providers";
+import {
+  accountLinks,
+  isDisposableAppStorageKey,
+  type AccountLink,
+} from "@/settings";
+import { supabase } from "@/supabase";
+import {
+  subjectTokens,
+  useTheme,
+  type Appearance,
+  type Subject,
+} from "@/theme";
 
-const subjects:Subject[]=['maths','maths-higher','english'];
-const appearances:Appearance[]=['system','light','dark'];
+const subjects: Subject[] = ["maths", "maths-higher", "english"];
+const appearances: Appearance[] = ["system", "light", "dark"];
 
-export default function Settings(){
-  const {subject,appearance,planning,setSubject,setAppearance,setPlanning}=usePreferences(); const {session}=useAuth(); const {colors,subject:tokens}=useTheme();
-  const [busy,setBusy]=useState<'signout'|'delete'|null>(null); const [deleteOpen,setDeleteOpen]=useState(false); const [confirmation,setConfirmation]=useState(''); const [error,setError]=useState('');
-  const links=accountLinks(process.env.EXPO_PUBLIC_WEBSITE_URL,process.env.EXPO_PUBLIC_API_URL); const version=Constants.expoConfig?.version;
-  const choice=<T extends string>(label:string,values:readonly T[],selected:T,set:(v:T)=>void)=><View accessibilityRole="radiogroup" accessibilityLabel={label}>{values.map(v=>{const selectedNow=v===selected;const title=v in subjectTokens?subjectTokens[v as Subject].label:v[0].toUpperCase()+v.slice(1);return <Pressable key={v} accessibilityRole="radio" accessibilityState={{selected:selectedNow,checked:selectedNow}} onPress={()=>set(v)} style={[styles.choice,{borderColor:colors.line,backgroundColor:selectedNow?colors.muted:'transparent'}]}><Text style={[styles.choiceText,{color:selectedNow?tokens.accent:colors.ink}]}>{title}</Text><Text accessibilityElementsHidden style={{color:selectedNow?tokens.accent:colors.quiet}}>{selectedNow?'Selected':'○'}</Text></Pressable>})}</View>;
-  async function openLink(kind:AccountLink){const url=links?.[kind];if(!url){Alert.alert('Link unavailable','The website address is not configured in this build. Contact support through the GCSE Study Desk website.');return}try{if(!await Linking.canOpenURL(url))throw new Error();await Linking.openURL(url)}catch{Alert.alert('Could not open link',`Open ${url} in your browser instead.`)}}
-  function confirmSignOut(){Alert.alert('Sign out?','Saved drafts will remain on this device so you can continue them when you sign back in.',[{text:'Stay signed in',style:'cancel'},{text:'Sign out',style:'destructive',onPress:()=>void signOut()}])}
-  async function signOut(){if(busy)return;setBusy('signout');setError('');try{if(!supabase)throw new Error('Sign out is unavailable because account services are not configured.');const {error:signOutError}=await supabase.auth.signOut();if(signOutError)throw signOutError;router.replace('/auth/sign-in')}catch(cause){setError(cause instanceof Error?cause.message:'Could not sign out. Check your connection and try again.')}finally{setBusy(null)}}
-  async function removeAccount(){if(busy||confirmation.trim().toUpperCase()!=='DELETE')return;setBusy('delete');setError('');try{if(!supabase||!session?.access_token)throw new Error('Your session has expired. Sign in again before deleting your account.');await deleteAccount(session.access_token,'DELETE');const keys=await AsyncStorage.getAllKeys();const disposable=keys.filter(isDisposableAppStorageKey);if(disposable.length)await AsyncStorage.multiRemove(disposable);const {error:signOutError}=await supabase.auth.signOut({scope:'local'});if(signOutError)throw signOutError;setDeleteOpen(false);router.replace('/auth/sign-in')}catch(cause){setError(cause instanceof Error?cause.message:'Account deletion failed. Check your connection and try again.');setDeleteOpen(false)}finally{setBusy(null)}}
-  return <ScrollScreen><DeskHeader title="Profile & settings" eyebrow="YOUR STUDY DESK"/>
-    <View style={[styles.identity,{backgroundColor:colors.raised,borderColor:colors.strong,borderLeftColor:tokens.accent}]}><Text style={[styles.meta,{color:colors.quiet}]}>SIGNED IN AS</Text><Text selectable style={[styles.email,{color:colors.ink}]}>{session?.user.email??'Email unavailable'}</Text></View>
-    <SectionHeader title="Course" meta="ACTIVE SUBJECT"/>{choice('Active subject',subjects,subject,setSubject)}
-    <SectionHeader title="Appearance" meta="ON THIS DEVICE"/>{choice('Appearance',appearances,appearance,setAppearance)}
-    <SectionHeader title="Exam plan" meta="PRIVATE ON THIS DEVICE"/>
-    <Text style={[styles.copy,{color:colors.quiet}]}>These unvalidated planning preferences shape suggestions only. Server marks and progress remain authoritative.</Text>
-    <TextInput accessibilityLabel="Exam date in YYYY-MM-DD format" value={planning.examDate} onChangeText={examDate=>setPlanning({...planning,examDate})} placeholder="Exam date: YYYY-MM-DD" placeholderTextColor={colors.quiet} style={[styles.input,{color:colors.ink,borderColor:colors.strong,backgroundColor:colors.raised}]}/>
-    <TextInput accessibilityLabel="Target grade" value={planning.targetGrade} onChangeText={targetGrade=>setPlanning({...planning,targetGrade})} placeholder="Target grade" placeholderTextColor={colors.quiet} keyboardType="number-pad" style={[styles.input,{color:colors.ink,borderColor:colors.strong,backgroundColor:colors.raised}]}/>
-    {choice('Study mode',['balanced','foundation-pass'] as const,planning.passMode,passMode=>setPlanning({...planning,passMode}))}
-    <Button variant="secondary" onPress={()=>router.push('/notebook')}>OPEN MISTAKE NOTEBOOK</Button>
-    <Button variant="secondary" onPress={()=>router.push('/weekly-summary')}>OPEN WEEKLY SUMMARY</Button>
-    <SectionHeader title="Sync & security"/><Text style={[styles.copy,{color:colors.quiet}]}>Your signed-in session lets the study service keep server progress tied to your account. Draft answers are also saved on this device so interrupted sessions can be resumed. Sign out leaves those drafts in place; deleting your account removes local app drafts after the server confirms deletion.</Text>
-    <View>{(['privacy','support','accountDeletion'] as AccountLink[]).map(kind=><Pressable key={kind} accessibilityRole="link" onPress={()=>void openLink(kind)} style={[styles.link,{borderColor:colors.line}]}><Text style={[styles.linkText,{color:colors.ink}]}>{kind==='privacy'?'Privacy':kind==='support'?'Support':'Account deletion information'}</Text><Text style={{color:colors.quiet}}>Open in browser</Text></Pressable>)}</View>
-    {error&&<Notice kind="error" title="ACCOUNT ACTION NOT COMPLETED">{error}</Notice>}
-    <SectionHeader title="Account"/>
-    <Button variant="secondary" disabled={busy!==null} onPress={confirmSignOut}>{busy==='signout'?'SIGNING OUT...':'SIGN OUT'}</Button>
-    <View style={[styles.danger,{borderColor:colors.negative,backgroundColor:colors.raised}]}><Text style={[styles.dangerTitle,{color:colors.negative}]}>Delete account</Text><Text style={[styles.copy,{color:colors.quiet}]}>Permanently deletes your account through the study service. This cannot be undone.</Text><Button variant="danger" disabled={busy!==null} onPress={()=>{setError('');setConfirmation('');setDeleteOpen(true)}}>DELETE ACCOUNT</Button></View>
-    <Text style={[styles.footnote,{color:colors.quiet}]}>GCSE Study Desk is an independent study app aligned to AQA course structures. It is not endorsed by AQA.{version?` App version ${version}.`:''}</Text>
-    <Modal visible={deleteOpen} transparent animationType="fade" onRequestClose={()=>busy!=='delete'&&setDeleteOpen(false)}><View style={styles.overlay}><View accessibilityViewIsModal style={[styles.dialog,{backgroundColor:colors.paper,borderColor:colors.negative}]}><Text accessibilityRole="header" style={[styles.dialogTitle,{color:colors.ink}]}>Permanently delete account?</Text><Text style={[styles.copy,{color:colors.quiet}]}>This irreversible action deletes your account and signs you out. Type DELETE to confirm.</Text><TextInput autoCapitalize="characters" autoCorrect={false} accessibilityLabel="Type DELETE to confirm account deletion" value={confirmation} onChangeText={setConfirmation} placeholder="DELETE" placeholderTextColor={colors.quiet} editable={busy!=='delete'} style={[styles.input,{color:colors.ink,borderColor:colors.strong,backgroundColor:colors.raised}]}/><Button variant="danger" disabled={busy!==null||confirmation.trim().toUpperCase()!=='DELETE'} onPress={()=>void removeAccount()}>{busy==='delete'?'DELETING ACCOUNT...':'DELETE PERMANENTLY'}</Button><Button variant="secondary" disabled={busy==='delete'} onPress={()=>setDeleteOpen(false)}>CANCEL</Button></View></View></Modal>
-  </ScrollScreen>
+export default function Settings() {
+  const {
+    subject,
+    appearance,
+    planning,
+    setSubject,
+    setAppearance,
+    setPlanning,
+  } = usePreferences();
+  const { session } = useAuth();
+  const { colors, subject: tokens } = useTheme();
+  const [busy, setBusy] = useState<"signout" | "delete" | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
+  const [error, setError] = useState("");
+  const links = accountLinks(
+    process.env.EXPO_PUBLIC_WEBSITE_URL,
+    process.env.EXPO_PUBLIC_API_URL,
+  );
+  const version = Constants.expoConfig?.version;
+  const choice = <T extends string>(
+    label: string,
+    values: readonly T[],
+    selected: T,
+    set: (v: T) => void,
+  ) => (
+    <View accessibilityRole="radiogroup" accessibilityLabel={label}>
+      {values.map((v) => {
+        const selectedNow = v === selected;
+        const title =
+          v in subjectTokens
+            ? subjectTokens[v as Subject].label
+            : v[0].toUpperCase() + v.slice(1);
+        return (
+          <Pressable
+            key={v}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: selectedNow, checked: selectedNow }}
+            onPress={() => set(v)}
+            style={[
+              styles.choice,
+              {
+                borderColor: colors.line,
+                backgroundColor: selectedNow ? colors.muted : "transparent",
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.choiceText,
+                { color: selectedNow ? tokens.accent : colors.ink },
+              ]}
+            >
+              {title}
+            </Text>
+            <Text
+              accessibilityElementsHidden
+              style={{ color: selectedNow ? tokens.accent : colors.quiet }}
+            >
+              {selectedNow ? "Selected" : "○"}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+  async function openLink(kind: AccountLink) {
+    const url = links?.[kind];
+    if (!url) {
+      Alert.alert(
+        "Link unavailable",
+        "The website address is not configured in this build. Contact support through the GCSE Study Desk website.",
+      );
+      return;
+    }
+    try {
+      if (!(await Linking.canOpenURL(url))) throw new Error();
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(
+        "Could not open link",
+        `Open ${url} in your browser instead.`,
+      );
+    }
+  }
+  function confirmSignOut() {
+    Alert.alert(
+      "Sign out?",
+      "Saved drafts will remain on this device so you can continue them when you sign back in.",
+      [
+        { text: "Stay signed in", style: "cancel" },
+        {
+          text: "Sign out",
+          style: "destructive",
+          onPress: () => void signOut(),
+        },
+      ],
+    );
+  }
+  async function signOut() {
+    if (busy) return;
+    setBusy("signout");
+    setError("");
+    try {
+      if (!supabase)
+        throw new Error(
+          "Sign out is unavailable because account services are not configured.",
+        );
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+      router.replace("/auth/sign-in");
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Could not sign out. Check your connection and try again.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+  async function removeAccount() {
+    if (busy || confirmation.trim().toUpperCase() !== "DELETE") return;
+    setBusy("delete");
+    setError("");
+    try {
+      if (!supabase || !session?.access_token)
+        throw new Error(
+          "Your session has expired. Sign in again before deleting your account.",
+        );
+      await deleteAccount(session.access_token, "DELETE");
+      const keys = await AsyncStorage.getAllKeys();
+      const disposable = keys.filter(isDisposableAppStorageKey);
+      if (disposable.length) await AsyncStorage.multiRemove(disposable);
+      const { error: signOutError } = await supabase.auth.signOut({
+        scope: "local",
+      });
+      if (signOutError) throw signOutError;
+      setDeleteOpen(false);
+      router.replace("/auth/sign-in");
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Account deletion failed. Check your connection and try again.",
+      );
+      setDeleteOpen(false);
+    } finally {
+      setBusy(null);
+    }
+  }
+  return (
+    <ScrollScreen>
+      <Button variant="secondary" onPress={() => router.replace("/")}>
+        Back to Today
+      </Button>
+      <DeskHeader title="Profile & settings" eyebrow="YOUR STUDY DESK" />
+      <View
+        style={[
+          styles.identity,
+          {
+            backgroundColor: colors.raised,
+            borderColor: colors.strong,
+            borderLeftColor: tokens.accent,
+          },
+        ]}
+      >
+        <Text style={[styles.meta, { color: colors.quiet }]}>SIGNED IN AS</Text>
+        <Text selectable style={[styles.email, { color: colors.ink }]}>
+          {session?.user.email ?? "Email unavailable"}
+        </Text>
+      </View>
+      <SectionHeader title="Course" meta="ACTIVE SUBJECT" />
+      {choice("Active subject", subjects, subject, setSubject)}
+      <SectionHeader title="Appearance" meta="ON THIS DEVICE" />
+      {choice("Appearance", appearances, appearance, setAppearance)}
+      <PlanningForm
+        key={`${subject}:${JSON.stringify(planning)}`}
+        planning={planning}
+        subject={subject}
+        save={setPlanning}
+      />
+      <Button variant="secondary" onPress={() => router.push("/notebook")}>
+        OPEN MISTAKE NOTEBOOK
+      </Button>
+      <Button
+        variant="secondary"
+        onPress={() => router.push("/weekly-summary")}
+      >
+        OPEN WEEKLY SUMMARY
+      </Button>
+      <SectionHeader title="Sync & security" />
+      <Text style={[styles.copy, { color: colors.quiet }]}>
+        Your signed-in session lets the study service keep server progress tied
+        to your account. Draft answers are also saved on this device so
+        interrupted sessions can be resumed. Sign out leaves those drafts in
+        place; deleting your account removes local app drafts after the server
+        confirms deletion.
+      </Text>
+      <View>
+        {(["privacy", "support", "accountDeletion"] as AccountLink[]).map(
+          (kind) => (
+            <Pressable
+              key={kind}
+              accessibilityRole="link"
+              onPress={() => void openLink(kind)}
+              style={[styles.link, { borderColor: colors.line }]}
+            >
+              <Text style={[styles.linkText, { color: colors.ink }]}>
+                {kind === "privacy"
+                  ? "Privacy"
+                  : kind === "support"
+                    ? "Support"
+                    : "Account deletion information"}
+              </Text>
+              <Text style={{ color: colors.quiet }}>Open in browser</Text>
+            </Pressable>
+          ),
+        )}
+      </View>
+      {error && (
+        <Notice kind="error" title="ACCOUNT ACTION NOT COMPLETED">
+          {error}
+        </Notice>
+      )}
+      <SectionHeader title="Account" />
+      <Button
+        variant="secondary"
+        disabled={busy !== null}
+        onPress={confirmSignOut}
+      >
+        {busy === "signout" ? "SIGNING OUT..." : "SIGN OUT"}
+      </Button>
+      <View
+        style={[
+          styles.danger,
+          { borderColor: colors.negative, backgroundColor: colors.raised },
+        ]}
+      >
+        <Text style={[styles.dangerTitle, { color: colors.negative }]}>
+          Delete account
+        </Text>
+        <Text style={[styles.copy, { color: colors.quiet }]}>
+          Permanently deletes your account through the study service. This
+          cannot be undone.
+        </Text>
+        <Button
+          variant="danger"
+          disabled={busy !== null}
+          onPress={() => {
+            setError("");
+            setConfirmation("");
+            setDeleteOpen(true);
+          }}
+        >
+          DELETE ACCOUNT
+        </Button>
+      </View>
+      <Text style={[styles.footnote, { color: colors.quiet }]}>
+        GCSE Study Desk is an independent study app aligned to AQA course
+        structures. It is not endorsed by AQA.
+        {version ? ` App version ${version}.` : ""}
+      </Text>
+      <Modal
+        visible={deleteOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => busy !== "delete" && setDeleteOpen(false)}
+      >
+        <View style={styles.overlay}>
+          <View
+            accessibilityViewIsModal
+            style={[
+              styles.dialog,
+              { backgroundColor: colors.paper, borderColor: colors.negative },
+            ]}
+          >
+            <Text
+              accessibilityRole="header"
+              style={[styles.dialogTitle, { color: colors.ink }]}
+            >
+              Permanently delete account?
+            </Text>
+            <Text style={[styles.copy, { color: colors.quiet }]}>
+              This irreversible action deletes your account and signs you out.
+              Type DELETE to confirm.
+            </Text>
+            <TextInput
+              autoCapitalize="characters"
+              autoCorrect={false}
+              accessibilityLabel="Type DELETE to confirm account deletion"
+              value={confirmation}
+              onChangeText={setConfirmation}
+              placeholder="DELETE"
+              placeholderTextColor={colors.quiet}
+              editable={busy !== "delete"}
+              style={[
+                styles.input,
+                {
+                  color: colors.ink,
+                  borderColor: colors.strong,
+                  backgroundColor: colors.raised,
+                },
+              ]}
+            />
+            <Button
+              variant="danger"
+              disabled={
+                busy !== null || confirmation.trim().toUpperCase() !== "DELETE"
+              }
+              onPress={() => void removeAccount()}
+            >
+              {busy === "delete" ? "DELETING ACCOUNT..." : "DELETE PERMANENTLY"}
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={busy === "delete"}
+              onPress={() => setDeleteOpen(false)}
+            >
+              CANCEL
+            </Button>
+          </View>
+        </View>
+      </Modal>
+    </ScrollScreen>
+  );
 }
 
-const styles=StyleSheet.create({identity:{borderWidth:1,borderLeftWidth:6,padding:16,gap:7},meta:{fontFamily:'DMSans',fontSize:11,fontWeight:'700',letterSpacing:1},email:{fontSize:18,fontWeight:'700'},choice:{minHeight:54,paddingHorizontal:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between',borderBottomWidth:1},choiceText:{fontSize:16,fontWeight:'700'},copy:{fontSize:15,lineHeight:22},link:{minHeight:58,borderBottomWidth:1,justifyContent:'center',gap:3},linkText:{fontSize:16,fontWeight:'700'},danger:{borderWidth:1,padding:16,gap:13},dangerTitle:{fontFamily:'Fraunces',fontSize:24,fontWeight:'700'},footnote:{fontSize:13,lineHeight:19},overlay:{flex:1,backgroundColor:'rgba(0,0,0,.58)',padding:20,justifyContent:'center'},dialog:{borderWidth:2,padding:20,gap:16},dialogTitle:{fontFamily:'Fraunces',fontSize:27,fontWeight:'700'},input:{minHeight:50,borderWidth:1,paddingHorizontal:12,fontSize:17,fontWeight:'700',letterSpacing:2}});
+const styles = StyleSheet.create({
+  identity: { borderWidth: 1, borderLeftWidth: 6, padding: 16, gap: 7 },
+  meta: {
+    fontFamily: "DMSans",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  email: { fontSize: 18, fontWeight: "700" },
+  choice: {
+    minHeight: 54,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+  },
+  choiceText: { fontSize: 16, fontWeight: "700" },
+  copy: { fontSize: 15, lineHeight: 22 },
+  link: {
+    minHeight: 58,
+    borderBottomWidth: 1,
+    justifyContent: "center",
+    gap: 3,
+  },
+  linkText: { fontSize: 16, fontWeight: "700" },
+  danger: { borderWidth: 1, padding: 16, gap: 13 },
+  dangerTitle: { fontFamily: "Fraunces", fontSize: 24, fontWeight: "700" },
+  footnote: { fontSize: 13, lineHeight: 19 },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,.58)",
+    padding: 20,
+    justifyContent: "center",
+  },
+  dialog: { borderWidth: 2, padding: 20, gap: 16 },
+  dialogTitle: { fontFamily: "Fraunces", fontSize: 27, fontWeight: "700" },
+  input: {
+    minHeight: 50,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: 2,
+  },
+});
+
+function PlanningForm({
+  planning,
+  subject,
+  save,
+}: {
+  planning: PlanningPreferences;
+  subject: Subject;
+  save: (next: PlanningPreferences) => Promise<void>;
+}) {
+  const { colors } = useTheme();
+  const [draft, setDraft] = useState(planning);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  return (
+    <View style={{ gap: 14 }}>
+      <SectionHeader title="Your revision goal" meta="SAVED TO YOUR ACCOUNT" />
+      <Text style={{ color: colors.quiet, lineHeight: 22 }}>
+        Keep your exam date and target in view. Save changes when you’re ready.
+      </Text>
+      <TextInput
+        accessibilityLabel="Exam date in YYYY-MM-DD format"
+        value={draft.examDate}
+        onChangeText={(examDate) => setDraft({ ...draft, examDate })}
+        placeholder="Exam date: YYYY-MM-DD"
+        placeholderTextColor={colors.quiet}
+        style={[
+          styles.input,
+          {
+            color: colors.ink,
+            borderColor: colors.strong,
+            backgroundColor: colors.raised,
+          },
+        ]}
+      />
+      <TextInput
+        accessibilityLabel="Target grade"
+        value={draft.targetGrade}
+        onChangeText={(targetGrade) => setDraft({ ...draft, targetGrade })}
+        placeholder="Target grade"
+        placeholderTextColor={colors.quiet}
+        keyboardType="number-pad"
+        style={[
+          styles.input,
+          {
+            color: colors.ink,
+            borderColor: colors.strong,
+            backgroundColor: colors.raised,
+          },
+        ]}
+      />
+      {subject === "maths" && (
+        <Button
+          variant="secondary"
+          accessibilityState={{
+            selected: draft.passMode === "foundation-pass",
+          }}
+          onPress={() =>
+            setDraft({
+              ...draft,
+              passMode:
+                draft.passMode === "foundation-pass"
+                  ? "balanced"
+                  : "foundation-pass",
+            })
+          }
+        >
+          {draft.passMode === "foundation-pass"
+            ? "Core skills priority is on"
+            : "Prioritise core skills for grade 4"}
+        </Button>
+      )}
+      {error && (
+        <Notice kind="error" title="Preferences were not saved">
+          {error}
+        </Notice>
+      )}
+      <Button
+        disabled={busy}
+        onPress={async () => {
+          if (draft.examDate && !/^\d{4}-\d{2}-\d{2}$/.test(draft.examDate)) {
+            setError("Use YYYY-MM-DD for your exam date.");
+            return;
+          }
+          if (
+            draft.targetGrade &&
+            (!/^[1-9]$/.test(draft.targetGrade) ||
+              (subject === "maths" && Number(draft.targetGrade) > 5) ||
+              (subject === "maths-higher" && Number(draft.targetGrade) < 4))
+          ) {
+            setError("Choose a grade within your course’s range.");
+            return;
+          }
+          setBusy(true);
+          setError("");
+          try {
+            await save(draft);
+          } catch (cause) {
+            setError(
+              cause instanceof Error
+                ? cause.message
+                : "Check your connection and try again.",
+            );
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy ? "Saving…" : "Save my preferences"}
+      </Button>
+    </View>
+  );
+}

@@ -39,13 +39,14 @@ export default function Results() {
   const { subject } = usePreferences();
   const { session } = useAuth();
   const { colors, subject: tokens } = useTheme();
+  const resultScope = `${session?.user.id}:${subject}:${id}`;
+  const [scope,setScope] = useState(resultScope);
   const [raw, setRaw] = useState<unknown>();
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  if(scope !== resultScope){setScope(resultScope);setLoaded(false);setRaw(undefined);}
   useEffect(() => {
     let active=true;
-    setLoaded(false);
-    setRaw(undefined);
     (async()=>{
       try {
         const attempts=await new ApiClient(subject).attempts();

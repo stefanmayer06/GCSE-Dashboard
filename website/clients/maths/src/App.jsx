@@ -1,3 +1,4 @@
+import Recovery, { usePasswordRecovery } from '../../shared/v2/Recovery.jsx';
 import StudioShell from '../../shared/v2/StudioShell.jsx';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { lazy, Suspense, useEffect, useState } from 'react';
@@ -47,6 +48,7 @@ function initialTheme() {
 }
 
 export default function App() {
+  const recovering = usePasswordRecovery();
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const [progress, setProgress] = useState(null);
   const [health, setHealth] = useState(null);
@@ -131,6 +133,8 @@ export default function App() {
     setHealth(null);
     setAuth(false);
   };
+
+  if (recovering) return <Recovery/>;
 
   if (auth === null) {
     return (

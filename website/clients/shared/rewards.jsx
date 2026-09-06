@@ -73,7 +73,7 @@ export function ExpertisePath({ progress, onChooseLesson }) {
           <span>{atSme ? 'Subject Matter Expert reached' : `Next: ${rankForLevel(nextLevel)}`}</span>
           <span>{progress.xpInto}/{progress.xpNeeded} XP</span>
         </div>
-        <div className="expertise-track" role="progressbar" aria-valuemin="0" aria-valuemax={progress.xpNeeded} aria-valuenow={progress.xpInto}>
+        <div className="expertise-track" role="progressbar" aria-label="Progress toward your next learning level" aria-valuemin="0" aria-valuemax={progress.xpNeeded} aria-valuenow={progress.xpInto}>
           <span style={{ width: `${progressPercent(progress)}%` }} />
         </div>
       </div>

@@ -59,29 +59,30 @@ function noteReturn(api, userId, subject) {
 
 export function Onboarding({ personal, progress, preferences, updatePreferences, diagnosticUrl, foundation = false, api }) {
   const [step, setStep] = useState(0);
+  const [started,setStarted] = useState(false);
   const [dismissed, setDismissed] = useState(() => Boolean(preferences.examDate));
   if (dismissed || !personal) return null;
   const existingStudy = progress && (progress.testsTaken > 0 || progress.practiceAnswered > 0);
-  if (step === 0 && existingStudy) return null;
+  if (!started && (preferences.examDate || existingStudy)) return null;
 
   const grades = foundation ? ['4', '5'] : ['4', '5', '6', '7', '8', '9'];
   const steps = [
     {
       title: 'When are your exams?',
-      body: 'Your 7-day plan counts down to the real date and keeps the last week for full-paper practice.',
+      body: 'Set a date to see how much time remains. You can change it later in your settings.',
       control: (
         <input
           aria-label="Exam date"
           type="date"
           value={preferences.examDate}
-          onChange={(e) => updatePreferences({ examDate: e.target.value })}
+          onChange={(e) => { setStarted(true); updatePreferences({ examDate: e.target.value }); }}
         />
       ),
       canNext: Boolean(preferences.examDate),
     },
     {
       title: 'What grade are you aiming for?',
-      body: 'Your target shapes which topics the plan prioritises. You can change it any time.',
+      body: 'Keep your goal in view. Foundation learners can also prioritise core skills with pass mode.',
       control: (
         <div className="chip-row">
           {grades.map((grade) => (
@@ -101,7 +102,7 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
     },
     {
       title: 'Take the 10-question diagnostic',
-      body: 'It samples every strand and sets your first week of missions. It takes about ten minutes.',
+      body: 'Try a short mixed set to see which methods need attention. Allow about ten minutes.',
       control: null,
       canNext: false,
     },
@@ -166,6 +167,7 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
 
   const preferences = personal?.preferences ?? defaultPreferences;
   const plan = personal?.plan ?? null;
+  const isNew = progress && !(progress.testsTaken > 0 || progress.practiceAnswered > 0);
   const today = dateKey();
   const todayDay = plan?.days.find((day) => day.date === today) || null;
   const mission = todayDay && todayDay.status === 'todo' ? todayDay : null;
@@ -201,24 +203,15 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
 
   return (
     <>
-      <Onboarding
-        personal={personal}
-        progress={progress}
-        preferences={preferences}
-        updatePreferences={updatePreferences}
-        diagnosticUrl={diagnosticUrl}
-        foundation={foundation}
-        api={api}
-      />
       <section className="study-grid" aria-label="Revision planner">
         <div className={`panel mission-card${todayDone ? ' mission-done' : ''}`}>
           <div className="mission-context">Your next session</div>
-          <h2>{mission ? mission.task : todayDone ? `✓ ${todayDone.task} done` : doneCount === 7 ? 'Every mission done' : 'Pick your first mission'}</h2>
-          <p className="sub">{mission ? (mission.topicId ? `${mission.minutes} focused minutes · learn it, then finish the short practice to lock today in.` : mission.task === 'Mistake retry' ? 'No lesson today. Clear the mistakes that are due, then the day is yours.' : 'This day has no lesson — use the practice desk to keep your plan on track.') : todayDone ? (todayDone.result ? `Score ${todayDone.result.percent}% · ${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks${todayDone.result.xpEarned != null ? ` · +${todayDone.result.xpEarned} XP` : ''} recorded. Come back tomorrow — the rest of the week stays locked.` : 'Come back tomorrow — the rest of the week stays locked.') : doneCount === 7 ? 'Enjoy the break, or keep practising freely. A fresh plan starts on Monday.' : 'Complete today\u2019s row in the exam plan below; future days stay locked until then.'}</p>
+          <h2>{isNew ? 'Find your starting point.' : mission ? mission.task : todayDone ? `✓ ${todayDone.task} done` : doneCount === 7 ? 'Every mission done' : 'Pick your first mission'}</h2>
+          <p className="sub">{isNew ? 'A short mixed set will show you what feels familiar and what deserves another look. Allow about ten minutes.' : mission ? (mission.topicId ? `${mission.minutes} focused minutes · learn it, then finish the short practice to lock today in.` : mission.task === 'Mistake retry' ? 'No lesson today. Clear the mistakes that are due, then the day is yours.' : 'This day has no lesson — use the practice desk to keep your plan on track.') : todayDone ? (todayDone.result ? `Score ${todayDone.result.percent}% · ${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks${todayDone.result.xpEarned != null ? ` · +${todayDone.result.xpEarned} XP` : ''} recorded. Come back tomorrow — the rest of the week stays locked.` : 'Come back tomorrow — the rest of the week stays locked.') : doneCount === 7 ? 'Enjoy the break, or keep practising freely. A fresh plan starts on Monday.' : 'Complete today\u2019s row in the exam plan below; future days stay locked until then.'}</p>
           <div className="study-actions">
-            {mission?.topicId && <Link className="btn btn-primary" to={`/learn/${mission.topicId}`} onClick={() => startMission(mission.date, mission.topicId)}>Begin this session →</Link>}
-            {mission && !mission.topicId && <Link className="btn btn-primary" to={mission.task === 'Mistake retry' ? '/notebook' : '/practice'}>Open {mission.task}</Link>}
-            <Link className="btn" to={diagnosticUrl}>Fast diagnostic · 10 questions</Link>
+            {!isNew && mission?.topicId && <Link className="btn btn-primary" to={`/learn/${mission.topicId}`} onClick={() => startMission(mission.date, mission.topicId)}>Begin this session →</Link>}
+            {!isNew && mission && !mission.topicId && <Link className="btn btn-primary" to={mission.task === 'Mistake retry' ? '/notebook' : mission.task === 'Weekly review' ? '/summary' : '/practice'}>Open {mission.task}</Link>}
+            <Link className={isNew ? 'btn btn-primary' : 'btn'} to={diagnosticUrl}>{isNew ? 'Try a 10-question check →' : 'Fast diagnostic · 10 questions'}</Link>
           </div>
         </div>
         <div className="panel readiness-card">
@@ -226,10 +219,10 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
           <div className="readiness-number">{evidence.ready ? `${evidence.score}%` : 'Not enough evidence'}</div>
           <p className="sub">{evidence.ready ? `Based on ${evidence.answered} marked answers across ${evidence.topics} topics. Accuracy is a guide, not a predicted grade.` : `${evidence.answered}/20 marked answers across ${evidence.topics}/3 topics. The score appears only when both thresholds are met.`}</p>
         </div>
-        <div className="panel plan-card">
+        <details className="panel plan-card"><summary>Your week, one step at a time</summary>
           <div className="plan-head"><div><h2>{days == null ? 'Set your exam date' : days < 0 ? 'Exam date passed' : `${days} day${days === 1 ? '' : 's'} to go`}</h2></div><input aria-label="Exam date" type="date" value={preferences.examDate} onChange={(e) => updatePreferences({ examDate: e.target.value })} /></div>
           {foundation && <label className="pass-toggle"><input type="checkbox" checked={preferences.passMode === 'foundation-pass'} onChange={(e) => updatePreferences({ passMode: e.target.checked ? 'foundation-pass' : 'balanced' })} /><span><strong>Pass mode · grade 4 goal</strong><small>Prioritise core and weak Foundation topics.</small></span></label>}
-          <div className="week-plan">{!personal ? <p className="empty">Loading your plan…</p> : plan?.days.length ? plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < today; const canStart = !done && !past && day.topicId && day.date === today; const locked = !done && !canStart && !past; return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done" title={day.result ? `Done: ${day.result.percent}% · ${day.result.correctMarks}/${day.result.totalMarks} marks` : undefined}><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : canStart ? <Link key={day.date} to={`/learn/${day.topicId}`} onClick={() => startMission(day.date, day.topicId)} title="Today's mission"><b>{day.label}</b><span>{day.task}</span><small>Start ★</small></Link> : <span key={day.date} className={past ? 'past' : 'locked'} title={past ? 'That day has passed' : 'Completes when a new day starts'}><b>{day.label}</b><span>{day.task}</span>{past ? <small>Past day</small> : locked ? <small>Coming up</small> : null}</span>); }) : <p className="empty">Complete a lesson to build your 7-day plan.</p>}</div>
+          <div className="week-plan">{!personal ? <p className="empty">Loading your plan…</p> : plan?.days.length ? plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < today; const canStart = !done && !past && day.date === today; const locked = !done && !canStart && !past; return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done" title={day.result ? `Done: ${day.result.percent}% · ${day.result.correctMarks}/${day.result.totalMarks} marks` : undefined}><b>✓ {day.date === today ? 'Today' : new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'})}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : canStart ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : day.task === 'Mistake retry' ? '/notebook' : day.task === 'Weekly review' ? '/summary' : '/practice'} onClick={() => day.topicId && startMission(day.date, day.topicId)} title="Today's mission"><b>{day.date === today ? 'Today' : new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'})}</b><span>{day.task}</span><small>Start ★</small></Link> : <span key={day.date} className={past ? 'past' : 'locked'} title={past ? 'That day has passed' : 'Completes when a new day starts'}><b>{day.date === today ? 'Today' : new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'})}</b><span>{day.task}</span>{past ? <small>Past day</small> : locked ? <small>Coming up</small> : null}</span>); }) : <p className="empty">Complete a lesson to build your 7-day plan.</p>}</div>
           {plan?.days?.length ? (
             <div className="week-track" role="img" aria-label={`${doneCount} of 7 days done this week`}>
               {plan.days.map((day) => (
@@ -239,7 +232,7 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
           ) : null}
           {error && <p className="plan-note error" role="alert">{error}</p>}
           <p className="plan-note">{doneCount}/7 days done this week · the plan is saved to your account and a fresh week starts on Monday.</p>
-        </div>
+        </details>
       </section>
       <section className="evidence-strip" aria-label="Mistake notebook progress">
         <Link to="/notebook" className={`evidence-chip ${dueCount ? 'due' : ''}`}>
@@ -255,6 +248,16 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
           <span>days until your exam</span>
         </Link>
       </section>
+      {<details className="setup-disclosure"><summary>Personalise your revision plan</summary>      <Onboarding
+        personal={personal}
+        progress={progress}
+        preferences={preferences}
+        updatePreferences={updatePreferences}
+        diagnosticUrl={diagnosticUrl}
+        foundation={foundation}
+        api={api}
+      />
+</details>}
     </>
   );
 }
@@ -523,7 +526,7 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
       </section>
       <section className="panel">
         <h2>This week&apos;s exam plan</h2>
-        {plan?.days.length ? <div className="week-plan">{plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < dateKey(); return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done"><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : <span key={day.date} className={past ? 'past' : 'locked'}><b>{day.label}</b><span>{day.task}</span></span>); })}</div> : <p className="empty">Open the dashboard to build your 7-day plan.</p>}
+        {plan?.days.length ? <div className="week-plan">{plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < dateKey(); return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done"><b>✓ {day.date === today ? 'Today' : new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'})}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : <span key={day.date} className={past ? 'past' : 'locked'}><b>{day.date === today ? 'Today' : new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'})}</b><span>{day.task}</span></span>); })}</div> : <p className="empty">Open the dashboard to build your 7-day plan.</p>}
         <p className="sub">{donePlan.length}/7 missions complete this week.</p>
       </section>
       <section className="panel">

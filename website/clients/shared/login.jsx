@@ -1,3 +1,4 @@
+import { ForgotPassword } from './v2/Recovery.jsx';
 import { useEffect, useState } from 'react';
 import { supabase } from './supabase.js';
 
@@ -108,8 +109,8 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
             : authDriver === 'supabase'
               ? 'Use your email to keep one secure account across every Study Desk subject.'
             : isSignup
-              ? 'Make a local account to keep your progress and papers on this device.'
-              : 'Your progress and papers are stored locally and follow this account.'}
+              ? 'Keep your study progress and marked papers together in your account.'
+              : 'Return to your saved plan, lessons and marked papers.'}
         </p>
         {error && (
           <div className="login-error" role="alert">{error}</div>
@@ -202,6 +203,7 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
               : isClaim ? 'Move account' : isSignup ? 'Create account' : 'Sign in'}
           </button>
         </form>
+        {!isSignup && !isClaim && <ForgotPassword/>}
         {oauth && !isClaim && (
           <a className="login-oauth" href={`/api/auth/oauth?next=${encodeURIComponent(next)}`}>
             Continue with {provider}

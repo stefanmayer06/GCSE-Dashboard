@@ -1,7 +1,7 @@
 {
   "name": "gcse-dashboard",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "description": "One revision dashboard for AQA GCSE Maths and English Language",
   "workspaces": [
@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "dev": "concurrently -n server,maths,english -c blue,magenta,yellow \"npm run dev -w server\" \"npm run dev -w clients/maths\" \"npm run dev -w clients/english\"",
-    "build": "npm run build -w clients/maths && npm run build -w clients/english",
+    "build": "npm run build -w clients/maths && npm run build -w clients/maths -- --base /maths-higher/ --outDir dist-higher && npm run build -w clients/english",
     "build:vercel": "node scripts/build-vercel.mjs",
     "db:migrations:list": "supabase migration list --linked",
     "db:migrations:push": "supabase db push --linked",
@@ -22,6 +22,7 @@
     "test:ui": "playwright test"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.52.0",
     "concurrently": "^9.1.0",
     "supabase": "^2.115.0"

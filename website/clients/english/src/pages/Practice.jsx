@@ -311,8 +311,7 @@ export default function Practice({ health, onProgress, userId }) {
           )}
         </div>
         <p className="sub small" style={{ marginTop: 12 }}>
-           Long answers are marked by the AI tutor (Qwen 3.7 Flash) against summarised AQA mark
-          schemes. {health?.aiMarking ? 'AI marking is ready.' : 'No OpenRouter key set — you\u2019ll self-mark against model answers and rubrics instead.'}
+           Long answers use AQA-style rubrics to explain where marks come from. {health?.aiMarking ? 'AI marking is ready.' : 'Guided self-marking is available with model answers and rubrics.'}
         </p>
         {error && (
           <div className="error-banner" role="alert">

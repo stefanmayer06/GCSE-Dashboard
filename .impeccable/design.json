@@ -1,165 +1,62 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-02T22:59:04Z",
-  "title": "Design System: GCSE Study Desk",
+  "generatedAt": "2026-09-06T00:00:00Z",
+  "title": "Design System: GCSE Study Desk 2",
   "extensions": {
-    "colorMeta": {
-      "desk-paper": { "role": "neutral", "displayName": "Desk Paper", "canonical": "#f3f0e8", "tonalRamp": ["#16140f", "#262119", "#3a352c", "#6b6459", "#a39c8f", "#cbc8bd", "#e9e6dc", "#f3f0e8"] },
-      "desk-paper-raised": { "role": "neutral", "displayName": "Raised Paper", "canonical": "#fbfaf6", "tonalRamp": ["#1d1a14", "#262119", "#3a352c", "#6b6459", "#a39c8f", "#d8d5ca", "#e9e6dc", "#fbfaf6"] },
-      "desk-paper-muted": { "role": "neutral", "displayName": "Shaded Paper", "canonical": "#e9e6dc", "tonalRamp": ["#1d1a14", "#2e2921", "#4a453b", "#6b6459", "#a39c8f", "#cbc8bd", "#e0ddd2", "#e9e6dc"] },
-      "india-ink": { "role": "neutral", "displayName": "India Ink", "canonical": "#161713", "tonalRamp": ["#0a0b09", "#161713", "#2a2b26", "#454640", "#65675f", "#8d8e85", "#cbc8bd", "#f3f0e8"] },
-      "graphite": { "role": "neutral", "displayName": "Graphite", "canonical": "#65675f", "tonalRamp": ["#2a2b26", "#454640", "#65675f", "#83857b", "#9b9d92", "#b3b5aa", "#d3d1c7", "#ece9e0"] },
-      "ledger-rule": { "role": "neutral", "displayName": "Ledger Rule", "canonical": "#cbc8bd", "tonalRamp": ["#2e2921", "#5f574c", "#8d8e85", "#a5a296", "#cbc8bd", "#d8d5ca", "#e5e2d8", "#f3f0e8"] },
-      "ledger-rule-strong": { "role": "neutral", "displayName": "Heavy Rule", "canonical": "#8d8e85", "tonalRamp": ["#2e2921", "#454540", "#5f574c", "#75746b", "#8d8e85", "#a5a296", "#cbc8bd", "#e0ddd2"] },
-      "blotting-paper": { "role": "neutral", "displayName": "Blotting Paper", "canonical": "#fffefa", "tonalRamp": ["#221e18", "#3a352c", "#5f574c", "#8d8e85", "#b8b3a6", "#d9d4c8", "#f3f0e8", "#fffefa"] },
-      "exam-violet": { "role": "primary", "displayName": "Exam Violet", "canonical": "#6849e8", "tonalRamp": ["#241145", "#37205f", "#4d34bd", "#6849e8", "#8c5cf0", "#a98df6", "#c4b2ff", "#e2dcff"] },
-      "exam-violet-strong": { "role": "primary", "displayName": "Exam Violet, pressed", "canonical": "#4d34bd", "tonalRamp": ["#14092e", "#241145", "#37205f", "#4d34bd", "#6849e8", "#8c5cf0", "#a98df6", "#c4b2ff"] },
-      "exam-violet-ink": { "role": "primary", "displayName": "Exam Violet Ink", "canonical": "#201a3d", "tonalRamp": ["#0e0b1c", "#201a3d", "#332a5e", "#4d34bd", "#6849e8", "#8c5cf0", "#c4b2ff", "#e2dcff"] },
-      "exam-violet-wash": { "role": "primary", "displayName": "Exam Violet Wash", "canonical": "#ece8ff", "tonalRamp": ["#4d34bd", "#6849e8", "#8c5cf0", "#a98df6", "#c4b2ff", "#dcd0ff", "#e2dcff", "#ece8ff"] },
-      "exam-violet-tint": { "role": "primary", "displayName": "Exam Violet Tint", "canonical": "#e2dcff", "tonalRamp": ["#4d34bd", "#6849e8", "#8c5cf0", "#c4b2ff", "#d2c6ff", "#e2dcff", "#ece8ff", "#f7f5ff"] },
-      "higher-green": { "role": "secondary", "displayName": "Higher Green", "canonical": "#287c68", "tonalRamp": ["#0f2f26", "#173b35", "#1b5b4b", "#287c68", "#4aa38b", "#76c9b2", "#a9dfc9", "#d8eee7"] },
-      "higher-green-ink": { "role": "secondary", "displayName": "Higher Green Ink", "canonical": "#173b35", "tonalRamp": ["#0a1d18", "#173b35", "#1b5b4b", "#287c68", "#4aa38b", "#76c9b2", "#d0e9df", "#e9f5f0"] },
-      "manuscript-ochre": { "role": "secondary", "displayName": "Manuscript Ochre", "canonical": "#ad7621", "tonalRamp": ["#3e2911", "#835713", "#ad7621", "#b06b21", "#c98f3f", "#e3bf7e", "#ebddbd", "#f3e8ce"] },
-      "ochre-ink": { "role": "secondary", "displayName": "Ochre Ink", "canonical": "#3e2911", "tonalRamp": ["#1d1308", "#3e2911", "#5f4118", "#835713", "#ad7621", "#b06b21", "#e3bf7e", "#ebddbd"] },
-      "marker-green": { "role": "semantic", "displayName": "Marker Green", "canonical": "#237b55", "tonalRamp": ["#123f2c", "#1b5b3e", "#237b55", "#3f9a72", "#55c193", "#8ad4b4", "#b9e6cf", "#dcebe3"] },
-      "marking-red": { "role": "semantic", "displayName": "Marking Red", "canonical": "#a33d3d", "tonalRamp": ["#3d1616", "#6b2626", "#a33d3d", "#c2574f", "#e2685f", "#ec8f86", "#f3bdb7", "#f6d9d5"] },
-      "ledger-amber": { "role": "semantic", "displayName": "Ledger Amber", "canonical": "#98670f", "tonalRamp": ["#452f05", "#6b4a0a", "#98670f", "#c98b26", "#d9a441", "#e6bc63", "#edce8f", "#f0e5c5"] },
-      "examiner-blue": { "role": "semantic", "displayName": "Examiner Blue", "canonical": "#38678c", "tonalRamp": ["#16283a", "#244761", "#38678c", "#5588ac", "#6fa8d8", "#92c1e4", "#b8d7ec", "#dfe9f1"] }
-    },
-    "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Web page titles and the sign-in headline; Georgia 400 with -0.05em tracking. Selector marketing pages scale larger (clamp(48px, 7.4vw, 94px))." },
-      "headline": { "displayName": "Headline", "purpose": "Panel titles and section heads (h2) in Georgia 400." },
-      "title": { "displayName": "Title", "purpose": "Card, docket and adhoc-CTA titles; stat numerals at 38px are covered by the numeric role." },
-      "body": { "displayName": "Body", "purpose": "Working prose and UI text; 13-15px in dense UI, 16-17px in editorial prose, serif at 1.78 line-height for English source texts." },
-      "label": { "displayName": "Label", "purpose": "Uppercase monospace metadata: tags, chips, eyebrows, table headers and paper labels at 8-11px with 0.07-0.09em tracking." },
-      "numeric": { "displayName": "Numeric", "purpose": "Stat numbers, timer values and scores in tabular figures (Georgia 400, 38px, tabular-nums)." }
-    },
     "shadows": [
-      { "name": "web-flat", "value": "none", "purpose": "Normative web surface state: every web panel, button, card and input sets box-shadow: none explicitly." },
-      { "name": "status-halo", "value": "0 0 0 3px rgba(35,123,85,0.12)", "purpose": "Live-availability dot halo (18% in dark mode); a status ring, not a surface shadow." },
-      { "name": "native-chrome-lift", "value": "0 6px 14px rgba(0,0,0,0.08)", "purpose": "Native dockets, mission heroes and notices (iOS shadow); Android elevation 3." },
-      { "name": "native-tab-bar-lift", "value": "0 -4px 14px rgba(0,0,0,0.10)", "purpose": "The rounded native bottom tab bar only (iOS shadow); Android elevation 8." },
-      { "name": "ink-scrim", "value": "rgba(22,23,19,0.48)", "purpose": "Modal and reward backdrops (pure black 55% in dark); an overlay wash, not a cast shadow." }
+      {
+        "name": "ordinary-surfaces",
+        "value": "none",
+        "purpose": "Flat panels and controls; boundaries use tone and borders."
+      }
     ],
     "motion": [
-      { "name": "state-transition", "value": "160ms ease", "purpose": "Color, background, border and transform transitions on links, chips, nav and buttons." },
-      { "name": "meter-fill", "value": "500ms ease", "purpose": "Progress and expertise fills animate width." },
-      { "name": "reward-rise", "value": "220ms ease-out", "purpose": "Reward dialog enters rising 16px with fade." },
-      { "name": "reward-stamp-in", "value": "420ms ease-out", "purpose": "Reward seal stamps in from rotate(-8deg) scale(0.82)." },
-      { "name": "press-scale", "value": "scale(0.95)", "purpose": "Touch feedback: mobile nav items on :active; native pressables use scale(0.98). Feedback is scale and ink, never shadow." },
-      { "name": "reduced-motion", "value": "transition: none; animation-duration: 0.01ms", "purpose": "prefers-reduced-motion collapses every web transition and animation." }
+      {
+        "name": "quick",
+        "value": "120ms",
+        "purpose": "Shared intended transition duration; reduced motion overrides web transitions."
+      },
+      {
+        "name": "standard",
+        "value": "180ms",
+        "purpose": "Shared intended transition duration; reduced motion overrides web transitions."
+      }
     ],
     "breakpoints": [
-      { "name": "mobile-collapse", "value": "760px" },
-      { "name": "sidebar-condense", "value": "900px" },
-      { "name": "exam-source-split", "value": "1100px" }
+      {
+        "name": "mobile",
+        "value": "760px"
+      },
+      {
+        "name": "compact-desktop",
+        "value": "1100px"
+      },
+      {
+        "name": "wide-desktop",
+        "value": "1500px"
+      }
     ]
   },
-  "components": [
-    {
-      "name": "Primary Button",
-      "kind": "button",
-      "refersTo": "button-primary",
-      "description": "Subject-accent primary action on a square printed form; shown in Exam Violet for Maths Foundation, each subject swaps its own accent and subject ink.",
-      "html": "<button class=\"ds-btn-primary\">Start Paper 1</button>",
-      "css": ".ds-btn-primary { min-height: 42px; padding: 10px 18px; border: 1px solid #201a3d; border-radius: 0; background: #6849e8; color: #ffffff; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform 160ms ease, opacity 160ms ease; } .ds-btn-primary:hover:not(:disabled) { transform: translateY(-1px); } .ds-btn-primary:active:not(:disabled) { transform: translateY(0); } .ds-btn-primary:focus-visible { outline: 3px solid #6849e8; outline-offset: 3px; } .ds-btn-primary:disabled { opacity: 0.48; }"
-    },
-    {
-      "name": "Secondary Button",
-      "kind": "button",
-      "refersTo": "button-secondary",
-      "description": "Raised-paper button with the Heavy Rule border; hover moves the edge to India Ink over Shaded Paper with a 1px lift.",
-      "html": "<button class=\"ds-btn-secondary\">Review answers</button>",
-      "css": ".ds-btn-secondary { min-height: 42px; padding: 10px 18px; border: 1px solid #8d8e85; border-radius: 0; background: #fbfaf6; color: #161713; font-size: 14px; font-weight: 700; cursor: pointer; transition: border-color 160ms ease, background 160ms ease, transform 160ms ease; } .ds-btn-secondary:hover:not(:disabled) { border-color: #161713; background: #e9e6dc; transform: translateY(-1px); } .ds-btn-secondary:active:not(:disabled) { transform: translateY(0); } .ds-btn-secondary:focus-visible { outline: 3px solid #6849e8; outline-offset: 3px; } .ds-btn-secondary:disabled { opacity: 0.48; }"
-    },
-    {
-      "name": "Text Field",
-      "kind": "input",
-      "refersTo": "input",
-      "description": "Blotting Paper answer field under a mono uppercase label; focus is an inked 3px accent outline, never a glow.",
-      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Exam date</span><input class=\"ds-input\" placeholder=\"e.g. 12 May 2027\"></label>",
-      "css": ".ds-field { display: block; } .ds-field-label { display: block; margin-bottom: 6px; color: #65675f; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; } .ds-input { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #8d8e85; border-radius: 0; background: #fffefa; color: #161713; font-size: 15px; } .ds-input:focus-visible { border-color: #6849e8; outline: 3px solid #6849e8; outline-offset: 3px; }"
-    },
-    {
-      "name": "Sidebar Nav Item",
-      "kind": "nav",
-      "refersTo": "nav-item",
-      "description": "Flat ruled nav rows with mono two-letter codes; active state is a drawn tint plus subject-ink border, not a glow.",
-      "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><a class=\"ds-nav-item ds-nav-item-active\" href=\"#\"><span class=\"ds-nav-icon\">TD</span><span class=\"ds-nav-label\">Today</span></a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-nav-icon\">PR</span><span class=\"ds-nav-label\">Practice</span></a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-nav-icon\">LR</span><span class=\"ds-nav-label\">Learn</span></a></nav>",
-      "css": ".ds-nav { display: grid; gap: 4px; max-width: 244px; } .ds-nav-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 9px 10px; border: 1px solid transparent; border-radius: 0; color: #65675f; font-size: 13px; font-weight: 700; text-decoration: none; transition: border-color 160ms ease, background 160ms ease, color 160ms ease; } .ds-nav-item:hover { border-color: #cbc8bd; background: #fbfaf6; color: #161713; } .ds-nav-item:focus-visible { outline: 3px solid #6849e8; outline-offset: 3px; } .ds-nav-item:active { transform: scale(0.98); } .ds-nav-item-active { border-color: #201a3d; background: #e2dcff; color: #201a3d; } .ds-nav-icon { width: 24px; color: currentColor; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 9px; font-weight: 800; letter-spacing: 0.04em; }"
-    },
-    {
-      "name": "Chip",
-      "kind": "chip",
-      "refersTo": "chip",
-      "description": "999px pill with mono uppercase text on Raised Paper; hover adds the accent wash, selected trades in subject tint plus subject ink.",
-      "html": "<div class=\"ds-chip-row\"><button class=\"ds-chip\">Algebra</button><button class=\"ds-chip ds-chip-on\">Geometry</button><button class=\"ds-chip\">Ratio</button></div>",
-      "css": ".ds-chip-row { display: flex; flex-wrap: wrap; gap: 6px; } .ds-chip { padding: 5px 10px; border: 1px solid #8d8e85; border-radius: 999px; background: #fbfaf6; color: #161713; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer; transition: border-color 160ms ease, background 160ms ease; } .ds-chip:hover { border-color: #6849e8; background: #ece8ff; } .ds-chip:focus-visible { outline: 3px solid #6849e8; outline-offset: 3px; } .ds-chip-on { border-color: #201a3d; background: #e2dcff; color: #201a3d; }"
-    },
-    {
-      "name": "Stat Card",
-      "kind": "card",
-      "refersTo": "stat-card",
-      "description": "Read-only squared stat tile: Georgia tabular numeral in subject ink over a mono label; the good state trades in the Marker Green wash. No hover by design.",
-      "html": "<div class=\"ds-stat-row\"><div class=\"ds-stat-card\"><span class=\"ds-stat-num\">87%</span><span class=\"ds-stat-label\">PAPER 2 ACCURACY</span></div><div class=\"ds-stat-card ds-stat-card-good\"><span class=\"ds-stat-num\">12</span><span class=\"ds-stat-label\">DAY STREAK</span></div></div>",
-      "css": ".ds-stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 10px; } .ds-stat-card { display: flex; flex-direction: column; justify-content: center; gap: 12px; min-height: 112px; padding: 18px 20px; border: 1px solid #8d8e85; border-radius: 0; background: #fbfaf6; } .ds-stat-num { color: #201a3d; font-family: Georgia, 'Times New Roman', serif; font-size: 38px; font-weight: 400; line-height: 0.9; font-variant-numeric: tabular-nums; } .ds-stat-label { color: #65675f; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 9px; font-weight: 800; letter-spacing: 0.07em; line-height: 1.6; } .ds-stat-card-good { background: #dcebe3; } .ds-stat-card-good .ds-stat-num, .ds-stat-card-good .ds-stat-label { color: #237b55; }"
-    },
-    {
-      "name": "Paper Docket",
-      "kind": "custom",
-      "refersTo": "docket",
-      "description": "The signature printed working form: Raised Paper card with a 5px accent strip inside the left edge, mono paper label and serif title; hover inks the border and lifts the sheet 2px.",
-      "html": "<a class=\"ds-docket\" href=\"#\"><span class=\"ds-docket-paper\">PAPER 1 · CALCULATOR</span><span class=\"ds-docket-title\">Practice Paper 1</span><span class=\"ds-docket-detail\">90 minutes · 80 marks · Foundation tier</span></a>",
-      "css": ".ds-docket { position: relative; display: grid; gap: 4px; padding: 18px 20px 18px 26px; border: 1px solid #8d8e85; border-radius: 0; background: #fbfaf6; color: #161713; text-decoration: none; transition: border-color 160ms ease, transform 160ms ease; } .ds-docket::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 5px; background: #6849e8; } .ds-docket:hover { border-color: #161713; transform: translateY(-2px); } .ds-docket:active { transform: translateY(0); } .ds-docket:focus-visible { outline: 3px solid #6849e8; outline-offset: 3px; } .ds-docket-paper { color: #201a3d; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; } .ds-docket-title { font-family: Georgia, 'Times New Roman', serif; font-size: 21px; letter-spacing: -0.02em; } .ds-docket-detail { color: #65675f; font-size: 13px; }"
-    },
-    {
-      "name": "Exam Question Card",
-      "kind": "card",
-      "refersTo": "panel",
-      "description": "The squared exam surface: a 4px accent top rule above a Heavy Rule panel, with mono question metadata and tabular-friendly body text.",
-      "html": "<article class=\"ds-qcard\"><span class=\"ds-q-tag\">Q4 · 3 MARKS</span><p class=\"ds-q-text\">Work out 3/4 + 1/8. Give your answer as a fraction in its simplest form.</p></article>",
-      "css": ".ds-qcard { padding: 18px 20px; border: 1px solid #8d8e85; border-top: 4px solid #6849e8; border-radius: 0; background: #fbfaf6; } .ds-q-tag { display: inline-block; margin-bottom: 10px; padding: 3px 8px; background: #e9e6dc; color: #65675f; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; } .ds-q-tag-marks { background: #dcebe3; color: #237b55; } .ds-q-text { margin: 0; color: #161713; font-size: 15px; line-height: 1.55; font-variant-numeric: tabular-nums; }"
-    },
-    {
-      "name": "Progress Meter",
-      "kind": "custom",
-      "description": "Ruled track, not a glossy bar: a Shaded Paper track with a Heavy Rule border and an accent fill that animates width, under a mono label with a tabular percentage.",
-      "html": "<div class=\"ds-meter\"><div class=\"ds-meter-head\"><span class=\"ds-meter-label\">EXPERTISE</span><span class=\"ds-meter-pct\">68%</span></div><div class=\"ds-meter-track\"><span class=\"ds-meter-fill\" style=\"width: 68%\"></span></div></div>",
-      "css": ".ds-meter-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; } .ds-meter-label { color: #65675f; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; } .ds-meter-pct { color: #65675f; font-size: 11px; font-variant-numeric: tabular-nums; } .ds-meter-track { height: 10px; border: 1px solid #8d8e85; background: #e9e6dc; overflow: hidden; } .ds-meter-fill { display: block; height: 100%; background: #6849e8; transition: width 500ms ease; }"
-    }
-  ],
+  "components": [],
   "narrative": {
-    "northStar": "The Ruled Notebook",
-    "overview": "GCSE Study Desk looks like a well-kept student's desk: warm paper under ink-black rules, metadata stamped in monospace, and one honest subject accent at a time. Every surface reads as a printed working form — squared exam papers, ruled notebooks, marked scripts — rather than a floating app card. The character is warm, precise, trustworthy: stationery-warm, ledger-precise, quietly confident, exam-authentic. Density is generous but ruled; hairlines and ink borders do the separating so type can stay calm.\n\nOne identity adapts to each platform on purpose. On the web, surfaces are sharp ruled forms — radius 0 panels, buttons and inputs — with hover as a first-class state: borders darken to ink and rows lift 1–2px. On native, everyday surfaces take a rounded desk character (13–22px), while exam-critical surfaces stay sharp and square; touch uses pressed scale feedback, safe areas and a rounded native tab bar. It is one identity with intentional adaptation, not two designs.\n\nThe confirmed anti-reference is neon SaaS/dashboard styling: no glows on dark navy panels, no radial purple-and-pink gradients, no glassy floating cards. The retired legacy theme that used exactly that look remains in the codebase as residue; it is not the design system. Depth is printed, not projected — tonal washes and rule weights carry hierarchy, and shadows exist only on native chrome and exceptional overlays.",
+    "northStar": "Learning studio",
+    "overview": "An open working surface with purposeful learning actions, readable evidence and quiet controls. Shared semantic palettes and typography unite platform-appropriate web and native layouts.",
     "keyCharacteristics": [
-      "Warm paper first: Desk Paper (#f3f0e8) with a 24px squared-paper pattern under every web screen; native repeats the same ruled texture as hairline rows.",
-      "Borders are elevation: hairlines, stronger edges, ink rules and tonal washes create hierarchy; web surfaces are flat (`box-shadow: none`).",
-      "One accent per subject: Exam Violet (Maths Foundation), Higher Green (Maths Higher), Manuscript Ochre (English Language) — never mixed within a surface.",
-      "State washes: pale same-hue washes behind matching ink for Marker Green, Ledger Amber, Marking Red and Examiner Blue.",
-      "Mono metadata: uppercase monospace labels at 8–11px with 0.07–0.09em tracking.",
-      "Georgia serif display at weight 400 with tight negative tracking, over a system sans body.",
-      "Dark mode is a separate warm ink on dark paper, not a dimmed copy of light mode."
-    ],
-    "rules": [
-      { "name": "The One Accent, One Surface Rule", "body": "Each course owns exactly one accent — Exam Violet, Higher Green or Manuscript Ochre — spent on borders, fills and primary buttons. Accents never mix within a surface, and accent washes are never used outside their subject.", "section": "colors" },
-      { "name": "The Wash Rule", "body": "State never shouts. Semantic colour appears as a pale wash behind ink of the same hue, always paired with a border of the same colour and a text or position cue, so no state relies on colour alone.", "section": "colors" },
-      { "name": "The Mono Label Rule", "body": "Metadata is set in uppercase monospace at 8–11px with 0.07–0.09em tracking; mono never sets the sentences a learner must read as prose.", "section": "typography" },
-      { "name": "The Borders Are Elevation Rule", "body": "Hairlines, stronger edges, ink rules and tonal washes create hierarchy; shadows are reserved for native chrome and exceptional overlays, never for ordinary web surfaces.", "section": "elevation" }
+      "Open learning sections",
+      "Evidence in context",
+      "Readable metadata",
+      "Flat surfaces",
+      "Explicit learning states"
     ],
     "dos": [
-      "**Do** consume the shared tokens (`--paper`, `--ink`, `--accent`, `--subject-tint`, washes) from `study-desk.css` and each subject's `theme.css`; new UI never hardcodes colours.",
-      "**Do** keep every colour legible in both themes: dark mode re-inks with its own warm paper and brighter accents, it is not a shadow of light mode.",
-      "**Do** set state as wash + same-hue border + same-hue text, with a non-colour cue alongside (label, position, mark).",
-      "**Do** use tabular numerals (`font-variant-numeric: tabular-nums`) for stats, timers, scores and answer inputs.",
-      "**Do** keep hover printed: border darkens toward India Ink with a 1–2px lift and no shadow on web.",
-      "**Do** respect `prefers-reduced-motion`: transitions and animations collapse to none."
+      "Use generated semantic tokens.",
+      "Keep one useful learning action prominent.",
+      "Pair colour with words and evidence."
     ],
     "donts": [
-      "**Don't** use neon SaaS/dashboard styling: no glows on dark navy panels, no radial purple/pink gradients, no glassy floating cards — that is the retired legacy theme and the confirmed anti-reference.",
-      "**Don't** shadow web surfaces: `box-shadow: none` is the normative web state; shadows belong to native chrome and exceptional overlays only.",
-      "**Don't** round web working surfaces: 0 radius for panels, buttons, inputs and modals; reserve 999px pills for chips and badges.",
-      "**Don't** mix subject accents within one surface, and don't use an accent's tint as a generic decoration outside its course.",
-      "**Don't** rely on colour alone to communicate subject, state, correctness, readiness or progress."
+      "Do not restore the V1 grid and tiny mono labels.",
+      "Do not equate accuracy with mastery.",
+      "Do not claim unverified accessibility or cross-device draft support."
     ]
   }
 }

@@ -1,9 +1,96 @@
-import { Tabs } from 'expo-router';
-import { StyleSheet, View, type ColorValue } from 'react-native';
-import { useTheme } from '@/theme';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import type { ComponentProps } from 'react';
-type IconName=ComponentProps<typeof MaterialCommunityIcons>['name'];
-const icon=(name:IconName,activeName:IconName)=>{function TabIcon(p:{color:ColorValue;focused:boolean}){return <View style={[styles.icon,p.focused&&styles.activeIcon]}><MaterialCommunityIcons name={p.focused?activeName:name} size={23} color={String(p.color)}/></View>}return TabIcon};
-export default function TabLayout(){const {colors,subject}=useTheme();return <Tabs screenOptions={{headerShown:false,tabBarActiveTintColor:subject.accent,tabBarInactiveTintColor:colors.quiet,tabBarHideOnKeyboard:true,tabBarStyle:{backgroundColor:colors.raised,borderTopColor:colors.line,borderTopWidth:1,paddingTop:7,paddingBottom:8,shadowColor:'#000',shadowOpacity:0,shadowRadius:14,shadowOffset:{width:0,height:-4},elevation:0},tabBarItemStyle:{borderRadius:16},tabBarLabelStyle:{fontSize:11,fontWeight:'800'}}}><Tabs.Screen name="index" options={{title:'Today',tabBarIcon:icon('home-variant-outline','home-variant')}}/><Tabs.Screen name="reflect" options={{title:'Reflect',tabBarIcon:icon('chart-box-outline','chart-box')}}/><Tabs.Screen name="practice" options={{title:'Practice',tabBarIcon:icon('clipboard-text-outline','clipboard-text')}}/><Tabs.Screen name="learn" options={{title:'Learn',tabBarIcon:icon('book-open-page-variant-outline','book-open-page-variant')}}/><Tabs.Screen name="tutor" options={{title:'Tutor',tabBarIcon:icon('message-processing-outline','message-processing')}}/></Tabs>}
-const styles=StyleSheet.create({icon:{width:38,height:29,borderRadius:11,alignItems:'center',justifyContent:'center'},activeIcon:{backgroundColor:'transparent'}});
+import { Tabs } from "expo-router";
+import { StyleSheet, View, type ColorValue } from "react-native";
+import { useTheme } from "@/theme";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import type { ComponentProps } from "react";
+type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
+const icon = (name: IconName, activeName: IconName) => {
+  function TabIcon(p: { color: ColorValue; focused: boolean }) {
+    return (
+      <View style={[styles.icon, p.focused && styles.activeIcon]}>
+        <MaterialCommunityIcons
+          name={p.focused ? activeName : name}
+          size={23}
+          color={String(p.color)}
+        />
+      </View>
+    );
+  }
+  return TabIcon;
+};
+export default function TabLayout() {
+  const { colors, subject } = useTheme();
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: subject.accent,
+        tabBarInactiveTintColor: colors.quiet,
+        tabBarHideOnKeyboard: true,
+        tabBarStyle: {
+          backgroundColor: colors.raised,
+          borderTopColor: colors.line,
+          borderTopWidth: 1,
+          paddingTop: 7,
+          paddingBottom: 8,
+          shadowColor: "#000",
+          shadowOpacity: 0,
+          shadowRadius: 14,
+          shadowOffset: { width: 0, height: -4 },
+          elevation: 0,
+        },
+        tabBarItemStyle: { borderRadius: 16 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "800" },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Today",
+          tabBarIcon: icon("home-variant-outline", "home-variant"),
+        }}
+      />
+      <Tabs.Screen
+        name="learn"
+        options={{
+          title: "Learn",
+          tabBarIcon: icon(
+            "book-open-page-variant-outline",
+            "book-open-page-variant",
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="practice"
+        options={{
+          title: "Practice",
+          tabBarIcon: icon("clipboard-text-outline", "clipboard-text"),
+        }}
+      />
+      <Tabs.Screen
+        name="reflect"
+        options={{
+          title: "Reflect",
+          tabBarIcon: icon("chart-box-outline", "chart-box"),
+        }}
+      />
+      <Tabs.Screen
+        name="tutor"
+        options={{
+          title: "Tutor",
+          tabBarIcon: icon("message-processing-outline", "message-processing"),
+        }}
+      />
+    </Tabs>
+  );
+}
+const styles = StyleSheet.create({
+  icon: {
+    width: 38,
+    height: 29,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  activeIcon: { backgroundColor: "transparent" },
+});

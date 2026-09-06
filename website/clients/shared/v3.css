@@ -395,11 +395,12 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 .strength-quiet { background: var(--v3-surface-2); border-color: var(--v3-line-strong); color: var(--v3-muted); }
 
 /* V3 mastery path (new): trail nodes, weakest-first, labels never colour-alone */
-.v3-mastery { margin-top: 14px; display: grid; gap: 10px; }
+.v3-mastery { margin-top: 16px; display: grid; gap: 12px; }
 .v3-mastery-row {
-  display: grid; grid-template-columns: 1fr auto; gap: 4px 14px; align-items: center;
-  padding: 14px 16px; border: 1px solid var(--v3-line); border-radius: var(--v3-r-md);
+  display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center;
+  padding: 16px 18px; border: 1px solid var(--v3-line); border-radius: var(--v3-r-md);
   background: var(--v3-paper); text-decoration: none; color: inherit;
+  box-shadow: var(--v3-shadow-sm);
   transition: transform var(--v3-dur-1) var(--v3-ease-out), border-color var(--v3-dur-1), box-shadow var(--v3-dur-1);
 }
 a.v3-mastery-row:hover { transform: translateY(-1px); border-color: var(--v3-line-strong); box-shadow: var(--v3-shadow-sm); }
@@ -597,3 +598,6 @@ input:focus, select:focus, textarea:focus, .answer-input:focus { border-color: v
   .panel, .stat-card, .paper-card, .q-card { border-width: 2px !important; }
 }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* Guard: legacy CSS `display` rules must never override the `hidden`
+   attribute — that bug once rendered a dead table inside the mastery path. */
+.mastery-leader[hidden] { display: none !important; }

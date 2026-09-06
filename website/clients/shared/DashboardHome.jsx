@@ -176,17 +176,6 @@ export default function DashboardHome({
                 );
               })}
             </div>
-            {/* Legacy rows kept hidden for back-compat selectors */}
-            <div className="mastery-leader" hidden aria-hidden="true">
-              {ranked.map((m) => (
-                <div key={m.id} className="mastery-leader-row">
-                  <span className="mastery-leader-name">{m.name}</span>
-                  <span className="mastery-leader-bar"><i style={{ width: `${m.percent ?? 0}%` }} /></span>
-                  <span className="mastery-leader-pct">{m.percent != null ? `${m.percent}%` : '—'}</span>
-                  <Link className="mastery-leader-cta" to={`${learnBase}`}>Practise →</Link>
-                </div>
-              ))}
-            </div>
             <p className="sub small">
               Built from every answer across papers, lessons and mixed rounds. Drill a weak step in{' '}
               <button type="button" className="link link-button" onClick={() => navigate(learnBase)}>Learn</button>.

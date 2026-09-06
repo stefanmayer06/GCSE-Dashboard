@@ -77,7 +77,7 @@ export default function Dashboard({ health, progress, userId }) {
       diagnosticUrl="/practice?diagnostic=1#adhoc"
       masteryRows={mastery}
       masteryLoading={!mastery && !!progress}
-      masteryEmptyHint="No accuracy data yet — it appears here, weakest first, once you answer questions in papers, drills or quick-fire rounds."
+      masteryEmptyHint="Answer questions in papers, drills or quick-fire rounds to see your topic accuracy here."
       masteryTitle="Skill accuracy — weakest first"
       papers={{
         blurb:

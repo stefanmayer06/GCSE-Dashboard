@@ -31,7 +31,7 @@ export function NextStepCard({ step, weak = [], dueCount = 0, streak = null, rea
   return (
     <section className={`panel nextstep-card tone-${tone}`} aria-labelledby="next-step-title">
       <div className="nextstep-top">
-        <div className="nextstep-ring" role="img" aria-label={ringPct != null ? `Readiness ${ringPct} percent, evidence-based, not a predicted grade` : 'Readiness still building — complete marked work to grow it'}>
+        <div className="nextstep-ring" role="img" aria-label={ringPct != null ? `Readiness ${ringPct} percent, calculated from marked work` : 'Complete marked work to build your readiness score'}>
           <svg viewBox="0 0 64 64" aria-hidden="true">
             <circle className="ring-bg" cx="32" cy="32" r="26" fill="none" strokeWidth="7" />
             <circle

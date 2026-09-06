@@ -169,7 +169,7 @@ export default function Results({ userId }) {
           </table>
           <p className="sub small">
              Rounded predicted boundaries for AQA 8300{isHigherResult ? 'H' : 'F'} practice. Real boundaries move each
-            exam series — this is a prediction, not a promise.
+             exam series. Use this estimate to plan your next practice.
           </p>
         </div>
 

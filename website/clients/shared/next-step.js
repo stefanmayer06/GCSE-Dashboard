@@ -144,7 +144,7 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
       eyebrow: "Today's mission",
       title: mission.task || 'Complete today’s mission',
       detail: isRetryDay
-        ? 'No new lesson today. Work the notebook, then the day is yours.'
+        ? 'Complete today’s notebook review.'
         : 'This day has no lesson — use the practice desk to keep your plan on track.',
       href: isRetryDay ? '/notebook' : '/practice',
       cta: isRetryDay ? 'Open notebook' : 'Open practice',
@@ -158,7 +158,7 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
       kind: 'weak-topic',
       eyebrow: `Needs work · ${weak.accuracy}% so far`,
       title: `Revisit ${weak.name}`,
-      detail: `Your accuracy across ${weak.answered} question${weak.answered === 1 ? '' : 's'} suggests the method is not secure yet. Reread the lesson, then drill it.`,
+      detail: `You scored ${weak.accuracy}% across ${weak.answered} question${weak.answered === 1 ? '' : 's'}. Reread the lesson, then practise the method again.`,
       href: `/learn/${weak.id}`,
       cta: 'Relearn this topic',
       meta: weak.strand,

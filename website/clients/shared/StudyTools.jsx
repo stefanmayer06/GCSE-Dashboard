@@ -138,7 +138,7 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
           </>
         )}
       </div>
-      <p className="sub small">Step {step + 1} of {steps.length} · saved to your account, not shared with anyone. You can skip — the diagnostic is always on the Practice desk.</p>
+      <p className="sub small">Step {step + 1} of {steps.length} · saved privately to your account. You can take the diagnostic later from Practice.</p>
     </section>
   );
 }
@@ -223,7 +223,7 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
         <div className={`panel mission-card${todayDone ? ' mission-done' : ''}`}>
           <div className="eyebrow">Today&apos;s mission</div>
           <h2>{isRestDay && !todayDone ? 'Rest day — planned recovery' : mission ? mission.task : todayDone ? `✓ ${todayDone.task} done` : doneCount === 7 ? 'Every mission done' : 'Pick your first mission'}</h2>
-          <p className="sub">{isRestDay && !todayDone ? 'No mission today by your plan. Light retrieval only: reread one mastered note, or take the day fully off — the streak keeps what rest protects.' : mission ? (mission.topicId ? `${mission.minutes} focused minutes · learn it, then finish the short practice to lock today in.` : mission.task === 'Mistake retry' ? 'No lesson today. Clear the mistakes that are due, then the day is yours.' : 'This day has no lesson — use the practice desk to keep your plan on track.') : todayDone ? (todayDone.result ? `Score ${todayDone.result.percent}% · ${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks${todayDone.result.xpEarned != null ? ` · +${todayDone.result.xpEarned} XP` : ''} recorded. Come back tomorrow — the rest of the week stays locked.` : 'Come back tomorrow — the rest of the week stays locked.') : doneCount === 7 ? 'Enjoy the break, or keep practising freely. A fresh plan starts on Monday.' : 'Complete today\u2019s row in the exam plan below; future days stay locked until then.'}</p>
+          <p className="sub">{isRestDay && !todayDone ? 'Today is a planned rest day. You can reread one mastered note or take the day off.' : mission ? (mission.topicId ? `${mission.minutes} focused minutes · learn it, then finish the short practice.` : mission.task === 'Mistake retry' ? 'Clear the mistakes due today to complete your mission.' : 'Use the Practice desk to complete today’s mission.') : todayDone ? (todayDone.result ? `Score ${todayDone.result.percent}% · ${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks${todayDone.result.xpEarned != null ? ` · +${todayDone.result.xpEarned} XP` : ''} recorded. Your next mission opens tomorrow.` : 'Your next mission opens tomorrow.') : doneCount === 7 ? 'This week is complete. A fresh plan starts on Monday.' : 'Complete today\u2019s row in the exam plan below. Your next mission opens tomorrow.'}</p>
           <div className="study-actions">
             {mission?.topicId && <Link className="btn btn-primary" to={`/learn/${mission.topicId}`} onClick={() => startMission(mission.date, mission.topicId)}>Start mission</Link>}
             {mission && !mission.topicId && <Link className="btn btn-primary" to={mission.task === 'Mistake retry' ? '/notebook' : '/practice'}>Open {mission.task}</Link>}
@@ -234,7 +234,7 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
         <div className="panel readiness-card">
           <div className="eyebrow">Readiness score</div>
           <div className="readiness-number">{evidence.ready ? `${evidence.score}%` : 'Not enough evidence'}</div>
-          <p className="sub">{evidence.ready ? `Based on ${evidence.answered} marked answers across ${evidence.topics} topics. Accuracy is a guide, not a predicted grade.` : `${evidence.answered}/20 marked answers across ${evidence.topics}/3 topics. The score appears only when both thresholds are met.`}</p>
+          <p className="sub">{evidence.ready ? `Calculated from ${evidence.answered} marked answers across ${evidence.topics} topics.` : `Complete 20 marked answers across 3 topics to unlock your score. Current progress: ${evidence.answered} answers across ${evidence.topics} topics.`}</p>
           {progress?.streakFreezes > 0 && (
             <p className="sub small freeze-note">
               {progress.streakFreezes} streak freeze{progress.streakFreezes === 1 ? '' : 's'} banked — one missed day won&apos;t reset your {progress?.streak ?? 0}-day streak.
@@ -598,7 +598,7 @@ export function Notebook({ userId, subject, api }) {
             <p className="sub small">
               {row.warmupCount
                 ? 'Warm-up logged — grade the cold retry honestly: Again sees it tomorrow, Easy pushes it weeks out.'
-                : 'Do the warm-up first, then retry the question cold and grade your recall. Mastery is proving it, not recognising it.'}
+                : 'Do the warm-up, retry the question from memory, then grade your recall.'}
             </p>
           </div>
         )}
@@ -790,14 +790,14 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
               </tbody>
             </table>
           </>
-        ) : <p className="empty">No mistakes saved yet — complete a marked paper or practice set and missed questions land here automatically.</p>}
+        ) : <p className="empty">Complete a marked paper or practice set to start your mistake notebook.</p>}
       </section>
       <section className="panel">
         <h2>Next focus</h2>
         <p>{preferences.passMode === 'foundation-pass' ? 'Pass mode is on: working towards a grade 4 goal through core and weak topics.' : 'Follow the saved exam plan on the dashboard and clear due notebook mistakes.'}</p>
-        <p className="sub">This is a revision snapshot, not an official grade prediction.</p>
+        <p className="sub">This revision snapshot summarises your marked work.</p>
         <div className="evidence-signature no-print" aria-hidden="true">
-          <span>Share with a teacher or parent: print or save as PDF — no second account needed.</span>
+          <span>Print or save this page as a PDF to share it with a teacher or parent.</span>
         </div>
       </section>
     </div>

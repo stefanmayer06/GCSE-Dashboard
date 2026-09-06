@@ -31,17 +31,17 @@ function formatExamMonth(dateStr) {
 
 function examCopy(days, dateStr) {
   if (days == null) return 'Set your exam date to start the countdown';
-  if (days < 0) return 'Exam date passed — keep evidence for resits or next steps';
-  if (days === 0) return 'Exams today — good luck. Warm up, don’t cram';
-  if (days === 1) return '1 day to go — short, sharp review only';
-  if (days <= 14) return `${days} days to go — every session counts now`;
+  if (days < 0) return 'Exam date passed. Keep your results for resits or next steps';
+  if (days === 0) return 'Exam today. Good luck. Keep your warm-up short';
+  if (days === 1) return '1 day to go. Do one short review';
+  if (days <= 14) return `${days} days to go. Every session counts`;
   // Far-future dates (e.g. a placeholder year) would read as absurd day
   // counts — show the month instead. Plenty of runway is the message.
   if (days > 365) {
     const month = formatExamMonth(dateStr);
-    return month ? `Exams ${month} — plenty of runway, build the habit now` : 'Exam date set — steady progress beats last-minute rush';
+    return month ? `Exams ${month}. Build a steady weekly habit` : 'Exam date set. Keep your practice steady';
   }
-  return `${days} days to go — steady progress beats last-minute rush`;
+  return `${days} days to go. Keep your practice steady`;
 }
 
 function ContinueStrip({ subjectKey, learnBase = '/learn' }) {
@@ -87,11 +87,11 @@ export default function DashboardHome({
   const tone = examTone(days);
 
   const streakCap = progress?.streak > 0
-    ? 'Paused days don’t erase progress — freezes have you covered'
-    : 'One mission starts the trail — rest days are part of the plan';
+    ? 'A streak freeze protects one missed day'
+    : 'Complete one mission to start your streak';
   const stats = [
     { value: progress?.testsTaken ?? '—', label: 'Timed papers sat', cap: 'Marked, reviewable, with worked methods' },
-    { value: overall != null ? `${overall}%` : '—', label: 'Average paper score', cap: 'Evidence so far — not a predicted grade' },
+    { value: overall != null ? `${overall}%` : '—', label: 'Average paper score', cap: 'Calculated from your marked papers' },
     { value: progress?.practiceAnswered ?? '—', label: 'Questions answered', cap: 'Lessons, drills and mixed rounds' },
     { value: progress?.streak > 0 ? progress.streak : '—', label: 'Day streak', cap: streakCap },
   ];
@@ -124,7 +124,7 @@ export default function DashboardHome({
         ))}
       </section>
 
-      <p className="section-label"><span className="section-num">02</span> Up next — do this first</p>
+      <p className="section-label"><span className="section-num">02</span> Your next task</p>
       <p className="sub" style={{ marginTop: -6 }}>One clear step. Everything else can wait.</p>
       <NextStepCard
         step={nextStep.step}
@@ -136,7 +136,7 @@ export default function DashboardHome({
         examDate={nextStep.examDate}
       />
 
-      <p className="section-label"><span className="section-num">03</span> Today — mission, readiness, week</p>
+      <p className="section-label"><span className="section-num">03</span> Today&apos;s plan</p>
       <StudyDashboard
         userId={userId}
         subject={subjectKey}
@@ -147,10 +147,10 @@ export default function DashboardHome({
         api={api}
       />
 
-      <p className="section-label"><span className="section-num">04</span> Mastery path — weakest first</p>
+      <p className="section-label"><span className="section-num">04</span> Mastery path</p>
       <section className="panel" aria-labelledby="mastery-title">
         <h2 id="mastery-title">{masteryTitle}</h2>
-        <p className="sub">New → Learning → Developing → Secure → Mastered. Every step shows its evidence — never colour alone.</p>
+        <p className="sub">Work through New → Learning → Developing → Secure → Mastered. Each level is based on your answers.</p>
         {masteryLoading ? (
           <div className="skeleton-block" role="status" aria-label="Loading mastery"> </div>
         ) : !ranked.some((m) => m.answered > 0) ? (
@@ -221,7 +221,7 @@ export default function DashboardHome({
         ) : null}
       </section>
 
-      <p className="section-label"><span className="section-num">06</span> Evidence — levels, memory, milestones</p>
+      <p className="section-label"><span className="section-num">06</span> Levels and milestones</p>
       <ExpertisePath progress={progress} onChooseLesson={() => navigate(learnBase)} />
 
       <MemRiCard userId={userId} subject={subjectKey} api={api} />

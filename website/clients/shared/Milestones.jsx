@@ -27,11 +27,11 @@ export function MilestoneShelf({ progress = null, subjectName = 'Study Desk', ap
           ))}
         </ul>
       ) : (
-        <p className="empty">No milestones yet — your first timed paper earns the first seal.</p>
+        <p className="empty">Complete your first timed paper to earn a milestone.</p>
       )}
       {next && (
         <p className="sub small">
-          Next seal: <strong>{next.label}</strong> — {next.value}/{next.at}
+          Next milestone: <strong>{next.label}</strong> · {next.value}/{next.at}
           {next.kind === 'streak' ? ' days' : next.kind === 'papers' ? ' papers' : ' lessons'}.
         </p>
       )}

@@ -236,7 +236,7 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
         <p className="login-local">
           {authDriver === 'supabase' ? 'Secure account · shared across subjects' : 'Local account · data stored on this device'}
         </p>
-        <p className="login-trust">Your revision stays yours — progress follows your account, never shared.</p>
+        <p className="login-trust">Your progress is private and follows your account.</p>
       </div>
     </div>
   );

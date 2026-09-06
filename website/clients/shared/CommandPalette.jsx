@@ -143,7 +143,7 @@ export default function CommandPalette({ items = [] }) {
           </button>
         </div>
         <p className="palette-count" role="status">
-          {results.length === 0 ? 'No matches — try a topic or page name.' : `${results.length} match${results.length === 1 ? '' : 'es'}`}
+          {results.length === 0 ? 'Try another topic or page name.' : `${results.length} match${results.length === 1 ? '' : 'es'}`}
         </p>
         <ul id="palette-list" ref={listRef} role="listbox" aria-label="Matches" className="palette-list">
           {results.map((item, index) => {

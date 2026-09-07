@@ -292,10 +292,9 @@ export default function Practice({ onProgress, userId }) {
       <header className="page-head">
         <div>
           <h1>Practice exam</h1>
-          <p className="sub">
-             All three AQA {higherTier ? 'Higher' : 'Foundation'} papers — 8300/{higherTier ? '1H' : '1F'} (non-calculator),
-             8300/{higherTier ? '2H' : '2F'} and 8300/{higherTier ? '3H' : '3F'} (calculator) — built fresh from the question bank every time.
-          </p>
+           <p className="sub">
+             Choose from all three AQA {higherTier ? 'Higher' : 'Foundation'} papers. Paper 1 is non-calculator; Papers 2 and 3 allow a calculator. Each paper uses a new set of questions.
+           </p>
         </div>
       </header>
 
@@ -415,11 +414,11 @@ function AdhocSection({ higherTier = false, onProgress, diagnostic = false, fixu
     <section className="panel" id="adhoc">
       <div className="quiz-head">
         <div>
-          <h2>{fixupActive ? 'Fix-Up round' : 'Ad-hoc questions'}</h2>
+          <h2>{fixupActive ? 'Questions to revisit' : 'Mixed practice'}</h2>
           <p className="sub">
             {fixupActive
-              ? 'Five questions drawn from your due mistakes and weakest topics — grade every retry honestly.'
-              : `A quick mixed bag drawn from any combination of the three ${higherTier ? 'Higher' : 'Foundation'} papers — great for keeping every topic sharp between full mocks.`}
+              ? 'Try five questions based on your recent mistakes and lower-scoring topics.'
+              : `Choose questions from any of the three ${higherTier ? 'Higher' : 'Foundation'} papers. This is useful when you have less time than a full paper.`}
           </p>
         </div>
       </div>
@@ -523,7 +522,7 @@ function AdhocRunner({ set, onExit, onNew, onProgress, diagnostic = false, fixup
     <section className="panel">
       <div className="quiz-head">
         <div>
-          <h2>Ad-hoc round</h2>
+          <h2>Mixed practice</h2>
           <p className="sub">Mixed from {set.papersIncluded.join(' + ')} · {set.questions.length} questions</p>
         </div>
         <button className="btn" onClick={onExit}>Back to setup</button>

@@ -562,8 +562,8 @@ test('lesson rewards persist, update levels live and cannot be claimed twice', a
   await completeMathsLessonQuiz(page);
 
   await expect(page.locator('.reward-dialog')).toBeVisible();
-  await expect(page.locator('.reward-dialog')).toContainText('Lesson stamp earned');
-  await expect(page.locator('.reward-dialog')).toContainText('first-completion XP');
+  await expect(page.locator('.reward-dialog')).toContainText('Lesson complete');
+  await expect(page.locator('.reward-dialog')).toContainText('XP for finishing the lesson');
   await expect(page.locator('.reward-close')).toBeFocused();
   await page.keyboard.press('Shift+Tab');
   await expect(page.getByRole('button', { name: 'Choose another lesson' })).toBeFocused();
@@ -624,7 +624,7 @@ test('Maths lesson quick practice completes today in the exam plan', async ({ pa
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
   await expect(page.locator('.week-plan .done')).toContainText('Fractions');
   await expect(page.locator('.mission-card')).toContainText('Fractions done');
-  await expect(page.locator('.plan-note').last()).toContainText('1/7 days done this week');
+  await expect(page.locator('.plan-note').last()).toContainText('completed 1 of 7 days this week');
 });
 
 test('saving exam preferences refreshes personal data without an error', async ({ page }) => {

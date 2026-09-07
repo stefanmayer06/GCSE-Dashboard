@@ -294,8 +294,7 @@ export default function Practice({ health, onProgress, userId }) {
         <div>
           <h1>Practice papers</h1>
           <p className="sub">
-            Both AQA 8700 papers, freshly assembled from the text bank with real mark totals,
-            real timings, and a question-by-question target time.
+            Choose Paper 1 or Paper 2. Each practice paper has the correct mark total, exam timing and a suggested time for each question.
           </p>
         </div>
       </header>
@@ -326,8 +325,7 @@ export default function Practice({ health, onProgress, userId }) {
           )}
         </div>
         <p className="sub small" style={{ marginTop: 12 }}>
-           Long answers are marked by the AI tutor (Qwen 3.7 Flash) against summarised AQA mark
-          schemes. {health?.aiMarking ? 'AI marking is ready.' : 'No OpenRouter key set — you\u2019ll self-mark against model answers and rubrics instead.'}
+          Long answers are checked against an AQA-style mark scheme. {health?.aiMarking ? 'Automatic feedback is available.' : 'Use the model answers and rubrics to mark your own work.'}
         </p>
         <label className="pass-toggle">
           <input type="checkbox" checked={q5First} onChange={toggleQ5First} />
@@ -414,12 +412,11 @@ function AdhocSection({ onProgress, diagnostic = false, fixup = false, memri = f
     <section className="panel" id="adhoc">
       <div className="quiz-head">
         <div>
-          <h2>{fixupActive ? 'Fix-Up round' : 'Quick-fire round'}</h2>
+          <h2>{fixupActive ? 'Questions to revisit' : 'Quick practice'}</h2>
           <p className="sub">
             {fixupActive
-              ? 'Five questions drawn from your due mistakes and weakest skills — grade every retry honestly.'
-              : `Mixed mini-questions drawn from any text in the bank. Instant feedback; language
-            analysis gets AI marking when a key is configured.`}
+              ? 'Try five questions based on your recent mistakes and lower-scoring skills.'
+              : 'Choose a short set of questions using any text in the bank. You’ll get feedback as you work.'}
           </p>
         </div>
       </div>
@@ -523,7 +520,7 @@ function AdhocRunner({ set, onExit, onNew, onProgress, fixupMeta = null, userId 
     <section className="panel">
       <div className="quiz-head">
         <div>
-          <h2>Quick-fire round</h2>
+          <h2>Quick practice</h2>
           <p className="sub">{set.questions.length} questions from the text bank</p>
         </div>
         <button className="btn" onClick={onExit} disabled={busy}>Back to setup</button>

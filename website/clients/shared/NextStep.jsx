@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
 import { masteryStage } from './next-step.js';
 
-// V3 Trailhead — Today hero. Answers "What should I do next?" in one glance.
-// State is never colour-alone: ring + facts + weakest-3 all carry text.
-// Kind copy (no punishment): streaks pause, rest is part of the plan.
+// V4 Desk Edition — the "Your next move" hero. Answers "What should I do
+// now?" in one glance, like a note pinned to the front of a folder:
+// big step, sticker facts (streak · readiness · exams), weakest topics
+// flagged underneath. State is never colour-alone: ring + facts + stage
+// chips all carry text. Kind copy (no punishment): streaks pause, rest
+// is part of the plan. Class contract stays frozen for Playwright.
 function examLabelFor(examDays, examDate) {
   if (examDays == null) return 'Set date';
   if (examDays < 0) return 'Passed';
@@ -30,23 +33,9 @@ export function NextStepCard({ step, weak = [], dueCount = 0, streak = null, rea
   const streakLabel = streak == null ? '—' : streak === 0 ? 'Fresh start' : `${streak} day${streak === 1 ? '' : 's'}`;
   return (
     <section className={`panel nextstep-card tone-${tone}`} aria-labelledby="next-step-title">
-      <div className="nextstep-top">
-        <div className="nextstep-ring" role="img" aria-label={ringPct != null ? `Readiness ${ringPct} percent, calculated from marked work` : 'Complete marked work to build your readiness score'}>
-          <svg viewBox="0 0 64 64" aria-hidden="true">
-            <circle className="ring-bg" cx="32" cy="32" r="26" fill="none" strokeWidth="7" />
-            <circle
-              className="ring-fg"
-              cx="32" cy="32" r="26" fill="none" strokeWidth="7" strokeLinecap="round"
-              strokeDasharray={ringC} strokeDashoffset={ringOff}
-              transform="rotate(-90 32 32)"
-            />
-            <text x="32" y="37" textAnchor="middle" fontSize="14" fontWeight="800" fill="currentColor">
-              {ringPct != null ? `${ringPct}` : '–'}
-            </text>
-          </svg>
-        </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <p className="eyebrow">{step.eyebrow || 'Up next · your trail'}</p>
+      <div className="nextstep-hero">
+        <div className="nextstep-copy">
+          <p className="eyebrow">{step.eyebrow || 'Up next'}</p>
           <h2 id="next-step-title">{step.title}</h2>
           <p className="sub">{step.detail}</p>
           <div className="nextstep-cta-row">
@@ -57,9 +46,27 @@ export function NextStepCard({ step, weak = [], dueCount = 0, streak = null, rea
               </Link>
             )}
           </div>
+          <p className="hero-scrawl" aria-hidden="true">One step is enough today.</p>
+        </div>
+        <div className="nextstep-side">
+          <div className="nextstep-ring" role="img" aria-label={ringPct != null ? `Readiness ${ringPct} percent, calculated from marked work` : 'Complete marked work to build your readiness score'}>
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle className="ring-bg" cx="32" cy="32" r="26" fill="none" strokeWidth="7" />
+              <circle
+                className="ring-fg"
+                cx="32" cy="32" r="26" fill="none" strokeWidth="7" strokeLinecap="round"
+                strokeDasharray={ringC} strokeDashoffset={ringOff}
+                transform="rotate(-90 32 32)"
+              />
+              <text x="32" y="37" textAnchor="middle" fontSize="14" fontWeight="800" fill="currentColor">
+                {ringPct != null ? `${ringPct}` : '–'}
+              </text>
+            </svg>
+          </div>
+          <span className="nextstep-ring-cap" aria-hidden="true">readiness</span>
         </div>
       </div>
-      <dl className="nextstep-facts" aria-label="Your position on the trail">
+      <dl className="nextstep-facts" aria-label="Your revision progress">
         <div>
           <dt>Streak</dt>
           <dd>{streakLabel}</dd>
@@ -75,7 +82,7 @@ export function NextStepCard({ step, weak = [], dueCount = 0, streak = null, rea
       </dl>
       {weak.length > 0 && (
         <div className="nextstep-weak">
-          <p className="eyebrow">Needs attention · weakest first</p>
+          <p className="eyebrow">Keep an eye on</p>
           <ul>
             {weak.map((topic) => {
               const stage = masteryStage(topic.accuracy, topic.answered);

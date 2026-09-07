@@ -51,6 +51,23 @@ function formatDate(iso) {
   return Number.isFinite(at) ? new Date(at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
 }
 
+// A far-off exam date (or a placeholder year) must never read as an absurd
+// day count — the month plus "plenty of runway" is the honest message.
+function examMonthLabel(dateStr) {
+  const at = Date.parse(dateStr ? `${dateStr}T12:00:00` : '');
+  return Number.isFinite(at) ? new Date(at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : null;
+}
+
+function planHeadline(days, examDate) {
+  if (days == null) return 'Set your exam date';
+  if (days < 0) return 'Exam date passed';
+  if (days > 365) {
+    const month = examMonthLabel(examDate);
+    return month ? `Exams ${month}` : 'Exam date set';
+  }
+  return `${days} day${days === 1 ? '' : 's'} to go`;
+}
+
 // One return ping per local calendar day, deduplicated in localStorage
 // (see ANALYTICS.md: week_return feeds the retention model).
 function noteReturn(api, userId, subject) {
@@ -75,7 +92,7 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
   const steps = [
     {
       title: 'When are your exams?',
-      body: 'Your 7-day plan counts down to the real date and keeps the last week for full-paper practice.',
+      body: 'We’ll use your exam date to plan what to revise each week.',
       control: (
         <input
           aria-label="Exam date"
@@ -88,7 +105,7 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
     },
     {
       title: 'What grade are you aiming for?',
-      body: 'Your target shapes which topics the plan prioritises. You can change it any time.',
+      body: 'This helps us choose the right topics for you. You can change it later.',
       control: (
         <div className="chip-row">
           {grades.map((grade) => (
@@ -108,7 +125,7 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
     },
     {
       title: 'Take the 10-question diagnostic',
-      body: 'It samples every strand and sets your first week of missions. It takes about ten minutes.',
+      body: 'It takes about 10 minutes and helps us choose what you should revise first.',
       control: null,
       canNext: false,
     },
@@ -117,7 +134,7 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
 
   return (
     <section className="panel onboarding-card" aria-label="Set up your revision">
-      <div className="eyebrow">Welcome · step {step + 1} of {steps.length}</div>
+      <div className="eyebrow">Getting started · {step + 1} of {steps.length}</div>
       <h2>{current.title}</h2>
       <p className="sub">{current.body}</p>
       {current.control && <div className="onboarding-control">{current.control}</div>}
@@ -138,7 +155,7 @@ export function Onboarding({ personal, progress, preferences, updatePreferences,
           </>
         )}
       </div>
-      <p className="sub small">Step {step + 1} of {steps.length} · saved privately to your account. You can take the diagnostic later from Practice.</p>
+      <p className="sub small">Your choices are saved to your account. You can take the diagnostic later from Practice.</p>
     </section>
   );
 }
@@ -221,11 +238,11 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
       />
       <section className="study-grid" aria-label="Revision planner">
         <div className={`panel mission-card${todayDone ? ' mission-done' : ''}`}>
-          <div className="eyebrow">Today&apos;s mission</div>
-          <h2>{isRestDay && !todayDone ? 'Rest day — planned recovery' : mission ? mission.task : todayDone ? `✓ ${todayDone.task} done` : doneCount === 7 ? 'Every mission done' : 'Pick your first mission'}</h2>
-          <p className="sub">{isRestDay && !todayDone ? 'Today is a planned rest day. You can reread one mastered note or take the day off.' : mission ? (mission.topicId ? `${mission.minutes} focused minutes · learn it, then finish the short practice.` : mission.task === 'Mistake retry' ? 'Clear the mistakes due today to complete your mission.' : 'Use the Practice desk to complete today’s mission.') : todayDone ? (todayDone.result ? `Score ${todayDone.result.percent}% · ${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks${todayDone.result.xpEarned != null ? ` · +${todayDone.result.xpEarned} XP` : ''} recorded. Your next mission opens tomorrow.` : 'Your next mission opens tomorrow.') : doneCount === 7 ? 'This week is complete. A fresh plan starts on Monday.' : 'Complete today\u2019s row in the exam plan below. Your next mission opens tomorrow.'}</p>
+          <div className="eyebrow">Today&apos;s revision</div>
+          <h2>{isRestDay && !todayDone ? 'Rest day' : mission ? mission.task : todayDone ? `✓ ${todayDone.task} done` : doneCount === 7 ? 'You’re done for the week' : 'Choose what to revise'}</h2>
+          <p className="sub">{isRestDay && !todayDone ? 'Today is a planned rest day. You can reread one saved note or take the day off.' : mission ? (mission.topicId ? `Spend ${mission.minutes} minutes on the lesson, then try the short practice.` : mission.task === 'Mistake retry' ? 'Retry the questions due today, then you’re done.' : 'Choose a short set of questions from Practice.') : todayDone ? (todayDone.result ? `You scored ${todayDone.result.percent}% (${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks)${todayDone.result.xpEarned != null ? ` and earned ${todayDone.result.xpEarned} XP` : ''}. Come back tomorrow for your next task.` : 'Come back tomorrow for your next task.') : doneCount === 7 ? 'You’ve finished this week’s plan. The next one starts on Monday.' : 'Choose today’s task from the plan below.'}</p>
           <div className="study-actions">
-            {mission?.topicId && <Link className="btn btn-primary" to={`/learn/${mission.topicId}`} onClick={() => startMission(mission.date, mission.topicId)}>Start mission</Link>}
+            {mission?.topicId && <Link className="btn btn-primary" to={`/learn/${mission.topicId}`} onClick={() => startMission(mission.date, mission.topicId)}>Start today&apos;s revision</Link>}
             {mission && !mission.topicId && <Link className="btn btn-primary" to={mission.task === 'Mistake retry' ? '/notebook' : '/practice'}>Open {mission.task}</Link>}
             {!isRestDay && <FixUpButton subject={subject} api={api} topics={topics} progress={progress} personal={personal} />}
             <Link className="btn" to={diagnosticUrl}>Fast diagnostic · 10 questions</Link>
@@ -233,16 +250,16 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
         </div>
         <div className="panel readiness-card">
           <div className="eyebrow">Readiness score</div>
-          <div className="readiness-number">{evidence.ready ? `${evidence.score}%` : 'Not enough evidence'}</div>
-          <p className="sub">{evidence.ready ? `Calculated from ${evidence.answered} marked answers across ${evidence.topics} topics.` : `Complete 20 marked answers across 3 topics to unlock your score. Current progress: ${evidence.answered} answers across ${evidence.topics} topics.`}</p>
+          <div className="readiness-number">{evidence.ready ? `${evidence.score}%` : 'More answers needed'}</div>
+          <p className="sub">{evidence.ready ? `Based on ${evidence.answered} marked answers across ${evidence.topics} topics.` : `Answer 20 questions across 3 topics to see your score. So far, you’ve answered ${evidence.answered} across ${evidence.topics} topics.`}</p>
           {progress?.streakFreezes > 0 && (
             <p className="sub small freeze-note">
-              {progress.streakFreezes} streak freeze{progress.streakFreezes === 1 ? '' : 's'} banked — one missed day won&apos;t reset your {progress?.streak ?? 0}-day streak.
+              You have {progress.streakFreezes} streak freeze{progress.streakFreezes === 1 ? '' : 's'}. One freeze protects your {progress?.streak ?? 0}-day streak if you miss a day.
             </p>
           )}
         </div>
         <div className="panel plan-card">
-          <div className="plan-head"><div><div className="eyebrow">Exam plan</div><h2>{days == null ? 'Set your exam date' : days < 0 ? 'Exam date passed' : `${days} day${days === 1 ? '' : 's'} to go`}</h2></div><input aria-label="Exam date" type="date" value={preferences.examDate} onChange={(e) => updatePreferences({ examDate: e.target.value })} /></div>
+          <div className="plan-head"><div><div className="eyebrow">Exam plan</div><h2>{planHeadline(days, preferences.examDate)}</h2></div><input aria-label="Exam date" type="date" value={preferences.examDate} onChange={(e) => updatePreferences({ examDate: e.target.value })} /></div>
           {foundation && <label className="pass-toggle"><input type="checkbox" checked={preferences.passMode === 'foundation-pass'} onChange={(e) => updatePreferences({ passMode: e.target.checked ? 'foundation-pass' : 'balanced' })} /><span><strong>Pass mode · grade 4 goal</strong><small>Prioritise core and weak Foundation topics.</small></span></label>}
           <div className="plan-flex">
             <div className="plan-rest" role="group" aria-label="Rest days each week">
@@ -287,7 +304,7 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
             </div>
           ) : null}
           {error && <p className="plan-note error" role="alert">{error}</p>}
-          <p className="plan-note">{doneCount}/7 days done this week · the plan is saved to your account and a fresh week starts on Monday.</p>
+          <p className="plan-note">You’ve completed {doneCount} of 7 days this week. Your next plan starts on Monday.</p>
         </div>
       </section>
       <section className="evidence-strip" aria-label="Mistake notebook progress">
@@ -300,8 +317,8 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
           <span>mastered in the last 7 days</span>
         </Link>
         <Link to="/summary" className="evidence-chip">
-          <b>{days == null || days < 0 ? '—' : days}</b>
-          <span>days until your exam</span>
+          <b>{days == null || days < 0 ? '—' : days > 365 ? (examMonthLabel(preferences.examDate) || '—') : days}</b>
+          <span>{days != null && days > 0 && days <= 365 ? 'days until your exam' : days != null && days > 365 ? 'your exam month' : 'days until your exam'}</span>
         </Link>
       </section>
     </>
@@ -337,10 +354,10 @@ export function FixUpButton({ subject, api, topics, progress, personal, mode = '
     const plan = fixupEnglishPlan({ topics, progress, mistakes });
     if (!plan.skillIds.length) {
       return plan.lessons.length ? (
-        <Link className="btn" to={`/learn/${plan.lessons[0]}`}>Warm up weak writing</Link>
+        <Link className="btn" to={`/learn/${plan.lessons[0]}`}>Review a writing skill</Link>
       ) : null;
     }
-    const label = mode === 'memri' ? 'Start memory check' : 'Fix-Up 5 · weak spots';
+    const label = mode === 'memri' ? 'Start memory check' : 'Practise 5 weak areas';
     return (
       <>
         <button
@@ -376,7 +393,7 @@ export function FixUpButton({ subject, api, topics, progress, personal, mode = '
         navigate(`/practice?${mode}=1#adhoc`);
       }}
     >
-      {mode === 'memri' ? `Start memory check · ${targets.length} topics` : 'Fix-Up 5 · weak spots'}
+      {mode === 'memri' ? `Review ${targets.length} topic${targets.length === 1 ? '' : 's'}` : 'Practise 5 weak areas'}
     </button>
   );
 }
@@ -390,11 +407,11 @@ export function MemRiCard({ userId, subject, api }) {
   if (!due.length) return null;
   return (
     <section className="panel memri-card" aria-labelledby="memri-title">
-      <div className="eyebrow">Memory check · faded mastery</div>
-      <h2 id="memri-title">{due.length} mastered {due.length === 1 ? 'mistake needs' : 'mistakes need'} re-proof</h2>
+      <div className="eyebrow">Memory refresh</div>
+      <h2 id="memri-title">Try {due.length === 1 ? 'this question' : `these ${due.length} questions`} again</h2>
       <p className="sub">
-        Mastered over 30 days ago: {due.slice(0, 3).map((row) => row.topicName).join(' · ')}
-        {due.length > 3 ? ` +${due.length - 3} more` : ''}. One mixed set keeps them honest.
+        You last reviewed {due.slice(0, 3).map((row) => row.topicName).join(' · ')} over a month ago
+        {due.length > 3 ? `, plus ${due.length - 3} more` : ''}. A quick check will help you remember them.
       </p>
       <div className="study-actions">
         <FixUpButton
@@ -611,7 +628,7 @@ export function Notebook({ userId, subject, api }) {
       <header className="page-head">
         <div>
           <h1>Mistake notebook</h1>
-          <p className="sub">Every missed question is saved to your account, classified by you, corrected in your own words, and retried on a schedule that adapts to how honest your grades are.</p>
+          <p className="sub">Questions you miss are saved here. Add what went wrong, write your correction and try them again when they’re due.</p>
         </div>
       </header>
       {error && <p className="plan-note error" role="alert">{error}</p>}
@@ -622,7 +639,7 @@ export function Notebook({ userId, subject, api }) {
         <div className="stat-card"><div className="stat-num">{rows.filter((row) => row.mastered).length}</div><div className="stat-label">Mastered all-time</div></div>
       </section>
       {topReasonLabel && (
-        <p className="sub notebook-insight">Most common reason so far: <b>{topReasonLabel}</b> — {ERROR_TYPES.find((type) => type.id === topReason[0])?.hint}</p>
+        <p className="sub notebook-insight">The reason you choose most often is <b>{topReasonLabel}</b>. {ERROR_TYPES.find((type) => type.id === topReason[0])?.hint}</p>
       )}
       <section className="panel notebook-list">
         <h2>Due now</h2>
@@ -638,7 +655,7 @@ export function Notebook({ userId, subject, api }) {
             : (
               <div className="empty-state">
                 <h3>Nothing due right now</h3>
-                <p>Reviews arrive on their dates. Meanwhile, five mixed questions keep every topic warm.</p>
+                <p>You’re up to date. You can do five mixed questions while you wait for the next review.</p>
                 <Link className="btn btn-primary" to="/practice#adhoc">Answer 5 mixed questions →</Link>
               </div>
             )}
@@ -687,13 +704,13 @@ export function TriagePanel({ result, mistakesNote = null }) {
 
   return (
     <section className="panel triage-panel">
-      <h2>Paper triage — what to do next</h2>
+      <h2>What to work on next</h2>
       <p className="sub">
         {pace != null && pace > 110
-          ? `You used about ${Math.round(pace)}% of the intended time. Pace cost you marks before ability did — try the timing budget on the next paper.`
+          ? `You took about ${Math.round(pace)}% of the suggested time. Use the timing guide on your next paper.`
           : pace != null && pace < 75
-            ? `You finished in about ${Math.round(pace)}% of the intended time — check the rushed answers below before moving on.`
-            : 'Your pacing was in a healthy range. Focus the next session on the biggest mark losses.'}
+            ? `You finished in about ${Math.round(pace)}% of the suggested time. Check the answers below in case you rushed them.`
+            : 'Your timing looked good. Next, focus on the areas where you lost the most marks.'}
       </p>
       {totalLost > 0 && (
         <div className="triage-lost">
@@ -736,7 +753,7 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
     <div className="page weekly-summary">
       <header className="page-head">
         <div>
-          <div className="eyebrow">Revision evidence report</div>
+          <div className="eyebrow">Your week in review</div>
           <h1>Weekly summary</h1>
           <p className="sub">
             {username ? `${username} · ` : ''}{subject === 'english' ? 'AQA GCSE English Language 8700' : subject === 'maths-higher' ? 'AQA GCSE Mathematics 8300 Higher' : 'AQA GCSE Mathematics 8300 Foundation'}
@@ -756,15 +773,15 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
       <section className="panel">
         <h2>This week&apos;s exam plan</h2>
         {plan?.days.length ? <div className="week-plan">{plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < dateKey(); return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done"><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : <span key={day.date} className={past ? 'past' : 'locked'}><b>{day.label}</b><span>{day.task}</span></span>); })}</div> : <p className="empty">Open the dashboard to build your 7-day plan.</p>}
-        <p className="sub">{donePlan.length}/7 missions complete this week.</p>
+          <p className="sub">You completed {donePlan.length} of 7 planned days this week.</p>
       </section>
       <section className="panel">
-        <h2>Mistake-to-mastery evidence</h2>
+        <h2>Mistake review</h2>
         {rows.length ? (
           <>
             <p className="sub">
-              {masteredWeek.length} mistake{masteredWeek.length === 1 ? '' : 's'} mastered in the last 7 days · {activeRows.length} still in rotation
-              {topReasonLabel(rows) ? ` · most common reason: ${topReasonLabel(rows)}` : ''}.
+              You mastered {masteredWeek.length} mistake{masteredWeek.length === 1 ? '' : 's'} this week. You still have {activeRows.length} to review.
+              {topReasonLabel(rows) ? ` Your most common reason was ${topReasonLabel(rows)}.` : ''}
             </p>
             {Object.keys(mix).length > 0 && (
               <div className="triage-lost">
@@ -793,9 +810,9 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
         ) : <p className="empty">Complete a marked paper or practice set to start your mistake notebook.</p>}
       </section>
       <section className="panel">
-        <h2>Next focus</h2>
-        <p>{preferences.passMode === 'foundation-pass' ? 'Pass mode is on: working towards a grade 4 goal through core and weak topics.' : 'Follow the saved exam plan on the dashboard and clear due notebook mistakes.'}</p>
-        <p className="sub">This revision snapshot summarises your marked work.</p>
+        <h2>What to do next</h2>
+        <p>{preferences.passMode === 'foundation-pass' ? 'Keep working through the core Foundation topics in your plan.' : 'Check today’s plan on the dashboard and retry any questions that are due.'}</p>
+        <p className="sub">This summary is based on your marked work.</p>
         <div className="evidence-signature no-print" aria-hidden="true">
           <span>Print or save this page as a PDF to share it with a teacher or parent.</span>
         </div>

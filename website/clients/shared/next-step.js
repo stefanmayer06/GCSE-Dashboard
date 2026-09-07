@@ -87,7 +87,7 @@ export function resumeTarget({ lastResult = null, activeTest = null, subject = '
     return {
       kind: 'resume',
       title: 'Resume your paper',
-      detail: `Paper ${activeTest.paper} · ${activeTest.type === 'full' ? 'full paper' : 'quick paper'} — pick up where you left off.`,
+      detail: `You were working on Paper ${activeTest.paper} (${activeTest.type === 'full' ? 'full paper' : 'quick paper'}). Your answers are still saved.`,
       href: `/practice?paper=${encodeURIComponent(activeTest.paper)}&type=${encodeURIComponent(activeTest.type)}`,
     };
   }
@@ -96,7 +96,7 @@ export function resumeTarget({ lastResult = null, activeTest = null, subject = '
     return {
       kind: 'review',
       title: 'Review your last paper',
-      detail: `You scored ${lastResult.percent}%. Walk the worked solutions, then retry what you missed.`,
+      detail: `You scored ${lastResult.percent}%. Check the worked solutions and have another go at the questions you missed.`,
       href: '/results',
     };
   }
@@ -117,10 +117,10 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
     return {
       kind: 'retry',
       eyebrow: due === 1 ? '1 mistake due' : `${due} mistakes due`,
-      title: due === 1 ? 'Retry your due mistake' : 'Clear your due mistakes',
-      detail: 'Spaced retries lock in what you missed. A few focused minutes now beats relearning it later.',
+      title: due === 1 ? 'Have another go at one question' : `Retry ${due} questions`,
+      detail: 'These questions are ready for another try. Spend a few minutes on them while the methods are still fresh.',
       href: '/notebook',
-      cta: 'Open mistake notebook',
+      cta: 'Start retries',
       meta: options.examDays != null && options.examDays >= 0 ? `${options.examDays} days to exams` : null,
     };
   }
@@ -130,22 +130,22 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
     if (mission.topicId) {
       return {
         kind: 'mission',
-        eyebrow: "Today's mission",
-        title: mission.task || 'Complete today’s mission',
-        detail: `${mission.minutes || 15} focused minutes · learn it, then finish the short practice to lock today in.`,
+        eyebrow: "Today's revision",
+        title: mission.task || 'Complete today’s task',
+        detail: `You have set aside ${mission.minutes || 15} minutes. Read the lesson, then try the short practice.`,
         href: `/learn/${mission.topicId}`,
-        cta: 'Start mission',
+        cta: 'Start today’s revision',
         meta: mission.label || null,
       };
     }
     const isRetryDay = mission.task === 'Mistake retry';
     return {
       kind: 'mission',
-      eyebrow: "Today's mission",
-      title: mission.task || 'Complete today’s mission',
+      eyebrow: "Today's revision",
+      title: mission.task || 'Complete today’s task',
       detail: isRetryDay
         ? 'Complete today’s notebook review.'
-        : 'This day has no lesson — use the practice desk to keep your plan on track.',
+        : 'Choose a short set of questions from Practice.',
       href: isRetryDay ? '/notebook' : '/practice',
       cta: isRetryDay ? 'Open notebook' : 'Open practice',
       meta: mission.label || null,
@@ -171,7 +171,7 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
       kind: 'diagnostic',
       eyebrow: 'Start here',
       title: 'Take the 10-question diagnostic',
-      detail: 'It samples every strand in about ten minutes and sets your first week of missions.',
+      detail: 'It takes about 10 minutes. We’ll use your answers to plan your first week.',
       href: '/practice?diagnostic=1#adhoc',
       cta: 'Start diagnostic',
       meta: null,
@@ -183,9 +183,9 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
   if (fresh) {
     return {
       kind: 'fresh-topic',
-      eyebrow: 'Keep momentum',
+      eyebrow: 'Try something new',
       title: `Learn ${fresh.name}`,
-      detail: 'Nothing is overdue and nothing looks weak — open new ground while confidence is high.',
+      detail: 'Your recent answers look good. This is a useful topic to learn next.',
       href: `/learn/${fresh.id}`,
       cta: 'Open lesson',
       meta: fresh.strand,
@@ -195,9 +195,9 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
   // 6. Healthy state: exam conditions.
   return {
     kind: 'practice',
-    eyebrow: 'Everything on track',
+    eyebrow: 'Ready for a paper',
     title: 'Sit a timed paper',
-    detail: 'Your topics look secure. Prove it under exam timing and review the worked solutions.',
+    detail: 'Your recent topic scores look good. Try a timed paper and review your answers afterwards.',
     href: '/practice',
     cta: 'Open practice desk',
     meta: null,

@@ -28,8 +28,8 @@ export default function AppShell({
   // the exact link order). A group heading is emitted the first time its
   // group appears while walking `nav` in order.
   const groups = [
-    { id: 'journey', label: 'Journey', match: ['/'] },
-    { id: 'practise', label: 'Practise', match: ['/practice', '/results', '/learn', '/texts'] },
+    { id: 'journey', label: 'Home', match: ['/'] },
+    { id: 'practise', label: 'Study', match: ['/practice', '/results', '/learn', '/texts'] },
     { id: 'review', label: 'Review', match: ['/notebook', '/summary', '/chat'] },
   ];
   // Legacy two-letter codes → V3 inline glyphs (NAV data untouched).

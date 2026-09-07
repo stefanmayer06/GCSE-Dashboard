@@ -8,6 +8,7 @@ import RouteAnalytics from '../../shared/RouteAnalytics.jsx';
 import '../../shared/study-desk.css';
 import './theme.css';
 import '../../shared/v3.css';
+import '../../shared/v4-dashboard.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

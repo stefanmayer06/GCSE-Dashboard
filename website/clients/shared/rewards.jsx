@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { Confetti } from './circuit/bits.jsx';
 
 export const EXPERTISE_RANKS = [
   'Learner',
@@ -153,6 +154,7 @@ export function RewardCelebration({ reward, lessonName, onClose, onPracticeAgain
   return (
     <div className="reward-backdrop">
       <div className="reward-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <Confetti />
         <button ref={closeRef} type="button" className="reward-close" onClick={onClose} aria-label="Close reward">x</button>
         <div className="reward-stamp" aria-hidden="true">
           <span>{levelUp ? 'LEVEL' : 'DONE'}</span>

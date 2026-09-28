@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Icon from './circuit/Icon.jsx';
 
 // 2.1 — Global quick jump (Ctrl/⌘+K), v3 Command Desk.
 //
@@ -92,8 +93,9 @@ export default function CommandPalette({ items = [] }) {
         onClick={() => setOpen(true)}
         aria-label="Quick jump to any page or topic (Control K)"
       >
-        <span aria-hidden="true">⌘K</span>
+        <Icon name="search" size={18} />
         <span className="palette-trigger-label">Quick jump</span>
+        <kbd aria-hidden="true">⌘K</kbd>
       </button>
     );
   }

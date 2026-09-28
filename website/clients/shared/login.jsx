@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './supabase.js';
+import Emblem from './circuit/Emblem.jsx';
+import Icon from './circuit/Icon.jsx';
+import Pip from './circuit/Pip.jsx';
+import { SubjectScene } from './circuit/Scenes.jsx';
+import { subjectFromPath } from './circuit/palette.js';
 
 export default function LoginScreen({ subjectName, tag, letter, authApi, onSignedIn }) {
   const [mode, setMode] = useState('signin');
@@ -100,8 +105,25 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
   const isSignup = mode === 'signup';
   const isClaim = mode === 'claim';
 
+  const subject = subjectFromPath();
   return (
     <div className="login-screen">
+      <aside className="login-stage" aria-hidden="true">
+        <div className="login-stage-brand">
+          <Emblem topicId={`subject:${subjectName}`} strand={subject === 'english' ? 'reading' : subject === 'maths-higher' ? 'algebra' : 'number'} layers={3} ring={false} size={34} />
+          <span>GCSE Study Desk</span>
+        </div>
+        <div className="login-stage-art">
+          <SubjectScene subject={subject} />
+        </div>
+        <p className="login-stage-line">Learn it. <em>Play</em> with it. Replay it until it sticks.</p>
+        <ul className="login-stage-points">
+          <li><Icon name="play" size={16} /> Interactive explainers that stop and ask you</li>
+          <li><Icon name="learn" size={16} /> A map of levels — every topic earns stars</li>
+          <li><Icon name="notebook" size={16} /> Misses come back for a scheduled retry</li>
+        </ul>
+        <Pip mood="happy" size={70} className="login-pip" bob />
+      </aside>
       <div className="login-card">
         <div className="login-brand">
           <span className="login-letter" aria-hidden="true">{letter}</span>

@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
 import LessonVisual from '../components/LessonVisual.jsx';
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
 import { recordLessonResult } from '../../../shared/study-personal.js';
+import { flattenTopics } from '../../../shared/study.js';
+import { ComboMeter, LessonExplainer, LessonHeader, MasteryPanel, NotesDeck, ResourceGrid, StageSection, TutorPromo, useStages } from '../../../shared/LessonKit.jsx';
+import { explainerForTopic } from '../../../shared/explainer/library/maths/index.js';
 
 export default function Topic({ onProgress, userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
@@ -25,6 +28,9 @@ export default function Topic({ onProgress, userId }) {
   const [celebration, setCelebration] = useState(null);
   const [busy, setBusy] = useState(false);
   const [quizError, setQuizError] = useState('');
+  const [combo, setCombo] = useState(0);
+  const [stagesDone, markStage] = useStages(topicId);
+  const { data: catalog } = useResource(userId ? `topics:${subject}:${userId}` : null, () => api.topics());
   const topic = topicOverride && topicOverride.topicId === topicId ? topicOverride.value : fetchedTopic;
 
   useEffect(() => {
@@ -35,6 +41,7 @@ export default function Topic({ onProgress, userId }) {
     setFeedback({});
     setDone(null);
     setCelebration(null);
+    setCombo(0);
   }, [topicId]);
 
   // v3 continue-strip: remember the last lesson per subject.
@@ -71,6 +78,7 @@ export default function Topic({ onProgress, userId }) {
   async function checkOne(qid, value) {
     const res = await api.check(qid, value);
     setFeedback((f) => ({ ...f, [qid]: res }));
+    setCombo((current) => (res.correct ? current + 1 : 0));
     return res;
   }
 
@@ -92,7 +100,9 @@ export default function Topic({ onProgress, userId }) {
         }
       }
       setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
-      invalidateResources(`topic:${userId}:${topicId}`);
+      markStage('practise');
+      invalidateResources(`topic:${subject}:${userId}:${topicId}`);
+      invalidateResources(`topics:${subject}:${userId}`);
       if (res.reward?.firstCompletion) {
         setTopicOverride({ topicId, value: { ...(topicOverride?.value ?? fetchedTopic), completed: true } });
       }
@@ -115,19 +125,22 @@ export default function Topic({ onProgress, userId }) {
 
   if (!topic) return <div className="page"><div className="loading">Loading…</div></div>;
 
+  const strandTopics = flattenTopics(catalog, 'strands').filter((t) => t.strand === topic.strand);
+  const position = strandTopics.findIndex((t) => t.id === topicId);
+  const nextTopic = position >= 0 ? strandTopics[position + 1] || null : null;
+  const authored = explainerForTopic(topicId);
+
   return (
-    <div className="page topic-page">
-      <Link to="/learn" className="back-link">← All topics</Link>
-      <header className="page-head">
-        <div>
-          <h1>{topic.name}</h1>
-          <p className="sub">
-             {topic.strandName} · AQA 8300 {higherTier ? 'Higher' : 'Foundation'} revision
-            {topic.accuracy != null ? ` · your accuracy so far: ${topic.accuracy}%` : ''}
-          </p>
-          {topic.completed && <div className="lesson-stamp topic-complete-stamp">Lesson completed</div>}
-        </div>
-      </header>
+    <div className="page topic-page lesson-page">
+      <LessonHeader
+        topic={topic}
+        strand={topic.strand}
+        eyebrow={`${topic.strandName} · ${higherTier ? 'Higher' : 'Foundation'}`}
+        sub={`${topic.strandName} · AQA 8300 ${higherTier ? 'Higher' : 'Foundation'} revision${topic.accuracy != null ? ` · your accuracy so far: ${topic.accuracy}%` : ''}`}
+        stagesDone={stagesDone}
+      >
+        {topic.completed && <div className="lesson-stamp topic-complete-stamp">Lesson completed</div>}
+      </LessonHeader>
 
       <div className="editorial-note" aria-label="Editorial metadata">
         <span>AQA 8300{higherTier ? 'H' : ''}{topic.specSection ? ` · spec section ${topic.specSection} ${topic.specArea}` : ''}</span>
@@ -137,45 +150,28 @@ export default function Topic({ onProgress, userId }) {
         <a href={topic.editorial?.reportIssueUrl || '/support.html'}>Report an issue</a>
       </div>
 
-      <section className="panel">
-        <h2>Notes</h2>
-        <LessonVisual key={topicId} topicId={topicId} />
-        <div className="notes">
-          {topic.notes.map((n, i) => {
-            if (n.t === 'p') return <p key={i} className="note-p">{n.text}</p>;
-            if (n.t === 'b')
-              return (
-                <ul key={i} className="note-bullets">
-                  {n.items.map((it, j) => <li key={j}>{it}</li>)}
-                </ul>
-              );
-            if (n.t === 'f')
-              return (
-                <div key={i} className="formula-card">
-                  <div className="formula-title">{n.title}</div>
-                  <div className="formula-body">{n.text}</div>
-                </div>
-              );
-            if (n.t === 'e')
-              return (
-                <div key={i} className="example-card">
-                  <div className="example-q">Worked example: {n.q}</div>
-                  <div className="example-a">{n.a}</div>
-                </div>
-              );
-            return null;
-          })}
-        </div>
-      </section>
+      <StageSection id="watch" index={1} title={authored ? 'Watch & play' : 'Watch the talk-through'} sub={authored ? 'A narrated explainer that stops for you to answer. Pause any time and play with the board.' : 'A narrated run through the notes, with a worked example to try before the reveal.'}>
+        <LessonExplainer topic={topic} subject={subject} authored={authored} onDone={() => markStage('watch')} />
+      </StageSection>
 
-      <section className="panel">
+      <StageSection id="learn" index={2} title="Learn the notes" sub="Bite-size cards. Try every worked example before you reveal it.">
+        <NotesDeck
+          notes={topic.notes}
+          visual={<LessonVisual key={topicId} topicId={topicId} />}
+          onSeen={() => markStage('learn')}
+        />
+      </StageSection>
+
+      <StageSection id="practise" index={3} title="Practise" sub="Five questions, marked instantly with worked solutions. Misses go to your notebook for a later retry.">
+      <section className="panel quiz-panel">
         <div className="quiz-head">
           <div>
             <h2>Quick practice</h2>
             <p className="sub">5 questions on this topic. Instant marking with worked solutions.</p>
           </div>
+          <ComboMeter streak={combo} />
           {!quiz && (
-            <button className="btn btn-primary" onClick={startQuiz} disabled={busy}>
+            <button className="btn btn-go" onClick={startQuiz} disabled={busy}>
               {busy ? 'Loading…' : 'Start 5 questions'}
             </button>
           )}
@@ -268,24 +264,17 @@ export default function Topic({ onProgress, userId }) {
         )}
       </section>
 
-      <section className="panel">
-        <h2>Free external resources</h2>
-        <p className="sub">More lessons and practice on this exact topic — all free.</p>
-        <div className="res-grid">
-          {topic.resources.map((res) => (
-            <a key={res.label} className="res-card" href={res.url} target="_blank" rel="noreferrer">
-              <div className="res-name">{res.label}</div>
-              <div className="res-why">{res.why}</div>
-            </a>
-          ))}
-        </div>
-      </section>
+      </StageSection>
 
-      <section className="panel">
-        <h2>Want a hand with this topic?</h2>
-        <p className="sub">Ask the AI tutor to explain {topic.name} your way.</p>
-        <Link className="btn btn-primary" to="/chat">Open AI tutor →</Link>
-      </section>
+      <StageSection id="master" index={4} title="Master it" sub="Stars and emblem layers are earned from marked answers. Replay the practice to build them up.">
+        <MasteryPanel topic={topic} strand={topic.strand} nextTopic={nextTopic} result={done} />
+        <section className="panel">
+          <h2>Free external resources</h2>
+          <p className="sub">More lessons and practice on this exact topic — all free.</p>
+          <ResourceGrid resources={topic.resources} />
+        </section>
+        <TutorPromo text={`Ask the AI tutor to explain ${topic.name} your way, one step at a time.`} />
+      </StageSection>
 
       {celebration && (
         <RewardCelebration

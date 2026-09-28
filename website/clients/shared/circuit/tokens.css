@@ -1,0 +1,304 @@
+/* ==========================================================================
+   Circuit — design tokens (v5)
+   One token layer for the selector, MathsMate (Foundation + Higher) and
+   EnglishMate. Everything else in circuit/*.css consumes these; legacy
+   variables used by study-desk.css are remapped at the bottom so older
+   structural rules re-ink automatically. Documented in
+   website/design/DESIGN.md — change the doc when you change a token.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Type — self-hosted, no default AI faces.
+     Display: Unbounded (wide geometric, game-like headlines + numbers)
+     UI/body: Atkinson Hyperlegible Next (Braille Institute legibility face)
+     Mono:    Atkinson Hyperlegible Mono (maths, answers, counters, labels)
+     Reading: Literata (English source texts, long-form "reader" moments)
+     Hand:    Kalam (chalk annotations inside explainer videos only) */
+  --font-display: 'Unbounded Variable', 'Unbounded', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif;
+  --font-ui: 'Atkinson Hyperlegible Next Variable', 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Atkinson Hyperlegible Mono Variable', 'Atkinson Hyperlegible Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-read: 'Literata Variable', 'Literata', Georgia, 'Times New Roman', serif;
+  --font-hand: 'Kalam', 'Segoe Print', 'Bradley Hand', cursive;
+  /* Numerals: Atkinson's distinguished zero never reads as a letter O. */
+  --font-num: var(--font-ui);
+
+  --t-hero: clamp(2.3rem, 1.5rem + 3.2vw, 4rem);
+  --t-h1: clamp(1.75rem, 1.3rem + 1.5vw, 2.5rem);
+  --t-h2: clamp(1.2rem, 1.1rem + 0.4vw, 1.45rem);
+  --t-h3: 1.08rem;
+  --t-body: 1rem;
+  --t-small: 0.875rem;
+  --t-micro: 0.75rem;
+
+  /* Surfaces — cool lavender paper with deep-night ink (Brilliant-like). */
+  --c-bg: #f2f3fa;
+  --c-bg-2: #e8eaf7;
+  --c-surface: #ffffff;
+  --c-surface-2: #f6f7fd;
+  --c-surface-3: #eceefa;
+  --c-ink: #15172b;
+  --c-ink-2: #2d3050;
+  --c-muted: #565b7c;
+  --c-faint: #8a8fae;
+  --c-line: #dfe2f2;
+  --c-line-strong: #b5bad7;
+  --c-night: #191b30;
+  --c-night-2: #24273f;
+  --c-night-3: #30344f;
+  --c-night-ink: #f2f3ff;
+  --c-night-muted: #aeb3d6;
+  --c-primary: #15172b;
+  --c-primary-hover: #2d3050;
+  --c-on-primary: #ffffff;
+  --c-focus: #3d6bff;
+
+  /* Shared hue keys (mirrors HUES in palette.js). */
+  --hue-blue: #3d6bff;
+  --hue-cyan: #10b5c9;
+  --hue-purple: #9b4dff;
+  --hue-amber: #f5a300;
+  --hue-green: #10b777;
+  --hue-coral: #ff5566;
+  --hue-tangerine: #ff7a2e;
+  --hue-rose: #f0468a;
+  --hue-volt: #c3f53c;
+  --hue-slate: #8b90b3;
+  --volt-ink: #1f2600;
+
+  /* Semantic — always paired with text/icon, never colour alone. */
+  --c-good: #07845a;
+  --c-good-bright: #16c784;
+  --c-good-wash: #ddf7eb;
+  --c-bad: #cc2f45;
+  --c-bad-bright: #ff5566;
+  --c-bad-wash: #fde5e8;
+  --c-warn: #9a5c00;
+  --c-warn-wash: #fff1d4;
+  --c-info: #2f5bff;
+  --c-info-wash: #e5ebff;
+
+  /* Subject — overridden per client/tier below. */
+  --subject: var(--hue-blue);
+  --subject-alt: var(--hue-cyan);
+
+  /* Graphics */
+  --emblem-line: #15172b;
+  --tile-shade: #15172b;
+  --tile-new-top: #dcdff1;
+  --tile-inset: #ffffff;
+  --tile-medal: #ffffff;
+  --tile-shadow: rgba(21, 23, 43, 0.14);
+  --pip-body: var(--hue-volt);
+  --pip-ink: #15172b;
+  --ring-track: rgba(21, 23, 43, 0.1);
+  --scene-ground: #dfe3f8;
+  --scene-ground-inset: rgba(255, 255, 255, 0.55);
+  --scene-paper: #ffffff;
+  --scene-paper-2: #eff1fb;
+  --scene-metal: #b8bdd9;
+  --scene-machine: #2d3050;
+  --scene-belt: #15172b;
+  --scene-grid: #c6cbe6;
+  --scene-glass: rgba(111, 147, 255, 0.22);
+  --scene-trace: #8a8fae;
+
+  /* Shape */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 26px;
+  --r-xl: 34px;
+  --r-pill: 999px;
+
+  --sh-1: 0 1px 2px rgba(21, 23, 43, 0.06), 0 2px 10px rgba(21, 23, 43, 0.04);
+  --sh-2: 0 14px 34px -16px rgba(21, 23, 43, 0.28), 0 2px 6px rgba(21, 23, 43, 0.05);
+  --sh-3: 0 34px 70px -24px rgba(21, 23, 43, 0.42);
+  --sh-inset: inset 0 0 0 1px var(--c-line);
+
+  /* Space (4px grid) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+  --page-max: 1120px;
+  --read-max: 760px;
+  --rail-w: 252px;
+  --touch: 44px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 0.8, 0.28, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --d-1: 140ms;
+  --d-2: 240ms;
+  --d-3: 420ms;
+  --d-4: 700ms;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --c-bg: #0e0f1d;
+  --c-bg-2: #090a15;
+  --c-surface: #161a2e;
+  --c-surface-2: #1c2038;
+  --c-surface-3: #242944;
+  --c-ink: #eef0ff;
+  --c-ink-2: #d2d6f3;
+  --c-muted: #a4a9cb;
+  --c-faint: #717698;
+  --c-line: #292e4c;
+  --c-line-strong: #454b73;
+  --c-night: #090a15;
+  --c-night-2: #151829;
+  --c-night-3: #20243c;
+  --c-primary: #eef0ff;
+  --c-primary-hover: #ffffff;
+  --c-on-primary: #15172b;
+  --c-focus: #8aa6ff;
+
+  --hue-blue: #6f93ff;
+  --hue-cyan: #4fd8e6;
+  --hue-purple: #bd8cff;
+  --hue-amber: #ffc443;
+  --hue-green: #3fdb9c;
+  --hue-coral: #ff8591;
+  --hue-tangerine: #ff9d61;
+  --hue-rose: #ff7fb0;
+  --hue-volt: #d4ff5c;
+  --hue-slate: #6d7299;
+
+  --c-good: #4fe0a4;
+  --c-good-bright: #4fe0a4;
+  --c-good-wash: rgba(79, 224, 164, 0.14);
+  --c-bad: #ff8591;
+  --c-bad-bright: #ff8591;
+  --c-bad-wash: rgba(255, 133, 145, 0.14);
+  --c-warn: #ffc443;
+  --c-warn-wash: rgba(255, 196, 67, 0.14);
+  --c-info: #8aa6ff;
+  --c-info-wash: rgba(138, 166, 255, 0.14);
+
+  --emblem-line: #080914;
+  --tile-shade: #04050c;
+  --tile-new-top: #3a3f63;
+  --tile-inset: #ffffff;
+  --tile-medal: #eef0ff;
+  --tile-shadow: rgba(0, 0, 0, 0.5);
+  --pip-ink: #0b0c18;
+  --ring-track: rgba(238, 240, 255, 0.12);
+  --scene-ground: #2a2f50;
+  --scene-ground-inset: rgba(255, 255, 255, 0.05);
+  --scene-paper: #e3e6fa;
+  --scene-paper-2: #cfd3ef;
+  --scene-metal: #6d7299;
+  --scene-machine: #10121f;
+  --scene-belt: #080914;
+  --scene-grid: #9ba1c9;
+  --scene-glass: rgba(111, 147, 255, 0.3);
+  --scene-trace: #6d7299;
+
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 10px rgba(0, 0, 0, 0.25);
+  --sh-2: 0 16px 38px -16px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --sh-3: 0 34px 70px -24px rgba(0, 0, 0, 0.8);
+}
+
+/* Subject identities. Clients set <html data-subject> before first paint;
+   .app tier classes keep the old contract working too. */
+:root[data-subject='maths'],
+.app.foundation-tier {
+  --subject: var(--hue-blue);
+  --subject-alt: var(--hue-cyan);
+}
+
+:root[data-subject='maths-higher'],
+.app.higher-tier {
+  --subject: var(--hue-purple);
+  --subject-alt: var(--hue-blue);
+}
+
+:root[data-subject='english'],
+.app.english-tier {
+  --subject: var(--hue-tangerine);
+  --subject-alt: var(--hue-rose);
+}
+
+/* Derived subject tokens are declared wherever --subject can change so
+   they re-resolve (custom properties compute where they are declared). */
+:root,
+.app,
+.login-screen {
+  --subject-strong: color-mix(in srgb, var(--subject) 70%, var(--c-ink));
+  --subject-wash: color-mix(in srgb, var(--subject) 12%, var(--c-surface));
+  --subject-wash-2: color-mix(in srgb, var(--subject) 24%, var(--c-surface));
+  --emblem-ghost: color-mix(in srgb, var(--subject) 10%, transparent);
+}
+
+:root[data-theme='dark'],
+:root[data-theme='dark'] .app,
+:root[data-theme='dark'] .login-screen {
+  --subject-strong: color-mix(in srgb, var(--subject) 76%, #ffffff);
+  --subject-wash: color-mix(in srgb, var(--subject) 14%, var(--c-surface));
+  --subject-wash-2: color-mix(in srgb, var(--subject) 26%, var(--c-surface));
+}
+
+/* Legacy variable bridge — study-desk.css, theme.css and visuals.css still
+   read these names. Keep the bridge until those structural files are
+   rewritten; new code must use the --c-* / --subject-* tokens above. */
+:root,
+:root[data-theme='dark'],
+.app.foundation-tier,
+.app.higher-tier,
+.app.english-tier {
+  --paper: var(--c-bg);
+  --paper-raised: var(--c-surface);
+  --paper-muted: var(--c-surface-2);
+  --ink: var(--c-ink);
+  --quiet: var(--c-muted);
+  --line: var(--c-line);
+  --line-strong: var(--c-line-strong);
+  --positive: var(--c-good);
+  --positive-wash: var(--c-good-wash);
+  --warning: var(--c-warn);
+  --warning-wash: var(--c-warn-wash);
+  --negative: var(--c-bad);
+  --negative-wash: var(--c-bad-wash);
+  --info: var(--c-info);
+  --info-wash: var(--c-info-wash);
+  --bg: var(--c-bg);
+  --bg2: var(--c-surface-2);
+  --panel: var(--c-surface);
+  --panel2: var(--c-surface-2);
+  --border: var(--c-line);
+  --text: var(--c-ink);
+  --muted: var(--c-muted);
+  --green: var(--c-good);
+  --amber: var(--c-warn);
+  --red: var(--c-bad);
+  --blue: var(--c-info);
+  --radius: var(--r-md);
+  --sidebar-bg: var(--c-night);
+  --input-bg: var(--c-surface);
+  --chat-scroll-bg: var(--c-surface-2);
+  --overlay: rgba(9, 10, 21, 0.62);
+  --hover-wash: color-mix(in srgb, var(--c-ink) 5%, transparent);
+  --on-accent: #ffffff;
+  --on-positive: #ffffff;
+  --status-glow: color-mix(in srgb, var(--c-good) 18%, transparent);
+  --desk-pattern: none;
+  --focus-ring: var(--c-focus);
+  --touch-min: var(--touch);
+  --accent: var(--subject);
+  --accent-strong: var(--subject-strong);
+  --accent2: var(--subject-alt);
+  --accent-wash: var(--subject-wash);
+  --subject-tint: var(--subject-wash);
+  --subject-ink: var(--subject-strong);
+}

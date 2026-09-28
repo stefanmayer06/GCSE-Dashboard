@@ -1,36 +1,23 @@
+/* EnglishMate — subject-only component rules. Colour + type tokens come
+   from shared/circuit/tokens.css (subject = tangerine). Source texts use the
+   reading face (Literata) on a warm paper surface in both themes. */
 :root {
-  --accent: #ad7621;
-  --accent-strong: #835713;
-  --accent2: #6849e8;
-  --accent-wash: #f3e8ce;
-  --subject-tint: #ebddbd;
-  --subject-ink: #3e2911;
-  --source-line: #9d8a68;
-  --source-ink: #34291d;
-  --source-bg: #fffaf0;
-  --source-tabs-bg: #f5ead4;
-  --on-accent: var(--ink);
-  --desk-pattern:
-    linear-gradient(rgba(62, 41, 17, 0.045) 1px, transparent 1px);
+  --source-line: color-mix(in srgb, var(--hue-tangerine) 38%, var(--c-line));
+  --source-ink: #231d18;
+  --source-bg: #fffaf3;
+  --source-tabs-bg: color-mix(in srgb, var(--hue-tangerine) 10%, var(--c-surface));
+  --on-accent: #1d1206;
 }
 
 :root[data-theme='dark'] {
-  --accent: #b06b21;
-  --accent-strong: #e9a85a;
-  --accent2: #d69ef0;
-  --accent-wash: rgba(176, 107, 33, 0.18);
-  --subject-tint: rgba(176, 107, 33, 0.16);
-  --subject-ink: #e3bf7e;
-  --source-line: #6a4a35;
-  --source-ink: #f4e7d0;
-  --source-bg: #241d14;
-  --source-tabs-bg: #2c2417;
-  --on-accent: #0c0d0a;
-  --desk-pattern:
-    linear-gradient(rgba(227, 191, 126, 0.05) 1px, transparent 1px);
+  --source-line: color-mix(in srgb, var(--hue-tangerine) 30%, var(--c-line));
+  --source-ink: #f3ece2;
+  --source-bg: #1d1a24;
+  --source-tabs-bg: color-mix(in srgb, var(--hue-tangerine) 12%, var(--c-surface));
+  --on-accent: #1d1206;
 }
 
-body { background-size: 100% 28px; }
+
 
 .papers-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
@@ -48,15 +35,15 @@ body { background-size: 100% 28px; }
 .model-answer,
 .text-card-excerpt {
   color: var(--source-ink);
-  font-family: Georgia, "Times New Roman", serif;
-  line-height: 1.78;
+  font-family: var(--font-read);
+  line-height: 1.8;
 }
 
 .source-title,
 .text-card-title {
-  color: var(--subject-ink);
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 400;
+  color: var(--c-ink);
+  font-family: var(--font-read);
+  font-weight: 700;
 }
 
 .source-meta,
@@ -64,7 +51,7 @@ body { background-size: 100% 28px; }
 .text-card-author { color: var(--quiet); }
 
 .source-tabs { border-color: var(--source-line); background: var(--source-tabs-bg); }
-.source-tab { border-radius: 0; color: var(--quiet); }
+.source-tab { border-radius: var(--r-pill); color: var(--quiet); }
 .source-tab.on { color: var(--on-accent); background: var(--accent); box-shadow: none; }
 
 .mark-chip.auto { color: var(--positive); background: var(--positive-wash); }
@@ -102,7 +89,9 @@ body { background-size: 100% 28px; }
 
 .q-image {
   margin: 16px 0;
+  overflow: hidden;
   border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
   background: var(--paper-muted);
 }
 
@@ -117,18 +106,16 @@ body { background-size: 100% 28px; }
 .q-image-cap {
   padding: 8px 12px;
   color: var(--quiet);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 9px;
+  font-family: var(--font-mono);
+  font-size: 10px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-/* v3 — migrated from the retired neon bundle + squared per the Ruled
-   Notebook system (web working surfaces are square; pills stay pill). */
-.review.pending { border-left: 3px solid var(--amber); }
+.review.pending { border-left: 4px solid var(--c-warn); }
 .tf-row,
 .model-answer,
-.marking-note { border-radius: 0; }
+.marking-note { border-radius: var(--r-sm); }
 
 :root[data-theme='dark'] .q-image { background: var(--paper-muted); }
 

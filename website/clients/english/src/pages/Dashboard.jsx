@@ -71,6 +71,7 @@ export default function Dashboard({ health, progress, userId }) {
       }
       progress={progress}
       topics={flatTopics}
+      personal={personal}
       nextStep={nextStep}
       userId={userId}
       api={api}

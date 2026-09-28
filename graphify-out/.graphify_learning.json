@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-09-23T17:02:11.712322+00:00",
+  "nodes": {
+    "website_clients_shared_readaloud_readaloud": {
+      "code_fingerprint": "ebadd83504401f43f6eb05687b25b5f4c1a1610eb26d0a69c1f09aeecfbb1ba7",
+      "label": "ReadAloud()",
+      "last": "2026-09-13T23:08:39.652394+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-13T23:08:39.652394+00:00",
+          "outcome": "useful",
+          "q": "Why does ReadAloud() connect Shared Read Aloud to English Client Navigation?"
+        }
+      ],
+      "score": 0.798381208,
+      "source_file": "website/clients/shared/ReadAloud.jsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "website_clients_shared_readaloud_readaloud_toggle": {
+      "code_fingerprint": "ebadd83504401f43f6eb05687b25b5f4c1a1610eb26d0a69c1f09aeecfbb1ba7",
+      "label": "toggle()",
+      "last": "2026-09-13T23:08:43.786454+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-13T23:08:43.786454+00:00",
+          "outcome": "useful",
+          "q": "Why does toggle() connect Shared Read Aloud to Personal Model Server?"
+        },
+        {
+          "date": "2026-09-13T23:08:39.593840+00:00",
+          "outcome": "useful",
+          "q": "Why does text() connect Personal Model Server to Shared Read Aloud?"
+        }
+      ],
+      "score": 1.596763286,
+      "source_file": "website/clients/shared/ReadAloud.jsx",
+      "status": "preferred",
+      "uses": 2
+    },
+    "website_server_src_storage_json_createjsonstorage": {
+      "code_fingerprint": "1467a28da3ac368927d0e9681713ea8b21c2ac6d18f8b366e8723e3ad8fc16bc",
+      "label": "createJsonStorage()",
+      "last": "2026-09-13T23:08:43.843649+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-13T23:08:43.843649+00:00",
+          "outcome": "useful",
+          "q": "Are the 34 inferred relationships involving createJsonStorage() actually correct?"
+        }
+      ],
+      "score": 0.798382103,
+      "source_file": "website/server/src/storage/json.js",
+      "status": "tentative",
+      "uses": 1
+    }
+  },
+  "version": 1
+}

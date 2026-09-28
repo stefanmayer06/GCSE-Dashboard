@@ -117,7 +117,7 @@
 .autosave-note { color: var(--c-muted); font-family: var(--font-mono); font-size: 0.72rem; }
 
 /* ---------- Exam hall ---------- */
-.exam { display: grid; gap: 16px; }
+.exam { display: grid; gap: 16px; max-width: 1280px; margin: 0 auto; padding: clamp(12px, 2vw, 24px) clamp(12px, 2.4vw, 32px) 60px; }
 
 .exam-bar {
   position: sticky;
@@ -138,7 +138,8 @@
 }
 
 .exam-title { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.exam-paper { font-family: var(--font-display); font-weight: 700; }
+.exam-paper { color: #fff; font-family: var(--font-display); font-weight: 700; }
+.exam-bar .btn { min-height: 44px; }
 .exam-bar .calc-badge { border-color: var(--c-night-3); background: var(--c-night-2); color: var(--c-night-ink); }
 .exam-timers { display: flex; flex-wrap: wrap; gap: 8px; }
 .timer { display: grid; gap: 2px; min-width: 104px; padding: 6px 12px; border: 0; border-radius: 12px; background: var(--c-night-2); }
@@ -150,7 +151,7 @@
 .timer.ahead .pace-badge { color: #7ff0c3; }
 .pace-badge { font-family: var(--font-mono); font-size: 0.7rem; }
 .exam-bar-actions { display: flex; gap: 8px; }
-.btn-quit { border-color: var(--c-night-3); background: transparent; color: var(--c-night-ink); }
+.exam-bar .btn-quit { border-color: var(--c-night-3); background: transparent; color: var(--c-night-ink); }
 .btn-quit:hover { border-color: var(--hue-coral); background: transparent; color: #ffb3bb; }
 .btn-submit,
 button.btn-submit { border: 2px solid var(--emblem-line); background: var(--hue-volt); color: var(--volt-ink); box-shadow: 0 3px 0 #000; }
@@ -274,7 +275,8 @@ button.btn-submit { border: 2px solid var(--emblem-line); background: var(--hue-
 }
 
 /* ---------- Notebook + summary ---------- */
-.notebook-list { padding: 8px; }
+.notebook-list { padding: clamp(18px, 2.2vw, 28px); }
+.notebook-list > h2 { margin-bottom: 12px; font-family: var(--font-display); font-weight: 700; }
 .notebook-row { margin: 0 0 8px; border: 1px solid var(--c-line); border-radius: var(--r-md); background: var(--c-surface); overflow: hidden; }
 .notebook-row.open { border-color: var(--subject); box-shadow: var(--sh-1); }
 .notebook-row.mastered { background: color-mix(in srgb, var(--hue-volt) 10%, var(--c-surface)); }
@@ -290,7 +292,7 @@ button.btn-submit { border: 2px solid var(--emblem-line); background: var(--hue-
 .triage-panel { border: 2px solid var(--emblem-line) !important; box-shadow: 0 5px 0 var(--emblem-line) !important; }
 .weekly-summary .stat-row { margin-bottom: 20px; }
 
-/* ---------- Tutor chat ---------- */
+/* ---------- Tutor chat (Pip) ---------- */
 .chat-box {
   display: flex;
   flex-direction: column;
@@ -301,19 +303,20 @@ button.btn-submit { border: 2px solid var(--emblem-line); background: var(--hue-
   background: var(--c-surface);
   box-shadow: var(--sh-1);
 }
-.chat-msg,
-.msg { display: flex; gap: 10px; margin: 10px 0; animation: c-slide-up var(--d-2) var(--ease-out) both; }
-.msg-avatar { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border: 2px solid var(--emblem-line); border-radius: 50%; background: var(--hue-volt); color: var(--volt-ink); font-family: var(--font-display); font-size: 0.8rem; font-weight: 800; overflow: hidden; }
-.msg-body { max-width: min(680px, 86%); }
-.msg-text { padding: 12px 16px; border-radius: 6px 20px 20px 20px; background: var(--c-surface-2); color: var(--c-ink); line-height: 1.6; }
-.msg.user,
-.chat-msg.user { flex-direction: row-reverse; }
-.msg.user .msg-text,
-.chat-msg.user .msg-text { border-radius: 20px 6px 20px 20px; background: var(--c-primary); color: var(--c-on-primary); }
-.msg.user .msg-avatar { background: var(--subject); color: #fff; }
+.chat-scroll { background: linear-gradient(180deg, var(--c-surface), var(--c-surface-2)); }
+.msg { gap: 10px; max-width: min(760px, 88%); animation: c-slide-up var(--d-2) var(--ease-out) both; }
+.msg-avatar { display: grid; place-items: center; flex: none; width: 42px; height: 42px; padding: 0; border: 0; border-radius: 14px; background: color-mix(in srgb, var(--hue-volt) 30%, var(--c-surface)); overflow: visible; }
+.msg.user .msg-avatar { background: var(--subject); color: #fff; --icon-accent: var(--hue-volt); }
+.msg-body { padding: 12px 16px; border: 1px solid var(--c-line); border-radius: 6px 20px 20px 20px; background: var(--c-surface); color: var(--c-ink); font-size: 0.98rem; line-height: 1.6; box-shadow: var(--sh-1); }
+.msg-text { padding: 0; border: 0; background: transparent; }
+.msg.user .msg-body { border-color: var(--c-primary); border-radius: 20px 6px 20px 20px; background: var(--c-primary); color: var(--c-on-primary); }
+.msg.user .msg-body a,
+.msg.user .msg-body code { color: inherit; }
+.msg-body.typing { color: var(--c-muted); font-style: italic; }
 .msg-model,
-.model-chip { color: var(--c-muted); font-family: var(--font-mono); font-size: 0.68rem; }
-.suggest-chip.source { font-size: 0.82rem; }
+.model-chip { margin-top: 6px; color: var(--c-muted); font-family: var(--font-mono); font-size: 0.68rem; }
+.markdown-message code { padding: 1px 6px; border-radius: 6px; background: var(--c-surface-3); font-family: var(--font-mono); font-size: 0.9em; }
+.markdown-message h3 { font-family: var(--font-display); font-size: 1.02rem; font-weight: 700; }
 
 /* ---------- English texts ---------- */
 .text-card {
@@ -339,3 +342,13 @@ button.btn-submit { border: 2px solid var(--emblem-line); background: var(--hue-
 .option-card { border-radius: var(--r-md); }
 .answer-area,
 textarea { border-radius: var(--r-md); }
+
+/* English choice buttons (mcq4 / true-false) share the game-tile feel. */
+.tf-btn { min-height: 48px; border: 2px solid var(--c-line-strong); border-radius: var(--r-sm); background: var(--c-surface); color: var(--c-ink); box-shadow: 0 3px 0 var(--c-line-strong); font: inherit; font-weight: 700; cursor: pointer; }
+.tf-btn:hover { border-color: var(--subject); }
+.tf-btn.on-true,
+.tf-btn.on-false { border-color: var(--subject); background: var(--subject-wash); box-shadow: 0 3px 0 var(--subject); }
+.mcq4-item { border: 1px solid var(--c-line) !important; border-radius: var(--r-md) !important; background: var(--c-surface-2); }
+.choose4-row { border: 2px solid var(--c-line-strong) !important; border-radius: var(--r-sm) !important; box-shadow: 0 3px 0 var(--c-line-strong); }
+.choose4-row.selected { border-color: var(--subject) !important; background: var(--subject-wash) !important; box-shadow: 0 3px 0 var(--subject); }
+.source-panel { border: 1px solid var(--source-line, var(--c-line)); background: var(--source-bg, var(--c-surface)); }

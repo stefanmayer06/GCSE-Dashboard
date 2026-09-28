@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Know what to revise next with free AQA-style GCSE Maths and English practice, worked solutions and scheduled mistake reviews." />
     <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta name="theme-color" content="#f3f0e8" />
+    <meta name="theme-color" content="#191b30" />
     <link rel="canonical" href="https://gcse-dashboard-server.vercel.app/" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_GB" />
@@ -17,7 +17,10 @@
     <meta name="twitter:title" content="GCSE Study Desk | Know what to revise next" />
     <meta name="twitter:description" content="AQA-style GCSE Maths and English practice that helps you learn from mistakes." />
     <title>GCSE Study Desk | Maths &amp; English Revision</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 fill=%22%23161713%22/><text x=%225%22 y=%2221%22 font-size=%2212%22 fill=%22%23f3f0e8%22>SD</text></svg>" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%23191b30%22/><g transform=%22translate(16 16)%22 stroke=%22%23191b30%22 stroke-width=%221.3%22><path d=%22M0 0V-10A10 10 0 0 1 10 0Z%22 fill=%22%233d6bff%22/><path d=%22M0 0H10A10 10 0 0 1 0 10Z%22 fill=%22%23ff7a2e%22/><path d=%22M0 0V10A10 10 0 0 1 -10 0Z%22 fill=%22%239b4dff%22/><path d=%22M0 0H-10A10 10 0 0 1 0 -10Z%22 fill=%22%23c3f53c%22/></g></svg>" />
+    <link rel="preload" href="/fonts/unbounded-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/circuit-public.css" />
     <link rel="stylesheet" href="/selector.css" />
     <script type="application/ld+json">
       {
@@ -59,47 +62,139 @@
       } catch (e) {}
     </script>
   </head>
-  <body>
+  <body class="public">
     <a class="skip-link" href="#page-title">Skip to subjects</a>
-    <main class="desk" id="main">
-      <header class="masthead">
+    <header class="masthead">
+      <div class="masthead-inner">
         <a class="brand" href="/" aria-label="GCSE Study Desk home">
-          <span class="brand-mark" aria-hidden="true">SD</span>
+          <span class="brand-mark" data-art="mark-brand" aria-hidden="true"></span>
           <span>GCSE Study Desk</span>
         </a>
-        <div class="mast-actions">
-          <span class="board-tag">AQA-style exam practice</span>
+        <nav class="mast-actions" aria-label="Site">
+          <a class="mast-link" href="#how-it-plays">How it plays</a>
           <a class="theme-toggle subjects-toggle" href="/subjects" aria-label="Browse all subjects">
-            <svg class="subjects-icon" width="18" height="15" viewBox="0 0 18 15" fill="none" aria-hidden="true">
-              <rect x="1" y="1" width="16" height="3.4" rx="0.8" fill="var(--maths)" />
-              <rect x="1" y="5.8" width="16" height="3.4" rx="0.8" fill="var(--english)" />
-              <rect x="1" y="10.6" width="16" height="3.4" rx="0.8" fill="var(--ink)" />
-            </svg>
+            <span class="subjects-icon" data-art="icon-grid" aria-hidden="true"></span>
             <span>Subjects</span>
           </a>
           <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch colour theme">
             <span class="theme-toggle-icon" aria-hidden="true">◐</span>
             <span>Dark</span>
           </button>
-        </div>
-      </header>
+        </nav>
+      </div>
+    </header>
 
-      <section class="intro" aria-labelledby="page-title">
-        <p class="eyebrow">AQA Maths and English practice</p>
-        <h1 id="page-title" class="headline-hierarchy" tabindex="-1"><span>Know what to revise.</span><br /><em>Fix what you missed.</em></h1>
-        <div class="intro-side">
-          <p class="intro-copy">Start with a quick check, practise AQA-style questions, then see the method and revisit mistakes. Study Desk builds the next step around your work in Maths Foundation, Maths Higher or English Language.</p>
-          <a class="hero-link" href="#try-example">Try one example <span aria-hidden="true">↓</span></a>
+    <main class="desk" id="main">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="beta-dot" aria-hidden="true"></span> Free beta · AQA GCSE Maths &amp; English</p>
+          <h1 id="page-title" class="headline-hierarchy" tabindex="-1"><span>Learn it. Play with it.</span> <em>Fix what you missed.</em></h1>
+          <p class="intro-copy">Interactive explainers that stop and ask you. A map of levels where every topic earns stars. Timed AQA-style papers, and a notebook that brings mistakes back until they stick.</p>
+          <div class="hero-actions">
+            <a class="btn-volt" href="#subjects">Choose a subject <span aria-hidden="true">↓</span></a>
+            <a class="hero-link" href="#try-example">Try one question first</a>
+          </div>
+          <ul class="hero-proof" aria-label="What is inside">
+            <li><b>3</b> courses</li>
+            <li><b>21</b> interactive explainers</li>
+            <li><b>Free</b> during the beta</li>
+          </ul>
         </div>
+        <div class="hero-art" data-art="hero" aria-hidden="true"></div>
       </section>
 
       <div id="continue-slot"></div>
 
+      <section class="subject-grid" id="subjects" aria-label="Choose a subject">
+        <article class="subject-card maths-card">
+          <div class="subject-art" data-art="foundation" aria-hidden="true"></div>
+          <div class="card-topline">
+            <span class="course-code">AQA 8300</span>
+            <span class="tier-chip">Grades 1–5</span>
+          </div>
+          <div class="subject-lockup">
+            <span class="subject-letter" data-art="mark-foundation" aria-hidden="true"></span>
+            <div>
+              <p class="subject-kicker">Foundation tier</p>
+              <h2>Mathematics</h2>
+            </div>
+          </div>
+          <p class="subject-copy">Number, Algebra, Ratio, Geometry, Probability and Statistics — as a map of levels to replay.</p>
+          <dl class="subject-facts">
+            <div><dt>Practice</dt><dd id="maths-bank">1,850 questions</dd></div>
+            <div><dt>Exam</dt><dd>3 papers</dd></div>
+            <div><dt>Explainers</dt><dd>11</dd></div>
+          </dl>
+          <a class="course-guide-link" href="/gcse-maths-foundation">Explore the Foundation revision guide</a>
+          <a class="enter-link" href="/maths/" data-acquisition="home-foundation">Open Maths Foundation <span aria-hidden="true">→</span></a>
+        </article>
+
+        <article class="subject-card higher-card">
+          <div class="subject-art" data-art="higher" aria-hidden="true"></div>
+          <div class="card-topline">
+            <span class="course-code">AQA 8300H</span>
+            <span class="tier-chip">Grades 4–9</span>
+          </div>
+          <div class="subject-lockup">
+            <span class="subject-letter" data-art="mark-higher" aria-hidden="true"></span>
+            <div>
+              <p class="subject-kicker">Higher tier</p>
+              <h2>Mathematics</h2>
+            </div>
+          </div>
+          <p class="subject-copy">Quadratics, circle theorems, surds, proof and graph questions — with Higher-only explainers.</p>
+          <dl class="subject-facts">
+            <div><dt>Practice</dt><dd id="higher-bank">2,810 questions</dd></div>
+            <div><dt>Exam</dt><dd>3 papers</dd></div>
+            <div><dt>Explainers</dt><dd>15</dd></div>
+          </dl>
+          <a class="course-guide-link" href="/gcse-maths-higher">Explore the Higher revision guide</a>
+          <a class="enter-link" href="/maths-higher/" data-acquisition="home-higher">Open Maths Higher <span aria-hidden="true">→</span></a>
+        </article>
+
+        <article class="subject-card english-card">
+          <div class="subject-art" data-art="english" aria-hidden="true"></div>
+          <div class="card-topline">
+            <span class="course-code">AQA 8700</span>
+            <span class="tier-chip">Grades 1–9</span>
+          </div>
+          <div class="subject-lockup">
+            <span class="subject-letter" data-art="mark-english" aria-hidden="true"></span>
+            <div>
+              <p class="subject-kicker">English Language</p>
+              <h2>English</h2>
+            </div>
+          </div>
+          <p class="subject-copy">Zoom into words, zoom out to structure, and write with a plan — for both Language papers.</p>
+          <dl class="subject-facts">
+            <div><dt>Sources</dt><dd id="english-texts">10 texts</dd></div>
+            <div><dt>Exam</dt><dd>2 papers</dd></div>
+            <div><dt>Explainers</dt><dd>6</dd></div>
+          </dl>
+          <a class="course-guide-link" href="/gcse-english-language">Explore the English revision guide</a>
+          <a class="enter-link" href="/english/" data-acquisition="home-english">Open English Language <span aria-hidden="true">→</span></a>
+        </article>
+      </section>
+
+      <section class="loop-strip" id="how-it-plays" aria-labelledby="loop-title">
+        <div class="loop-head">
+          <p class="eyebrow">How it plays</p>
+          <h2 id="loop-title">Every topic is a level you can replay.</h2>
+        </div>
+        <ol>
+          <li><span class="loop-tile" data-art="tile-watch" aria-hidden="true"></span><b>01 · Watch</b><span>A short explainer that pauses for you to answer.</span></li>
+          <li><span class="loop-tile" data-art="tile-learn" aria-hidden="true"></span><b>02 · Learn</b><span>Bite-size cards. Try each worked example first.</span></li>
+          <li><span class="loop-tile" data-art="tile-practise" aria-hidden="true"></span><b>03 · Practise</b><span>Instant marking with the full method.</span></li>
+          <li><span class="loop-tile" data-art="tile-retry" aria-hidden="true"></span><b>04 · Master</b><span>Misses come back later. Stars show it stuck.</span></li>
+        </ol>
+      </section>
+
       <section class="worked-example" id="try-example" aria-labelledby="example-title">
         <div class="example-intro">
-          <p class="example-label">A quick look inside</p>
+          <p class="example-label">Try one now</p>
           <h2 id="example-title">A mistake becomes<br />a plan.</h2>
-          <p>Try a Maths-style step. This example stays on this page and does not save an answer. In your account, marked mistakes can become scheduled retries.</p>
+          <p>Try a Maths-style step. This example stays on this page and does not save an answer. In your account, marked mistakes become scheduled retries.</p>
+          <span class="example-pip" data-art="pip-think" aria-hidden="true"></span>
           <a class="example-start" href="/maths/practice?diagnostic=1#adhoc" data-acquisition="home-example">Start a 10-question check <span aria-hidden="true">→</span></a>
         </div>
         <div class="example-sheet">
@@ -124,86 +219,12 @@
         </div>
       </section>
 
-      <section class="loop-strip" aria-label="How Study Desk works">
-        <ol>
-          <li><b>01 · Quick check</b><span>Start with 10 questions</span></li>
-          <li><b>02 · Practise</b><span>Work through timed papers</span></li>
-          <li><b>03 · Review</b><span>See where you went wrong</span></li>
-          <li><b>04 · Try again</b><span>Come back until it sticks</span></li>
-        </ol>
-      </section>
-
-      <section class="subject-grid" aria-label="Choose a subject">
-
-        <article class="subject-card maths-card">
-          <div class="card-topline">
-            <span class="course-code">AQA 8300</span>
-          </div>
-          <div class="subject-lockup">
-            <span class="subject-letter" aria-hidden="true">M</span>
-            <div>
-              <p class="subject-kicker">Foundation tier</p>
-              <h2>Mathematics</h2>
-            </div>
-          </div>
-          <p class="subject-copy">Practise Number, Algebra, Ratio, Geometry, Probability and Statistics at Foundation level.</p>
-          <a class="course-guide-link" href="/gcse-maths-foundation">Explore the Foundation revision guide</a>
-          <dl class="subject-facts">
-            <div><dt>Practice</dt><dd id="maths-bank">1,850 questions</dd></div>
-            <div><dt>Exam</dt><dd>3 papers</dd></div>
-            <div><dt>Grades</dt><dd>1–5</dd></div>
-          </dl>
-          <a class="enter-link" href="/maths/" data-acquisition="home-foundation">Open Maths Foundation <span aria-hidden="true">→</span></a>
-        </article>
-
-        <article class="subject-card higher-card">
-          <div class="card-topline">
-            <span class="course-code">AQA 8300H</span>
-          </div>
-          <div class="subject-lockup">
-            <span class="subject-letter" aria-hidden="true">H</span>
-            <div>
-              <p class="subject-kicker">Higher tier</p>
-              <h2>Mathematics</h2>
-            </div>
-          </div>
-          <p class="subject-copy">Work on Higher topics, proof and grade 4–9 exam questions.</p>
-          <a class="course-guide-link" href="/gcse-maths-higher">Explore the Higher revision guide</a>
-          <dl class="subject-facts">
-            <div><dt>Practice</dt><dd id="higher-bank">2,810 questions</dd></div>
-            <div><dt>Exam</dt><dd>3 papers</dd></div>
-            <div><dt>Grades</dt><dd>4–9</dd></div>
-          </dl>
-          <a class="enter-link" href="/maths-higher/" data-acquisition="home-higher">Open Maths Higher <span aria-hidden="true">→</span></a>
-        </article>
-
-        <article class="subject-card english-card">
-          <div class="card-topline">
-            <span class="course-code">AQA 8700</span>
-          </div>
-          <div class="subject-lockup">
-            <span class="subject-letter" aria-hidden="true">E</span>
-            <div>
-              <p class="subject-kicker">English Language</p>
-              <h2>English</h2>
-            </div>
-          </div>
-          <p class="subject-copy">Practise close reading and writing for both English Language papers.</p>
-          <a class="course-guide-link" href="/gcse-english-language">Explore the English revision guide</a>
-          <dl class="subject-facts">
-            <div><dt>Sources</dt><dd id="english-texts">10 texts</dd></div>
-            <div><dt>Exam</dt><dd>2 papers</dd></div>
-            <div><dt>Grades</dt><dd>1–9</dd></div>
-          </dl>
-          <a class="enter-link" href="/english/" data-acquisition="home-english">Open English Language <span aria-hidden="true">→</span></a>
-        </article>
-      </section>
-
       <footer class="desk-note">
         <strong>Choose a subject and start revising.</strong>
         <span>Independent study tool, not affiliated with AQA. <a href="/privacy.html">Privacy</a> · <a href="/support.html">Support</a> · <a href="/feedback.html">Feedback</a> · <a href="/delete-account.html">Delete account</a></span>
       </footer>
     </main>
+    <script src="/art.js" defer></script>
     <script src="/selector.js" defer></script>
     <script>
       (() => {

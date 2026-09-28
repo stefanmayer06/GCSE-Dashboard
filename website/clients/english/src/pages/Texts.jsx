@@ -11,7 +11,7 @@ export default function Texts() {
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>The Texts 📜</h1>
+          <h1>The Texts</h1>
           <p className="sub">
             Current practice sources: six original contemporary fiction passages for Paper 1,
             and Paper 2 pairs of 19th-century non-fiction and modern original non-fiction in either order.

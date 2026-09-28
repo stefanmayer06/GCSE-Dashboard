@@ -300,6 +300,7 @@ textarea:focus,
   background: var(--c-surface-2);
 }
 
+/* @public:start — graphics primitives (synced to selector/circuit-public.css) */
 /* ---------- Graphics primitives ---------- */
 .c-icon { flex: none; display: inline-block; vertical-align: middle; }
 .c-icon .i-accent { fill: var(--icon-accent, currentColor); stroke: currentColor; }
@@ -427,6 +428,7 @@ textarea:focus,
 @media (prefers-contrast: more) {
   :root { --c-line: var(--c-line-strong); --c-muted: var(--c-ink-2); }
 }
+/* @public:end */
 
 /* ---------- Graphics lab (/lab) ---------- */
 .lab-grid { display: grid; gap: 10px; }
@@ -451,3 +453,10 @@ textarea:focus,
 .empty-state h3 { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
 .empty-state p { margin: 0; color: var(--c-muted); font-size: 0.92rem; }
 .empty { padding: 8px 0; border: 0; color: var(--c-muted); }
+
+.c-mark { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 4px; border-radius: 50%; vertical-align: -4px; color: #fff; }
+.c-mark.ok { background: var(--c-good-bright); }
+.c-mark.no { background: var(--c-bad-bright); }
+.hint-inline .c-icon,
+.marking-note .c-icon,
+.q-tag .c-icon { vertical-align: -2px; --icon-accent: currentColor; }

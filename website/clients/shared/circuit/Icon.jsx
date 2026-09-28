@@ -213,6 +213,21 @@ const ICONS = {
       <rect className="i-accent" x="16.5" y="14" width="4" height="6.5" rx="1.6" />
     </>
   ),
+  freeze: (
+    <>
+      <path d="M12 2.5v19M3.8 7.25l16.4 9.5M3.8 16.75l16.4-9.5" />
+      <path d="m9.5 4 2.5 2.5L14.5 4M9.5 20l2.5-2.5 2.5 2.5" />
+      <circle className="i-accent" cx="12" cy="12" r="2.2" />
+    </>
+  ),
+  cross: <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />,
+  warning: (
+    <>
+      <path d="M12 3.5 21.5 20h-19z" />
+      <path d="M12 10v4.5" />
+      <circle className="i-accent" cx="12" cy="17.2" r="1.2" />
+    </>
+  ),
   heart: <path className="i-accent" d="M12 20.3s-8.3-4.9-8.3-11A4.6 4.6 0 0 1 12 6.6a4.6 4.6 0 0 1 8.3 2.7c0 6.1-8.3 11-8.3 11z" />,
   flag: (
     <>

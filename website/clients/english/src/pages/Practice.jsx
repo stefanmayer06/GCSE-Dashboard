@@ -4,6 +4,8 @@ import { api } from '../api.js';
 import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 import { personalKey } from '../../../shared/study-personal.js';
+import Mark from '../../../shared/circuit/Mark.jsx';
+import Icon from '../../../shared/circuit/Icon.jsx';
 
 function activeTestKey(userId) {
   return userId ? personalKey(userId, 'english', 'active-test') : null;
@@ -756,7 +758,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
             <span className="mark-chip auto">auto-marked</span>
           </div>
           {fb.matched?.map((m, j) => (
-            <div key={j} className="fb-text">✅ Your point “{m.line}” matches “{m.point}”.</div>
+            <div key={j} className="fb-text"><Mark ok /> Your point “{m.line}” matches “{m.point}”.</div>
           ))}
           {fb.missed?.map((m, j) => (
             <div key={`m${j}`} className="fb-text" style={{ color: 'var(--muted)' }}>· You could also have said: “{m}”</div>
@@ -768,7 +770,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
       return (
         <div className="fb-box">
           <div className="fb-head"><span className="fb-marks">{fb.got}<span className="outof"> / 4</span></span><span className="mark-chip auto">auto-marked</span></div>
-          {fb.rows.map((r, j) => <div key={j} className="fb-text">{r.right ? '✅' : '❌'} {j + 1}. {r.text} — {r.right ? r.answer : `You chose ${r.selected || 'nothing'}; answer: ${r.answer}`}</div>)}
+          {fb.rows.map((r, j) => <div key={j} className="fb-text">{r.right ? <Mark ok /> : <Mark />} {j + 1}. {r.text} — {r.right ? r.answer : `You chose ${r.selected || 'nothing'}; answer: ${r.answer}`}</div>)}
         </div>
       );
     }
@@ -776,7 +778,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
       return (
         <div className="fb-box">
           <div className="fb-head"><span className="fb-marks">{fb.got}<span className="outof"> / 4</span></span><span className="mark-chip auto">auto-marked</span></div>
-          {fb.rows.map((r, j) => <div key={j} className="fb-text">{r.selected ? (r.answer ? '✅' : '❌') : '·'} {String.fromCharCode(65 + j)}. {r.text} — {r.answer ? 'TRUE' : 'FALSE'}</div>)}
+          {fb.rows.map((r, j) => <div key={j} className="fb-text">{r.selected ? (r.answer ? <Mark ok /> : <Mark />) : '·'} {String.fromCharCode(65 + j)}. {r.text} — {r.answer ? 'TRUE' : 'FALSE'}</div>)}
         </div>
       );
     }
@@ -789,7 +791,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
           </div>
           {fb.rows.map((r, j) => (
             <div key={j} className="fb-text">
-              {r.right ? '✅' : '❌'} “{r.text}” → {r.answer ? 'TRUE' : 'FALSE'}
+              {r.right ? <Mark ok /> : <Mark />} “{r.text}” → {r.answer ? 'TRUE' : 'FALSE'}
             </div>
           ))}
         </div>
@@ -867,7 +869,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
             Check answer
           </button>
           {q.type !== 'truefalse' && q.type !== 'list' && (
-            <span className="hint-inline">{q.markType === 'ai' ? '🤖 AI will mark this against the AQA rubric' : 'Show the model answer when you\u2019re done'}</span>
+            <span className="hint-inline">{q.markType === 'ai' ? <><Icon name="sparkle" size={14} /> AI will mark this against the AQA rubric</> : 'Show the model answer when you\u2019re done'}</span>
           )}
         </div>
       ) : (
@@ -1092,7 +1094,7 @@ function TestScreen(props) {
               <span className="q-tag">Q{current + 1}</span>
               <span className="q-tag marks">{q.marks} marks</span>
               <span className="q-tag topic">~{q.targetMins} min</span>
-              {q.markType === 'ai' && <span className="q-tag stretch">🤖 AI-marked</span>}
+              {q.markType === 'ai' && <span className="q-tag stretch"><Icon name="sparkle" size={12} /> AI-marked</span>}
               {q.markType === 'auto' && <span className="q-tag">auto-marked</span>}
             </div>
             <div className="q-text">{q.text.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>
@@ -1179,8 +1181,8 @@ function TestScreen(props) {
             </p>
             <div className="marking-note">
               <span>{markingReady
-                ? '🤖 Your long answers will be marked by the AI examiner against summarised AQA mark schemes.'
-                : '⚠️ No OpenRouter key is configured — long answers will be returned with model answers and rubrics so you can self-mark.'}</span>
+                ? <><Icon name="sparkle" size={14} /> Your long answers will be marked by the AI examiner against summarised AQA mark schemes.</>
+                : <><Icon name="warning" size={14} /> No OpenRouter key is configured — long answers will be returned with model answers and rubrics so you can self-mark.</>}</span>
             </div>
             <div className="modal-actions">
               <button className="btn" onClick={() => setConfirmOpen(false)}>Keep working</button>

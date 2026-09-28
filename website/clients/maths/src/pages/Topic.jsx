@@ -9,6 +9,8 @@ import { recordLessonResult } from '../../../shared/study-personal.js';
 import { flattenTopics } from '../../../shared/study.js';
 import { ComboMeter, LessonExplainer, LessonHeader, MasteryPanel, NotesDeck, ResourceGrid, StageSection, TutorPromo, useStages } from '../../../shared/LessonKit.jsx';
 import { explainerForTopic } from '../../../shared/explainer/library/maths/index.js';
+import Mark from '../../../shared/circuit/Mark.jsx';
+import Icon from '../../../shared/circuit/Icon.jsx';
 
 export default function Topic({ onProgress, userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
@@ -227,11 +229,11 @@ export default function Topic({ onProgress, userId }) {
                       >
                         Check answer
                       </button>
-                      {q.hint && <span className="hint-inline">💡 {q.hint}</span>}
+                      {q.hint && <span className="hint-inline"><Icon name="bulb" size={16} /> {q.hint}</span>}
                     </div>
                   ) : (
                     <div className="quiz-fb">
-                      <div className="quiz-fb-line">{fb.correct ? '✅ Correct!' : '❌ Not quite.'} Answer: <b>{fb.answerText}</b></div>
+                      <div className="quiz-fb-line">{fb.correct ? <><Mark ok /> Correct!</> : <><Mark /> Not quite.</>} Answer: <b>{fb.answerText}</b></div>
                       <div className="review-sol">
                         {fb.solution.map((s, j) => <div key={j} className="sol-step">{s}</div>)}
                       </div>

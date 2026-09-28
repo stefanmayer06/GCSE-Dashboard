@@ -6,6 +6,8 @@ import { RubricBands } from './Practice.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 import { TriagePanel } from '../../../shared/StudyTools.jsx';
 import { mergeMistakeRows, mistakeRowsFromResult, personalKey } from '../../../shared/study-personal.js';
+import Mark from '../../../shared/circuit/Mark.jsx';
+import Icon from '../../../shared/circuit/Icon.jsx';
 
 export default function Results({ userId }) {
   const navigate = useNavigate();
@@ -198,7 +200,7 @@ export default function Results({ userId }) {
                     <div className="fb-box">
                       <div className="fb-head"><span className="fb-marks">{q.got}<span className="outof"> / 4</span></span></div>
                       {q.listResult.matched.map((m, j) => (
-                        <div key={j} className="fb-text">✅ “{m.line}” — matches “{m.point}”.</div>
+                        <div key={j} className="fb-text"><Mark ok /> “{m.line}” — matches “{m.point}”.</div>
                       ))}
                       {q.listResult.missed.map((m, j) => (
                         <div key={`m${j}`} className="fb-text" style={{ color: 'var(--muted)' }}>· You could also have said: “{m}”</div>
@@ -209,14 +211,14 @@ export default function Results({ userId }) {
                   {q.mcqResult && (
                     <div className="fb-box">
                       <div className="fb-head"><span className="fb-marks">{q.got}<span className="outof"> / 4</span></span></div>
-                      {q.mcqResult.map((r, j) => <div key={j} className="fb-text">{r.right ? '✅' : '❌'} {j + 1}. {r.text} — {r.right ? r.answer : `You chose ${r.selected || 'nothing'}; answer: ${r.answer}`}</div>)}
+                      {q.mcqResult.map((r, j) => <div key={j} className="fb-text">{r.right ? <Mark ok /> : <Mark />} {j + 1}. {r.text} — {r.right ? r.answer : `You chose ${r.selected || 'nothing'}; answer: ${r.answer}`}</div>)}
                     </div>
                   )}
 
                   {q.choose4Result && (
                     <div className="fb-box">
                       <div className="fb-head"><span className="fb-marks">{q.got}<span className="outof"> / 4</span></span></div>
-                      {q.choose4Result.map((r, j) => <div key={j} className="fb-text">{r.selected ? (r.answer ? '✅' : '❌') : '·'} {String.fromCharCode(65 + j)}. {r.text} — {r.answer ? 'TRUE' : 'FALSE'}</div>)}
+                      {q.choose4Result.map((r, j) => <div key={j} className="fb-text">{r.selected ? (r.answer ? <Mark ok /> : <Mark />) : '·'} {String.fromCharCode(65 + j)}. {r.text} — {r.answer ? 'TRUE' : 'FALSE'}</div>)}
                     </div>
                   )}
 
@@ -225,7 +227,7 @@ export default function Results({ userId }) {
                       <div className="fb-head"><span className="fb-marks">{q.got}<span className="outof"> / 4</span></span></div>
                       {q.tfResult.map((r, j) => (
                         <div key={j} className="fb-text">
-                          {r.right ? '✅' : '❌'} “{r.text}” → {r.answer ? 'TRUE' : 'FALSE'}
+                          {r.right ? <Mark ok /> : <Mark />} “{r.text}” → {r.answer ? 'TRUE' : 'FALSE'}
                         </div>
                       ))}
                     </div>

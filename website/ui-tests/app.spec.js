@@ -272,14 +272,51 @@ test('subject themes share the desk system but keep distinct accents', async ({ 
   await signIn(page);
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
   const maths = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
-  // V3 Trailhead system: Fraunces display type on shared warm paper.
-  await expect(page.locator('h1')).toHaveCSS('font-family', /Fraunces/);
-  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(247, 244, 236)');
+  // Circuit v5: self-hosted Unbounded display type on the shared cool paper.
+  await expect(page.locator('h1')).toHaveCSS('font-family', /Unbounded/);
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(242, 243, 250)');
 
   await page.goto(`${BASE}/english/`, { waitUntil: 'networkidle' });
   const english = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
-  await expect(page.locator('h1')).toHaveCSS('font-family', /Fraunces/);
+  await expect(page.locator('h1')).toHaveCSS('font-family', /Unbounded/);
   expect(maths).not.toEqual(english);
+});
+
+test('course map shows every Foundation topic as a replayable level tile', async ({ page }) => {
+  await signIn(page);
+  const topics = await (await page.request.get(`${BASE}/api/maths/topics`)).json();
+  const count = Object.values(topics.strands).reduce((sum, strand) => sum + strand.topics.length, 0);
+  await page.goto(`${BASE}/maths/learn`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.map-tile')).toHaveCount(count);
+  await expect(page.locator('.map-bubble')).toHaveCount(1);
+  await expect(page.locator('.map-tile').first()).toHaveAttribute('aria-label', /stars/);
+});
+
+test('an authored explainer stops at a checkpoint and continues after an answer', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/maths/learn/fractions`, { waitUntil: 'networkidle' });
+  const player = page.locator('.xp-player');
+  await expect(player.locator('.xp-poster h3')).toHaveText('Fractions of an amount');
+  await player.getByRole('button', { name: /Watch/ }).click();
+  await player.getByRole('button', { name: 'Pause', exact: true }).click();
+  await player.locator('.xp-chapter').nth(1).click();
+  await player.getByRole('button', { name: 'Play', exact: true }).click();
+  await expect(player.locator('.xp-check')).toBeVisible();
+  await expect(player.locator('.xp-check-prompt')).toContainText('How much goes into each');
+  await player.locator('.xp-check').getByRole('button', { name: '7', exact: true }).click();
+  await expect(player.locator('.xp-fb.right')).toContainText('28 ÷ 4 = 7');
+  await player.getByRole('button', { name: /Continue/ }).click();
+  await expect(player.locator('.xp-check')).toHaveCount(0);
+  await expect(player.locator('.xp-diamond.right')).toHaveCount(1);
+});
+
+test('topics without an authored explainer get a narrated talk-through', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/maths/learn/decimals`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.xp-poster h3')).toContainText('talk-through');
+  await expect(page.locator('#stage-learn .notes')).toBeVisible();
+  await page.goto(`${BASE}/english/learn/language`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.xp-poster h3')).toHaveText('Zoom into a word');
 });
 
 test('lesson headers avoid treating study-priority scores as exam weight claims', async ({ page }) => {

@@ -227,7 +227,7 @@ export default function DashboardHome({
                 <b>{progress?.streak ?? 0}</b>
                 <span>day streak</span>
               </div>
-              {progress?.streakFreezes ? <span className="freeze-chip" title="Streak freezes banked">❄ {progress.streakFreezes}</span> : null}
+              {progress?.streakFreezes ? <span className="freeze-chip" title="Streak freezes banked"><Icon name="freeze" size={14} /> {progress.streakFreezes}</span> : null}
             </div>
             <WeekStrip days={week.states} todayIndex={week.today} />
             <p className="streak-note">{progress?.streak > 0 ? 'Rest days pause the streak — they never break it.' : 'One short session starts it. No pressure.'}</p>

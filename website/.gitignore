@@ -49,3 +49,9 @@ plugins/impeccable-live.client.ts
 app/plugins/impeccable-live.client.ts
 src/plugins/impeccable-live.client.ts
 # impeccable-live-ignore-end
+
+# Art export scratch build
+scripts/art/.build/
+
+# Local Playwright override for sandboxes without Google Chrome
+playwright.local.config.mjs

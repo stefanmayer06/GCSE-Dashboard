@@ -12,6 +12,11 @@
 // Evaluation is a pure function of t, so play, pause, scrub, replay and
 // reduced motion all share one code path.
 
+// Every element type a script may use. primitives.jsx renders each one;
+// scripts/validate-explainers.mjs rejects anything else.
+export const ELEMENT_TYPES = ['text', 'frac', 'rect', 'circle', 'line', 'arrow', 'path', 'point', 'arc', 'bar', 'numberline', 'axes', 'tri', 'dots', 'grid', 'words', 'chip', 'callout', 'pie', 'balance', 'emblem', 'pip', 'card'];
+export const CHECKPOINT_KINDS = ['choice', 'number', 'tap', 'slider', 'reflect'];
+
 export const STAGE_W = 960;
 export const STAGE_H = 540;
 export const DEFAULT_CAMERA = { x: 0, y: 0, w: STAGE_W, h: STAGE_H };

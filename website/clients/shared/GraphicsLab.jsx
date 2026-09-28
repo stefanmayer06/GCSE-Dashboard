@@ -8,6 +8,9 @@ import { Confetti, HudChip, ProgressRing, SegmentBar, Stars, WeekStrip } from '.
 import { STRANDS } from './circuit/palette.js';
 import ExplainerPlayer from './explainer/Player.jsx';
 import { MATHS_EXPLAINERS } from './explainer/library/maths/index.js';
+import { ENGLISH_EXPLAINERS } from './explainer/library/english/index.js';
+
+const ALL_EXPLAINERS = [...MATHS_EXPLAINERS, ...ENGLISH_EXPLAINERS];
 
 // Graphics lab — a living catalogue of every Circuit graphic, reachable at
 // /<subject>/lab (signed in, not in the nav). Use it to eyeball new emblems,
@@ -34,10 +37,10 @@ export default function GraphicsLab({ subject = 'maths' }) {
         <h2>Explainers</h2>
         <label className="lab-pick">Script{' '}
           <select value={video} onChange={(event) => setVideo(Number(event.target.value))}>
-            {MATHS_EXPLAINERS.map((script, index) => <option key={script.id} value={index}>{script.title}</option>)}
+            {ALL_EXPLAINERS.map((script, index) => <option key={script.id} value={index}>{script.title}</option>)}
           </select>
         </label>
-        <ExplainerPlayer script={MATHS_EXPLAINERS[video] || MATHS_EXPLAINERS[0]} />
+        <ExplainerPlayer script={ALL_EXPLAINERS[video] || ALL_EXPLAINERS[0]} />
       </section>
 
       <section className="panel">

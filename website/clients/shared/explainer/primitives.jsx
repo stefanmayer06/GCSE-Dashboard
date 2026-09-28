@@ -29,6 +29,62 @@ export function col(name, fallback = 'var(--b-ink)') {
 
 const font = (key) => FONTS[key] || FONTS.ui;
 
+// Canvas can't resolve CSS variables, so measurement uses the concrete
+// family stacks behind the --font-* tokens (see circuit/tokens.css).
+const MEASURE_FAMILIES = {
+  display: '"Unbounded Variable", "Unbounded", sans-serif',
+  ui: '"Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", sans-serif',
+  mono: '"Atkinson Hyperlegible Mono Variable", "Atkinson Hyperlegible Mono", monospace',
+  hand: '"Kalam", cursive',
+  read: '"Literata Variable", "Literata", Georgia, serif',
+};
+const widthCache = new Map();
+let measureCtx = null;
+
+// Real text width in stage units (the stage is 1:1 with SVG user units).
+// Falls back to an estimate where canvas is unavailable (tests, SSR).
+export function textWidth(text, size, fontKey = 'ui', weight = 400) {
+  const family = MEASURE_FAMILIES[fontKey] || MEASURE_FAMILIES.ui;
+  const spec = `${weight} ${size}px ${family}`;
+  let loaded = true;
+  try {
+    loaded = typeof document === 'undefined' || !document.fonts || document.fonts.check(spec);
+  } catch {}
+  const key = `${spec}|${loaded ? 1 : 0}|${text}`;
+  if (widthCache.has(key)) return widthCache.get(key);
+  let width = String(text).length * size * (fontKey === 'read' ? 0.5 : 0.55);
+  try {
+    if (!measureCtx && typeof document !== 'undefined') measureCtx = document.createElement('canvas').getContext('2d');
+    if (measureCtx) {
+      measureCtx.font = spec;
+      width = measureCtx.measureText(String(text)).width;
+    }
+  } catch {}
+  widthCache.set(key, width);
+  return width;
+}
+
+function measuredLines(text, maxWidth, size, fontKey) {
+  const words = String(text).split(/\s+/).filter(Boolean);
+  const space = textWidth(' ', size, fontKey) * 1.15;
+  const lines = [];
+  let line = [];
+  let cursor = 0;
+  words.forEach((word, index) => {
+    const w = textWidth(word, size, fontKey);
+    if (line.length && cursor + space + w > maxWidth) {
+      lines.push(line);
+      line = [];
+      cursor = 0;
+    }
+    const x = line.length ? cursor + space : 0;
+    line.push({ word, index, x, w });
+    cursor = x + w;
+  });
+  if (line.length) lines.push(line);
+  return lines;
+}
+
 function Label({ x, y, text, size = 22, color = 'ink', fontKey = 'mono', anchor = 'middle', weight = 700, opacity = 1 }) {
   if (text == null || text === '') return null;
   return (
@@ -301,9 +357,57 @@ function NumberLineEl({ props, enter, anim }) {
   );
 }
 
+function signed(value, lead = false) {
+  const n = Math.round(value * 100) / 100;
+  if (lead) return String(n);
+  return n < 0 ? `− ${Math.abs(n)}` : `+ ${n}`;
+}
+
+// equation: 'line' → y = mx + c, 'quad' → y = ax² + bx + c, else literal.
+function equationText(props) {
+  if (props.equation === 'line') {
+    const m = Math.round((props.m ?? 0) * 100) / 100;
+    const c = props.c ?? 0;
+    const mx = m === 0 ? '' : m === 1 ? 'x' : m === -1 ? '−x' : `${signed(m, true)}x`;
+    if (!mx) return `y = ${signed(c, true)}`;
+    return Math.abs(c) < 1e-9 ? `y = ${mx}` : `y = ${mx} ${signed(c)}`;
+  }
+  if (props.equation === 'quad') {
+    const a = Math.round((props.qa ?? 1) * 100) / 100;
+    const b = props.qb ?? 0;
+    const c = props.qc ?? 0;
+    let out = `y = ${a === 1 ? '' : a === -1 ? '−' : a}x²`;
+    if (Math.abs(b) > 1e-9) out += ` ${signed(b)}x`.replace(/([+−]) 1x/, '$1 x');
+    if (Math.abs(c) > 1e-9) out += ` ${signed(c)}`;
+    return out;
+  }
+  return String(props.equation);
+}
+
 // ---------------------------------------------------------------- axes + graphs
 function AxesEl({ id, props, enter }) {
-  const { x = 180, y = 60, w = 600, h = 420, xmin = -5, xmax = 5, ymin = -5, ymax = 5, step = 1, grid = true, lines = [], curves = [], points = [], riseRun = null, labels = true } = props;
+  const { x = 180, y = 60, w = 600, h = 420, xmin = -5, xmax = 5, ymin = -5, ymax = 5, step = 1, grid = true, points = [], labels = true } = props;
+  // Shorthands so sandbox sliders and tweens can drive ONE line (m, c) or
+  // ONE quadratic (qa, qb, qc) through top-level numeric props.
+  const lines = [...(props.lines || []), ...(props.m != null ? [{ m: props.m, c: props.c ?? 0, color: props.lineColor || 'volt' }] : [])];
+  const curves = [...(props.curves || []), ...(props.qa != null ? [{ a: props.qa, b: props.qb ?? 0, c: props.qc ?? 0, color: props.curveColor || 'purple' }] : [])];
+  const riseRun = props.riseRun === true && props.m != null
+    ? { x1: props.runFrom ?? 0, x2: (props.runFrom ?? 0) + (props.run ?? 1), m: props.m, c: props.c ?? 0, color: props.riseColor || 'coral' }
+    : props.riseRun && typeof props.riseRun === 'object' ? props.riseRun : null;
+  const rootPoints = [];
+  if (props.showRoots && props.qa) {
+    const disc = props.qb ** 2 - 4 * props.qa * (props.qc ?? 0);
+    if (disc >= 0) {
+      const r1 = (-props.qb - Math.sqrt(disc)) / (2 * props.qa);
+      const r2 = (-props.qb + Math.sqrt(disc)) / (2 * props.qa);
+      for (const root of disc === 0 ? [r1] : [r1, r2]) {
+        if (root >= xmin && root <= xmax) rootPoints.push({ x: root, y: 0, label: `x = ${Math.round(root * 100) / 100}`, color: 'volt' });
+      }
+    }
+  }
+  if (props.showIntercept && props.m != null && (props.c ?? 0) >= ymin && (props.c ?? 0) <= ymax) {
+    rootPoints.push({ x: 0, y: props.c ?? 0, label: `(0, ${Math.round((props.c ?? 0) * 100) / 100})`, color: 'cyan' });
+  }
   const sx = (value) => x + ((value - xmin) / (xmax - xmin)) * w;
   const sy = (value) => y + h - ((value - ymin) / (ymax - ymin)) * h;
   const clip = `ax-${id}`;
@@ -365,9 +469,10 @@ function AxesEl({ id, props, enter }) {
           );
         })() : null}
       </g>
-      {points.map((point, index) => (
+      {[...points, ...rootPoints].map((point, index) => (
         <PointEl key={`pt${index}`} props={{ x: sx(point.x), y: sy(point.y), color: point.color || 'volt', label: point.label, labelColor: point.labelColor || 'ink', r: 8 }} />
       ))}
+      {props.equation ? <Label x={x + 16} y={y + 26} text={equationText(props)} anchor="start" size={24} fontKey="mono" color={props.equationColor || 'ink'} /> : null}
     </g>
   );
 }
@@ -414,9 +519,9 @@ function TriEl({ props, enter, anim }) {
         strokeDashoffset={anim === 'draw' ? 1 - enter : undefined}
       />
       {right ? <path d={`M${x + 22} ${y} V${y - 22} H${x}`} fill="none" stroke={col(color)} strokeWidth="3" /> : null}
-      {labels.a ? <Label x={x + a / 2} y={y + (squares > 0.5 ? -22 : 30)} text={labels.a} size={28} fontKey="display" color={labels.aColor || 'ink'} /> : null}
-      {labels.b ? <Label x={x + (squares > 0.5 ? 26 : -30)} y={y - b / 2} text={labels.b} size={28} fontKey="display" color={labels.bColor || 'ink'} /> : null}
-      {labels.c ? <Label x={x + a / 2 + nx * (squares > 0.5 ? -40 : 34)} y={y - b / 2 + ny * (squares > 0.5 ? -40 : 34)} text={labels.c} size={28} fontKey="display" color={labels.cColor || 'ink'} /> : null}
+      {labels.a ? <Label x={x + a / 2} y={squares > 0.5 ? y + a + 26 : y + 30} text={labels.a} size={26} fontKey="display" color={labels.aColor || 'ink'} /> : null}
+      {labels.b ? <Label x={squares > 0.5 ? x - b - 14 : x - 30} y={y - b / 2} text={labels.b} size={26} fontKey="display" anchor={squares > 0.5 ? 'end' : 'middle'} color={labels.bColor || 'ink'} /> : null}
+      {labels.c ? <Label x={squares > 0.5 ? (sqC[0][0] + sqC[2][0]) / 2 : x + a / 2 + nx * 34} y={squares > 0.5 ? (sqC[0][1] + sqC[2][1]) / 2 + 40 : y - b / 2 + ny * 34} text={labels.c} size={26} fontKey="display" color={labels.cColor || 'ink'} /> : null}
     </g>
   );
 }
@@ -452,19 +557,19 @@ function GridEl({ props, enter }) {
 // ---------------------------------------------------------------- words (English)
 function WordsEl({ id, props, enter, tap }) {
   const { x = 120, y = 120, w = 720, text = '', size = 32, fontKey = 'read', lh = 1.55, highlights = [], dim = false, color = 'ink', underline = [] } = props;
-  const lines = wrapWords(text, w, size, fontKey === 'read' ? 0.5 : 0.52);
+  const family = props.font || fontKey;
+  const lines = measuredLines(text, w, size, family);
   const lineH = size * lh;
   const hlFor = (index) => highlights.find((h) => index >= h.from && index <= h.to) || null;
   const out = [];
   lines.forEach((line, lineIndex) => {
-    let cursor = x;
-    line.forEach(({ word, index }) => {
-      const wordW = word.length * size * (fontKey === 'read' ? 0.5 : 0.52);
+    line.forEach(({ word, index, x: offset, w: wordW }) => {
       const hl = hlFor(index);
       const targetId = `${id}:${index}`;
       const tappable = tap?.targets?.has(targetId);
       const state = tap?.state?.[targetId];
       const baseY = y + lineIndex * lineH;
+      const left = x + offset;
       out.push(
         <g
           key={index}
@@ -475,15 +580,14 @@ function WordsEl({ id, props, enter, tap }) {
           onClick={tappable ? () => tap.onTap(targetId) : undefined}
           onKeyDown={tappable ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); tap.onTap(targetId); } } : undefined}
         >
-          {hl ? <rect x={cursor - 4} y={baseY - size * 0.62} width={(wordW + 8) * Math.min(1, enter * 1.4)} height={size * 1.2} rx="6" fill={col(hl.color || 'volt')} opacity="0.42" /> : null}
-          {tappable ? <rect className="xp-tap-box" x={cursor - 6} y={baseY - size * 0.66} width={wordW + 12} height={size * 1.3} rx="8" /> : null}
-          <text x={cursor} y={baseY} fontSize={size} fill={col(color)} fontFamily={font(props.font || fontKey)} dominantBaseline="central" opacity={dim && !hl ? 0.35 : 1}>
+          {hl ? <rect x={left - 5} y={baseY - size * 0.64} width={(wordW + 10) * Math.min(1, enter * 1.4)} height={size * 1.22} rx="6" fill={col(hl.color || 'volt')} opacity="0.42" /> : null}
+          {tappable ? <rect className="xp-tap-box" x={left - 7} y={baseY - size * 0.68} width={wordW + 14} height={size * 1.32} rx="8" /> : null}
+          <text x={left} y={baseY} fontSize={size} fill={col(color)} fontFamily={font(family)} dominantBaseline="central" opacity={dim && !hl ? 0.35 : 1}>
             {word}
           </text>
-          {underline.includes(index) ? <path d={`M${cursor} ${baseY + size * 0.55} q${wordW / 4} 6 ${wordW / 2} 0 t${wordW / 2} 0`} fill="none" stroke={col('coral')} strokeWidth="3" strokeLinecap="round" /> : null}
+          {underline.includes(index) ? <path d={`M${left} ${baseY + size * 0.55} q${wordW / 4} 6 ${wordW / 2} 0 t${wordW / 2} 0`} fill="none" stroke={col('coral')} strokeWidth="3" strokeLinecap="round" /> : null}
         </g>,
       );
-      cursor += wordW + size * 0.5;
     });
   });
   return <g opacity={Math.min(1, enter * 1.5)}>{out}</g>;
@@ -492,7 +596,7 @@ function WordsEl({ id, props, enter, tap }) {
 // ---------------------------------------------------------------- chips + callouts
 function ChipEl({ id, props, enter, tap }) {
   const { x = 480, y = 270, text = '', color = 'blue', size = 24, solid = true, fontKey = 'ui' } = props;
-  const width = String(text).length * size * 0.56 + 36;
+  const width = textWidth(String(text), size, props.font || fontKey, 800) + size * 1.3;
   const height = size * 1.7;
   const tappable = tap?.targets?.has(id);
   const state = tap?.state?.[id];
@@ -568,31 +672,48 @@ function PieEl({ props, enter }) {
 }
 
 // ---------------------------------------------------------------- balance scale
+// A two-pan balance. `tilt` (degrees, + = right side down) rotates the beam;
+// the pans hang level from the beam ends. Letter labels are unknown blocks
+// (subject colour), everything else is a number block (amber).
 function BalanceEl({ props, enter }) {
-  const { x = 480, y = 400, width = 560, left = [], right = [], tilt = 0, color = 'purple' } = props;
-  const block = (label, index, side) => {
-    const big = /[a-z]/i.test(label);
-    const size = big ? 58 : 38;
-    const items = side === 'left' ? left : right;
-    const total = items.reduce((sum, item) => sum + (/[a-z]/i.test(item) ? 64 : 44), 0);
-    let offset = -total / 2;
-    for (let k = 0; k < index; k += 1) offset += /[a-z]/i.test(items[k]) ? 64 : 44;
-    const bx = (side === 'left' ? -width / 2 + 60 : width / 2 - 60) + offset + (big ? 32 : 22) - size / 2;
+  const { x = 480, y = 250, width = 620, left = [], right = [], tilt = 0, color = 'purple' } = props;
+  const hw = width / 2;
+  const rad = (tilt * Math.PI) / 180;
+  const ends = {
+    left: [x - hw * Math.cos(rad), y - hw * Math.sin(rad)],
+    right: [x + hw * Math.cos(rad), y + hw * Math.sin(rad)],
+  };
+  const drop = 70;
+  const size = 62;
+  const pan = (side, items) => {
+    const [ex, ey] = ends[side];
+    const trayW = Math.max(190, items.length * (size + 6) + 24);
+    const trayY = ey + drop;
+    const startX = ex - ((items.length * (size + 6)) - 6) / 2;
     return (
-      <g key={`${side}${index}`}>
-        <rect x={bx} y={-size - 8} width={size} height={size} rx="8" fill={col(big ? color : 'amber')} stroke="var(--b-line)" strokeWidth="3" />
-        <Label x={bx + size / 2} y={-size / 2 - 8} text={label} size={big ? 30 : 22} color="#15172b" fontKey="display" />
+      <g key={side}>
+        <path d={`M${ex} ${ey} L${ex - trayW / 2 + 10} ${trayY} M${ex} ${ey} L${ex + trayW / 2 - 10} ${trayY}`} stroke="var(--b-muted)" strokeWidth="2.5" />
+        <rect x={ex - trayW / 2} y={trayY} width={trayW} height="12" rx="6" fill="var(--b-ink)" />
+        {items.map((label, index) => {
+          const letter = /[a-z]/i.test(label);
+          const bx = startX + index * (size + 6);
+          return (
+            <g key={`${side}${index}`}>
+              <rect x={bx} y={trayY - size - 2} width={size} height={size} rx="10" fill={col(letter ? color : 'amber')} stroke="var(--b-line)" strokeWidth="3" />
+              <Label x={bx + size / 2} y={trayY - size / 2 - 2} text={label} size={label.length > 2 ? 22 : 28} color="#15172b" fontKey="display" />
+            </g>
+          );
+        })}
       </g>
     );
   };
   return (
     <g opacity={enter}>
-      <path d={`M${x - 40} ${y + 90} L${x + 40} ${y + 90} L${x} ${y + 4} Z`} fill="var(--b-panel)" stroke="var(--b-ink)" strokeWidth="4" strokeLinejoin="round" />
-      <g transform={`translate(${x} ${y}) rotate(${tilt})`}>
-        <rect x={-width / 2} y={-6} width={width} height={12} rx="6" fill="var(--b-ink)" />
-        {left.map((label, index) => block(label, index, 'left'))}
-        {right.map((label, index) => block(label, index, 'right'))}
-      </g>
+      <path d={`M${x} ${y} L${x - 58} ${y + 190} L${x + 58} ${y + 190} Z`} fill="var(--b-panel)" stroke="var(--b-ink)" strokeWidth="4" strokeLinejoin="round" />
+      <line x1={ends.left[0]} y1={ends.left[1]} x2={ends.right[0]} y2={ends.right[1]} stroke="var(--b-ink)" strokeWidth="12" strokeLinecap="round" />
+      <circle cx={x} cy={y} r="11" fill={col('volt')} stroke="var(--b-line)" strokeWidth="3" />
+      {pan('left', left)}
+      {pan('right', right)}
     </g>
   );
 }
@@ -616,16 +737,27 @@ function PipEl({ props }) {
   );
 }
 
-function CardEl({ props, enter }) {
-  const { x = 240, y = 150, w = 480, h = 200, title, body, color = 'blue', size = 30 } = props;
+function CardEl({ id, props, enter, tap }) {
+  const { x = 240, y = 150, w = 480, h = 200, title, body, color = 'blue', size = 30, fontKey = 'mono' } = props;
   const lines = String(body || '').split('\n');
+  const tappable = tap?.targets?.has(id);
+  const state = tap?.state?.[id];
   return (
-    <g opacity={enter}>
+    <g
+      opacity={enter}
+      className={tappable ? `xp-tap${state ? ` is-${state}` : ''}` : undefined}
+      role={tappable ? 'button' : undefined}
+      tabIndex={tappable ? 0 : undefined}
+      aria-label={tappable ? `Choose: ${title || body}` : undefined}
+      onClick={tappable ? () => tap.onTap(id) : undefined}
+      onKeyDown={tappable ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); tap.onTap(id); } } : undefined}
+    >
+      {tappable ? <rect className="xp-tap-box" x={x - 8} y={y - 8} width={w + 16} height={h + 16} rx="28" /> : null}
       <rect x={x} y={y} width={w} height={h} rx="22" fill="var(--b-panel)" stroke={col(color)} strokeWidth="4" />
       <rect x={x} y={y} width={w} height="10" rx="5" fill={col(color)} />
-      {title ? <Label x={x + 28} y={y + 46} text={title} anchor="start" size={20} color={color} /> : null}
+      {title ? <Label x={x + 28} y={y + 30} text={title} anchor="start" size={16} color={color} /> : null}
       {lines.map((line, index) => (
-        <Label key={index} x={x + 28} y={y + 92 + index * size * 1.3} text={line} anchor="start" size={size} fontKey="mono" weight={700} />
+        <Label key={index} x={x + 28} y={y + (title ? 46 : 20) + size * 0.75 + index * size * 1.3} text={line} anchor="start" size={size} fontKey={props.font || fontKey} weight={props.weight ?? 700} />
       ))}
     </g>
   );

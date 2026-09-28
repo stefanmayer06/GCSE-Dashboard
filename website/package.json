@@ -19,6 +19,7 @@
     "test": "npm test -w server",
     "test:foundation": "node --test server/test/foundation-bank.test.js",
     "test:higher": "node --test server/test/higher-bank.test.js",
+    "explainers:check": "node scripts/validate-explainers.mjs",
     "test:ui": "playwright test",
     "support:list": "node scripts/support-ops.mjs list",
     "support:prune": "node scripts/support-ops.mjs prune",

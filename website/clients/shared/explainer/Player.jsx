@@ -185,6 +185,14 @@ export default function ExplainerPlayer({ script, onComplete = null, onContinue 
   const wrapRef = useRef(null);
   const completedRef = useRef(false);
   const voiceAvailable = speechSupported();
+  // Re-render once web fonts arrive so measured text (words, chips) uses
+  // the real metrics even when the player is paused.
+  const [, setFontsReady] = useState(false);
+  useEffect(() => {
+    let live = true;
+    document.fonts?.ready?.then(() => { if (live) setFontsReady(true); });
+    return () => { live = false; };
+  }, []);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -461,9 +469,6 @@ export default function ExplainerPlayer({ script, onComplete = null, onContinue 
           {frame.items.map((item) => <StageItem key={item.id} item={item} tap={tap} />)}
         </svg>
 
-        {prefs.captions && started && !active && beat?.caption ? (
-          <p className="xp-caption" aria-hidden="true"><span>{beat.caption}</span></p>
-        ) : null}
 
         {!started ? (
           <div className="xp-poster">
@@ -517,6 +522,10 @@ export default function ExplainerPlayer({ script, onComplete = null, onContinue 
           </div>
         ) : null}
       </div>
+
+      {prefs.captions ? (
+        <p className="xp-caption" aria-hidden="true">{started && beat?.caption ? beat.caption : '\u00a0'}</p>
+      ) : null}
 
       <div className="xp-controls">
         <button type="button" className="xp-btn xp-btn-main" onClick={toggle} aria-label={playing ? 'Pause' : 'Play'} disabled={!!active}>

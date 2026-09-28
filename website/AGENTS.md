@@ -46,11 +46,12 @@ The clients remain separate because their question formats, grading logic and gl
 - `server/src/personal.js`: per-subject `/personal` routes backing preferences, the saved 7-day plan, the mistake notebook and durable paper attempts.
 - `server/src/analytics.js`: authenticated `POST /api/events` append route and `GET /api/events/summary` activation/funnel summary, backed by the storage driver (`events.json` locally, `product_events` on Supabase). See `ANALYTICS.md` for the event taxonomy, activation definition and retention policy.
 - `server/src/feedback.js`: public, rate-limited `POST /api/feedback` route storing beta-tester feedback through the storage driver (`feedback.json` locally, `beta_feedback` table on Supabase).
+- `server/src/support.js`: public, rate-limited `POST /api/support` route storing help and privacy requests privately (`support-requests.json` locally, `support_requests` on Supabase).
 - `clients/shared/study-personal.js`: web personal-data repository, hydration and one-time legacy localStorage import.
 - `server/src/supabase/`: Supabase server client configuration and secret-key handling.
 - `supabase/`: SQL migrations (tables, RLS policies, RPCs), private legacy staging tables and database tests.
 - `server/src/subjects/maths/`: generated question bank, exact marking, grades, progress and Maths tutor.
-- `server/src/subjects/english/`: source texts, question assembly, rubric marking, grades, progress and English tutor.
+- `server/src/subjects/english/`: source texts, question assembly, rubric marking, progress and English tutor. English practice scores do not issue a predicted grade.
 - `clients/maths/src/pages/`: Maths dashboard, papers, results, topic lessons and tutor.
 - `clients/english/src/pages/`: English dashboard, papers, results, lessons, text library and tutor.
 - `clients/shared/login.jsx`: shared sign-in gate used by both clients.
@@ -59,7 +60,7 @@ The clients remain separate because their question formats, grading logic and gl
 
 ## Accounts And Sign-In
 
-Every request to `/api/maths/*`, `/api/maths-higher/*` and `/api/english/*` requires a valid session except the three public health endpoints. The selector uses those health endpoints, so it can show availability before sign-in.
+Every request to `/api/maths/*`, `/api/maths-higher/*` and `/api/english/*` requires a valid session except the three public health endpoints. The selector uses those health endpoints to enrich content counts; a failed health request does not mean a course is unavailable.
 
 - `POST /api/auth/login` accepts a username and password.
 - `POST /api/auth/signup` creates a new local account (3-32 character username, 8+ character password) and signs it in.
@@ -179,12 +180,13 @@ checks.
 - Every generated question must include an exact answer, worked solution and deterministic marking metadata.
 - Every generated Higher paper must contain at least one accessible graph stimulus, no calculator-required items on 8300/1H, and exactly one item marked as an exceptional synoptic challenge.
 - AQA content weightings apply approximately across the qualification, not as fixed per-paper allocations; any specification topic may appear on any Higher paper.
+- Topic `examWeight` fields are internal relative planning priorities. Do not display them as per-topic exam percentages or mark allocations.
 
 ### English
 
 - Course: AQA GCSE English Language 8700, grades 1-9; it has no tiers.
 - Preserve both papers, source displays, marks and timing.
-- List and true/false questions are marked deterministically.
+- Current Paper 1 multiple-choice and Paper 2 choose-four questions are marked deterministically; legacy list and true/false sessions keep their marking routes until expiry.
 - Extended responses use AQA-style rubric prompts through OpenRouter when configured.
 - Without an API key, learners must still receive rubrics and model answers for self-marking.
 - Paper 1 Q5 description tasks show a free image from Wikimedia Commons (`q5Image` on each text in `server/src/subjects/english/texts/p1.js`; URLs are resolved via `Special:FilePath`). Images must stay appropriate for 14+ students, and the client hides them gracefully if a URL ever fails.
@@ -219,7 +221,7 @@ docker compose up --build
 - Prefer small, testable changes over cross-subject abstractions that obscure exam-specific behavior.
 - Subject data is always scoped to the signed-in user. Never write progress, drafts, chat or history to a shared file.
 - New sign-in-facing API routes belong under `/api/auth`; new subject routes stay namespaced under `/api/maths`, `/api/maths-higher` and `/api/english` and must keep working with the session gate.
-- `/api/feedback` is the only public write endpoint besides auth. Keep it anonymous, rate limited and free of personal data beyond the optional reply email; never expose stored feedback through any client-facing route.
+- `/api/feedback` and `/api/support` are the only public write endpoints besides auth. Keep them anonymous and rate limited; never expose stored messages through any client-facing route. Feedback and support may accept an optional reply email, and privacy support requests require one.
 - The local/Docker default admin account is `admin` / `admin`; production must use `ADMIN_PASSWORD` and must never depend on that default.
 - Authoritative user data, progress and study sessions must use the configured storage driver: JSON beneath `DATA_DIR` locally and Supabase tables on Vercel. Browser storage is limited to theme, auth-library session persistence, active drafts, disposable result/history caches and one-time migration flags.
 - Supabase is the application database. Keep service-role keys server-side, keep RLS enabled on user-owned tables (`user_id = auth.uid()`), and version every schema change as a migration under `supabase/migrations`. Never merge development users, progress, sessions, chat or submissions into production.

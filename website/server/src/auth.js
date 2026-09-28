@@ -16,6 +16,7 @@ const OAUTH_STATE_TTL = 10 * 60 * 1000;
 const DEFAULT_OAUTH_FETCH_TIMEOUT = 10_000;
 const MAX_OAUTH_FETCH_TIMEOUT = 15_000;
 const USERNAME_PATTERN = /^[a-z0-9_.-]{3,32}$/;
+const ACQUISITION_SOURCE_PATTERN = /^[a-z0-9][a-z0-9_-]{0,59}$/i;
 const scrypt = promisify(crypto.scrypt);
 const supabaseAuth = storage.driver === 'supabase';
 
@@ -37,6 +38,11 @@ export function oauthConfigured() {
       && oauthCfg.tokenUrl
       && oauthCfg.userinfoUrl,
   );
+}
+
+function acquisitionSource(value) {
+  const source = typeof value === 'string' ? value.trim() : '';
+  return ACQUISITION_SOURCE_PATTERN.test(source) ? source.toLowerCase() : 'direct';
 }
 
 async function hashPassword(password) {
@@ -598,7 +604,7 @@ export function authRoutes() {
         : null;
       if (user && typeof storage.recordEvent === 'function') {
         await storage.recordEvent(result.session.user.id, 'signup', {
-          metadata: { source: String(req.body?.source || '').slice(0, 60) || 'direct' },
+          metadata: { source: acquisitionSource(req.body?.source) },
         }).catch(() => {});
       }
       return res.status(201).json({
@@ -639,7 +645,7 @@ export function authRoutes() {
     setSessionCookie(res, await issueSession(user.id));
     if (typeof storage.recordEvent === 'function') {
       await storage.recordEvent(user.id, 'signup', {
-        metadata: { source: String(req.body?.source || '').slice(0, 60) || 'direct' },
+        metadata: { source: acquisitionSource(req.body?.source) },
       }).catch(() => {});
     }
     return res.status(201).json({ user: { username: user.username } });

@@ -16,6 +16,8 @@ export default function TextDetail() {
   if (!text) return <div className="page"><div className="loading">Loading…</div></div>;
 
   const isPair = !!text.textB;
+  const selectedMeta = isPair ? (tab === 'A' ? text.textMetaA : text.textMetaB) : null;
+  const gutenberg = isPair ? selectedMeta.gutenberg : text.gutenberg;
 
   return (
     <div className="page topic-page">
@@ -25,8 +27,8 @@ export default function TextDetail() {
           <h1>{text.title}</h1>
           <p className="sub">{text.paper} · {text.kind} · {text.century}</p>
         </div>
-        {text.gutenberg && (
-          <a className="btn" href={text.gutenberg} target="_blank" rel="noreferrer">
+        {gutenberg && (
+          <a className="btn" href={gutenberg} target="_blank" rel="noreferrer">
             Full text on Project Gutenberg
           </a>
         )}
@@ -52,7 +54,7 @@ export default function TextDetail() {
                   ? `${text.textMetaA.author}, ${text.textMetaA.year}`
                   : `${text.textMetaB.author}, ${text.textMetaB.year}`}
               </span>
-              <span className="source-flag">{text.source}</span>
+              <span className="source-flag">{selectedMeta.source}</span>
               <ReadAloud text={tab === 'A' ? text.textA : text.textB} />
             </div>
             <div className="text-detail-source">
@@ -79,10 +81,11 @@ export default function TextDetail() {
       )}
 
       <section className="panel">
-        <h2>Practise with this text</h2>
+        <h2>{text.archived ? 'Continue with current practice' : 'Practise with this text'}</h2>
         <p className="sub">
-          This text appears in the practice papers and quick-fire rounds — start a paper and you
-          may meet it there.
+          {text.archived
+            ? 'This classic extract is kept for older links and saved attempts. New Paper 1 sets use original contemporary fiction, following the exam’s source period.'
+            : 'This text appears in the practice papers and quick-fire rounds — start a paper and you may meet it there.'}
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <Link className="btn btn-primary" to="/practice">Start a paper →</Link>

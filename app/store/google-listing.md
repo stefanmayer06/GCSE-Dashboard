@@ -5,6 +5,7 @@ All bracketed fields are release-owner prerequisites.
 ## Listing
 
 - **App name:** GCSE Study Desk
+- **Service operator:** Mayer Digital
 - **Default language:** English (United Kingdom)
 - **Category:** Education
 - **Short description (80 characters max):** Focused GCSE Maths and English revision, practice and progress.
@@ -16,7 +17,7 @@ All bracketed fields are release-owner prerequisites.
 
 Make the next revision step clear with GCSE Study Desk.
 
-Study AQA-aligned Maths Foundation, Maths Higher and English Language in one focused app. Read course notes, practise topics, complete paper-style sessions and see progress for each course separately.
+Study with AQA-style Maths Foundation, Maths Higher and English Language practice in one focused app. Read course notes, practise topics, complete original paper-style sessions and see progress for each course separately.
 
 WHAT YOU CAN DO
 
@@ -31,6 +32,8 @@ WHAT YOU CAN DO
 An account and internet connection are required for synced learning, starting activities, marking and tutor replies. AI feedback can be wrong and does not represent an official examiner grade.
 
 GCSE Study Desk is independent. It is not affiliated with, approved by, or endorsed by AQA.
+
+Operated by Mayer Digital.
 
 ## Graphics and release text
 

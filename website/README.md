@@ -15,7 +15,7 @@ the repository's `website/` directory.
 
 ## Subjects
 
-- **MathsMate Foundation**: AQA Mathematics 8300 Foundation, three papers, 1,730 generated questions, interactive diagrams and lesson models, topic lessons, progress tracking and an AI tutor. Any Foundation topic may appear on any paper; Paper 1 remains non-calculator safe.
+- **MathsMate Foundation**: AQA Mathematics 8300 Foundation, three papers, 1,850 generated questions, interactive diagrams and lesson models, topic lessons, progress tracking and an AI tutor. Any Foundation topic may appear on any paper; Paper 1 remains non-calculator safe.
 - **MathsMate Higher**: AQA Mathematics 8300H, three 80-mark papers, original Higher generators plus supporting topic practice, accessible graph questions, deterministic mark schemes, grades 4-9 and a Higher-aware AI tutor.
 - **EnglishMate**: AQA English Language 8700, both papers, source-text library, skill lessons, AQA-style AI marking, progress tracking and an AI tutor.
 
@@ -82,9 +82,15 @@ docker compose up --build
 Apply tracked schema changes to the linked Supabase project:
 
 ```bash
+npx supabase migration up --local
+npx supabase test db
 npm run db:migrations:list
 npm run db:migrations:push
 ```
+
+The first two commands validate an isolated local database. Review the linked
+project's pending migrations before pushing; a local test does not apply them to
+production.
 
 ## Vercel + Supabase
 
@@ -145,6 +151,7 @@ See `FOUNDATION_AUDIT.md` for the Foundation bank review and remaining content b
 | `/` | Subject selector |
 | `/subjects` | Subject directory (catalogue of available subjects) |
 | `/feedback.html` | Public beta-tester feedback form (stores to the `beta_feedback` table / local `feedback.json`) |
+| `/support.html` | Public account, content and privacy support form (stores privately to `support_requests` / local `support-requests.json`) |
 | `/maths/*` | MathsMate client (sign-in gated) |
 | `/maths-higher/*` | MathsMate Higher client (sign-in gated) |
 | `/english/*` | EnglishMate client (sign-in gated) |
@@ -152,6 +159,7 @@ See `FOUNDATION_AUDIT.md` for the Foundation bank review and remaining content b
 | `/api/events` | Authenticated product-event append (see `ANALYTICS.md`) |
 | `/api/events/summary` | Activation and funnel summary for the signed-in learner |
 | `/api/feedback` | Public beta feedback submissions (rate limited) |
+| `/api/support` | Public support submissions (rate limited) |
 | `/api/maths/*` | Maths API (session required; health is public) |
 | `/api/maths-higher/*` | Higher Maths API (session required; health is public) |
 | `/api/english/*` | English API (session required; health is public) |
@@ -174,3 +182,11 @@ retention windows. See `FOUNDATION_AUDIT.md`, `HIGHER_AUDIT.md` and
 `ENGLISH_AUDIT.md` for the per-qualification coverage audits and remaining
 content backlog. See `AGENTS.md` for architecture, educational goals and change
 invariants.
+
+The public support form and private review/retention commands are documented in
+`SUPPORT_OPERATIONS.md`.
+
+Use `npm run acquisition:report -- 90` with the appropriate production storage
+environment to see aggregate signups, first-week activation and day-7 returns by
+source. The report contains no learner identifiers; definitions and caveats are
+in `ANALYTICS.md`.

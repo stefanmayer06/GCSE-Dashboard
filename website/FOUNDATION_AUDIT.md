@@ -24,11 +24,23 @@ table or probability diagram. The paper builder enforces 4 to 7 visual questions
 - Wrong answers or ambiguous choices were corrected in operations, equations, fractions,
   percentages, averages, graph gradients, probability, ratio and angle generators.
 - Colloquial Z/F/C angle terminology was removed from teaching and marking language.
+- Original N4 practice and a worked lesson now cover factors, multiples, primes, prime
+  factorisation in index form, HCF, LCM and shared-multiple/grouping problems. This maps to
+  [AQA 8300 Number N4](https://www.aqa.org.uk/subjects/mathematics/gcse/mathematics-8300/specification/subject-content/3.1-number).
+- Original N9 practice and a worked lesson now cover writing and interpreting standard form,
+  calculator E notation, comparing values and multiplying powers of ten. This maps to the
+  same AQA Number specification and includes positive and negative integer powers.
+- Topic-level `examWeight` values are relative priorities for the study planner, not
+  published AQA percentages. The learner-facing lesson header no longer describes them as
+  a fraction of an exam paper.
+- Finance teaching now uses only tax rules supplied in a question. The tax exercises are
+  explicitly fictional, so a learner is not taught a changing UK allowance or National
+  Insurance calculation as a general fact.
 
 ## Remaining Specification Backlog
 
-1. Number: factors, multiples, prime factorisation, HCF/LCM, standard form, roots and indices,
-   systematic listing, broader fraction arithmetic and formal written methods.
+1. Number: roots and indices beyond the current BIDMAS examples, systematic listing,
+   broader fraction arithmetic and formal written methods.
 2. Rates and proportion: unit conversion, compound measures, density and pressure, inverse
    proportion, growth and decay, and graphical proportion.
 3. Algebra: identities and functions, simultaneous equations, factorising and solving Foundation

@@ -33,6 +33,7 @@ async function completeMathsLessonQuiz(page) {
 
 const pages = [
   ['selector', '/', ['#page-title', '.maths-card', '.english-card']],
+  ['support', '/support.html', ['#contact', '#support-form', '#support-button']],
   ['subjects-directory', '/subjects', ['.subject-directory', '.dir-maths', '.dir-english', '.dir-coming']],
   ['maths-foundation-guide', '/gcse-maths-foundation', ['#course-title', '.course-stats', '.faq-list']],
   ['maths-higher-guide', '/gcse-maths-higher', ['#course-title', '.course-stats', '.faq-list']],
@@ -46,6 +47,7 @@ const pages = [
   ['maths-higher-learn', '/maths-higher/learn/surds', ['.notes']],
   ['maths-learn', '/maths/learn', ['.strand-panel']],
   ['maths-topic', '/maths/learn/fractions', ['.notes']],
+  ['maths-factors-topic', '/maths/learn/factors-multiples', ['.notes']],
   ['maths-chat', '/maths/chat', ['.chat-box']],
   ['english-dashboard', '/english/', ['h1', '.subject-switch']],
   ['english-practice', '/english/practice', ['h1']],
@@ -75,6 +77,38 @@ for (const [name, url, selectors] of pages) {
     expect(errors, `${name} has browser errors`).toEqual([]);
   });
 }
+
+test('English modern-first source pair shows the selected source and its provenance', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.goto(`${BASE}/english/texts/p2-city-modern-first`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.source-flag')).toHaveText('Original text written for practice');
+  await expect(page.getByRole('link', { name: 'Full text on Project Gutenberg' })).toHaveCount(0);
+  await page.getByRole('button', { name: /Source B.*Condition of the Working-Class/ }).click();
+  await expect(page.locator('.source-flag')).toContainText('Public domain');
+  await expect(page.getByRole('link', { name: 'Full text on Project Gutenberg' })).toHaveAttribute('href', /gutenberg\.org/);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('English current fiction library preserves an archived classic deep link', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.goto(`${BASE}/english/texts`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.text-card[href*="/p1-"]')).toHaveCount(6);
+  await expect(page.getByRole('link', { name: /The Last Crossing/ })).toBeVisible();
+  await expect(page.locator('.text-card[href$="/p1-great-expectations"]')).toHaveCount(0);
+  await page.getByRole('link', { name: /The Last Crossing/ }).click();
+  await expect(page.locator('.source-flag')).toHaveText('Original fiction written for practice');
+  await expect(page.locator('.text-detail-source')).toContainText('Nia reached the marsh gate');
+  await expect(page.getByRole('link', { name: 'Full text on Project Gutenberg' })).toHaveCount(0);
+  await page.goto(`${BASE}/english/texts/p1-great-expectations`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.text-detail-source')).toContainText('Ours was the marsh country');
+  await expect(page.getByRole('heading', { name: 'Continue with current practice' })).toBeVisible();
+  await expect(page.locator('.page-head')).toContainText('Archived classic skills practice');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
 
 test('login gate accepts the admin account and rejects a bad password', async ({ page }) => {
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
@@ -112,13 +146,72 @@ test('signing out returns to the login gate', async ({ page }) => {
   await expect.poll(() => page.evaluate((keys) => keys.map((key) => localStorage.getItem(key)), storageKeys)).toEqual(storageKeys.map(() => null));
 });
 
-test('subject selector links and live status', async ({ page }) => {
+test('subject selector keeps course links usable when health details are unavailable', async ({ page }) => {
+  await page.route('**/api/maths/health', (route) => route.abort());
   await page.goto('/', { waitUntil: 'networkidle' });
-  await expect(page.locator('#maths-status')).toContainText('Ready');
-  await expect(page.locator('#english-status')).toContainText('Ready');
-  await expect(page.locator('a[href="/maths/"]')).toBeVisible();
-  await expect(page.locator('a[href="/english/"]')).toBeVisible();
+  await expect(page.locator('.maths-card .enter-link')).toBeVisible();
+  await expect(page.locator('.english-card .enter-link')).toBeVisible();
+  await expect(page.locator('.maths-card')).not.toContainText('Offline');
   await expect(page.locator('a[href="/subjects"]')).toBeVisible();
+});
+
+test('public example explains the method and carries acquisition source into the diagnostic', async ({ page }) => {
+  await page.goto(`${BASE}/?src=parent-group`, { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Check the method' }).click();
+  await expect(page.locator('#example-prompt')).toBeVisible();
+  await page.getByRole('radio', { name: '4' }).check();
+  await page.getByRole('button', { name: 'Check the method' }).click();
+  await expect(page.locator('#example-result')).toContainText('x = 5');
+  await expect(page.locator('#example-result')).toContainText('Subtract 5 from both sides');
+  await expect(page.locator('#example-result')).toContainText('later retry');
+  await expect(page.locator('.example-start')).toHaveAttribute('href', '/maths/practice?diagnostic=1&src=parent-group#adhoc');
+  await expect(page.locator('.maths-card .enter-link')).toHaveAttribute('href', '/maths/?src=parent-group');
+  await page.getByRole('radio', { name: '5' }).check();
+  await page.getByRole('button', { name: 'Check the method' }).click();
+  await expect(page.locator('#example-outcome')).toContainText('Correct');
+});
+
+test('course guides and the subject directory preserve a campaign source through signup links', async ({ page }) => {
+  await page.goto(`${BASE}/gcse-maths-foundation`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.course-action.primary')).toHaveAttribute('href', '/maths/?src=guide-foundation');
+  await page.goto(`${BASE}/gcse-maths-foundation?src=parent-group`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.course-action.primary')).toHaveAttribute('href', '/maths/?src=parent-group');
+  await expect(page.locator('a[href="/subjects?src=parent-group"]')).toHaveCount(2);
+  await page.goto(`${BASE}/subjects?src=parent-group`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.dir-maths .dir-open')).toHaveAttribute('href', '/maths/?src=parent-group');
+});
+
+test('homepage check continues through signup into ten diagnostic questions', async ({ page }) => {
+  const username = `visitor${Date.now()}`;
+  await page.goto(`${BASE}/?src=parent-group`, { waitUntil: 'networkidle' });
+  await page.getByRole('link', { name: 'Start a 10-question check' }).click();
+  await expect(page).toHaveURL(/\/maths\/practice\?diagnostic=1&src=parent-group#adhoc$/);
+  await expect(page.locator('.login-card')).toBeVisible();
+  await page.getByRole('button', { name: 'New here? Create an account' }).click();
+  await page.locator('input[name="username"]').fill(username);
+  await page.locator('input[name="password"]').fill('revision-pass-1');
+  await page.locator('input[name="confirm"]').fill('revision-pass-1');
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page.locator('.quiz-q')).toHaveCount(10);
+  await expect.poll(async () => {
+    const response = await page.request.get(`${BASE}/api/events/summary`);
+    return response.ok() ? (await response.json()).counts.diagnostic_start : undefined;
+  }).toBe(1);
+});
+
+test('support form sends an account request and requires a reply email for privacy', async ({ page }) => {
+  await page.goto(`${BASE}/support.html`, { waitUntil: 'networkidle' });
+  await page.locator('#topic').selectOption('privacy');
+  await page.locator('#message').fill('I need a copy of my account data.');
+  await page.getByRole('button', { name: 'Send support request' }).click();
+  await expect(page.locator('#email')).toHaveAttribute('required', '');
+  await expect(page.locator('#status')).toBeEmpty();
+
+  await page.locator('#topic').selectOption('account');
+  await page.locator('#message').fill('I cannot sign in to Maths Foundation.');
+  await page.getByRole('button', { name: 'Send support request' }).click();
+  await expect(page.locator('#status')).toContainText('Your request was received');
+  await expect(page.locator('#topic')).toHaveValue('');
 });
 
 test('public GCSE guides expose indexable SEO metadata and structured data', async ({ page }) => {
@@ -145,7 +238,7 @@ test('public GCSE guides expose indexable SEO metadata and structured data', asy
 });
 
 test('authenticated subject shells are excluded from search indexing', async ({ page }) => {
-  for (const path of ['/maths/', '/maths-higher/', '/english/', '/feedback.html', '/delete-account.html', '/api/health']) {
+  for (const path of ['/maths/', '/maths-higher/', '/english/', '/feedback.html', '/support.html', '/delete-account.html', '/api/health']) {
     const response = await page.goto(BASE + path);
     expect(response.headers()['x-robots-tag'], path).toContain('noindex');
   }
@@ -165,6 +258,16 @@ test('subject directory links to both subjects and tolerates more rows', async (
   ]);
 });
 
+test('subject directory total includes both Maths question banks', async ({ page }) => {
+  const foundation = await (await page.request.get(`${BASE}/api/maths/health`)).json();
+  const higher = await (await page.request.get(`${BASE}/api/maths-higher/health`)).json();
+  await page.goto(`${BASE}/subjects`, { waitUntil: 'networkidle' });
+  await expect(page.locator('#spec-bank')).toHaveText(`${(foundation.bankSize + higher.bankSize).toLocaleString()}+`);
+  await page.route('**/api/maths-higher/health', (route) => route.abort());
+  await page.reload({ waitUntil: 'networkidle' });
+  await expect(page.locator('#spec-bank')).toHaveText('4,600+');
+});
+
 test('subject themes share the desk system but keep distinct accents', async ({ page }) => {
   await signIn(page);
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
@@ -177,6 +280,25 @@ test('subject themes share the desk system but keep distinct accents', async ({ 
   const english = await page.locator('.logo-icon').evaluate((element) => getComputedStyle(element).backgroundColor);
   await expect(page.locator('h1')).toHaveCSS('font-family', /Fraunces/);
   expect(maths).not.toEqual(english);
+});
+
+test('lesson headers avoid treating study-priority scores as exam weight claims', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/maths/learn/factors-multiples`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.page-head .sub')).toContainText('AQA 8300 Foundation revision');
+  await expect(page.locator('.page-head .sub')).not.toContainText(/roughly|% of your paper/i);
+  await page.goto(`${BASE}/english/learn/language`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.page-head .sub')).toContainText('AQA 8700 revision');
+  await expect(page.locator('.page-head .sub')).not.toContainText(/roughly|marks across/i);
+});
+
+test('standard form lesson opens a five-question practice', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/maths/learn/standard-form`, { waitUntil: 'networkidle' });
+  await expect(page.locator('h1')).toHaveText('Standard Form');
+  await expect(page.locator('.example-card')).toContainText('0.00042');
+  await page.getByRole('button', { name: 'Start 5 questions' }).click();
+  await expect(page.locator('.quiz-q')).toHaveCount(5);
 });
 
 test('English tutor renders Markdown response structure', async ({ page }) => {
@@ -681,11 +803,11 @@ test('English offline lesson completion earns the same first-completion reward',
   expect(topic.completed).toBeTruthy();
 });
 
-test('English quick-fire shows extracts and enables true-false marking', async ({ page }) => {
+test('English quick-fire shows extracts and marks four selected statements', async ({ page }) => {
   await signIn(page);
   await page.goto(`${BASE}/english/practice`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: 'List four things' }).click();
+  await page.getByRole('button', { name: 'Four quick choices' }).click();
   await page.getByRole('button', { name: 'Language analysis' }).click();
   await page.getByRole('button', { name: /Give me questions/ }).click();
 
@@ -698,18 +820,41 @@ test('English quick-fire shows extracts and enables true-false marking', async (
   const question = page.locator('.quiz-q').first();
   const check = question.getByRole('button', { name: 'Check answer' });
   await expect(check).toBeDisabled();
-  const rows = question.locator('.tf-row');
-  expect(await rows.count()).toBeGreaterThan(0);
-  for (let index = 0; index < await rows.count(); index += 1) {
-     await rows.nth(index).getByRole('button', { name: /True$/ }).click();
-  }
+  const rows = question.locator('.choose4-row');
+  await expect(rows).toHaveCount(8);
+  for (let index = 0; index < 4; index += 1) await rows.nth(index).click();
   await expect(check).toBeEnabled();
   await check.click();
   await expect(question.locator('.fb-box')).toBeVisible();
 });
 
+test('English Paper 1 Q1 offers four three-choice parts', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.goto(`${BASE}/english/practice?paper=1&type=short`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.mcq4-item')).toHaveCount(4);
+  for (const item of await page.locator('.mcq4-item').all()) {
+    await expect(item.locator('button')).toHaveCount(3);
+    await item.locator('button').first().click();
+  }
+  await expect(page.locator('.q-pos')).toContainText('1 answered');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('English Paper 2 Q1 allows four of eight statements', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`${BASE}/english/practice?paper=2&type=short`, { waitUntil: 'networkidle' });
+  const rows = page.locator('.choose4-row');
+  await expect(rows).toHaveCount(8);
+  for (let index = 0; index < 4; index += 1) await rows.nth(index).click();
+  await expect(rows.nth(4)).toBeDisabled();
+  await expect(page.locator('.q-pos')).toContainText('1 answered');
+});
+
 for (const [name, url] of [
   ['mobile-selector', '/'],
+  ['mobile-support', '/support.html'],
   ['mobile-subjects', '/subjects'],
   ['mobile-maths-foundation-guide', '/gcse-maths-foundation'],
   ['mobile-maths-higher-guide', '/gcse-maths-higher'],

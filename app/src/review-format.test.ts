@@ -5,6 +5,7 @@ import {
   prettifyKey,
   rubricLines,
   trueFalseLines,
+  englishChoiceLines,
 } from "./review-format";
 
 test("formats scalar and blank answers", () => {
@@ -54,6 +55,13 @@ test("renders true/false rows with the learner answer and the key", () => {
   expect(lines[0].text).toContain("you said False, correct answer True");
   expect(lines[0].correct).toBe(false);
   expect(lines[1].correct).toBe(true);
+});
+
+test("renders current English objective questions with the chosen and correct answers", () => {
+  expect(englishChoiceLines([{ text: "What opened?", selected: "Its hand", answer: "A yellow eye", right: false }], "mcq4")[0].text)
+    .toContain("you chose Its hand; answer: A yellow eye");
+  expect(englishChoiceLines([{ text: "The narrator is cold", selected: true, answer: true, right: true }], "choose4")[0])
+    .toMatchObject({ correct: true, text: "A. The narrator is cold — selected; statement is true" });
 });
 
 test("joins question numbers for review summaries", () => {

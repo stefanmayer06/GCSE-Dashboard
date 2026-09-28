@@ -1,336 +1,359 @@
 /**
- * Paper 1 (8700/1) texts: Explorations in Creative Reading and Writing.
- * All extracts are from public-domain works (lightly abridged) and are
- * labelled as such; questions model the real AQA question types:
- * Q1 list 4 things (4m) · Q2 language (8m) · Q3 structure (8m) ·
- * Q4 evaluate ("to what extent") (20m) · Q5 creative writing (40m).
+ * Original contemporary fiction for independent AQA-style Paper 1 practice.
+ * These are practice passages, not published literature or official exam sources.
+ * New IDs keep archived classic texts and their saved sessions intact.
+ * Q1: four three-option choices; Q3: a specified structural effect;
+ * Q4: evaluation of a specified later part; Q5: description or story opening.
  */
-export const P1_TEXTS = [
-  {
-    id: 'p1-great-expectations',
-    title: 'Great Expectations',
-    kind: 'Fiction',
-    author: 'Charles Dickens',
-    year: '1861',
-    century: '19th century',
-    source: 'Public domain — abridged',
-    gutenberg: 'https://www.gutenberg.org/ebooks/1400',
-    text: `Ours was the marsh country, down by the river, within, as the river wound, twenty miles of the sea. My first most vivid and broad impression of the identity of things, seems to me to have been gained on a memorable raw afternoon towards evening. At such a time I found out for certain, that this bleak place overgrown with nettles was the churchyard; and that the dark flat wilderness beyond the churchyard, intersected with dykes and mounds and gates, with scattered cattle feeding on it, was the marshes; and that the low leaden line beyond, was the river; and that the distant savage lair from which the wind was rushing, was the sea.
-
-I was undersized for my years, and not strong. The marsh country held me in the grip of its fading light as I looked about me, my heart beating hard at the thought that the dead, buried below my feet, might know how little I had been wept for.
-
-"Hold your noise!" cried a terrible voice, as a man started up from among the graves at the side of the church porch. "Keep still, you little devil, or I'll cut your throat!"
-
-A fearful man, all in coarse grey, with a great iron on his leg. A man with no hat, and with broken shoes, and with an old rag tied round his head. A man who had been soaked in water, and smothered in mud, and lamed by stones, and cut by flints, and stung by nettles, and torn by briars; who limped, and shivered, and glared, and growled; and whose teeth chattered in his head as he seized me by the chin.
-
-"Tell us your name!" said the man. "Quick!" ... "Show us where you live," said the man. "Pint out the place!"
-
-After each question he tilted me over a little more, so as to give me a greater sense of helplessness and danger.
-
-"You fail, or you go from my words in any partickler, no matter how small it is, and your heart and your liver shall be tore out, roasted and ate. Now, I ain't alone, as you may think I am. There's a young man hid with me, in comparison with which young man I am a Angel. That young man hears the words I speak. That young man has a secret way pecooliar to himself, of getting at a boy, and at his heart, and at his liver. It is in wain for a boy to attempt to hide himself from that young man. A boy may lock his door, may be warm in bed, may tuck himself up, may draw the clothes over his head, may think himself comfortable and safe, but that young man will softly creep and creep his way to him, and tear him open."
-
-I was dreadfully frightened, and so giddy that I clung to him with both hands.`,
+function originalText(entry) {
+  return {
+    kind: 'Original fiction',
+    author: 'Written for GCSE Study Desk',
+    year: '2026',
+    century: '21st century',
+    source: 'Original fiction written for practice',
     skills: ['listing', 'language', 'structure', 'evaluation', 'creative-writing'],
+    ...entry,
+  };
+}
+
+export const P1_TEXTS = [
+  originalText({
+    id: 'p1-last-crossing',
+    title: 'The Last Crossing',
+    text: `Nia reached the marsh gate at twenty minutes to seven. A notice said that the footbridge closed at seven, when the tide began to cover the lower path. She had come to collect the field recorder her brother had left in the bird hide. In her pocket were the hide key and a folded shopping bag; neither seemed particularly useful against the weather.
+
+Beyond the bridge, a man in an orange jacket stood beside the path. He held a pair of binoculars above his head. Nia thought he was waving until she saw his other hand clutching a fence post. There were plenty of ways to lose your footing out here. Apparently he had found one.
+
+Water threaded the grass in silver stitches. Each channel looked narrow enough to step over, but beneath its polished surface the mud was deep and greedy. The path ahead lay like a fraying ribbon, its edges disappearing into the reeds. Somewhere behind them a bird gave a thin, irritated cry, and the wind carried it away before the sound was finished.
+
+Nia tested the first board of the bridge. It bent with a damp complaint. Through the gaps she could see the water sliding underneath, smooth as glass, concealing everything it touched. She had crossed this bridge in summer, when children ran over it with ice creams. Now the rail was slick against her palm and the far bank seemed to be moving away.
+
+"Don't come off the boards," the man called. His voice was steady, but the words arrived in pieces. "My boot's stuck. I've called the warden."
+
+Nia looked back at the gate. She could leave the recorder until tomorrow. She could tell someone at the car park. She could do several sensible things which would put a fence and a locked gate between her and this stranger. The man shifted his weight, and the post tilted.
+
+She stayed on the bridge. At its far end hung a rescue line in a white box, exactly where her brother had said it would be. Her fingers struggled with the catch. She had to press it twice before she could lift the lid.
+
+"I can't reach you," she said. It came out louder than she expected. "But there's a line."
+
+She threw. The loop landed short, a bright coil on the dark mud. For a moment neither of them moved. Then she pulled it back, gathered the rope more carefully and tried again. This time he caught it. He secured the end to the post and stopped shifting about.
+
+From the gate came the clatter of boots: the warden, carrying a long pole. Nia stepped aside. Only then did she notice that her knees were shaking hard enough to knock against the rail.
+
+"You stayed," the man said as the warden reached him.
+
+Nia looked at the white box, at the shopping bag still folded in her pocket, at the recorder she had completely forgotten. "I nearly didn't."
+
+The warden's radio crackled. Seven o'clock. Nia held the gate open while the others came through, and kept holding it until both of them were safely on the road.`,
     q1: {
-      focus: 'Read again the first part of the source, from the beginning to the line: "...as he seized me by the chin."\nList four things about the stranger from this part of the source.',
-      points: [
-        'he was soaked in water',
-        'he was smothered in mud',
-        'a great iron on his leg',
-        'he had no hat',
-        'he had broken shoes',
-        'an old rag tied round his head',
-        'he limped',
-        'he shivered',
-        'he glared',
-        'he growled',
-        'his teeth chattered',
-        'he seized Pip by the chin',
-      ],
+      range: { start: 'Nia reached the marsh gate', end: 'Apparently he had found one.' },
+      focus: 'Read from the beginning to "Apparently he had found one."',
     },
     q2: {
-      focus: 'Look in detail at this extract, from "A fearful man, all in coarse grey..." to "...teeth chattered in his head as he seized me by the chin."\nHow does the writer use language to describe the stranger?',
+      range: { start: 'Water threaded the grass', end: 'the far bank seemed to be moving away.' },
+      focus: 'Use the part from "Water threaded the grass" to "the far bank seemed to be moving away."\nHow does the writer use language to make the marsh seem unsafe?',
     },
     q3: {
-      focus: 'You now need to think about the WHOLE extract.\nHow has the writer structured the text to interest you as a reader?',
+      focus: 'Read the whole extract, the opening of an original short story.\nHow has the writer organised the extract to build tension? You could consider the order of events, changes in focus and what the ending leaves unresolved.',
     },
     q4: {
-      statement: '"The writer creates a character who is terrifying, but also somehow pitiful."',
-      focus: 'To what extent do you agree? In your response, you could:\n• consider your own impressions of the stranger\n• evaluate how the writer makes the character terrifying and pitiful\n• support your opinions with references to the text.',
+      range: { start: 'Nia looked back at the gate.', end: 'both of them were safely on the road.' },
+      statement: '"Nia is brave because she acts despite her fear."',
+      focus: 'Use only the later part, from "Nia looked back at the gate." to the end.\nTo what extent do you agree? Develop your judgement, examine the writer’s choices and support your views with evidence from this part.',
     },
-    q5a: 'Write a description of a place that feels threatening, as suggested by this picture or your own idea. Focus on the senses to make the scene vivid for your reader.',
-    q5b: 'Write the opening of a story about a young person who meets a stranger in an isolated place. Establish a tense atmosphere and a convincing character — you do not need to finish the story.',
+    q5a: 'For a school creative-writing magazine, describe a stretch of coast in changing weather. Use your imagination; you may use the picture for ideas.',
+    q5b: 'For the same magazine, write the opening of a story in which someone must decide whether to turn back. Develop the setting and the moment of hesitation.',
     q5Image: {
       file: 'Low tide off the Graveney Marshes - geograph.org.uk - 3300392.jpg',
-      alt: 'A wide grey salt marsh at low tide under a heavy sky, cut through by dark winding channels of water.',
+      alt: 'Salt marsh at low tide, with winding water channels beneath a grey sky.',
       credit: 'Wikimedia Commons · geograph.org.uk',
     },
-    skillsNote: 'listing, language analysis, structure, evaluation, creative writing',
-  },
-  {
-    id: 'p1-war-of-the-worlds',
-    title: 'The War of the Worlds',
-    kind: 'Fiction',
-    author: 'H. G. Wells',
-    year: '1898',
-    century: '19th century',
-    source: 'Public domain — abridged',
-    gutenberg: 'https://www.gutenberg.org/ebooks/36',
-    text: `No one would have believed in the last years of the nineteenth century that this world was being watched keenly and closely by intelligences greater than man's and yet as mortal as his own; that as men busied themselves about their various concerns they were scrutinised and studied, perhaps almost as narrowly as a man with a microscope might scrutinise the transient creatures that swarm and multiply in a drop of water. With infinite complacency men went to and fro over this globe about their little affairs, serene in their assurance of their empire over matter. It is possible that the infusoria under the microscope do the same.
+  }),
+  originalText({
+    id: 'p1-signal-on-the-moor',
+    title: 'A Signal on the Moor',
+    text: `Leena had promised her brother a short walk: up to the weather station and back before lunch. Owen carried their dad's old camera, although he had forgotten its memory card. She carried the map. At the last gate her phone lost its signal, and she put it away rather than admit that she had been using it instead.
 
-Yet across the gulf of space, minds that are to our minds as ours are to those of the beasts that perish, intellects vast and cool and unsympathetic, regarded this earth with envious eyes, and slowly and surely drew their plans against us.
+The weather station should have been beside a stone wall, with a green fence round it. There was the wall. There was the fence. In the middle stood a blue metal box which neither of them remembered. Three lights flashed along its side, one after another, as evenly as the ticking of a clock.
 
-Those who have never seen a living Martian can scarcely imagine the strange horror of its appearance: the peculiar V-shaped mouth with its pointed upper lip, the absence of brow ridges, the absence of a chin beneath the wedge-like lower lip, the incessant quivering of this mouth, the Gorgon groups of tentacles, the tumultuous breathing of the lungs in a strange atmosphere, the evident heaviness and painfulness of movement due to the greater gravitational energy of the earth — above all, the extraordinary intensity of the immense eyes — were at once vital, intense, inhuman, crippled and monstrous.
+"New battery," Leena said. She had no idea what the box was, but it felt better to give it a name.
 
-There was something fungoid in the oily brown skin, something in the clumsy deliberation of the tedious movements unspeakably nasty. Even at this first encounter, this first glimpse, I was overcome with disgust and dread.
+The moor had gone strangely quiet. Mist pooled in the hollows, whitening the grass until the ground seemed to end a few metres from their boots. The box had no handle, no label, not even a scratch. Its blue surface swallowed the weak daylight. A low hum rested against Leena's teeth; she could feel it when she shut her mouth. The lights kept their patient rhythm. They did not illuminate the mist. They seemed to make small holes in it.
 
-To me, watching from the roadside, the arrival of the Martians seemed like a dream — but the Thing itself lay almost entirely buried in sand, amidst the scattered splinters of a fir tree it had shivered to fragments in its descent; and the undignified, faintly glowing grey bulk, innocent-seeming in this world to which it had travelled so far, was rising slowly and painfully out of its cylinder.`,
-    skills: ['listing', 'language', 'structure', 'evaluation', 'creative-writing'],
+Owen raised the useless camera. "Might as well look."
+
+He stepped towards the fence. The box clicked. A second click followed, and then a soft crunch, exactly like a boot pressing into wet gravel. Leena glanced behind her. The path was empty. Owen took another step. Crunch. This time the sound came before his foot touched the ground.
+
+"Stay there," she said.
+
+He froze, one hand on the fence. In the silence the box made two more footsteps. Then it stopped. Leena's neat explanation began to come apart. A battery did not predict where you were going.
+
+Owen was watching her now. He always did this when he wanted her to make something ordinary again. She could invent another explanation: a speaker, a sensor, a game left by people who had too much time. She could hear how confident she would sound. Instead she took the map out and unfolded it with both hands, slowly, because they would not stay still.
+
+The first voice from the box was hers.
+
+"Stay there," it said.
+
+Owen backed away. "That's what you just—"
+
+His own voice interrupted him, thin and hurried: "Don't open it."
+
+Neither of them had said that.
+
+Under the row of lights, a small screen woke. Leena could make out a date and a time. Twelve fifteen. Tomorrow. The camera slipped against Owen's jacket, and its little plastic buckle struck the fence. A moment earlier, from somewhere inside the blue box, Leena had heard the same small knock.
+
+She folded the map along the wrong crease. "We go back together," she said, and waited for the box to answer.`,
     q1: {
-      focus: 'Read again the first part of the source, from the beginning to: "...drew their plans against us."\nList four things you learn about the Martians (or the men of Earth) from this part of the source.',
-      points: [
-        'the world was being watched by intelligences greater than man\u2019s',
-        'men went about their affairs with infinite complacency',
-        'men were serene in their assurance of their empire over matter',
-        'the Martian minds were vast and cool and unsympathetic',
-        'the Martians regarded the earth with envious eyes',
-        'the Martians were as mortal as man',
-        'men were studied perhaps as narrowly as creatures under a microscope',
-        'the Martians drew their plans against us',
-      ],
+      range: { start: 'Leena had promised her brother', end: 'as evenly as the ticking of a clock.' },
+      focus: 'Read from the beginning to "as evenly as the ticking of a clock."',
     },
     q2: {
-      focus: 'Look in detail at this extract, from "Those who have never seen a living Martian..." to "...overcome with disgust and dread."\nHow does the writer use language to make the Martian seem horrifying?',
+      range: { start: 'The moor had gone strangely quiet.', end: 'They seemed to make small holes in it.' },
+      focus: 'Use the paragraph from "The moor had gone strangely quiet." to "They seemed to make small holes in it."\nHow does the writer use language to make the box and its surroundings seem unfamiliar?',
     },
     q3: {
-      focus: 'You now need to think about the WHOLE extract.\nHow has the writer structured the text to interest you as a reader?',
+      focus: 'Read the whole extract, the opening of an original short story.\nHow has the writer organised it to increase suspense? You could consider how information is revealed, shifts in attention and the final moment.',
     },
     q4: {
-      statement: '"The writer creates a powerful contrast between the calm confidence of humanity and the terrifying reality of the invaders."',
-      focus: 'To what extent do you agree? In your response, you could:\n• consider your own impressions of the opening and the Martian\n• evaluate how the writer builds this contrast\n• support your opinions with references to the text.',
+      range: { start: 'He froze, one hand on the fence.', end: 'waited for the box to answer.' },
+      statement: '"Leena loses confidence, yet still tries to protect her brother."',
+      focus: 'Use only the later part, from "He froze, one hand on the fence." to the end.\nTo what extent do you agree? Evaluate the portrayal of Leena, the writer’s choices and the evidence in this part.',
     },
-    q5a: 'Write a description of something utterly unfamiliar arriving somewhere familiar — an object, a creature, or a machine. Focus on precise, unsettling detail.',
+    q5a: 'For a school creative-writing magazine, describe an unfamiliar object in an open landscape. Use your imagination; the picture may give you ideas for the setting.',
+    q5b: 'For the same magazine, write the opening of a story about a discovery that is difficult to explain. Let the reader share the character’s uncertainty.',
     q5Image: {
       file: 'A misty day on the moors - geograph.org.uk - 2758115.jpg',
-      alt: 'Low rolling mist drifting across empty open moorland on a grey day, with a single distant track.',
+      alt: 'Mist across open moorland, with a distant track and low hills.',
       credit: 'Wikimedia Commons · geograph.org.uk',
     },
-    q5b: 'Write the opening of a story about a discovery that changes everything. Build suspense through setting and mood before the discovery is revealed — you do not need to finish the story.',
-    skillsNote: 'listing, language analysis, structure, evaluation, creative writing',
-  },
-  {
-    id: 'p1-jane-eyre',
-    title: 'Jane Eyre',
-    kind: 'Fiction',
-    author: 'Charlotte Brontë',
-    year: '1847',
-    century: '19th century',
-    source: 'Public domain — abridged',
-    gutenberg: 'https://www.gutenberg.org/ebooks/1260',
-    text: `There was no possibility of taking a walk that day. We had been wandering, indeed, in the leafless shrubbery an hour in the morning; but since dinner (Mrs. Reed, when there was no company, dined early) the cold winter wind had brought with it clouds so sombre, and a rain so penetrating, that further out-door exercise was now out of the question. I was glad of it: I never liked long walks, especially on chilly afternoons: dreadful to me was the coming home in the raw twilight, with nipped fingers and toes, and a heart saddened by the chidings of Bessie, the nurse, and humbled by the consciousness of my physical inferiority to Eliza, John, and Georgiana Reed.
+  }),
+  originalText({
+    id: 'p1-the-spare-room',
+    title: 'The Spare Room',
+    text: `Asha arrived at the hotel at nine twenty, forty minutes before her audition. The receptionist gave her a brass key with the number eight on it. There were no practice rooms downstairs, he explained, so she could use a spare bedroom. She thanked him twice and carried her borrowed violin up the stairs, keeping the case away from the polished wall.
 
-I crept out of the sitting-room, and took my place beside a window in the breakfast-room, secluded behind folding scarlet curtains, with a book in my hand. Nor could I pass unnoticed as to whom all this belonged — the sense of my own loneliness sat heavy upon me. I longed for somewhere else, anywhere else.
+Her dad had packed a cheese sandwich in the outside pocket. She could feel it pressing against the case whenever she changed hands. At the top of the stairs she checked the number, checked the key and wiped her shoes on a mat that looked cleaner than anything she had ever worn.
 
-The red-room was a spare chamber, very seldom slept in; I might say never, indeed, unless when a chance influx of visitors at Gateshead Hall rendered it necessary. Yet it was one of the largest and stateliest chambers in the mansion. A bed supported on massive pillars of mahogany, hung with curtains of deep red damask, stood out like a tabernacle in the centre; the two large windows, with their blinds always drawn down, were half shrouded in festoons and falls of similar drapery; the carpet was red; the table at the foot of the bed was covered with a crimson cloth; the walls were a soft fawn colour with a blush of pink in it; the wardrobe, the toilet-table, the chairs were of darkly polished old mahogany.
+The room opened around her in pale gold. Curtains fell in heavy folds from a height that made her neck ache; a chandelier held a hundred tiny copies of the morning sun. The bed stood in the centre, plump and untouched, as though nobody had ever needed to sleep in it. Even the chair had silk-covered arms. It did not welcome her. It displayed her.
 
-Out of these deep surrounding shades rose high, and glared white, the piled-up mattresses and pillows of the bed, spread with a snowy Marseilles counterpane. Scarcely less prominent was an ample cushioned easy-chair near the head of the bed, also white, with a footstool before it; and looking, as I thought, like a pale throne.
+She set the violin case on the carpet. Beside the enormous wardrobe it looked like a small animal pretending not to be seen. In the mirror she noticed a loose thread on her cuff, then another. She tucked both inside her sleeve. The silence here seemed expensive. She was afraid of putting a sound into it.
 
-This room was chill, because it seldom had a fire; it was silent, because remote from the nursery and kitchens; solemn, because it was known to be seldom entered.`,
-    skills: ['listing', 'language', 'structure', 'evaluation', 'creative-writing'],
+Downstairs, someone played a scale perfectly. Asha could hear the last note settle without a wobble. She drew the bow from its case, tightened it and set it on the bed. Then she moved it to the chair. Then she picked it up again.
+
+A knock came at the door.
+
+The woman outside wore a housekeeping apron and carried a stack of towels. "Not interrupting?"
+
+"I'm meant to practise," Asha said, which was not quite an answer.
+
+The woman looked at the violin. "Go on, then. This room's heard worse."
+
+She placed the towels beside the basin and reached up to open the window. The handle stuck. She frowned, gripped it with both hands and gave it an unceremonious shove. Traffic rushed into the room, followed by the argument of two pigeons on the ledge. Asha laughed before she could stop herself.
+
+"There," the woman said. "A bit of air."
+
+In the brighter, untidy noise, Asha opened her music. The first page had a coffee stain in one corner and her teacher's pencilled reminder across the top: breathe. She put the violin under her chin. Her bow caught the string too hard, and the first note scratched.
+
+She stopped. The woman was still at the door, shifting the towels that remained on her arm.
+
+"Another go?" she asked.
+
+Asha nodded. The next note was steadier. She played past the difficult bar, then past the coffee stain, until she was no longer listening for the perfect scale downstairs. When she lowered the violin, the chair was simply a chair. She sat on it and ate her sandwich.`,
     q1: {
-      focus: 'Read again the first part of the source, from the beginning to: "...Georgiana Reed."\nList four things you learn about Jane\u2019s situation from this part of the source.',
-      points: [
-        'there was no possibility of taking a walk that day',
-        'the weather was cold and raining',
-        'Jane never liked long walks',
-        'dreadful to her was the coming home in the raw twilight',
-        'her fingers and toes were nipped',
-        'her heart was saddened by the chidings of Bessie the nurse',
-        'she was humbled by the consciousness of her physical inferiority',
-        'to Eliza, John and Georgiana Reed',
-      ],
+      range: { start: 'Asha arrived at the hotel', end: 'cleaner than anything she had ever worn.' },
+      focus: 'Read from the beginning to "cleaner than anything she had ever worn."',
     },
     q2: {
-      focus: 'Look in detail at the description of the red-room, from "The red-room was a spare chamber..." to "...known to be seldom entered."\nHow does the writer use language to make the room seem impressive and unsettling?',
+      range: { start: 'The room opened around her', end: 'She was afraid of putting a sound into it.' },
+      focus: 'Use the part from "The room opened around her" to "She was afraid of putting a sound into it."\nHow does the writer use language to make the room seem intimidating to Asha?',
     },
     q3: {
-      focus: 'You now need to think about the WHOLE extract.\nHow has the writer structured the text to take the reader from the garden, through the house, and into the red-room?',
+      focus: 'Read the whole extract, the opening of an original short story.\nHow has the writer organised it to show Asha becoming more at ease? You could consider contrasts, changes in focus and the return to an earlier detail.',
     },
     q4: {
-      statement: '"The writer makes us feel Jane\u2019s loneliness and powerlessness in this household."',
-      focus: 'To what extent do you agree? In your response, you could:\n• consider your own impressions of Jane and the house\n• evaluate how the writer conveys loneliness and being controlled\n• support your opinions with references to the text.',
+      range: { start: 'The woman looked at the violin.', end: 'She sat on it and ate her sandwich.' },
+      statement: '"The woman’s ordinary actions make a powerful difference to Asha."',
+      focus: 'Use only the later part, from "The woman looked at the violin." to the end.\nTo what extent do you agree? Develop a judgement about the woman’s impact and evaluate how the writer presents it, using evidence from this part.',
     },
-    q5a: 'Write a description of a room that frightened you as a child — or a room that carries a strange atmosphere. Focus on colour, light and silence.',
+    q5a: 'For a school creative-writing magazine, describe a room that makes a strong impression on its visitor. Use your imagination; you may use the picture for ideas.',
+    q5b: 'For the same magazine, write the opening of a story about someone preparing for an important performance. Focus on what the character notices and feels.',
     q5Image: {
       file: 'Harewood House The State Bedroom (218306803).jpeg',
-      alt: 'A grand old bedroom with tall windows, heavy dark drapes and an ornate canopied bed in dim afternoon light.',
+      alt: 'A grand bedroom with tall windows, drapes and a canopied bed.',
       credit: 'Wikimedia Commons',
     },
-    q5b: 'Write the opening of a story about a child who is shut in a room they have been forbidden to enter. Focus on what they see, hear and feel — you do not need to finish the story.',
-    skillsNote: 'listing, language analysis, structure, evaluation, creative writing',
-  },
-  {
-    id: 'p1-treasure-island',
-    title: 'Treasure Island',
-    kind: 'Fiction',
-    author: 'Robert Louis Stevenson',
-    year: '1883',
-    century: '19th century',
-    source: 'Public domain — abridged',
-    gutenberg: 'https://www.gutenberg.org/ebooks/120',
-    text: `I remember him as if it were yesterday, as he came plodding to the inn door, his sea-chest following behind him in a hand-barrow; a tall, strong, heavy, nut-brown man, his tarry pigtail falling over the shoulder of his soiled blue coat, his hands ragged and scarred, with black, broken nails, and the sabre cut across one cheek, a dirty, livid white. I remember him looking round the cove and whistling to himself as he did so, and then breaking out in that old sea-song that he sang so often afterwards:
+  }),
+  originalText({
+    id: 'p1-captain-for-a-morning',
+    title: 'Captain for a Morning',
+    text: `Hari was waiting beside the harbour steps at eight o'clock, wearing the life jacket his aunt had insisted he bring. He had been promised a morning on a sailing boat, helping Captain Mags deliver it to the next harbour. The boat was called Daring. Beneath its fresh white letters, where the paint had peeled, he could make out the older name: Nearly There.
 
- "Fifteen men on the dead man's chest—
-  Yo-ho-ho, and a bottle of rum!"
+Mags arrived carrying a flask and a packet of ginger biscuits. She put both on the wall, shook Hari's hand and inspected the knot he had tied in the boat's loose rope. "Very decorative," she said. "We'll give it a job in a minute."
 
-...in the high, old tottering voice that seemed to have been tuned and broken at the capstan bars. Then he rapped on the door with a bit of stick like a handspike that he carried, and when my father appeared, called roughly for a glass of rum. This, when it was brought to him, he drank slowly, like a connoisseur, lingering on the taste and still looking about him at the cliffs and up at our signboard.
+Her yellow coat had three buttons, none of them the same. A pencil protruded from her woollen hat at an angle which suggested a minor collision. When she smiled, one eyebrow stayed serious, as if it had been appointed to supervise the rest of her face. Hari watched her lower the biscuits into the boat with more care than she had given the flask. This was not how captains looked in the books he had read.
 
-"This is a handy cove," says he at length; "and a pleasant sittyated grog-shop. Much company, mate?"
+She retied his knot without a word, then tapped the little brass compass. "Knows the way. Terrible company."
 
-He had taken me aside first thing and told me he would give me a silver fourpenny on the first of every month if I would only "keep a weather-eye open for a seafaring man with one leg", letting that get back as soon as he appeared, at which I was to tell him the moment I saw him.
+Hari laughed politely. He was beginning to think the morning might be very long.
 
-How that personage haunted my dreams, I need scarcely tell you. On stormy nights, when the wind shook the four corners of the house and the surf roared along the cove and up the cliffs, I would see him, in a thousand forms, and with a thousand diabolical expressions.
+Beyond the harbour mouth, the wind changed. A loose sail slapped the mast, a sharp sound that made him flinch. The boat leaned. For a moment the water was much closer to his elbow than it ought to have been.
 
-And all the time he lived with us in the inn the captain seemed never to vary from the fierce routine of his habits. He was out from morning until night; he refused to answer to any name but "Captain"; he drank rum until the roar of the breakers grew small in his ears; and there were nights when he took his cutlass and his pistols and sat alone by the fire, glaring into the dark.`,
-    skills: ['listing', 'language', 'structure', 'evaluation', 'creative-writing'],
+Mags put the flask down. Her voice lost its wandering, conversational shape.
+
+"Stay seated, Hari. I've got it."
+
+She moved once, quickly, and the sail filled. The noise stopped. The boat settled into the wind, lifting over a wave instead of striking through it. Hari looked at her hands. He had not noticed them before: broad, scarred, working without any wasted movement. She watched the water beyond him, measuring something he could not see.
+
+"There we are," she said. "Daring's remembered what she's for."
+
+He wanted to ask how she had known what to do, but the question seemed too large. He asked whether the biscuits were safe instead.
+
+"Safer than we are. Waterproof tin."
+
+She saw his expression and softened her voice. "You're doing fine. Being quiet doesn't mean being useless. Tell me when you see the red buoy."
+
+Hari watched the water. He found the buoy, lost it behind a wave, found it again and pointed. Mags nodded. It was a small job, but she had given it to him as though it mattered.
+
+The harbour fell away behind them. Mags passed him a biscuit, keeping her eyes on the sea. This time, when she made a joke about the compass, Hari laughed because it was funny. On the side of the boat, just above the water, the old letters vanished and appeared with each rise of the waves.`,
     q1: {
-      focus: 'Read again the first part of the source, from the beginning to: "...looking about him at the cliffs and up at our signboard."\nList four things you learn about the captain from this part of the source.',
-      points: [
-        'he came plodding to the inn door',
-        'he was a tall, strong, heavy, nut-brown man',
-        'his tarry pigtail fell over his shoulder',
-        'his hands were ragged and scarred, with black, broken nails',
-        'a sabre cut across one cheek',
-        'he sang a sea-song in a high, old tottering voice',
-        'he carried a stick like a handspike',
-        'he drank rum slowly, like a connoisseur',
-      ],
+      range: { start: 'Hari was waiting beside', end: 'We\'ll give it a job in a minute."' },
+      focus: 'Read from the beginning to "We\'ll give it a job in a minute."',
     },
     q2: {
-      focus: 'Look in detail at this extract, from "I remember him as if it were yesterday..." to "...a glass of rum."\nHow does the writer use language to make the captain seem rough and dangerous?',
+      range: { start: 'Her yellow coat had three buttons', end: 'Terrible company."' },
+      focus: 'Use the part from "Her yellow coat had three buttons" to "Terrible company."\nHow does the writer use language to make Mags seem unusual and amusing?',
     },
     q3: {
-      focus: 'You now need to think about the WHOLE extract.\nHow has the writer structured the text to move from the man\u2019s arrival to his fearsome daily routine?',
+      focus: 'Read the whole extract, the opening of an original short story.\nHow has the writer organised it to change Hari’s impression of Mags? You could consider shifts in tone, the placement of the difficult moment and the ending.',
     },
     q4: {
-      statement: '"The writer creates a character who is both comic and terrifying."',
-      focus: 'To what extent do you agree? In your response, you could:\n• consider your own impressions of the captain\n• evaluate how the writer balances comedy and danger\n• support your opinions with references to the text.',
+      range: { start: 'Mags put the flask down.', end: 'with each rise of the waves.' },
+      statement: '"Mags earns Hari’s trust through her skill and her kindness."',
+      focus: 'Use only the later part, from "Mags put the flask down." to the end.\nTo what extent do you agree? Evaluate the portrayal of Mags and support your judgement with references to this part.',
     },
-    q5a: 'Write a description of a new arrival who changes everything, as seen by someone watching from a window. Focus on small, telling details.',
+    q5a: 'For a school creative-writing magazine, describe a harbour or a boat at sea. Use your imagination; you may use the picture for ideas.',
+    q5b: 'For the same magazine, write the opening of a story in which someone’s first impression proves misleading. Establish the characters before revealing everything.',
     q5Image: {
       file: 'Tall ship sailing from Poole Harbour, passing Old Harry rocks - geograph.org.uk - 2746399.jpg',
-      alt: 'A tall sailing ship gliding past chalk sea stacks under a wide coastal sky.',
+      alt: 'A sailing ship passing white chalk sea stacks beneath a wide sky.',
       credit: 'Wikimedia Commons · geograph.org.uk',
     },
-    q5b: 'Write the opening of a story about a secret a child is paid to keep. Focus on the tension between curiosity and fear — you do not need to finish the story.',
-    skillsNote: 'listing, language analysis, structure, evaluation, creative writing',
-  },
-  {
-    id: 'p1-dracula',
-    title: 'Dracula',
-    kind: 'Fiction',
-    author: 'Bram Stoker',
-    year: '1897',
-    century: '19th century',
-    source: 'Public domain — abridged',
-    gutenberg: 'https://www.gutenberg.org/ebooks/345',
-    text: `I did not sleep well, though my bed was comfortable enough, for I had all sorts of queer dreams. In the morning we were at the edge of the Borgo Pass, and the driver got down and stood beside the calèche, buckling on the horses\u2019 bridles and shortening the traces.
+  }),
+  originalText({
+    id: 'p1-the-road-home',
+    title: 'The Road Home',
+    text: `Milo got off the bus one stop too early. He realised this only after its red lights had disappeared round the bend. The village shop was closed, and the screen of his phone showed one per cent. In his rucksack was a postcard from his grandad, with the address written in careful capitals: 5 BEECH LANE. He had been invited to stay for the last week of the summer holidays.
 
-As the evening fell it began to get very cold, and the growing twilight seemed to merge into one dark obscurity. It was as if the sun, sinking below the black hills, had left behind a world of shadow, and the trees about us seemed to lean closer as we went. I was conscious of an increasing uneasiness, but could put my fears into no words.
+The driver had told him to look for a yellow gate. Milo could see three gates from the bus stop. All of them looked grey in the falling light. He took out the postcard, held it close to his face and chose the road that climbed between the hedges.
 
-Then, far off in the darkness, I heard a sound — a sound so faint at first that it might have been the wind in the pines. But it grew: a long-drawn, quavering howl, so sorrowful and cruel, that my blood seemed to freeze in my veins.
+The hedges rose on either side like the walls of a narrowing corridor. Water dripped from their leaves in slow, separate taps. Each tap seemed to start another in the darkness ahead. The last light lay in a thin strip along the road; beyond it, the tarmac dissolved into a black pool. Milo's trainers made a dry scraping sound which followed him too closely. He stopped. The sound stopped too.
 
-At the first howl the horses began to strain and rear, but the driver spoke to them soothingly, and they quieted. He said to me:—
+He almost laughed at himself. Then something moved in the hedge. He began walking again, more quickly, and tried not to imagine how he would describe this to his mum if he ever found enough signal to call her.
 
-"It is the wolves."
+At the fork there was no sign. Milo checked his phone once more. The screen went black before he could open the map. He pressed the button, as if the phone might reconsider. It did not.
 
-The howling of the wolves grew louder and louder; the men around the carriage whispered, and crossed themselves; the driver lashed the horses, and we flew along the road, the calèche rocking like a ship on a stormy sea. I expected every moment to see the wolves leap out upon us.
+He stood between the two roads with the postcard in his hand. His grandad had written about the shed, the tomatoes, the things they could mend together. He had not mentioned how to get there in the dark.
 
-Suddenly, away on our left, I saw a faint flickering blue flame. Then another and another, far away, as though the night itself were lighting little lamps. The driver saw my own start of fear, for my hands shook, and said:—
+A light appeared beyond the left-hand hedge. It swayed, vanished, then returned. Milo took a step backwards.
 
-"Those are the lights where the dead are buried, for it is said that where the flames burn the ground is holy."
+"Milo?"
 
-I must have slept again, for I was woken by the creak of the wheels stopping. The driver was shaking me by the shoulder. Before us stood a vast ruined castle, from whose tall black windows came no ray of light, and whose broken battlements showed a jagged line against the moonlit sky. Its huge, gloomy bulk rose out of the darkness like a crouching beast.`,
-    skills: ['listing', 'language', 'structure', 'evaluation', 'creative-writing'],
+He knew the voice. Even so, he waited until the light had reached the fork and he could see the old green coat behind it.
+
+"Thought you might have got the wrong stop," his grandad said. "I do it myself."
+
+The torch was wrapped with tape. In its yellow circle the road looked ordinary again: a drain, a flattened leaf, Milo's dusty shoes. The movement in the hedge became a blackbird hopping away from them, offended by the light.
+
+His grandad did not ask why he had gone up the hill. He took the heavier bag and walked at Milo's pace, pointing out the turning and the gate, which really was yellow. "We'll put a better sign there tomorrow."
+
+Inside the house, a lamp shone on two mugs and a plate of toast. Milo had expected to spend the first evening being shown things: the spare room, the bathroom, the rules. Instead his grandad asked him to hold a cupboard door while he tightened a screw. Milo put his hand against the wood. It was a small, useful thing to do.
+
+Later, at the back door, he set his trainers beside the muddy green boots. There was already room for them.`,
     q1: {
-      focus: 'Read again the first part of the source, from the beginning to: "...the trees about us seemed to lean closer as we went."\nList four things about the journey from this part of the source.',
-      points: [
-        'Jonathan did not sleep well and had queer dreams',
-        'in the morning they were at the edge of the Borgo Pass',
-        'as evening fell it began to get very cold',
-        'the twilight merged into one dark obscurity',
-        'the sun had sunk below the black hills',
-        'the trees seemed to lean closer',
-        'he felt an increasing uneasiness',
-        'he could not put his fears into words',
-      ],
+      range: { start: 'Milo got off the bus', end: 'the road that climbed between the hedges.' },
+      focus: 'Read from the beginning to "the road that climbed between the hedges."',
     },
     q2: {
-      focus: 'Look in detail at this extract, from "Then, far off in the darkness..." to "...the night itself were lighting little lamps."\nHow does the writer use language to create a sense of fear and danger?',
+      range: { start: 'The hedges rose on either side', end: 'The sound stopped too.' },
+      focus: 'Use the paragraph from "The hedges rose on either side" to "The sound stopped too."\nHow does the writer use language to make the road feel threatening to Milo?',
     },
     q3: {
-      focus: 'You now need to think about the WHOLE extract.\nHow has the writer structured the text to build tension across the journey?',
+      focus: 'Read the whole extract, the opening of an original short story.\nHow has the writer organised it to move from anxiety to reassurance? You could consider the sequence of discoveries, changes in focus and the closing detail.',
     },
     q4: {
-      statement: '"The writer makes the landscape itself seem alive and threatening."',
-      focus: 'To what extent do you agree? In your response, you could:\n• consider your own impressions of the journey\n• evaluate how the setting is made to feel threatening\n• support your opinions with references to the text.',
+      range: { start: 'A light appeared beyond the left-hand hedge.', end: 'There was already room for them.' },
+      statement: '"Milo’s grandad makes him feel welcome without making him feel foolish."',
+      focus: 'Use only the later part, from "A light appeared beyond the left-hand hedge." to the end.\nTo what extent do you agree? Examine how the writer presents the welcome and support your judgement with evidence from this part.',
     },
-    q5a: 'Write a description of a journey at night to somewhere you have never been. Focus on sounds you cannot explain.',
+    q5a: 'For a school creative-writing magazine, describe a road as daylight fades. Use your imagination; you may use the picture for ideas.',
+    q5b: 'For the same magazine, write the opening of a story about arriving somewhere for the first time. Use the surroundings to reveal the character’s feelings.',
     q5Image: {
       file: 'Lane from White House Farm - geograph.org.uk - 414113.jpg',
-      alt: 'A narrow tree-lined lane in fading evening light, soft and empty, disappearing into darkness.',
+      alt: 'A narrow country lane bordered by hedges and fields.',
       credit: 'Wikimedia Commons · geograph.org.uk',
     },
-    q5b: 'Write the opening of a story in which a building will appear "like a crouching beast" out of the darkness. Foreshadow its arrival through atmosphere and setting — you do not need to reach the ending.',
-    skillsNote: 'listing, language analysis, structure, evaluation, creative writing',
-  },
-  {
-    id: 'p1-frankenstein',
-    title: 'Frankenstein',
-    kind: 'Fiction',
-    author: 'Mary Shelley',
-    year: '1818',
-    century: '19th century',
-    source: 'Public domain — abridged',
-    gutenberg: 'https://www.gutenberg.org/ebooks/84',
-    text: `It was on a dreary night of November that I beheld the accomplishment of my toils. With an anxiety that almost amounted to agony, I collected the instruments of life around me, that I might infuse a spark of being into the lifeless thing that lay at my feet. It was already one in the morning; the rain pattered dismally against the panes, and my candle was nearly burnt out, when, by the glimmer of the half-extinguished light, I saw the dull yellow eye of the creature open; it breathed hard, and a convulsive motion agitated its limbs.
+  }),
+  originalText({
+    id: 'p1-the-test-run',
+    title: 'The Test Run',
+    text: `Sana reached the community hall at six o'clock, carrying the model city in a cardboard tray. Her brother Theo followed with a toolbox. The doors opened to visitors at half past six, and she had been given the table nearest the stage. For three weeks she had promised that every window in the model would light up when she turned a single handle.
 
-How can I describe my emotions at this catastrophe, or how delineate the wretch whom with such infinite pains and care I had endeavoured to form? His limbs were in proportion, and I had selected his features as beautiful. Beautiful! Great God! His yellow skin scarcely covered the work of muscles and arteries beneath; his hair was of a lustrous black, and flowing; his teeth of a pearly whiteness; but these luxuriances only formed a more horrid contrast with his watery eyes, that seemed almost of the same colour as the dun-white sockets in which they were set, his shrivelled complexion and straight black lips.
+The hall smelled of floor polish and warm dust. Rain tapped against the high windows. Sana set the tray down, unwrapped the handle and told Theo that they had plenty of time. He put the toolbox underneath the table without answering.
 
-The different accidents of life are not so changeable as the feelings of human nature. I had worked hard for nearly two years, for the sole purpose of infusing life into an inanimate body. For this I had deprived myself of rest and health. I had desired it with an ardour that far exceeded moderation; but now that I had finished, the beauty of the dream vanished, and breathless horror and disgust filled my heart.
+From the front, the city looked magnificent. Towers of clear plastic caught the ceiling lights and broke them into bright fragments. Tiny silver roads threaded between the houses; a miniature river curled towards a bridge no longer than Sana's thumb. At the back, where nobody was supposed to look, wires sprawled in a tangled nest. A strip of tape held them down. One loose end twitched whenever she moved the tray, like something trying to escape.
 
-Unable to endure the aspect of the being I had created, I rushed out of the room, and continued a long time traversing my bed-chamber, unable to compose my mind to sleep. At length lassitude succeeded to the tumult I had before endured; and I threw myself on the bed in my clothes, endeavouring to seek a few moments of forgetfulness. But it was in vain: I slept, indeed, but I was disturbed by the wildest dreams.`,
-    skills: ['listing', 'language', 'structure', 'evaluation', 'creative-writing'],
+She had made a little sign: ONE HANDLE. ONE HUNDRED LIGHTS. She straightened it, stepped back and imagined people stopping to read it. The rain grew louder. Somewhere outside, thunder rolled along the roofs of the shops.
+
+Theo pointed at the wires. "Did you check that connection?"
+
+"It worked yesterday."
+
+"That's not what I asked."
+
+She turned the handle. Three windows glowed. Another flickered. Then the bridge went dark. Sana turned faster, pressing her thumb against the metal until it hurt. The small motor made a dry, exhausted sound. Theo reached for the toolbox.
+
+"Leave it," she said. "I can do it."
+
+The lights in the hall went out.
+
+For a moment Sana thought she had broken those too. Then she heard rain, chairs scraping, a laugh from somewhere near the doors. A phone torch cut across the room. Another followed. In their moving light the perfect city looked flat and flimsy, a collection of packaging that should have been put in the recycling.
+
+Theo was beside her. "It's the storm."
+
+She nodded, but she could not make herself look at him. Under the table his toolbox was still closed. She remembered all the evenings he had held a wire or fetched a screw while she explained the project as if she had made it alone.
+
+The organiser came over with a lantern. "Can we show it like this? People are coming in."
+
+Sana looked at her sign. One hundred lights. Behind it, three uncertain windows shone whenever her hand moved.
+
+"It isn't ready," she said. "I said it was, but it isn't."
+
+The organiser waited. Theo opened the toolbox and placed a screwdriver on the table, within her reach. He did not say anything.
+
+Sana turned the sign face down. "Can we have ten minutes?" She moved her chair so there was space beside her, then pushed the lantern between them. The rain kept striking the windows. Outside, people were hurrying towards the hall; inside, she and Theo bent over the same small pool of light.`,
     q1: {
-      focus: 'Read again the first part of the source, from the beginning to: "...a convulsive motion agitated its limbs."\nList four things about the moment of creation from this part of the source.',
-      points: [
-        'it was on a dreary night of November',
-        'the narrator had collected the instruments of life around him',
-        'it was already one in the morning',
-        'the rain pattered dismally against the panes',
-        'the candle was nearly burnt out',
-        'a dull yellow eye opened',
-        'the creature breathed hard',
-        'a convulsive motion agitated its limbs',
-      ],
+      range: { start: 'Sana reached the community hall', end: 'underneath the table without answering.' },
+      focus: 'Read from the beginning to "underneath the table without answering."',
     },
     q2: {
-      focus: 'Look in detail at this extract, from "How can I describe my emotions at this catastrophe..." to "...straight black lips."\nHow does the writer use language to make the creature seem horrifying?',
+      range: { start: 'From the front, the city looked magnificent.', end: 'like something trying to escape.' },
+      focus: 'Use the paragraph from "From the front, the city looked magnificent." to "like something trying to escape."\nHow does the writer use language to contrast the model’s impressive appearance with its weakness?',
     },
     q3: {
-      focus: 'You now need to think about the WHOLE extract.\nHow has the writer structured the text to show the shift from triumph to horror?',
+      focus: 'Read the whole extract, the opening of an original short story.\nHow has the writer organised it to show Sana’s confidence turning into doubt? You could consider contrasts, turning points and the focus of the ending.',
     },
     q4: {
-      statement: '"The writer makes the reader feel sympathy for Victor, even though he has brought disaster on himself."',
-      focus: 'To what extent do you agree? In your response, you could:\n• consider your own impressions of Victor\u2019s choices\n• evaluate how sympathy is created — or undermined\n• support your opinions with references to the text.',
+      range: { start: 'For a moment Sana thought', end: 'bent over the same small pool of light.' },
+      statement: '"Sana begins to take responsibility instead of protecting her pride."',
+      focus: 'Use only the later part, from "For a moment Sana thought" to the end.\nTo what extent do you agree? Evaluate Sana’s response and how the writer presents it, supporting your judgement with evidence from this part.',
     },
-    q5a: 'Write a description of the moment a long-awaited success turns to disaster. Focus on the contrast between hope and horror.',
+    q5a: 'For a school creative-writing magazine, describe a town or city during a storm. Use your imagination; you may use the picture for ideas.',
+    q5b: 'For the same magazine, write the opening of a story in which a carefully prepared plan goes wrong. Build the character’s expectations before the first setback.',
     q5Image: {
       file: 'Thunderstorm Over the City.jpg',
-      alt: 'Dark storm clouds boiling over a city skyline with a single bolt of lightning splitting the sky.',
+      alt: 'Lightning above city rooftops under dark storm clouds.',
       credit: 'Wikimedia Commons',
     },
-    q5b: 'Write the opening of a story about a creator and their creation meeting again, years later. Establish character and mood as the reunion approaches — you do not need to finish the story.',
-    skillsNote: 'listing, language analysis, structure, evaluation, creative writing',
-  },
+  }),
 ];

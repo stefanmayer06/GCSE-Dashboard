@@ -1,9 +1,10 @@
 import { Link, router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text } from "react-native";
+import { Linking, Pressable, Text, View } from "react-native";
 import { authRequest } from "./api";
 import { ApiAuthResponse, applyApiAuthResponse } from "./auth";
 import { Button, DeskHeader, Field, Notice, ScrollScreen } from "./components";
+import { accountLinks } from "./settings";
 import { supabase } from "./supabase";
 import { useTheme } from "./theme";
 
@@ -49,6 +50,20 @@ export function AuthForm({
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [recoveryReady, setRecoveryReady] = useState(mode !== "recover");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const links = accountLinks(process.env.EXPO_PUBLIC_WEBSITE_URL, process.env.EXPO_PUBLIC_API_URL);
+  async function openExternal(url: string | undefined, fallback: string) {
+    if (!url) {
+      setError(fallback);
+      return;
+    }
+    try {
+      if (!(await Linking.canOpenURL(url))) throw new Error();
+      await Linking.openURL(url);
+    } catch {
+      setError(`Open ${url} in your browser instead.`);
+    }
+  }
   const titles = {
     signin: "Sign in",
     signup: "Create account",
@@ -124,6 +139,10 @@ export function AuthForm({
 
   function validate(): boolean {
     const problems: Record<string, string> = {};
+    if (mode === "signup" && !ageConfirmed) {
+      setError("Confirm you are 13 or over to create an account. GCSE Study Desk is for learners aged 13+.");
+      return false;
+    }
     if (mode === "signin" || mode === "signup" || mode === "forgot" || mode === "claim") {
       if (!email.trim()) problems.email = "Enter your email address.";
       else if (!emailValid(email)) problems.email = "That email does not look complete — check for a typo.";
@@ -282,6 +301,12 @@ export function AuthForm({
           {fieldError("password")}
         </>
       )}
+      {mode === "signup" && (
+        <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: ageConfirmed }} accessibilityLabel="Confirm you are 13 or over" onPress={() => setAgeConfirmed((v) => !v)} style={{ borderWidth: 1, borderColor: colors.strong, backgroundColor: ageConfirmed ? colors.infoWash : colors.raised, padding: 14, gap: 6, borderRadius: 14 }}>
+          <Text style={{ fontWeight: '800', color: colors.ink }}>{ageConfirmed ? '✓ I AM 13 OR OVER' : 'I CONFIRM I AM 13 OR OVER'}</Text>
+          <Text style={{ color: colors.quiet, lineHeight: 20 }}>GCSE Study Desk is for learners aged 13 and over. It is not for children under 13. Never enter names, school details or sensitive information into practice answers.</Text>
+        </Pressable>
+      )}
       {error && (
         <Notice kind="error" title="NOT COMPLETED">
           {error}
@@ -298,6 +323,16 @@ export function AuthForm({
       >
         {busy ? "Working..." : titles[mode]}
       </Button>
+      <Text style={{ color: colors.quiet, lineHeight: 20 }}>
+        {mode === "signup"
+          ? "One account keeps progress separate across Maths Foundation, Maths Higher and English. AI tutor and English feedback is guidance, not an official grade."
+          : "Independent revision aligned to AQA structures — not affiliated with, approved by, or endorsed by AQA."}
+      </Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
+        <Pressable accessibilityRole="link" accessibilityLabel="Open privacy policy" onPress={() => void openExternal(links?.privacy, 'The privacy page address is not configured in this build.')}><Text style={{ color: colors.info, fontWeight: '700' }}>Privacy</Text></Pressable>
+        <Pressable accessibilityRole="link" accessibilityLabel="Open support" onPress={() => void openExternal(links?.support, 'The support page address is not configured in this build.')}><Text style={{ color: colors.info, fontWeight: '700' }}>Support</Text></Pressable>
+        <Pressable accessibilityRole="link" accessibilityLabel="Open account deletion information" onPress={() => void openExternal(links?.accountDeletion, 'The deletion page address is not configured in this build. You can still delete from Settings after signing in.')}><Text style={{ color: colors.info, fontWeight: '700' }}>Delete account</Text></Pressable>
+      </View>
       {mode !== "signin" && (
         <Link
           href="/auth/sign-in"

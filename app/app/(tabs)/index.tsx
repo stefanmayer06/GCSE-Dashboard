@@ -1,3 +1,3 @@
-import { TodayScreen } from '@/today/TodayScreen';
+import { HomeScreen } from '@/home/HomeScreen';
 
-export default TodayScreen;
+export default HomeScreen;

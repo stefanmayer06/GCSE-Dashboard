@@ -83,6 +83,17 @@ body { background-size: 100% 28px; }
   background: var(--subject-tint);
 }
 
+.mcq4-grid { display: grid; gap: 14px; margin: 16px 0; }
+.mcq4-item { min-width: 0; margin: 0; padding: 14px; border: 1px solid var(--line-strong); border-radius: 12px; }
+.mcq4-item legend { padding: 0 6px; font-weight: 700; color: var(--ink); }
+.mcq4-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.mcq4-choices .tf-btn { width: 100%; height: auto; min-height: 48px; padding: 9px 10px; text-align: left; white-space: normal; }
+@media (max-width: 700px) { .mcq4-choices { grid-template-columns: 1fr; } }
+.choose4-row { display: grid; grid-template-columns: 24px 1fr 22px; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--paper-raised); color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.choose4-row.selected { border-color: var(--subject-ink); background: var(--subject-tint); }
+.choose4-row:disabled { opacity: .65; cursor: default; }
+.exam-title .calc-badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+
 .option-card.selected { border-color: var(--subject-ink); background: var(--subject-tint); box-shadow: none; }
 .word-watch, .input-hint, .marking-note { color: var(--quiet); }
 

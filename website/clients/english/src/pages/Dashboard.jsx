@@ -61,7 +61,7 @@ export default function Dashboard({ health, progress, userId }) {
     <DashboardHome
       subjectKey="english"
       title="Your English revision"
-      subtitle="AQA GCSE English Language (8700). Practise both papers with the correct timings and AQA-style marking."
+      subtitle="AQA GCSE English Language (8700). Practise timed, original question sets with AQA-style feedback."
       headChip={
         health ? (
           <div className="head-chip">
@@ -81,10 +81,10 @@ export default function Dashboard({ health, progress, userId }) {
       masteryTitle="How you’re doing by skill"
       papers={{
         blurb:
-          'Practise either English Language paper with the correct marks and 1 hour 45 minute timing. You’ll get AQA-style feedback, model answers and clear areas to work on next.',
+          'Practise 80-mark English Language question sets with 1 hour 45 minute timing. The current source library uses classic fiction and adapted pairs. You’ll get AQA-style feedback, model answers and clear areas to work on next.',
         items: [
-          { id: 1, code: '8700/1', calc: true, calcLabel: 'Fiction extract', blurb: 'Explorations in Creative Reading and Writing. Q1 list (4) · Q2 language (8) · Q3 structure (8) · Q4 evaluate (20) · Q5 creative writing (40).', meta: '80 marks · 1h 45', fullHref: '/practice?paper=1&type=full', shortHref: '/practice?paper=1&type=short', fullLabel: 'Full · 80 marks · 1h45', shortLabel: 'Quick · Q1+Q5 · 50 min' },
-          { id: 2, code: '8700/2', calc: true, calcLabel: 'Two sources', blurb: 'Writers’ Viewpoints and Perspectives. Q1 true/false (4) · Q2 summary (8) · Q3 language (12) · Q4 compare (16) · Q5 writing to argue (40).', meta: '80 marks · 1h 45', fullHref: '/practice?paper=2&type=full', shortHref: '/practice?paper=2&type=short', fullLabel: 'Full · 80 marks · 1h45', shortLabel: 'Quick · Q1+Q5 · 50 min' },
+          { id: 1, code: '8700/1', calc: true, calcLabel: 'Contemporary fiction practice', blurb: 'Explorations in Creative Reading and Writing. Q1 four choices (4) · Q2 language (8) · Q3 structure (8) · Q4 evaluate (20) · Q5 creative writing (40). Original contemporary passages written for practice.', meta: '80 marks · 1h 45', fullHref: '/practice?paper=1&type=full', shortHref: '/practice?paper=1&type=short', fullLabel: 'Full · 80 marks · 1h45', shortLabel: 'Quick · Q1+Q5 · 50 min' },
+          { id: 2, code: '8700/2', calc: true, calcLabel: 'Adapted source pair', blurb: 'Writers’ Viewpoints and Perspectives. Q1 choose four (4) · Q2 summary (8) · Q3 language (12) · Q4 compare (16) · Q5 writing to argue (40). The current source pair is a practice adaptation.', meta: '80 marks · 1h 45', fullHref: '/practice?paper=2&type=full', shortHref: '/practice?paper=2&type=short', fullLabel: 'Full · 80 marks · 1h45', shortLabel: 'Quick · Q1+Q5 · 50 min' },
         ],
       }}
       adhoc={{

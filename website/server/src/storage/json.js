@@ -8,6 +8,7 @@ import {
   unlink,
   writeFile,
 } from 'node:fs/promises';
+import { acquisitionReport, summarizeEvents } from '../event-report.js';
 
 const SCHEMA_VERSION = 1;
 const DEFAULT_STUDY_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
@@ -277,6 +278,7 @@ export function createJsonStorage({ dataDir } = {}) {
   );
   const eventsFile = path.join(root, 'events.json');
   const feedbackFile = path.join(root, 'feedback.json');
+  const supportFile = path.join(root, 'support-requests.json');
 
   async function recoverFinalizeTransaction() {
     const stored = await readJson(transactionFile);
@@ -500,17 +502,13 @@ export function createJsonStorage({ dataDir } = {}) {
     await init();
     const id = requiredIdentifier(userId, 'userId');
     const events = await readObject(eventsFile);
-    const counts = {};
-    let firstSeen = null;
-    let lastSeen = null;
-    for (const event of Object.values(events)) {
-      if (String(event?.userId) !== id) continue;
-      counts[event.name] = (counts[event.name] || 0) + 1;
-      if (!firstSeen || event.occurredAt < firstSeen) firstSeen = event.occurredAt;
-      if (!lastSeen || event.occurredAt > lastSeen) lastSeen = event.occurredAt;
-    }
-    const activated = (counts.diagnostic_complete || 0) > 0 && (counts.session_marked || 0) > 0;
-    return { counts, firstSeen, lastSeen, activated };
+    return summarizeEvents(Object.values(events).filter((event) => String(event?.userId) === id));
+  }
+
+  async function getAcquisitionReport(sinceDays = 90) {
+    await init();
+    const events = await readObject(eventsFile);
+    return acquisitionReport(Object.values(events), { sinceDays });
   }
 
   async function listUsers() {
@@ -958,6 +956,56 @@ export function createJsonStorage({ dataDir } = {}) {
     });
   }
 
+  async function saveSupportRequest(input) {
+    await init();
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      throw storageError('STORAGE_INVALID_ARGUMENT', 'support request must be an object');
+    }
+    const record = {
+      id: requiredIdentifier(input.id, 'id'),
+      topic: requiredString(input.topic, 'topic'),
+      message: requiredString(input.message, 'message'),
+      email: typeof input.email === 'string' && input.email ? input.email : null,
+      createdAt: isoDate(input.createdAt, 'createdAt', Date.now()),
+    };
+    return withLock(supportFile, async () => {
+      const requests = await readObject(supportFile);
+      if (requests[record.id]) return false;
+      const cutoff = Date.now() - 180 * 24 * 60 * 60 * 1000;
+      for (const [id, request] of Object.entries(requests)) {
+        if (new Date(request.createdAt).getTime() < cutoff) delete requests[id];
+      }
+      requests[record.id] = record;
+      await atomicWrite(supportFile, requests);
+      return true;
+    });
+  }
+
+  async function listSupportRequests(limit = 50) {
+    await init();
+    const requests = await readObject(supportFile);
+    return Object.values(requests)
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+      .slice(0, Math.max(1, Math.min(100, Number(limit) || 50)));
+  }
+
+  async function pruneSupportRequests(keepDays = 180) {
+    await init();
+    return withLock(supportFile, async () => {
+      const requests = await readObject(supportFile);
+      const cutoff = Date.now() - Math.max(30, Number(keepDays) || 180) * 24 * 60 * 60 * 1000;
+      let removed = 0;
+      for (const [id, request] of Object.entries(requests)) {
+        if (new Date(request.createdAt).getTime() < cutoff) {
+          delete requests[id];
+          removed += 1;
+        }
+      }
+      if (removed) await atomicWrite(supportFile, requests);
+      return removed;
+    });
+  }
+
   return {
     driver: 'json',
     schemaVersion: SCHEMA_VERSION,
@@ -993,7 +1041,11 @@ export function createJsonStorage({ dataDir } = {}) {
     listAttempts,
     recordEvent,
     getEventSummary,
+    getAcquisitionReport,
     pruneEvents,
     saveFeedback,
+    saveSupportRequest,
+    listSupportRequests,
+    pruneSupportRequests,
   };
 }

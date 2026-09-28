@@ -14,16 +14,18 @@ guessed statement codes.
 Higher-only topic families, each with generated questions, exact answers, worked solutions and
 deterministic marking metadata:
 
-- Number: standard form and index laws, surds and exact values, bounds and error intervals.
-- Algebra: algebraic fractions, quadratics (factorising, formula, completing the square,
-  iteration), simultaneous equations (linear and linear/quadratic), functions, graphs and
-  graphical methods, mathematical proof.
-- Ratio, proportion and rates of change: growth and decay, direct and inverse proportion,
-  compound measures.
-- Geometry and measures: similarity and vectors, circle theorems and measures, advanced
-  trigonometry (cosine rule, area formula).
-- Probability: conditional probability, tree diagrams, distributions.
-- Statistics: histograms, cumulative frequency, box plots and sampling.
+- Number: standard form, negative and fractional indices, surd simplification and
+  rationalisation, bounds and error intervals.
+- Algebra: simple algebraic fractions, quadratics (factorising and formula), simultaneous
+  equations (linear and linear/quadratic), linear function values, graph reading and
+  introductory proof questions.
+- Ratio, proportion and rates of change: repeated percentage growth or decay and
+  inverse-square proportion.
+- Geometry and measures: similar lengths, vector-component sums, the angle-at-centre
+  theorem, sector area, cosine rule and the non-right-angle triangle area formula.
+- Probability: without-replacement and independent-event questions with tree diagrams.
+- Statistics: frequency density, histograms, cumulative-frequency medians and
+  interquartile range from box-plot values.
 
 Every Higher question also draws on the Foundation-shared families (`TOPICS` in
 `server/src/subjects/maths/bank/topics.js`) because AQA 8300H assumes the full Foundation content
@@ -43,14 +45,14 @@ base. Foundation and Higher progress, mastery and paper history remain stored se
 
 ## Remaining Specification Backlog
 
-1. Algebra: quadratic inequalities, tangent and normal to a circle, areas under curves and
-   gradients of curves beyond generated cases, transformations of graphs.
-2. Geometry: further vector geometry proofs, sine rule ambiguity cases, frustums and composite
-   solids, further exact triangle geometry.
-3. Probability: Venn and set notation beyond the generated families, conditional expectation.
-4. Statistics: capture-recapture, further hypothesis-style reasoning and comparing distributions.
-5. Number: further surd manipulation families and product rule for counting at Higher depth.
-6. Ratio: further graphical proportion and gradients of real-life graphs.
+1. Algebra: completing the square, iteration, quadratic inequalities, tangent and normal to
+   a circle, areas under curves, gradients of curves and transformations of graphs.
+2. Geometry: vector geometry proofs, sine rule (including ambiguity), further circle theorems
+   and constructions, frustums and composite solids.
+3. Probability: Venn and set notation, fuller conditional-probability methods and distributions.
+4. Statistics: sampling methods, capture-recapture and comparing distributions.
+5. Number: recurring decimals, further surd manipulation and the product rule for counting.
+6. Ratio: direct and graphical proportion, compound measures and real-life graph gradients.
 
 ## Verification
 

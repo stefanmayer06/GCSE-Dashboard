@@ -40,10 +40,12 @@ The combination of exam-date-aware planning, subject-specific practice, explicit
 - Implemented learner capabilities include authentication, diagnostics, seven-day plans, daily missions, lessons, question practice, timed and resumable papers, marking and worked solutions, XP and streaks, readiness, a mistake notebook, scheduled retries, weekly summaries, and feedback submission.
 - English AI feedback is guidance, not an official mark or grade. The product must not imply AQA endorsement.
 - The product must not claim complete specification coverage, guaranteed outcomes, grade improvements, examiner credentials, or production capabilities that are not evidenced.
+- Topic `examWeight` values are relative study-planning priorities. They are not AQA per-topic paper percentages or guaranteed mark allocations and must not be shown as such.
 - Current roles are `student` and `admin`. Parent and teacher dashboards, classes, billing, entitlements, multiple exam boards, and additional subjects are not implemented.
-- Public application writes are restricted to authentication and rate-limited feedback; user data is protected by Supabase Row Level Security. Service credentials must never reach clients.
+- Public application writes are restricted to authentication and rate-limited feedback and support forms; user data is protected by Supabase Row Level Security. Service credentials must never reach clients.
 - Durable terminology includes diagnostic, mission, seven-day plan, practice, paper, mistake notebook, error type, retry, mastery, and readiness score. Use UK English, including "Maths" and "revision".
-- Commercial model, paid-tier timing, production domain, monitored support address, legal owner details, and mobile release timing remain open decisions. Current public framing is a free beta and must not be replaced with unimplemented pricing or availability claims.
+- The confirmed service operator is Mayer Digital. The public contact route for support and privacy requests is the support form.
+- Commercial model, paid-tier timing, production domain, remaining privacy details, support-form operating routine, and mobile release timing remain open decisions. Current public framing is a free beta and must not be replaced with unimplemented pricing or availability claims.
 
 ## Brand Commitments
 
@@ -54,12 +56,12 @@ The combination of exam-date-aware planning, subject-specific practice, explicit
 
 ## Evidence on Hand
 
-- The Foundation question bank currently contains 1,730 generated questions; keep public quantity claims synchronized with the relevant health endpoint and content source.
+- The Foundation question bank currently contains 1,850 generated questions; keep public quantity claims synchronized with the relevant health endpoint and content source.
 - Higher Maths generators include graph stimuli and grade-boundary support. English includes source texts, exemplars, topic lessons, and both papers.
 - Coverage and quality evidence is documented in `website/FOUNDATION_AUDIT.md`, `website/HIGHER_AUDIT.md`, and `website/ENGLISH_AUDIT.md`.
 - Product behavior is covered by server tests and the learner-loop Playwright suite at `website/ui-tests/app.spec.js`.
 - The product icon source is `app/assets/icon-source.svg`. Public privacy, support, account-deletion, and feedback pages are implemented under `website/selector/` and `website/public/`.
-- `MARKET_COMPARISON.md`, `BETA_POSTING_PLAN.md`, and `website/ANALYTICS.md` contain current category research, beta goals, event definitions, and the activation definition.
+- `website/GO_TO_MARKET.md` contains the brand position, first audience and commercial pilot; `website/ANALYTICS.md` documents event definitions and activation. `website/SUPPORT_OPERATIONS.md` documents private support review and retention.
 - There are no approved testimonials, attainment outcomes, examiner endorsements, customer logos, or paid-plan entitlements. Store and legal drafts still contain owner-controlled placeholders that must not be published as facts.
 
 ## Product Principles

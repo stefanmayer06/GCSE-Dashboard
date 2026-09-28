@@ -2,6 +2,9 @@
 
 This maps the August 2026 codebase, not every answer available in the store consoles. The release owner must verify the production backend, Supabase project, AI provider settings, SDK binary and provider contracts before submission.
 
+The confirmed service operator is Mayer Digital. Public support and privacy
+requests use `[PRODUCTION_WEBSITE_URL]/support.html#contact`.
+
 ## Data map
 
 | Data | Collected/shared | Purpose | Linked to user | Storage/notes |

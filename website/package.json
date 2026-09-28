@@ -19,7 +19,10 @@
     "test": "npm test -w server",
     "test:foundation": "node --test server/test/foundation-bank.test.js",
     "test:higher": "node --test server/test/higher-bank.test.js",
-    "test:ui": "playwright test"
+    "test:ui": "playwright test",
+    "support:list": "node scripts/support-ops.mjs list",
+    "support:prune": "node scripts/support-ops.mjs prune",
+    "acquisition:report": "node scripts/acquisition-report.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

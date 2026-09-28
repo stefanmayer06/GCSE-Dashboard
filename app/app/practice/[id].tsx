@@ -40,7 +40,7 @@ import { mergeMistakes, mistakesFromResult } from "@/notebook";
 import { hydratePersonal } from "@/personal";
 import { completeMission, missionResultFromServer } from "@/planning";
 import { MathsVisual } from "@/practice/MathsVisual";
-import { joinNumbers, rubricLines } from "@/review-format";
+import { englishChoiceLines, joinNumbers, rubricLines } from "@/review-format";
 
 const rec = (value: unknown): UnknownRecord =>
   value && typeof value === "object" && !Array.isArray(value)
@@ -106,6 +106,11 @@ export function mergeEssayAnswer(
 }
 export function hasQuestionAnswer(question: UnknownRecord, value: unknown) {
   const type = text(question.type) ?? text(rec(question.input).type);
+  if (type === "mcq4") {
+    const items = asArray(rec(question.input).items);
+    return items.length === 4 && items.every((_, i) => ["A", "B", "C"].includes(text(rec(value)[String(i)]) ?? ""));
+  }
+  if (type === "choose4") return Object.values(rec(value)).filter((on) => on === true).length === 4;
   return type === "essay" ||
     (asArray(question.options).length > 0 && type !== "mcq")
     ? Boolean(text(rec(normalizeAnswer(value)).text))
@@ -322,7 +327,7 @@ export default function ActivePractice() {
       const value = normalizeAnswer(answers[qid]);
       const type = text(question.type);
       const response =
-        subject === "english" && type !== "list" && type !== "truefalse"
+        subject === "english" && !["list", "mcq4", "choose4", "truefalse"].includes(type ?? "")
           ? await api.mark(
               active.session.id,
               qid,
@@ -588,7 +593,7 @@ const cached = cacheResult(result, answers, active.session.title);
                 ? "Final attempt reached"
                 : question.markType === "self"
                  ? "Reveal model answer and rubric"
-                : subject === "english" && !["list", "truefalse"].includes(text(question.type) ?? "")
+                : subject === "english" && !["list", "mcq4", "choose4", "truefalse"].includes(text(question.type) ?? "")
                    ? feedbackHistory[qid]?.length ? "Improve answer / resubmit to examiner" : "Ask examiner to mark"
                   : "Check with server"}
             </Button>
@@ -709,6 +714,7 @@ function Question({
       question.extract,
   );
   const statements = asArray(input.statements).map(rec);
+  const mcqItems = asArray(input.items).map(rec);
   return (
     <View style={styles.question}>
       <View style={styles.qmeta}>
@@ -736,7 +742,47 @@ function Question({
       <PromptImage image={question.image} colors={colors} />
       <Text style={[styles.prompt, { color: colors.ink }]}>{prompt}</Text>
       <MathsVisual stimulus={question.stimulus} colors={colors} accent={accent} />
-      {type === "truefalse" && statements.length ? (
+      {type === "choose4" && statements.length ? (
+        <View>
+          <Text style={{ color: colors.quiet, marginBottom: 8 }}>{Object.values(rec(value)).filter((on) => on === true).length} of 4 selected</Text>
+          {statements.map((statement, index) => {
+            const selected = rec(value)[String(index)] === true;
+            const full = Object.values(rec(value)).filter((on) => on === true).length >= 4;
+            return (
+              <Pressable key={index} accessibilityRole="checkbox" accessibilityState={{ checked: selected }}
+                disabled={disabled || (full && !selected)}
+                onPress={() => onChange({ ...rec(value), [index]: !selected })}
+                style={[styles.statement, { borderColor: selected ? accent : colors.strong, backgroundColor: colors.raised, opacity: full && !selected ? 0.65 : 1 }]}>
+                <Text style={{ color: colors.ink, fontWeight: "700" }}>{String.fromCharCode(65 + index)}.</Text>
+                <Text style={{ color: colors.ink, flex: 1 }}>{text(statement.text)}</Text>
+                <Text style={{ color: accent }}>{selected ? "✓" : ""}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : type === "mcq4" && mcqItems.length ? (
+        mcqItems.map((item, index) => {
+          const current = text(rec(value)[String(index)]);
+          return (
+            <View key={index} style={[styles.statement, { borderColor: colors.strong, flexDirection: "column", alignItems: "stretch" }]}>
+              <Text style={{ color: colors.ink, fontWeight: "700", marginBottom: 8 }}>{index + 1}. {text(item.text)}</Text>
+              {asArray(item.choices).map((rawChoice) => {
+                const choice = rec(rawChoice);
+                const id = text(choice.id) ?? "";
+                return (
+                  <Pressable key={id} disabled={disabled} accessibilityRole="radio"
+                    accessibilityLabel={`${index + 1}. ${text(item.text)}: ${id}. ${text(choice.text)}`}
+                    accessibilityState={{ checked: current === id }}
+                    onPress={() => onChange({ ...rec(value), [index]: id })}
+                    style={[styles.option, { borderColor: current === id ? accent : colors.strong, backgroundColor: colors.raised, marginBottom: 6 }]}>
+                    <Text style={{ color: colors.ink, fontWeight: current === id ? "800" : "500" }}>{id}. {text(choice.text)}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          );
+        })
+      ) : type === "truefalse" && statements.length ? (
         statements.map((statement, index) => {
           const current = rec(value)[String(index)];
           return (
@@ -1053,6 +1099,8 @@ function Feedback({
   const model = text(value.modelAnswer) ?? text(value.answerText);
   const guidance = text(value.guidance);
   const rubric = rec(value.rubric);
+  const format = text(value.format);
+  const choiceLines = format === "mcq4" || format === "choose4" ? englishChoiceLines(value.rows, format) : [];
   return (
     <View
       accessibilityLiveRegion="polite"
@@ -1069,12 +1117,17 @@ function Feedback({
             : "SERVER CHECK"}
       </Text>
       {attempt != null && <Text style={{color:colors.quiet}}>Attempt {finite(value.attemptNo) ?? attempt}{finite(value.markDelta) != null ? ` / delta ${finite(value.markDelta)! >= 0 ? "+" : ""}${finite(value.markDelta)}` : ""}{value.canResubmit === false ? " / final attempt" : " / can resubmit"}</Text>}
-      {finite(value.marks) != null && (
+      {(finite(value.marks) ?? finite(value.got)) != null && (
         <Text style={{ color: colors.ink, fontWeight: "800" }}>
-          {finite(value.marks)} /{" "}
+          {finite(value.marks) ?? finite(value.got)} /{" "}
           {finite(value.marksTotal) ?? finite(value.max) ?? "?"} marks
         </Text>
       )}
+      {choiceLines.map((line, index) => (
+        <Text key={index} selectable style={{ color: line.correct ? colors.positive : colors.ink, lineHeight: 21 }}>
+          {line.correct ? "✓ " : "• "}{line.text}
+        </Text>
+      ))}
       {text(value.strengths) && (
         <Text style={{ color: colors.ink }}>
           Strengths: {text(value.strengths)}

@@ -22,7 +22,7 @@ export default function gen(v) {
     const income = (ri(r, 150, 350) * 100);
     const taxed = income - 12570;
     ans = taxed * 0.2;
-    text = `Jamie earns £${income.toLocaleString()} per year.\nThe first £12,570 of income is tax-free. Any earnings above this are taxed at 20%.\nWork out how much tax Jamie pays per year.`;
+    text = `Jamie earns £${income.toLocaleString()} per year.\nIn a simplified fictional tax system, the first £12,570 of income is tax-free and earnings above this are taxed at 20%.\nUsing these rules, work out how much tax Jamie pays per year.`;
     input = { type: 'number', placeholder: '£' };
     sol = [[`Taxable income = £${income.toLocaleString()} − £12,570 = £${taxed.toLocaleString()}.`, `Tax = 20% of £${taxed.toLocaleString()} = £${ans.toLocaleString()}.`]];
     hint = 'Subtract the tax-free allowance first, then find 20% of what is left.';
@@ -80,12 +80,12 @@ export default function gen(v) {
     const gross = ri(r, 200, 400) * 100;
     const taxable = gross - 12570;
     const it = taxable * 0.2;
-    const ni = taxable * 0.08;
-    ans = round(it + ni, 2);
-    text = `Priya's gross salary is £${gross.toLocaleString()} per year.\nShe pays 20% income tax and 8% National Insurance on everything she earns above £12,570.\nWork out the total she pays in income tax and National Insurance.`;
+    const contribution = taxable * 0.08;
+    ans = round(it + contribution, 2);
+    text = `Priya's gross salary is £${gross.toLocaleString()} per year.\nIn a simplified fictional system, she pays 20% income tax and a separate 8% social contribution on earnings above a £12,570 allowance.\nUsing these rules, work out the total she pays.`;
     input = { type: 'number', tolerance: 0.011, placeholder: '£' };
-    sol = [[`Earnings above £12,570: £${gross.toLocaleString()} − £12,570 = £${taxable.toLocaleString()}.`, `Income tax: 20% of £${taxable.toLocaleString()} = £${round(it, 2).toLocaleString('en-GB', { minimumFractionDigits: 2 })}.`, `NI: 8% of £${taxable.toLocaleString()} = £${round(ni, 2).toLocaleString('en-GB', { minimumFractionDigits: 2 })}.`, `Total = £${ans.toLocaleString('en-GB', { minimumFractionDigits: 2 })}.`]];
-    hint = 'Work out the tax and NI separately on the same taxable amount, then add.';
+    sol = [[`Earnings above £12,570: £${gross.toLocaleString()} − £12,570 = £${taxable.toLocaleString()}.`, `Income tax: 20% of £${taxable.toLocaleString()} = £${round(it, 2).toLocaleString('en-GB', { minimumFractionDigits: 2 })}.`, `Social contribution: 8% of £${taxable.toLocaleString()} = £${round(contribution, 2).toLocaleString('en-GB', { minimumFractionDigits: 2 })}.`, `Total = £${ans.toLocaleString('en-GB', { minimumFractionDigits: 2 })}.`]];
+    hint = 'Work out each charge separately on the taxable amount given, then add.';
     return { marks: 5, difficulty: 3, stretch: true, text, input, answer: ans, answerText: `£${ans.toLocaleString('en-GB', { minimumFractionDigits: 2 })}`, solution: sol, hint };
   }
 }

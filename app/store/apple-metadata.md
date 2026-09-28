@@ -5,6 +5,7 @@ All URLs and contact fields below are release-owner placeholders. Do not submit 
 ## Product page
 
 - **Name:** GCSE Study Desk
+- **Service operator:** Mayer Digital
 - **Subtitle:** Maths and English revision
 - **Primary category:** Education
 - **Secondary category:** Reference
@@ -13,13 +14,13 @@ All URLs and contact fields below are release-owner placeholders. Do not submit 
 - **Privacy policy URL:** `[PRODUCTION_WEBSITE_URL]/privacy.html`
 - **Support URL:** `[PRODUCTION_WEBSITE_URL]/support.html`
 - **Marketing URL (optional):** `[PRODUCTION_WEBSITE_URL]`
-- **Copyright:** `[YEAR] [LEGAL_OWNER_NAME]`
+- **Copyright:** `2026 Mayer Digital`
 
 ## Description
 
 GCSE Study Desk brings Maths and English revision into one focused app.
 
-Choose AQA-aligned Maths Foundation, Maths Higher or English Language. Work through course notes, topic practice and paper-style sessions, then use clear progress signals to decide what to study next.
+Choose AQA-style Maths Foundation, Maths Higher or English Language practice. Work through course notes, topic practice and original paper-style sessions, then use clear progress signals to decide what to study next.
 
 Features:
 
@@ -34,6 +35,8 @@ Features:
 Starting activities, synchronising progress, tutor replies and server marking require an internet connection. AI feedback may be inaccurate and is not an official grade.
 
 GCSE Study Desk is an independent revision product. It is not affiliated with, approved by, or endorsed by AQA.
+
+Operated by Mayer Digital.
 
 ## Version 1.0 release notes
 
@@ -50,7 +53,7 @@ The first mobile release of GCSE Study Desk: Maths Foundation, Maths Higher and 
 
 ## Required owner checks
 
-- Confirm name availability, categories, localisation, price, territories and legal owner.
+- Confirm name availability, categories, localisation, price, territories and publisher account details.
 - Replace every placeholder with a deployed HTTPS URL or monitored contact.
 - Complete the age-rating and App Privacy forms from the drafts in this directory.
 - Upload final screenshots and app icon; verify all text against the submitted binary.

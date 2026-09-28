@@ -25,6 +25,7 @@ export function priorityTopics(topics, progress, passMode = false) {
     const bb = stats[b.id];
     const aScore = aa ? aa.correct / aa.total : -1;
     const bScore = bb ? bb.correct / bb.total : -1;
+    // examWeight is a relative study-planning score, not a per-topic exam percentage.
     const aCore = passMode ? -(Number(a.examWeight) || 0) / 100 : 0;
     const bCore = passMode ? -(Number(b.examWeight) || 0) / 100 : 0;
     return (aScore + aCore) - (bScore + bCore);

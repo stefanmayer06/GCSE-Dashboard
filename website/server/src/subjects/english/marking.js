@@ -1,9 +1,23 @@
 /**
  * AQA GCSE English Language (8700) marking rubrics — summarised from the
- * official mark schemes. Used by the configured OpenRouter model to award
+ * official mark schemes, except the clearly labelled skill-practice rubric.
+ * Used by the configured OpenRouter model to award
  * marks, and shown to students for self-marking in offline mode.
  */
 export const RUBRICS = {
+  reading19c: {
+    key: 'reading19c',
+    name: 'Older-source reading practice — not an exam question',
+    marks: 8,
+    ao: 'AO1 + AO2 skill practice',
+    bands: [
+      { level: 1, range: '1–2', desc: 'Names a basic idea or mood; little accurate support from the older source; phrase explanations are missing or guesses.' },
+      { level: 2, range: '3–4', desc: 'Explains some of the source’s meaning and attitude; gives a plausible meaning for at least one unfamiliar phrase.' },
+      { level: 3, range: '5–6', desc: 'Clear account of the writer’s message and attitude; accurately explains two phrases using their context.' },
+      { level: 4, range: '7–8', desc: 'Precise, well-supported understanding of the writer’s message and attitude; insightfully decodes two phrases from context.' },
+    ],
+    guidance: 'Assess only the older source named in the question. Reward accurate gist, supported inference about attitude, and contextual explanation of two phrases. Do not require comparison with the modern source. This is an original skill drill, not an AQA Paper 2 question or official mark scheme.',
+  },
   p1q2: {
     key: 'p1q2',
     name: 'Paper 1 Q2 — Language analysis',
@@ -28,7 +42,7 @@ export const RUBRICS = {
       { level: 3, range: '5–6', desc: 'Clear structural terminology; explains how focus, pace, tension or perspective shifts affect the reader; uses reference to whole text.' },
       { level: 4, range: '7–8', desc: 'Perceptive analysis of structure as a deliberate sequence (foreshadowing, juxtaposition, cyclical features); explores how structure shapes meaning.' },
     ],
-    guidance: 'Reward: openings, endings, focus shifts, perspective, time, tension/pace, juxtaposition, motifs, cyclical structure. Analyses of sentence-level structure count if linked to the whole. Penalise: pure chronology ("it starts, next, finally"), retelling, language techniques analysed instead of structure.',
+    guidance: 'Reward: openings, endings, focus shifts, perspective, time, tension/pace, juxtaposition, motifs, cyclical structure. Focus on the effect named in the question, where specified. Analyses of sentence-level structure count if linked to the whole. Penalise: pure chronology ("it starts, next, finally"), retelling, language techniques analysed instead of structure.',
   },
   p1q4: {
     key: 'p1q4',
@@ -41,7 +55,7 @@ export const RUBRICS = {
       { level: 3, range: '11–15', desc: 'Clear, sustained critical response (agree/partly/ranged); well-chosen quotations; evaluative vocabulary used deliberately; developed and coherent.' },
       { level: 4, range: '16–20', desc: 'Compelling, critical evaluation; explores nuance and ambivalence; compelling use of evidence; convincing judgement that develops across the response.' },
     ],
-    guidance: 'Reward: a clear position, selection of the BEST evidence, evaluative language (effective, convincing, ironic, memorable), balanced judgement ("However\u2026"). Penalise: retelling, agreeing or disagreeing with no reasoning, listing points without judgement.',
+    guidance: 'Reward: a clear supported position, well-chosen evidence and evaluation of the writer’s choices. Use the part of the source specified in the question. Credit justified nuance, but do not require disagreement or a fixed balance of views. Penalise: retelling, agreeing or disagreeing with no reasoning, listing points without judgement.',
   },
   p2q2: {
     key: 'p2q2',
@@ -94,7 +108,7 @@ export const RUBRICS = {
       { level: 3, range: 'AO5 13–18 · AO6 9–12', desc: 'Clear, successful communication; coherent and engaging structure; wide vocabulary; mostly accurate SPaG with ambitious techniques.' },
       { level: 4, range: 'AO5 19–24 · AO6 13–16', desc: 'Compelling, convincing writing; sophisticated, deliberate structure; full range of sentence structures; highly accurate; ambitious vocabulary used with flair.' },
     ],
-    guidance: 'AO5 rewards: content matched to task (description OR narrative, not both), vivid ideas, controlled structure, developed detail. AO6 rewards: sentence variety, ambitious vocabulary, spelling, punctuation (including commas and apostrophes), paragraphing. Do not reward length alone. Story or description both valid — judge against the chosen form.',
+    guidance: 'AO5 rewards: content matched to the chosen description or narrative task, vivid ideas, controlled structure and developed detail. When a story opening is requested, judge an opening; do not require a complete plot or resolution. Descriptive detail within a narrative is valid. An image is an optional stimulus when the task permits imagination. AO6 rewards: sentence variety, vocabulary, spelling, punctuation and paragraphing. Do not reward length alone.',
   },
   p2q5: {
     key: 'p2q5',

@@ -4,6 +4,8 @@ import { buildStimulus } from './visuals.js';
 
 const genMods = {
   'place-value': () => import('./q/place-value.js'),
+  'factors-multiples': () => import('./q/factors-multiples.js'),
+  'standard-form': () => import('./q/standard-form.js'),
   operations: () => import('./q/operations.js'),
   fractions: () => import('./q/fractions.js'),
   decimals: () => import('./q/decimals.js'),

@@ -1,6 +1,6 @@
 begin;
 
-select plan(57);
+select plan(66);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'subject_progress', 'subject_progress table exists');
@@ -181,8 +181,7 @@ select throws_ok(
     '10000000-0000-0000-0000-000000000001', 'maths',
     '[{"id":"mistake-3","qid":"q3","topicName":"Ratio","prompt":"Share 10","dueDates":[],"reviewIndex":0,"workedSolution":{"not":"an array"}}]'::jsonb
   )$test$,
-  '23514',
-  'worked solutions must be arrays, never objects'
+  '23514'
 );
 
 -- Durable paper attempts.
@@ -208,20 +207,20 @@ select ok(
   'only the service role writes paper attempts'
 );
 select lives_ok(
-  $test$select count(*) from (
+  $test$select count(saved_id) from (
     select public.save_paper_attempt(
       '10000000-0000-0000-0000-000000000001', 'maths', 'attempt-' || g,
       jsonb_build_object('paperCode','8300/1F','type','full','tier','foundation','totalMarks',80,
         'correctMarks',40,'percent',50,'durationSec',3000,
         'completedAt', to_char(timezone('utc', now()) - (g || ' days')::interval, 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
         'result', jsonb_build_object('id', 'attempt-' || g))
-    ) from generate_series(1, 52) g
-  ) t,
+    ) as saved_id from generate_series(1, 52) g
+  ) t$test$,
   'paper attempts can be written through the RPC'
 );
 select is(
   (select count(*) from public.paper_attempts where user_id = '10000000-0000-0000-0000-000000000001'),
-  50,
+  50::bigint,
   'only the most recent 50 attempts are retained per user and subject'
 );
 select lives_ok(
@@ -240,8 +239,7 @@ select is(
 -- Product events: taxonomy constraint and retention function.
 select throws_ok(
   $test$insert into public.product_events (user_id, name) values ('10000000-0000-0000-0000-000000000001', 'made_up_event')$test$,
-  '23514',
-  'product events reject unknown event names'
+  '23514'
 );
 select lives_ok(
   $test$
@@ -258,13 +256,43 @@ select lives_ok(
 );
 select is(
   (select count(*) from public.product_events where user_id = '10000000-0000-0000-0000-000000000001' and name = 'diagnostic_complete'),
-  0,
+  0::bigint,
   'the retention prune removes events past the documented window'
 );
 select throws_ok(
   $test$select public.prune_product_events(10)$test$,
-  '22023',
-  'retention windows shorter than 30 days are rejected'
+  '22023'
+);
+
+-- Public support messages are visible only to the server-side service role.
+select has_table('public', 'support_requests', 'support requests table exists');
+select ok(
+  (select relrowsecurity from pg_class where oid = 'public.support_requests'::regclass),
+  'support requests have RLS enabled'
+);
+select ok(
+  not has_table_privilege('anon', 'public.support_requests', 'select')
+  and not has_table_privilege('anon', 'public.support_requests', 'insert')
+  and not has_table_privilege('anon', 'public.support_requests', 'delete'),
+  'anon has no direct support-request access'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.support_requests', 'select')
+  and not has_table_privilege('authenticated', 'public.support_requests', 'insert')
+  and not has_table_privilege('authenticated', 'public.support_requests', 'delete'),
+  'authenticated users have no direct support-request access'
+);
+select ok(
+  has_table_privilege('service_role', 'public.support_requests', 'select'),
+  'service role can list support requests'
+);
+select ok(
+  has_table_privilege('service_role', 'public.support_requests', 'insert'),
+  'service role can create support requests'
+);
+select ok(
+  has_table_privilege('service_role', 'public.support_requests', 'delete'),
+  'service role can prune support requests'
 );
 
 select * from finish();

@@ -73,7 +73,15 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
         isClaim
           ? await authApi.claim({ username, email, currentPassword: password, newPassword })
           : isSignup
-          ? await authApi.signup({ username, email, password })
+          ? await authApi.signup({
+              username,
+              email,
+              password,
+              source: (() => {
+                const value = new URLSearchParams(window.location.search).get('src') || '';
+                return /^[a-z0-9][a-z0-9_-]{0,59}$/i.test(value) ? value : 'direct';
+              })(),
+            })
           : await authApi.login(supabaseAuth ? email : username, password);
       if (data.pendingEmailConfirmation) {
         setError('Check your email to confirm your account, then sign in.');

@@ -122,7 +122,7 @@ export default function Topic({ onProgress, userId }) {
         <div>
           <h1>{topic.name}</h1>
           <p className="sub">
-             {topic.strandName} · roughly {topic.examWeight}% of your {higherTier ? 'Higher' : 'Foundation'} paper
+             {topic.strandName} · AQA 8300 {higherTier ? 'Higher' : 'Foundation'} revision
             {topic.accuracy != null ? ` · your accuracy so far: ${topic.accuracy}%` : ''}
           </p>
           {topic.completed && <div className="lesson-stamp topic-complete-stamp">Lesson completed</div>}

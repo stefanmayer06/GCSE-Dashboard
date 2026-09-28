@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { buildPaper, loadBank, markAnswers, questionsFor } from '../src/subjects/maths/bank/index.js';
+import { TOPICS } from '../src/subjects/maths/bank/topics.js';
 
 await loadBank();
 
@@ -105,6 +106,101 @@ test('arithmetic and equation generators store mathematically correct answers', 
     const equation = question.text.replace('Solve', '').trim().replaceAll('−', '-').replaceAll('x', `(${candidate})`);
     const [left, right] = equation.split('=').map((side) => Function(`return ${side.replace(/(\d)\s*\(/g, '$1*(')}`)());
     assert.ok(Math.abs(left - right) < 1e-9, question.id);
+  }
+});
+
+test('Foundation N4 factor, prime, HCF and LCM questions have one valid answer', () => {
+  const questions = questionsFor('factors-multiples');
+  assert.equal(questions.length, 60);
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const prime = (n) => n >= 2 && Array.from({ length: Math.floor(Math.sqrt(n)) - 1 }, (_, i) => i + 2).every((d) => n % d !== 0);
+  const product = (notation) => notation.split(' × ').reduce((total, term) => {
+    const [, base, power] = term.match(/^(\d+)([²³⁴])?$/) || [];
+    assert.ok(base, `unreadable prime product: ${notation}`);
+    return total * Number(base) ** ({ '²': 2, '³': 3, '⁴': 4 }[power] || 1);
+  }, 1);
+
+  for (const question of questions) {
+    const family = Number(question.id.split('-').at(-1)) % 6;
+    const choices = question.input.choices?.map((choice) => choice.text);
+    if (family === 0) {
+      const number = Number(question.text.match(/\d+/)[0]);
+      assert.equal(choices.filter((choice) => number % Number(choice) === 0).length, 1, question.id);
+    } else if (family === 1) {
+      assert.equal(choices.filter((choice) => prime(Number(choice))).length, 1, question.id);
+    } else if (family === 2) {
+      const number = Number(question.text.match(/\d+/)[0]);
+      assert.equal(choices.filter((choice) => product(choice) === number).length, 1, question.id);
+    } else {
+      const [a, b] = [...question.text.matchAll(/\d+/g)].slice(0, 2).map((match) => Number(match[0]));
+      const expected = family === 3 || (family === 5 && question.text.startsWith('Two ribbons'))
+        ? gcd(a, b)
+        : a * b / gcd(a, b);
+      assert.equal(question.answer, expected, question.id);
+    }
+    const marked = markAnswers([question], [{ qid: question.id, value: question.answer }]);
+    assert.equal(marked.correctMarks, question.marks, question.id);
+  }
+});
+
+test('finance lessons and tax questions supply fictional rules without asserting UK rates', () => {
+  const lesson = TOPICS.find((topic) => topic.id === 'money-finance');
+  assert.ok(lesson);
+  assert.ok(lesson.notes.some((note) => note.t === 'p' && note.text.includes('do not assume a current UK tax rule')));
+  assert.doesNotMatch(JSON.stringify(lesson), /National Insurance|first £12,570 you earn is tax-free/);
+
+  for (const question of questionsFor('money-finance')) {
+    const variant = Number(question.id.split('-').at(-1)) % 6;
+    if (variant !== 0 && variant !== 5) continue;
+    assert.match(question.text, /simplified fictional/);
+    assert.doesNotMatch(question.text, /National Insurance/);
+    const income = Number(question.text.match(/£([\d,]+) per year/)[1].replaceAll(',', ''));
+    const rate = variant === 0 ? 0.2 : 0.28;
+    assert.ok(Math.abs(question.answer - (income - 12570) * rate) < 0.001, question.id);
+    assert.equal(markAnswers([question], [{ qid: question.id, value: question.answer }]).correctMarks, question.marks);
+  }
+});
+
+test('Foundation N9 standard-form questions have one correctly normalised answer', () => {
+  const questions = questionsFor('standard-form');
+  assert.equal(questions.length, 60);
+  const parse = (text) => {
+    const match = text.match(/^([\d.]+) × 10\^(-?\d+)$/);
+    assert.ok(match, `unreadable standard form: ${text}`);
+    return { coefficient: Number(match[1]), value: Number(match[1]) * 10 ** Number(match[2]) };
+  };
+  const near = (a, b) => Math.abs(a - b) <= Math.max(1e-12, Math.abs(b) * 1e-10);
+
+  for (const question of questions) {
+    const family = Number(question.id.split('-').at(-1)) % 6;
+    const choices = question.input.choices || [];
+    assert.equal(new Set(choices.map((choice) => choice.text)).size, choices.length, question.id);
+    if (family === 1) {
+      const source = question.text.match(/([\d.]+ × 10\^-?\d+)/)[1];
+      assert.ok(near(question.answer, parse(source).value), question.id);
+    } else {
+      const selected = choices.find((choice) => choice.label === question.answer);
+      assert.equal(selected?.text, question.answerText, question.id);
+      if (family === 2) {
+        assert.equal(choices.filter((choice) => {
+          const { coefficient } = parse(choice.text);
+          return coefficient >= 1 && coefficient < 10;
+        }).length, 1, question.id);
+      } else if (family === 4) {
+        assert.equal(Math.max(...choices.map((choice) => parse(choice.text).value)), parse(selected.text).value, question.id);
+      } else {
+        const target = family === 0
+          ? Number(question.text.match(/Write ([\d,.]+)/)[1].replaceAll(',', ''))
+          : family === 3
+            ? [...question.text.matchAll(/([\d.]+ × 10\^-?\d+)/g)].slice(0, 2).reduce((value, match) => value * parse(match[1]).value, 1)
+            : Number(question.text.match(/([\d.]+)E([+-]\d+)/)[1]) * 10 ** Number(question.text.match(/([\d.]+)E([+-]\d+)/)[2]);
+        assert.equal(choices.filter((choice) => {
+          const { coefficient, value } = parse(choice.text);
+          return coefficient >= 1 && coefficient < 10 && near(value, target);
+        }).length, 1, question.id);
+      }
+    }
+    assert.equal(markAnswers([question], [{ qid: question.id, value: question.answer }]).correctMarks, question.marks, question.id);
   }
 });
 

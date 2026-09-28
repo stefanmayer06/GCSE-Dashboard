@@ -1,0 +1,15 @@
+{
+  "name": "gcse-study-desk-reddit-ad",
+  "private": true,
+  "description": "25-second vertical Reddit ad for GCSE Study Desk, rendered from HTML.",
+  "type": "module",
+  "scripts": {
+    "build": "bash scripts/build.sh",
+    "render": "node scripts/render.mjs",
+    "preview": "node scripts/preview.mjs",
+    "storyboard": "node scripts/storyboard.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "~1.56.0"
+  }
+}

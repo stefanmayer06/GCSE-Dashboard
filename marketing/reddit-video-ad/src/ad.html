@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>GCSE Study Desk — Reddit ad (25 s, 1080×1920)</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  /* Trailhead tokens (DESIGN.md / website/clients/shared/v3.css) */
+  :root {
+    --paper: #f7f4ec;
+    --card: #ffffff;
+    --card-muted: #efead9;
+    --ink: #191c17;
+    --quiet: #5b6055;
+    --line: #d9d3c0;
+    --line-strong: #8a8471;
+    --indigo: #4338ca;
+    --indigo-ink: #232058;
+    --indigo-tint: #e4e1ff;
+    --indigo-soft: #f3f1ff;
+    --pine: #0f766e;
+    --pine-ink: #123b36;
+    --pine-tint: #d3eee7;
+    --ember: #b45309;
+    --ember-ink: #452a0b;
+    --ember-tint: #f7e5c6;
+    --good: #15803d;
+    --good-wash: #dcf0e3;
+    --pencil: #3b4036;
+    --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+    --body: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --hand: 'Caveat', 'Segoe Print', cursive;
+    --shadow: 0 3px 6px rgba(25, 28, 23, 0.06), 0 18px 44px rgba(25, 28, 23, 0.09);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); }
+  body { width: 1080px; height: 1920px; overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+  #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--paper); color: var(--ink); font-family: var(--body); }
+  #world { position: absolute; left: 0; top: 0; width: 1080px; height: 4600px; will-change: transform; }
+  #trail { position: absolute; left: 0; top: 0; overflow: visible; }
+  #overlay { position: absolute; inset: 0; pointer-events: none; }
+  .abs { position: absolute; }
+  .hide { opacity: 0; }
+
+  /* Type voices */
+  .display { font-family: var(--display); font-weight: 600; font-variation-settings: 'SOFT' 70, 'WONK' 1; letter-spacing: -0.005em; }
+  .mono { font-family: var(--mono); font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; }
+  .hand { font-family: var(--hand); font-weight: 600; color: var(--pencil); }
+  .num { font-variant-numeric: tabular-nums; }
+  .x { font-family: var(--display); font-style: italic; font-weight: 500; font-variation-settings: 'SOFT' 100, 'WONK' 0; }
+
+  /* Headlines: characterful serif, set in capitals as briefed */
+  .headline { position: absolute; left: 190px; top: 318px; width: 820px; font-size: 104px; line-height: 1.0; text-transform: uppercase; }
+  .headline .ln { display: block; width: max-content; white-space: nowrap; will-change: transform, opacity; }
+  #h1 { left: 90px; width: 900px; }
+
+  /* Revision notes (the learner's pile) */
+  .note { position: absolute; padding: 14px 28px 12px; background: var(--card); border: 2px solid var(--line); border-radius: 18px; box-shadow: 0 2px 4px rgba(25,28,23,.05), 0 10px 24px rgba(25,28,23,.07); font-family: var(--hand); font-weight: 600; font-size: 58px; line-height: 1.1; color: var(--pencil); white-space: nowrap; will-change: transform, opacity; }
+
+  /* Pebble cards */
+  .card { position: absolute; left: 190px; width: 800px; background: var(--card); border: 2px solid var(--line); border-radius: 30px; box-shadow: var(--shadow); will-change: transform, opacity; }
+
+  /* Subject cards */
+  .subject { height: 210px; display: flex; align-items: center; padding: 0 30px 0 30px; gap: 28px; }
+  .subject .badge { flex: none; width: 104px; height: 104px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 56px; font-variation-settings: 'SOFT' 70, 'WONK' 1; background: var(--card-muted); color: var(--ink); }
+  .subject .name { flex: 1; font-size: 60px; line-height: 1.05; white-space: nowrap; }
+  .subject .go { flex: none; width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; }
+  .subject .go svg { width: 28px; height: 28px; }
+
+  /* Today card (V4 hero: ink border, subject rule, cut-paper lift) */
+  #today { height: 488px; border: 3px solid var(--ink); overflow: hidden; box-shadow: 10px 12px 0 rgba(25,28,23,.13); }
+  #today .rule { position: absolute; left: 0; right: 0; top: 0; height: 16px; background: var(--indigo); }
+  #today .row { position: absolute; left: 48px; right: 48px; top: 60px; display: flex; justify-content: space-between; align-items: center; }
+  #today .eyebrow { font-size: 34px; color: var(--indigo-ink); }
+  #today .chip { font-size: 30px; padding: 10px 22px; border-radius: 999px; background: var(--indigo-tint); color: var(--indigo-ink); }
+  #today .title { position: absolute; left: 48px; top: 128px; font-size: 80px; line-height: 1.05; white-space: nowrap; }
+  #today .detail { position: absolute; left: 48px; top: 232px; font-size: 40px; font-weight: 500; color: var(--quiet); }
+  #today .btn { position: absolute; left: 48px; right: 48px; top: 318px; height: 120px; border-radius: 24px; background: var(--indigo); color: #fff; display: flex; align-items: center; justify-content: center; gap: 18px; font-size: 44px; font-weight: 700; letter-spacing: -0.005em; box-shadow: 0 3px 0 var(--indigo-ink); }
+  #today .btn svg { width: 40px; height: 40px; }
+
+  /* Question + method cards */
+  #question { height: 486px; }
+  .eyerow { position: absolute; left: 48px; right: 48px; top: 44px; display: flex; justify-content: space-between; font-size: 30px; color: var(--quiet); }
+  .qtext { position: absolute; left: 48px; top: 104px; font-size: 70px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+  .qtext .x { font-size: 1.12em; }
+  .working { position: absolute; left: 48px; right: 48px; top: 226px; border-top: 3px dashed var(--line); }
+  .working .wl { position: absolute; left: 6px; font-size: 92px; line-height: 1; white-space: nowrap; }
+  #w1 { top: 28px; }
+  #w2 { top: 128px; }
+  .working .circle { position: absolute; width: 150px; height: 118px; overflow: visible; }
+
+  #method { height: 524px; background: var(--indigo-soft); border-color: var(--indigo); border-width: 3px; }
+  #method .eyerow { color: var(--indigo-ink); }
+  .step { position: absolute; left: 48px; right: 48px; display: grid; grid-template-columns: 64px 1fr; column-gap: 20px; }
+  .step .n { width: 56px; height: 56px; border-radius: 50%; background: var(--indigo); color: #fff; display: grid; place-items: center; font-family: var(--mono); font-weight: 700; font-size: 30px; margin-top: 2px; }
+  .step .say { font-size: 42px; font-weight: 500; line-height: 1.3; color: var(--ink); }
+  .step .eq { grid-column: 2; font-size: 68px; font-weight: 600; line-height: 1.15; color: var(--indigo-ink); white-space: nowrap; letter-spacing: -0.01em; }
+  #s1 { top: 110px; }
+  #s2 { top: 272px; }
+  .mark { padding: 0 8px; margin: 0 -8px; background-image: linear-gradient(180deg, transparent 58%, var(--indigo-tint) 58%, var(--indigo-tint) 94%, transparent 94%); background-repeat: no-repeat; background-size: 0% 100%; }
+  #retrychip { position: absolute; left: 48px; top: 426px; display: inline-flex; align-items: center; gap: 14px; padding: 10px 24px 10px 18px; border-radius: 999px; border: 3px dashed var(--indigo); background: var(--card); color: var(--indigo-ink); font-size: 30px; }
+  #retrychip svg { width: 34px; height: 34px; }
+
+  /* Retry + mastery cards */
+  #retry { height: 360px; }
+  #retry .eyerow { color: var(--indigo-ink); }
+  #retry .qtext { top: 100px; font-size: 62px; }
+  #retry .ans { position: absolute; left: 48px; top: 206px; font-size: 96px; line-height: 1; white-space: nowrap; }
+  .gmark { padding: 0 14px; margin: 0 -14px; border-radius: 14px; background: var(--good-wash); background-repeat: no-repeat; }
+  #correct { position: absolute; right: 48px; top: 226px; display: inline-flex; align-items: center; gap: 12px; padding: 12px 24px 12px 16px; border-radius: 999px; background: var(--good-wash); border: 3px solid var(--good); color: var(--ink); font-size: 30px; }
+  #correct svg { width: 36px; height: 36px; }
+
+  #mastery { height: 206px; }
+  #mastery .topic { position: absolute; left: 48px; top: 40px; font-size: 44px; font-weight: 600; letter-spacing: -0.01em; }
+  .stage { position: absolute; right: 48px; top: 36px; padding: 10px 22px; border-radius: 999px; border: 3px solid; font-size: 30px; display: inline-flex; align-items: center; gap: 10px; }
+  .stage.dev { background: var(--card-muted); border-color: var(--line-strong); color: var(--quiet); }
+  .stage.sec { background: var(--good-wash); border-color: var(--good); color: var(--ink); }
+  .stage svg { width: 30px; height: 30px; }
+  .track { position: absolute; left: 48px; right: 48px; top: 132px; height: 26px; border-radius: 999px; background: var(--card-muted); overflow: hidden; }
+  .track .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--indigo); }
+
+  /* Taps */
+  .ripple { position: absolute; width: 170px; height: 170px; margin: -85px 0 0 -85px; border-radius: 50%; background: rgba(25,28,23,.10); border: 3px solid rgba(25,28,23,.28); opacity: 0; }
+  .touch { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(25,28,23,.22); opacity: 0; }
+
+  /* End card */
+  #end { position: absolute; inset: 0; }
+  #endtrail { position: absolute; left: 0; top: 0; overflow: visible; }
+  #mark { position: absolute; left: 450px; top: 532px; width: 180px; height: 180px; border-radius: 42px; background: var(--ink); color: var(--paper); display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 88px; letter-spacing: -0.02em; font-variation-settings: 'SOFT' 70, 'WONK' 1; box-shadow: 0 4px 8px rgba(25,28,23,.12), 0 22px 48px rgba(25,28,23,.14); }
+  #brand { position: absolute; left: 40px; right: 40px; top: 776px; text-align: center; font-size: 110px; line-height: 1; text-transform: uppercase; white-space: nowrap; }
+  #soon { position: absolute; left: 0; right: 0; margin: 0 auto; width: max-content; top: 944px; white-space: nowrap; padding: 22px 40px; border-radius: 999px; border: 3px dashed var(--ink); background: var(--card); font-size: 34px; color: var(--ink); }
+  #thanks { position: absolute; left: 60px; right: 60px; top: 1108px; text-align: center; font-family: var(--display); font-style: italic; font-weight: 400; font-size: 74px; line-height: 1.1; font-variation-settings: 'SOFT' 100, 'WONK' 1; color: var(--ink); }
+
+  /* Burned-in captions (inside the 4:5 centre band) */
+  .cap { position: absolute; left: 50%; bottom: 312px; transform: translateX(-50%); max-width: 940px; padding: 22px 36px 24px; border-radius: 26px; background: var(--card); border: 2px solid var(--line); box-shadow: 0 3px 6px rgba(25,28,23,.06), 0 14px 34px rgba(25,28,23,.10); font-family: var(--body); font-weight: 600; font-size: 50px; line-height: 1.26; letter-spacing: -0.01em; color: var(--ink); text-align: center; white-space: nowrap; opacity: 0; }
+
+  /* Guides (debug only) */
+  #guides { position: absolute; inset: 0; display: none; }
+  body.guides #guides { display: block; }
+  #guides .band { position: absolute; left: 0; right: 0; top: 285px; height: 1350px; outline: 3px dashed rgba(220, 38, 38, .7); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="world">
+    <svg id="trail" width="1080" height="4600" viewBox="0 0 1080 4600" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <!-- 0–3 s: the learner's pile of revision notes -->
+    <div class="note" id="n1" style="left:92px; top:676px">Fractions?</div>
+    <div class="note" id="n2" style="left:650px; top:668px">4x + 6 = 30</div>
+    <div class="note" id="n3" style="left:120px; top:862px">Quadratics</div>
+    <div class="note" id="n4" style="left:96px; top:1016px">Ratio?</div>
+    <div class="note" id="n5" style="left:560px; top:1168px">Language Paper 1</div>
+    <div class="note" id="n6" style="left:118px; top:1296px">Creative writing?</div>
+
+    <!-- 3–9 s: subjects, one colour at a time -->
+    <div class="card subject" id="sub-f" style="top:1130px">
+      <div class="badge">M</div><div class="name display">Maths Foundation</div>
+      <div class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></div>
+    </div>
+    <div class="card subject" id="sub-h" style="top:1376px">
+      <div class="badge">H</div><div class="name display">Maths Higher</div>
+      <div class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></div>
+    </div>
+    <div class="card subject" id="sub-e" style="top:1622px">
+      <div class="badge">E</div><div class="name display">English</div>
+      <div class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></div>
+    </div>
+
+    <!-- 9–12 s: today's one step -->
+    <div class="card" id="today" style="top:2140px">
+      <div class="rule"></div>
+      <div class="row"><span class="eyebrow mono">Today</span><span class="chip mono">Maths Foundation</span></div>
+      <div class="title display">Solving Equations</div>
+      <div class="detail">Short practice · 5 questions</div>
+      <div class="btn" id="startbtn">Start today’s revision
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+      </div>
+    </div>
+
+    <!-- 12–17 s: exam-style question, attempt, worked method -->
+    <div class="card" id="question" style="top:2430px">
+      <div class="eyerow mono"><span>Question 1 of 5</span><span>2 marks</span></div>
+      <div class="qtext num">Solve&nbsp; 4<span class="x">x</span> + 6 = 30</div>
+      <div class="working">
+        <div class="wl hand num" id="w1">4x = <span id="c36">36</span></div>
+        <div class="wl hand num" id="w2">x = 9</div>
+        <svg class="circle" id="circle36svg" viewBox="0 0 150 118"><path id="circle36" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" d="M106 12 C 64 2, 16 16, 12 58 C 9 96, 62 114, 102 106 C 140 98, 147 62, 137 38 C 128 16, 96 4, 58 12" fill="none" stroke="#4338ca" stroke-width="5" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+    <div class="card" id="method" style="top:2940px">
+      <div class="eyerow mono"><span>Worked method</span></div>
+      <div class="step" id="s1"><div class="n">1</div><div class="say">Subtract 6 from both sides</div><div class="eq num">4<span class="x">x</span> = <span class="mark" id="m24">24</span></div></div>
+      <div class="step" id="s2"><div class="n">2</div><div class="say">Divide both sides by 4</div><div class="eq num"><span class="x">x</span> = <span class="mark" id="m6">6</span></div></div>
+      <div id="retrychip" class="mono">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>
+        Saved for a retry · 1 day
+      </div>
+    </div>
+
+    <!-- 17–20 s: loop back, retry, secure -->
+    <div class="card" id="retry" style="top:3470px">
+      <div class="eyerow mono"><span>Retry · 1 day later</span></div>
+      <div class="qtext num">Solve&nbsp; 4<span class="x">x</span> + 6 = 30</div>
+      <div class="ans hand num" id="ans"><span class="gmark" id="gm">x = 6</span></div>
+      <div id="correct" class="mono">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"/></svg>
+        Correct
+      </div>
+    </div>
+    <div class="card" id="mastery" style="top:3862px">
+      <div class="topic">Solving Equations</div>
+      <div class="stage dev mono" id="st-dev">Developing</div>
+      <div class="stage sec mono" id="st-sec"><svg viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"/></svg>Secure</div>
+      <div class="track"><div class="fill" id="fill"></div></div>
+    </div>
+
+    <div class="ripple" id="rip1"></div><div class="touch" id="tch1"></div>
+    <div class="ripple" id="rip2"></div><div class="touch" id="tch2"></div>
+  </div>
+
+  <div id="overlay">
+    <div class="headline display" id="h1"><span class="ln">WHAT SHOULD I</span><span class="ln">REVISE NEXT?</span></div>
+    <div class="headline display" id="h3"><span class="ln">ONE STEP IS</span><span class="ln">ENOUGH TODAY.</span></div>
+    <div class="headline display" id="h5"><span class="ln">LEARN IT.</span><span class="ln">COME BACK TO IT.</span><span class="ln">MAKE IT STICK.</span></div>
+
+    <div id="end">
+      <svg id="endtrail" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="mark">SD</div>
+      <div id="brand" class="display">GCSE STUDY DESK</div>
+      <div id="soon" class="mono">APP &amp; NEW FEATURES COMING SOON</div>
+      <div id="thanks">Thanks for being here.</div>
+    </div>
+
+    <div id="caps"></div>
+    <div id="guides"><div class="band"></div></div>
+  </div>
+</div>
+<script src="vo-data.js"></script>
+<script src="ad.js"></script>
+</body>
+</html>

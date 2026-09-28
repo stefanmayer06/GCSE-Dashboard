@@ -488,7 +488,7 @@ export default function ExplainerPlayer({ script, onComplete = null, onContinue 
           </div>
         ) : null}
 
-        {active ? (
+        {active && active.kind !== 'tap' ? (
           <div className={`xp-check-layer kind-${active.kind}`}>
             <Checkpoint
               cp={active}
@@ -522,6 +522,21 @@ export default function ExplainerPlayer({ script, onComplete = null, onContinue 
           </div>
         ) : null}
       </div>
+
+      {active?.kind === 'tap' ? (
+        <div className="xp-check-layer kind-tap">
+          <Checkpoint
+            cp={active}
+            record={record}
+            onSubmit={submit}
+            onContinue={continueAfter}
+            onReveal={reveal}
+            sliderValue={sliderValue}
+            onSlider={setSliderValue}
+            tapChoice={false}
+          />
+        </div>
+      ) : null}
 
       {prefs.captions ? (
         <p className="xp-caption" aria-hidden="true">{started && beat?.caption ? beat.caption : '\u00a0'}</p>

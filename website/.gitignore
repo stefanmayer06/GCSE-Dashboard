@@ -55,3 +55,6 @@ scripts/art/.build/
 
 # Local Playwright override for sandboxes without Google Chrome
 playwright.local.config.mjs
+
+# Design doc copy without the <html> wrapper (for hosts that add their own)
+design/design-doc.fragment.html

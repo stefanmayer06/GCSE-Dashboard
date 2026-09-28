@@ -144,6 +144,25 @@ npm run test:ui
 See `FOUNDATION_AUDIT.md` for the Foundation bank review and remaining content backlog. See
 `AGENTS.md` for architecture, educational goals and change invariants.
 
+## Design System
+
+The web app uses the Circuit design system: custom isometric level maps,
+Shapez-style topic emblems, a mascot guide (Pip) and interactive explainer
+videos that pause to ask questions. Open `design/design-doc.html` for the
+visual reference. The guides for extending it are:
+
+- `design/DESIGN.md`: tokens, type, layout, motion and principles
+- `design/GRAPHICS.md`: how every custom graphic is built
+- `design/VIDEO_AUTHORING.md`: writing interactive explainer scripts
+- `design/NEW_SUBJECT.md`: the checklist for adding a subject
+
+```bash
+npm run explainers:check   # validate explainer scripts
+npm run art:export         # re-render graphics for the public pages
+npm run design:shots       # recapture screens (app running on :3000)
+npm run design:doc         # rebuild design/design-doc.html
+```
+
 ## Routes
 
 | Route | Purpose |

@@ -103,7 +103,15 @@
   animation: c-slide-up var(--d-3) var(--ease-spring) both;
 }
 
-.xp-check-layer.kind-tap { top: 3%; right: 3%; bottom: auto; left: auto; max-width: 46%; }
+.xp-check-layer.kind-tap {
+  /* Tap prompts sit under the board so they never hide a target. */
+  position: relative;
+  inset: auto;
+  max-width: none;
+  padding: 12px 12px 4px;
+  background: var(--c-night);
+}
+.xp-check-layer.kind-tap .xp-check { box-shadow: 0 5px 0 #000; }
 
 .xp-check {
   display: grid;

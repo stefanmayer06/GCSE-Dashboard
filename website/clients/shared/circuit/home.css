@@ -112,8 +112,10 @@
 .nextstep-weak { margin-top: 18px; }
 .nextstep-weak .eyebrow { color: var(--c-night-muted); }
 .nextstep-weak ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
+.nextstep-card .nextstep-weak-link { background: transparent; }
 .nextstep-weak-link { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 8px 6px 14px; border: 1px solid var(--c-night-3); border-radius: var(--r-pill); color: var(--c-night-ink); font-weight: 700; text-decoration: none; }
-.nextstep-weak-link:hover { background: var(--c-night-2); }
+.nextstep-card .nextstep-weak-link:hover { background: var(--c-night-2); }
+.nextstep-weak-name { color: var(--c-night-ink); }
 .strength { padding: 2px 10px; border-radius: var(--r-pill); font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; }
 .strength-good { background: color-mix(in srgb, var(--c-good-bright) 25%, transparent); color: #7ff0c3; }
 .strength-mid { background: color-mix(in srgb, var(--hue-amber) 25%, transparent); color: #ffd27a; }

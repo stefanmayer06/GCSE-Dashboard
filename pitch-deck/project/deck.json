@@ -1,0 +1,49 @@
+{
+  "v": 4,
+  "createdOnFiles": { "v": 1, "at": "2026-09-29T00:15:00Z" },
+  "title": "GCSE Study Desk — Seed Deck",
+  "cover": "cover",
+  "order": [
+    "cover",
+    "problem",
+    "insight",
+    "loop",
+    "learn",
+    "fix",
+    "built",
+    "traction",
+    "why-now",
+    "market",
+    "validation",
+    "model",
+    "gtm",
+    "competition",
+    "roadmap",
+    "team",
+    "ask",
+    "sources"
+  ],
+  "sections": {
+    "s1": { "description": "The problem and the insight behind GCSE Study Desk", "start": "cover" },
+    "s2": { "description": "The product loop and what is already built", "start": "loop" },
+    "s3": { "description": "Traction, timing, market size and comparable companies", "start": "traction" },
+    "s4": { "description": "Business model, go-to-market and competition", "start": "model" },
+    "s5": { "description": "Roadmap, team and the ask", "start": "roadmap" },
+    "s6": { "description": "Sources for every figure in the deck", "start": "sources" }
+  },
+  "faces": {
+    "unbounded": {
+      "family": "Unbounded",
+      "href": "https://fonts.googleapis.com/css2?family=Unbounded:wght@400..800&display=swap"
+    },
+    "atkinson-hyperlegible-next": {
+      "family": "Atkinson Hyperlegible Next",
+      "href": "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400..800&display=swap"
+    },
+    "atkinson-hyperlegible-mono": {
+      "family": "Atkinson Hyperlegible Mono",
+      "href": "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400..700&display=swap"
+    }
+  },
+  "designSystems": []
+}

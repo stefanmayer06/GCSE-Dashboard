@@ -1,4 +1,4 @@
-// Social adverts: four 1080×1350 (4:5) posts for Instagram and Reddit,
+// Social adverts: five 1080×1350 (4:5) posts for Instagram and Reddit,
 // drawn with the real Circuit components so they match the product.
 // Copy follows PRODUCT.md and GO_TO_MARKET.md: AQA-style and independent,
 // free during the beta, no grade promises, no invented results. Numbers
@@ -32,7 +32,7 @@ function SubjectMark({ course, size = 40 }) {
   );
 }
 
-function Frame({ id, tone, facts, children }) {
+function Frame({ id, tone, facts, cta = 'Try it free', children }) {
   return (
     <article className={`post post-${id} tone-${tone}`}>
       <header className="post-top">
@@ -48,7 +48,7 @@ function Frame({ id, tone, facts, children }) {
           <b className="post-url">{facts.url}</b>
           <small>Independent revision tool. Not affiliated with AQA.</small>
         </span>
-        <span className="post-cta">Try it free <Icon name="arrowRight" size={30} /></span>
+        <span className="post-cta">{cta} <Icon name="arrowRight" size={30} /></span>
       </footer>
     </article>
   );
@@ -314,10 +314,87 @@ function NotebookPost({ facts }) {
   );
 }
 
+// ---------- 5 · Beta testers ----------
+// The call for testers in BETA_RECRUITMENT.md, which flips the product: the
+// learner marks the app. The card is a question paper with the exam hall's
+// tags. Q1 and Q2 are the first session, as next-step.js words it ("Take
+// the 10-question diagnostic. It takes about 10 minutes. We'll use your
+// answers to plan your first week."); Q3 and Q4 are the feedback form's
+// own questions (selector/feedback.html). The check doesn't fill the
+// mistake notebook (lessons and papers do), so this card leaves retries
+// out. 50 is the recruitment target; the time allowed adds sign-up and the
+// form to the check.
+const TESTERS_WANTED = 50;
+const CHECK = { questions: 10, minutes: 10 };
+const MINUTES = 15;
+
+function TestersPost({ facts }) {
+  const questions = [
+    {
+      prompt: 'Pick your course.',
+      marks: 1,
+      answer: (
+        <ul className="beta-courses">
+          {COURSES.map((course) => (
+            <li key={course.id}><SubjectMark course={course} size={26} />{course.name} {course.tier}</li>
+          ))}
+        </ul>
+      ),
+    },
+    {
+      prompt: `Take the ${CHECK.questions}-question check.`,
+      marks: CHECK.questions,
+      answer: <p className="beta-note">It takes about {CHECK.minutes} minutes and plans your first week.</p>,
+    },
+    {
+      prompt: 'How clear did the design feel?',
+      marks: 1,
+      answer: <ol className="beta-scale">{[1, 2, 3, 4, 5].map((n) => <li key={n}>{n}</li>)}</ol>,
+    },
+    {
+      prompt: 'What should I fix first?',
+      marks: 2,
+      answer: <div className="beta-lines"><i /><i /></div>,
+    },
+  ];
+  return (
+    <Frame id="testers" tone="night" facts={facts} cta="Join the beta">
+      <div className="post-head">
+        <p className="post-eyebrow">Wanted: {TESTERS_WANTED} beta testers</p>
+        <h1 className="post-title">
+          <span>Mark my work.</span>
+          <span><em>Be brutal.</em></span>
+        </h1>
+        <p className="post-lede">I’m building a free revision site for AQA GCSE Maths and English Language. Try it, then tell me what to fix.</p>
+      </div>
+      <section className="beta-paper">
+        <header className="beta-paper-head">
+          <span>Beta test · Paper 1</span>
+          <span>Time allowed: {MINUTES} minutes</span>
+        </header>
+        <p className="beta-rubric">Answer all questions. There are no wrong answers.</p>
+        <ol className="beta-qs">
+          {questions.map((question, index) => (
+            <li key={question.prompt}>
+              <div className="beta-q">
+                <span className="q-tag">Q{index + 1}</span>
+                <p>{question.prompt}</p>
+                <span className="q-tag marks">{question.marks} mark{question.marks === 1 ? '' : 's'}</span>
+              </div>
+              {question.answer}
+            </li>
+          ))}
+        </ol>
+      </section>
+    </Frame>
+  );
+}
+
 // Carousel order alternates night and paper and follows a lesson: the
 // idea, the map and its four stages, Watch (explainers), Master (retries).
-// `alt` is the image description for the platform's alt-text field; the
-// build writes them to design/social/alt-text.md.
+// The call for testers comes last so the four keep their files; on Reddit
+// it leads the gallery. `alt` is the image description for the platform's
+// alt-text field; the build writes them to design/social/alt-text.md.
 const DISCLAIMER = 'Independent revision tool, not affiliated with AQA.';
 export const POSTS = [
   {
@@ -343,5 +420,11 @@ export const POSTS = [
     file: '04-misses-come-back',
     Component: NotebookPost,
     alt: (facts) => `GCSE Study Desk advert on a light background. Headline: Misses come back until they stick. A mistake notebook card for Solve 3x + 5 = 20 shows the answer x = 6 marked wrong, the correct answer x = 5, the worked method, and the reason chosen for the miss: arithmetic slip. The question comes back after 1, 3, 7 and 21 days, then counts as mastered. Free beta at ${facts.url}. ${DISCLAIMER}`,
+  },
+  {
+    id: 'testers',
+    file: '05-beta-testers-wanted',
+    Component: TestersPost,
+    alt: (facts) => `GCSE Study Desk call for beta testers on a dark navy background. Eyebrow: Wanted, ${TESTERS_WANTED} beta testers. Headline: Mark my work. Be brutal. Below it: I’m building a free revision site for AQA GCSE Maths and English Language. Try it, then tell me what to fix. A white exam paper headed Beta test, Paper 1, time allowed ${MINUTES} minutes: answer all questions, there are no wrong answers. Question 1, 1 mark: pick your course, Maths Foundation, Maths Higher or English Language. Question 2, ${CHECK.questions} marks: take the ${CHECK.questions}-question check, which takes about ${CHECK.minutes} minutes and plans your first week. Question 3, 1 mark: how clear did the design feel, with a blank scale from 1 to 5. Question 4, 2 marks: what should I fix first, with two blank answer lines. Join the beta at ${facts.url}. ${DISCLAIMER}`,
   },
 ];

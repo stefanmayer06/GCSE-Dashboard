@@ -275,3 +275,39 @@ body { background: var(--c-night); }
 .retry.mastered .retry-dot { border: 0; background: radial-gradient(circle, color-mix(in srgb, var(--hue-volt) 45%, transparent) 0 42%, transparent 70%); }
 .retry small { color: var(--c-ink-2); font-family: var(--font-mono); font-size: 20px; font-weight: 800; letter-spacing: 0.02em; }
 .retry.mastered small { padding: 2px 12px; border-radius: var(--r-pill); background: var(--hue-volt); color: var(--volt-ink); }
+
+/* ---------- 5 · Beta testers ---------- */
+.post-testers .post-title { font-size: 98px; }
+.post-lede { max-width: 900px; margin: 18px 0 0; color: var(--c-night-muted); font-size: 30px; font-weight: 700; line-height: 1.32; }
+
+/* A question paper on the night desk, with the exam hall's .q-tag chips. */
+.beta-paper {
+  position: relative;
+  z-index: 1;
+  margin-top: 28px;
+  padding: 20px 32px 24px;
+  border: 3px solid var(--emblem-line);
+  border-radius: 30px;
+  background: var(--c-surface);
+  color: var(--c-ink);
+  box-shadow: 0 8px 0 #0a0b16, 0 40px 80px -30px rgba(0, 0, 0, 0.75);
+}
+.beta-paper-head { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--c-line); color: var(--c-muted); font-family: var(--font-mono); font-size: 18px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.beta-rubric { margin: 10px 0 0; color: var(--c-ink-2); font-size: 24px; font-weight: 700; }
+.beta-qs { display: grid; gap: 14px; margin: 14px 0 0; padding: 0; list-style: none; }
+.beta-q { display: flex; align-items: center; gap: 16px; }
+.beta-q p { flex: 1; margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -0.01em; }
+.beta-q .q-tag { flex: none; justify-content: center; min-width: 58px; padding: 6px 14px; font-size: 19px; letter-spacing: 0.04em; text-transform: uppercase; }
+/* Answers sit under the prompt, clear of the question tag. */
+.beta-courses,
+.beta-note,
+.beta-scale,
+.beta-lines { margin: 10px 0 0 74px; }
+.beta-courses { display: flex; gap: 10px; padding: 0; list-style: none; }
+.beta-courses li { display: inline-flex; align-items: center; gap: 10px; padding: 5px 16px 5px 5px; border: 2px solid var(--c-line-strong); border-radius: var(--r-pill); font-size: 21px; font-weight: 800; white-space: nowrap; }
+.beta-courses .post-mark { width: 40px; height: 40px; border-radius: 50%; }
+.beta-note { margin-top: 4px; color: var(--c-muted); font-size: 24px; font-weight: 700; }
+.beta-scale { display: flex; gap: 12px; padding: 0; list-style: none; }
+.beta-scale li { display: grid; place-items: center; width: 48px; height: 48px; border: 2px solid var(--c-line-strong); border-radius: 50%; color: var(--c-ink-2); font-family: var(--font-num); font-size: 24px; font-weight: 800; }
+.beta-lines { margin-top: 0; }
+.beta-lines i { display: block; height: 34px; border-bottom: 3px dotted var(--c-line-strong); }

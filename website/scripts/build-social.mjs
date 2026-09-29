@@ -1,4 +1,4 @@
-// Renders the social adverts in design/social/: four 1080×1350 (4:5) PNGs
+// Renders the social adverts in design/social/: five 1080×1350 (4:5) PNGs
 // for Instagram and Reddit. The posts live in scripts/social/posts.jsx and
 // are drawn with the real Circuit components (emblems, level tiles, scenes,
 // Pip and a live explainer frame), so they can't drift from the product.

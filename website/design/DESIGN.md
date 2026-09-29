@@ -27,6 +27,7 @@ the current running through it. Each reference contributed one idea:
 | Mimo | Game HUD (streak, XP, level), pressable 3D buttons, visible progress | Rail HUD chips, `.btn-go`, lesson segment bar, combo meter |
 | Shapez | Shapes built from four quadrants, stacked in layers, carried on belts | `Emblem.jsx`, mastery layers, animated traces |
 | Polly | A friendly guide that makes a chat feel like company | `Pip.jsx` (tutor avatar, checkpoints, empty states) |
+| Duolingo · Credly | Collectible achievements that level up; badges with a frame, ribbon and rank worth showing off | Study creatures (`Critter.jsx`): milestones that hatch and evolve Bronze → Silver → Gold → Legend |
 | Coursera | Units, lessons and a sense of place in a course | Units as worlds; lesson stages Watch → Learn → Practise → Master |
 | Substack | Calm long-form reading in a serif | Literata for English sources and notes |
 
@@ -74,6 +75,8 @@ hardcode a colour in a component.
 - Subject identity: `--subject`, `--subject-alt` plus derived
   `--subject-strong` and `--subject-wash`, set by `<html data-subject>`.
 - Graphics: `--emblem-line`, `--emblem-ghost`, `--tile-*`, `--scene-*`.
+- Creature ranks: `--rank-bronze`, `--rank-silver`, `--rank-gold`,
+  `--rank-legend` (volt) for milestone badge frames.
 - Radii `--r-sm` to `--r-xl`, shadows `--sh-1` to `--sh-3`, motion
   `--ease-out` and `--ease-spring`.
 
@@ -124,9 +127,10 @@ letter-spaced 0.08em.
 | `base.css` | Reset, buttons, chips, cards, graphics primitives and motion (the `@public` section is exported to the selector) |
 | `shell.css` | Night rail, top bar, bottom tab dock, command palette |
 | `overlays.css` | Celebrations, confetti, toasts, dialogs |
+| `critters.css` | Study creature art, eggs and rank badges (graphics only) |
 | `video.css` | Explainer player: board themes (`--b-*`), controls, checkpoints, captions |
 | `learn.css` | Course map worlds, level tiles, lesson HUD, notes deck, mastery panel |
-| `home.css` | Dashboard bento board, next-step card, streak week |
+| `home.css` | Dashboard bento board, next-step card, streak week, creature collection |
 | `pages.css` | Login, exam hall, results, notebook, chat, texts, choice tiles |
 
 The two clients stay separate bundles. Scope new global rules to a page
@@ -152,6 +156,12 @@ shell.
   `recommendTile(groups)`.
 - **Next step** (`clients/shared/NextStep.jsx`) and the dashboard bento
   (`clients/shared/DashboardHome.jsx`).
+- **Milestones** (`clients/shared/Milestones.jsx`): the creature
+  collection. Cards open a detail dialog (pet the creature, see its
+  evolution line, one action that grows it, share); evolutions since the
+  last visit replay as a celebration. Tiers are recomputed from evidence
+  (`critters.js`); the only browser storage is a per-user "last tiers shown"
+  cache that decides whether to play the animation.
 
 ## Layout
 

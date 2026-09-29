@@ -21,7 +21,8 @@ import { hueVar, starsFor, strandInfo } from './circuit/palette.js';
 //   week      mission + readiness + 7-day plan (StudyDashboard)
 //   shapes    the emblem collection: every topic, built from marks
 //   boss      timed papers as boss levels
-//   proof     level/badges, memory checks, milestones
+//   creatures milestones: evidence-fed creatures that hatch and evolve
+//   proof     level/badges, memory checks
 // Test contract kept: h1, .stat-card, .mission-card, .week-plan,
 // .plan-card, .expertise-path, .papers-grid, .paper-card, .btn.
 
@@ -348,11 +349,23 @@ export default function DashboardHome({
         ) : null}
       </section>
 
-      <SectionTitle num="05">Proof it&rsquo;s sticking</SectionTitle>
+      <SectionTitle num="05">Milestones</SectionTitle>
+      <MilestoneShelf
+        progress={progress}
+        mistakes={Array.isArray(personal?.mistakes) ? personal.mistakes : null}
+        topicCount={topics.length}
+        subject={subjectKey}
+        userId={userId}
+        subjectName={title.replace('Your ', '')}
+        learnBase={learnBase}
+        nextHref={nextStep.step?.href || null}
+        api={api}
+      />
+
+      <SectionTitle num="06">Proof it&rsquo;s sticking</SectionTitle>
       <div className="proof-grid">
         <ExpertisePath progress={progress} onChooseLesson={() => navigate(learnBase)} />
         <MemRiCard userId={userId} subject={subjectKey} api={api} />
-        <MilestoneShelf progress={progress} subjectName={title.replace('Your ', '')} api={api} />
       </div>
     </div>
   );

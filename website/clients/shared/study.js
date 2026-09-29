@@ -122,32 +122,6 @@ export function missionOutcome(res) {
   };
 }
 
-// Milestones with real meaning: streak eras, paper counts, lesson counts.
-// Each reached milestone is shareable; streak eras also bank a freeze
-// server-side, so the payout is protection, not confetti.
-const MILESTONE_DEFS = [
-  { id: 'streak-7', kind: 'streak', at: 7, label: '7-day streak', detail: 'A full week — banks a streak freeze.' },
-  { id: 'streak-30', kind: 'streak', at: 30, label: '30-day streak', detail: 'A full month — banks a streak freeze.' },
-  { id: 'streak-100', kind: 'streak', at: 100, label: '100-day streak', detail: 'Century club — banks a streak freeze.' },
-  { id: 'papers-1', kind: 'papers', at: 1, label: 'First timed paper', detail: 'Sat a full paper under exam conditions.' },
-  { id: 'papers-10', kind: 'papers', at: 10, label: '10 timed papers', detail: 'Double digits of exam-day practice.' },
-  { id: 'papers-25', kind: 'papers', at: 25, label: '25 timed papers', detail: 'A whole exam season of papers.' },
-  { id: 'lessons-5', kind: 'lessons', at: 5, label: '5 lessons completed', detail: 'Five topics learned and drilled.' },
-  { id: 'lessons-25', kind: 'lessons', at: 25, label: '25 lessons completed', detail: 'Serious ground covered.' },
-];
-
-export function milestonesFor(progress) {
-  const values = {
-    streak: progress?.streak ?? 0,
-    papers: progress?.testsTaken ?? 0,
-    lessons: progress?.lessonsCompleted ?? 0,
-  };
-  return MILESTONE_DEFS.map((def) => {
-    const value = values[def.kind] ?? 0;
-    return { ...def, value, reached: value >= def.at };
-  });
-}
-
 // Fix-Up 5 targeting: due mistake topics first (most urgent), then weakest
 // practised topics. Returns topic ids for Maths, skill/kind routing for
 // English (writing weaknesses route to lessons — quick-fire can't mark

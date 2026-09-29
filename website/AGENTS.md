@@ -66,6 +66,10 @@ The clients remain separate because their question formats, grading logic and gl
 - `clients/shared/AppShell.jsx`, `DashboardHome.jsx`, `NextStep.jsx`,
   `CourseMap.jsx`, `LessonKit.jsx`, `rewards.jsx`: the shared shell, home,
   course map, lesson stages and rewards used by both clients.
+- `clients/shared/Milestones.jsx` and `critters.js`: milestones as a
+  collection of study creatures. Each creature's tier is recomputed from one
+  evidence track (progress or the mistake notebook); art is
+  `circuit/Critter.jsx`.
 - `clients/shared/GraphicsLab.jsx`: the `/<subject>/lab` catalogue of every
   graphic and explainer (signed in, not linked in the nav).
 - `design/`: the Circuit design doc (`design-doc.html`) and handoff guides:
@@ -255,7 +259,7 @@ docker compose up --build
 - Themes (light and dark) are driven by the Circuit tokens in `clients/shared/circuit/tokens.css` (`--c-*`, `--hue-*`, `--subject`). Legacy `study-desk.css` and `theme.css` variables are remapped onto them. The `data-theme` attribute is set on `<html>` and persisted under the `gcse-theme` localStorage key so the choice survives across the selector and both subjects. New UI should consume these tokens rather than hardcoding colors; see `design/DESIGN.md`.
 - Every colour, border and surface should stay legible in both themes. Dark mode is not a shadow of the light design; it uses its own night surfaces, muted text and brighter hues on the same grid and typography.
 - Graphics are custom SVG components in `clients/shared/circuit/`. Do not add icon fonts, emoji or stock illustrations, and do not add default system or "AI" typefaces; the self-hosted stack is Unbounded, Atkinson Hyperlegible Next and Mono, Literata and Kalam. Follow `design/GRAPHICS.md`.
-- Stars, emblem layers and mastery come only from server-marked evidence (`starsFor`, `layersForStage` and the server's `masteryStage`). Never award them for viewing a page, and never lock a topic behind another.
+- Stars, emblem layers, mastery and creature tiers come only from server-marked evidence (`starsFor`, `layersForStage`, the server's `masteryStage` and `critterCollection`). Never award them for viewing a page, and never lock a topic behind another.
 - Explainer scripts are pure data. Run `npm run explainers:check` after adding or changing one, and follow `design/VIDEO_AUTHORING.md`. Explainer voice, caption and speed settings live under the `gcse-explainer-prefs` localStorage key as a UI preference only.
 - After changing a graphic used on the public pages, run `npm run art:export` and commit `selector/art.js` and `selector/circuit-public.css`. Never edit those two files by hand.
 - The adverts in `design/social/` are generated. Change `scripts/social/posts.jsx`, run `npm run social:build` and commit the PNGs with `alt-text.md`; rebuild after changing a graphic they use or a count they show. Their copy follows the same claim rules as the product.

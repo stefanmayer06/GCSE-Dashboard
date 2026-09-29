@@ -1,4 +1,4 @@
-"""Build the Volta brand assets and the brand-kit page.
+"""Build the Clevolta brand assets and the brand-kit page.
 
 Run from website/: python3 design/brand/src/brand.py
 Needs: pip install fonttools brotli uharfbuzz
@@ -7,6 +7,7 @@ The wordmark is Unbounded ExtraBold (OFL) from selector/fonts, shaped with
 HarfBuzz so the font's own kerning applies, then converted to outlines.
 """
 import html
+import math
 import os
 import sys
 
@@ -15,6 +16,9 @@ from glyphs import shape
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(SRC_DIR)
 os.makedirs(OUT, exist_ok=True)
+
+NAME = 'Clevolta'   # clever + Volta
+WORD = NAME.lower()
 
 NIGHT = '#191b30'
 NIGHT_INK = '#f2f3ff'
@@ -55,7 +59,7 @@ def quarter(idx, fill, r=R, line=NIGHT, sw=SW, cls=None, dash=None, stroke=None)
 
 
 def disc(state='building', line=NIGHT, vq_class=None, volt=VOLT, hues=None, ghost='rgba(25,27,48,0.07)'):
-    """The Volta disc in mark units, centred on 0,0."""
+    """The Clevolta disc in mark units, centred on 0,0."""
     hues = hues or QUARTERS
     if state == 'blueprint':
         body = f'<circle r="{f(R + 6)}" fill="{ghost}"/>'
@@ -94,7 +98,7 @@ def svg(view, body, width=None, height=None, title=None, cls=None, extra=''):
     return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{view}"{size}{role}{c}{extra}>{t}{body}</svg>'
 
 
-def mark_svg(state='building', size=None, title='Volta', line=NIGHT, vq_class=None, pad=10, cls=None):
+def mark_svg(state='building', size=None, title=NAME, line=NIGHT, vq_class=None, pad=10, cls=None):
     ext = R + (8 + 2 if state == 'closed' else 6 if state == 'blueprint' else SW / 2) + pad
     return svg(f'{f(-ext)} {f(-ext)} {f(ext * 2)} {f(ext * 2)}', disc(state, line, vq_class), size, size, title, cls)
 
@@ -102,7 +106,7 @@ def mark_svg(state='building', size=None, title='Volta', line=NIGHT, vq_class=No
 # ---------------------------------------------------------------- wordmark
 WM_WGHT = 800
 WM_TRACK = -4
-WM_D, WM_W, WM_B = shape('volta', WM_WGHT, WM_TRACK)
+WM_D, WM_W, WM_B = shape(WORD, WM_WGHT, WM_TRACK)
 ASC = -WM_B[1]            # top of the l (770)
 
 
@@ -110,14 +114,14 @@ def wordmark_group(ink, x=0, y=0, k=1.0):
     return f'<path d="{WM_D}" fill="{ink}" transform="translate({f(x)} {f(y)}) scale({f(k)})"/>'
 
 
-def wordmark_svg(ink, height=None, title='Volta'):
+def wordmark_svg(ink, height=None, title=NAME):
     x0, y0, x1, y1 = WM_B
     pad = 40
     vb = f'{f(x0 - pad)} {f(y0 - pad)} {f(x1 - x0 + pad * 2)} {f(y1 - y0 + pad * 2)}'
     return svg(vb, wordmark_group(ink), height=height, title=title)
 
 
-def lockup(ink, sub=None, sub_ink=None, height=None, title='Volta'):
+def lockup(ink, sub=None, sub_ink=None, height=None, title=NAME):
     """Disc + wordmark on one line. Font units, baseline at y=0."""
     top, bottom = -ASC - 6, 17          # disc spans cap top to overshoot
     d = bottom - top
@@ -139,7 +143,7 @@ def lockup(ink, sub=None, sub_ink=None, height=None, title='Volta'):
 
 
 def stacked(ink, height=None):
-    d = 1000
+    d = max(1000, 0.3 * (WM_B[2] - WM_B[0]))   # disc keeps pace with the word
     k = d / (2 * (R + SW / 2))
     gap = 230
     ww = WM_B[2] - WM_B[0]
@@ -150,14 +154,14 @@ def stacked(ink, height=None):
     w = max(d, ww) + pad * 2
     top = -d / 2 - pad
     h = d + gap + ASC + 17 + pad * 2
-    return svg(f'{f(-w / 2)} {f(top)} {f(w)} {f(h)}', body, height=height, title='Volta')
+    return svg(f'{f(-w / 2)} {f(top)} {f(w)} {f(h)}', body, height=height, title=NAME)
 
 
 # ---------------------------------------------------------------- app icons
 OPT = -0.05 * R   # optical centring: the small volt quarter shifts the visual mass
 
 
-def icon(kind='night', size=None, title='Volta app icon'):
+def icon(kind='night', size=None, title=f'{NAME} app icon'):
     k = 600 / (2 * (R + SW / 2))
     if kind == 'night':
         bg = f'<rect width="1024" height="1024" rx="230" fill="{NIGHT}"/>'
@@ -180,20 +184,20 @@ def favicon():
     k = 25 / (2 * (R + SW / 2))
     body = (f'<rect width="32" height="32" rx="8" fill="{NIGHT}"/>'
             f'<g transform="translate({f(16 + OPT * k)} {f(16 + OPT * k)}) scale({f(k)})">{disc("building")}</g>')
-    return svg('0 0 32 32', body, title='Volta')
+    return svg('0 0 32 32', body, title=NAME)
 
 
 def android_foreground():
     # 108dp canvas, 66dp safe zone: art stays inside the inner 72%.
     k = 560 / (2 * (R + SW / 2))
     body = f'<g transform="translate({f(512 + OPT * k)} {f(512 + OPT * k)}) scale({f(k)})">{disc("building")}</g>'
-    return svg('0 0 1024 1024', body, 1024, 1024, 'Volta')
+    return svg('0 0 1024 1024', body, 1024, 1024, NAME)
 
 
 def android_monochrome():
     k = 560 / (2 * (R + SW / 2))
     body = f'<g transform="translate({f(512 + OPT * k)} {f(512 + OPT * k)}) scale({f(k)})">{mono_disc("#000000")}</g>'
-    return svg('0 0 1024 1024', body, 1024, 1024, 'Volta')
+    return svg('0 0 1024 1024', body, 1024, 1024, NAME)
 
 
 # ---------------------------------------------------------------- page-only art
@@ -211,12 +215,17 @@ def construct():
         f'</g>'
     )
     return svg('-56 -56 112 112', guides + disc('building', vq_class='vq') + labels,
-               title='Construction of the Volta disc')
+               title=f'Construction of the {NAME} disc')
 
 
 def meaning_icons():
     L = f'stroke="{NIGHT}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"'
-    volt = svg('-24 -24 48 48', f'<path d="{qd(30)}" transform="translate(-13 13)" fill="{VOLT}" {L}/>')
+    pts = []
+    for i in range(10):
+        r = 18 if i % 2 == 0 else 7.6
+        t = math.radians(-90 + i * 36)
+        pts.append(f'{f(r * math.cos(t))} {f(r * math.sin(t) + 1.5)}')
+    clever = svg('-24 -24 48 48', f'<path d="M{"L".join(pts)}Z" fill="#f5a300" {L}/>')
     pile = ''
     for i, c in enumerate([PURP, TANG, VOLT]):
         y = 11 - i * 9
@@ -231,7 +240,7 @@ def meaning_icons():
                 f'<path d="M15 -9A17 17 0 1 0 17 4" fill="none" {L}/>'
                 f'<path d="M9 -12l7 3 1-8" fill="none" {L}/>'
                 f'<path d="{qd(10)}" transform="translate(-5 5)" fill="{VOLT}" {L}/>')
-    return volt, pile, turn, again
+    return clever, pile, turn, again
 
 
 def sizes(line_bg):
@@ -285,6 +294,17 @@ SOURCES = [
     ('Poetry Foundation: Volta', 'https://www.poetryfoundation.org/education/glossary/volta'),
     ('App Store: Volta (indeHealth)', 'https://apps.apple.com/us/app/volta/id6547832204'),
     ('Google Play: Volta (tutoring management)', 'https://play.google.com/store/apps/details?id=co.penny.pujwh'),
+    ('App Store: Volta AI', 'https://apps.apple.com/us/app/volta-ai/id1628105999'),
+    ('App Store: Volta Live', 'https://apps.apple.com/us/app/volta-live/id6769760087'),
+    ('App Store: Volta EV', 'https://apps.apple.com/us/app/volta-ev/id6754547857'),
+    ('Google Play: Volta Driver', 'https://play.google.com/store/apps/details?id=com.yourvolta.driver&hl=en_US'),
+    ('Wikipedia: Clever (company), owned by Kahoot', 'https://en.wikipedia.org/wiki/Clever_(company)'),
+    ('Y Combinator: Cleva', 'https://www.ycombinator.com/companies/cleva'),
+    ('Les Clés de Volta', 'https://www.lesclesdevolta.fr/'),
+    ('Hager: Volta replacement key', 'https://hager.com/intl-fr/produits/informations/vz304n-cle-de-rechange-volta-fermet-vz302n'),
+    ('Apple iTunes Search API (App Store lookups, GB and US)', 'https://itunes.apple.com/search?term=clevolta&entity=software&country=gb'),
+    ('Google Play search: clevolta', 'https://play.google.com/store/search?q=clevolta&c=apps'),
+    ('Companies House search: clevolta', 'https://find-and-update.company-information.service.gov.uk/search/companies?q=clevolta'),
     ('App Store: Revvo', 'https://apps.apple.com/us/app/revvo/id6775417070'),
     ('App Store: Piply AI', 'https://apps.apple.com/us/app/piply-ai-study-exam-prep/id6759463981'),
     ('Pippit education tools', 'https://www.pippit.ai/tools/education'),
@@ -298,7 +318,7 @@ SOURCES = [
 
 def page():
     tpl = open(os.path.join(SRC_DIR, 'brand-template.html')).read()
-    v, p, t, a = meaning_icons()
+    c, p, t, a = meaning_icons()
     rail = mark_svg(size=36, title=None, pad=1)
     fills = {
         'LOCKUP_NIGHT': lockup(NIGHT_INK),
@@ -308,7 +328,7 @@ def page():
         'WORDMARK_VOLT': wordmark_svg(NIGHT, height=90),
         'SUB_MATHS': lockup(NIGHT_INK, 'maths', BLUE_ON_NIGHT),
         'SUB_ENGLISH': lockup(NIGHT_INK, 'english', TANG_ON_NIGHT),
-        'ICON_VOLT': v, 'ICON_PILE': p, 'ICON_TURN': t, 'ICON_AGAIN': a,
+        'ICON_CLEVER': c, 'ICON_PILE': p, 'ICON_TURN': t, 'ICON_AGAIN': a,
         'MARK_CONSTRUCT': construct(),
         'STATE_BLUEPRINT': mark_svg('blueprint', title='Blueprint state'),
         'STATE_BUILDING': mark_svg('building', title='Building state'),
@@ -317,7 +337,7 @@ def page():
         'SIZES_NIGHT': sizes(NIGHT),
         'ICONS': icons_block(),
         'RAIL_MARK': rail,
-        'ICON_SMALL': icon('night', title='Volta'),
+        'ICON_SMALL': icon('night', title=NAME),
         'AVATAR': svg('0 0 100 100', f'<circle cx="50" cy="50" r="50" fill="{NIGHT}"/>'
                       f'<g transform="translate({f(50 + OPT * 0.72)} {f(50 + OPT * 0.72)}) scale(0.72)">{disc()}</g>'),
         'DONTS': donts(),
@@ -336,26 +356,26 @@ def write(name, content):
 
 
 if __name__ == '__main__':
-    write('volta-mark.svg', mark_svg('building', pad=2))
-    write('volta-mark-closed.svg', mark_svg('closed', pad=2))
-    write('volta-mark-blueprint.svg', mark_svg('blueprint', pad=2))
-    write('volta-mark-mono.svg', svg('-42 -42 84 84', mono_disc('#191b30'), title='Volta'))
-    write('volta-wordmark.svg', wordmark_svg(NIGHT))
-    write('volta-wordmark-light.svg', wordmark_svg(NIGHT_INK))
-    write('volta-lockup.svg', lockup(NIGHT))
-    write('volta-lockup-light.svg', lockup(NIGHT_INK))
-    write('volta-lockup-stacked.svg', stacked(NIGHT))
-    write('volta-lockup-stacked-light.svg', stacked(NIGHT_INK))
-    write('volta-maths-lockup-light.svg', lockup(NIGHT_INK, 'maths', BLUE_ON_NIGHT))
-    write('volta-english-lockup-light.svg', lockup(NIGHT_INK, 'english', TANG_ON_NIGHT))
-    write('volta-maths-lockup.svg', lockup(NIGHT, 'maths', BLUE))
-    write('volta-english-lockup.svg', lockup(NIGHT, 'english', '#e0600f'))
-    write('volta-app-icon.svg', icon('night', 1024))
-    write('volta-app-icon-paper.svg', icon('paper', 1024))
-    write('volta-app-icon-mono.svg', icon('mono', 1024))
-    write('volta-android-foreground.svg', android_foreground())
-    write('volta-android-monochrome.svg', android_monochrome())
-    write('volta-favicon.svg', favicon())
+    write(f'{WORD}-mark.svg', mark_svg('building', pad=2))
+    write(f'{WORD}-mark-closed.svg', mark_svg('closed', pad=2))
+    write(f'{WORD}-mark-blueprint.svg', mark_svg('blueprint', pad=2))
+    write(f'{WORD}-mark-mono.svg', svg('-42 -42 84 84', mono_disc('#191b30'), title=NAME))
+    write(f'{WORD}-wordmark.svg', wordmark_svg(NIGHT))
+    write(f'{WORD}-wordmark-light.svg', wordmark_svg(NIGHT_INK))
+    write(f'{WORD}-lockup.svg', lockup(NIGHT))
+    write(f'{WORD}-lockup-light.svg', lockup(NIGHT_INK))
+    write(f'{WORD}-lockup-stacked.svg', stacked(NIGHT))
+    write(f'{WORD}-lockup-stacked-light.svg', stacked(NIGHT_INK))
+    write(f'{WORD}-maths-lockup-light.svg', lockup(NIGHT_INK, 'maths', BLUE_ON_NIGHT))
+    write(f'{WORD}-english-lockup-light.svg', lockup(NIGHT_INK, 'english', TANG_ON_NIGHT))
+    write(f'{WORD}-maths-lockup.svg', lockup(NIGHT, 'maths', BLUE))
+    write(f'{WORD}-english-lockup.svg', lockup(NIGHT, 'english', '#e0600f'))
+    write(f'{WORD}-app-icon.svg', icon('night', 1024))
+    write(f'{WORD}-app-icon-paper.svg', icon('paper', 1024))
+    write(f'{WORD}-app-icon-mono.svg', icon('mono', 1024))
+    write(f'{WORD}-android-foreground.svg', android_foreground())
+    write(f'{WORD}-android-monochrome.svg', android_monochrome())
+    write(f'{WORD}-favicon.svg', favicon())
     with open(os.path.join(OUT, 'brand-kit.html'), 'w') as fh:
         fh.write(page())
     print('wrote', len([n for n in os.listdir(OUT) if n.endswith('.svg')]), 'SVGs and brand-kit.html to', OUT)

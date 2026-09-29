@@ -1,4 +1,4 @@
-<title>Volta Brand Kit</title>
+<title>Clevolta Brand Kit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Unbounded:wght@500;700;800&display=swap">
@@ -24,6 +24,7 @@
   --accent: #3d6bff;
   --good: #07845a;
   --bad: #cc2f45;
+  --warn: #9a5c00;
   --paper-stage: #f2f3fa;
   /* Fixed brand colours: identical in both themes because they are the logo. */
   --b-night: #191b30;
@@ -52,7 +53,7 @@
     --bg: #0e0f1d; --surface: #161a2e; --surface-2: #1c2038; --ink: #eef0ff; --ink-2: #d2d6f3;
     --muted: #a4a9cb; --line: #292e4c; --line-strong: #454b73; --stage: #090a15; --stage-2: #151829;
     --stage-ink: #f2f3ff; --stage-muted: #aeb3d6; --volt: #d4ff5c; --volt-ink: #1f2600; --accent: #8aa6ff;
-    --good: #4fe0a4; --bad: #ff8591; --paper-stage: #e8eaf7;
+    --good: #4fe0a4; --bad: #ff8591; --warn: #ffc443; --paper-stage: #e8eaf7;
     color-scheme: dark;
   }
 }
@@ -60,7 +61,7 @@
   --bg: #0e0f1d; --surface: #161a2e; --surface-2: #1c2038; --ink: #eef0ff; --ink-2: #d2d6f3;
   --muted: #a4a9cb; --line: #292e4c; --line-strong: #454b73; --stage: #090a15; --stage-2: #151829;
   --stage-ink: #f2f3ff; --stage-muted: #aeb3d6; --volt: #d4ff5c; --volt-ink: #1f2600; --accent: #8aa6ff;
-  --good: #4fe0a4; --bad: #ff8591; --paper-stage: #e8eaf7;
+  --good: #4fe0a4; --bad: #ff8591; --warn: #ffc443; --paper-stage: #e8eaf7;
   color-scheme: dark;
 }
 
@@ -248,6 +249,7 @@ td .muted { color: var(--muted); }
 .s.free { color: var(--good); }
 .s.taken { color: var(--bad); }
 .s.todo { color: var(--muted); }
+.s.warn { color: var(--warn); }
 .next { margin: 0; padding: 0; display: grid; gap: 0; counter-reset: step; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
 .next li { list-style: none; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 14px; padding: 16px 20px; border-top: 1px solid var(--line); counter-increment: step; }
 .next li:first-child { border-top: 0; }
@@ -279,12 +281,12 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
   <div class="hero-lockup">{{LOCKUP_NIGHT}}</div>
   <div class="hero-lines">
     <div class="hero-tag">Fix what you <em>missed.</em></div>
-    <p>Volta is the proposed name for the product now called GCSE Study Desk. The mark is built from the app's own quadrant shapes: three quarters for the three courses, and a fourth in volt for the mastery you earn. The circle only closes when you fix what you missed.</p>
+    <p>Clevolta is the proposed name for the product now called GCSE Study Desk: clever and Volta, joined at the v. It leads with learning and keeps everything Volta meant. No app, company, business or domain was found using it. The mark is unchanged: three quarters for the three courses, and a fourth in volt for the mastery you earn.</p>
   </div>
   <div class="hero-meta">
-    <span class="chip"><b>Name</b> Volta</span>
-    <span class="chip"><b>Say it</b> VOL-tuh</span>
-    <span class="chip"><b>Store name</b> Volta: GCSE Revision</span>
+    <span class="chip"><b>Name</b> Clevolta</span>
+    <span class="chip"><b>Say it</b> kleh-VOL-tuh</span>
+    <span class="chip"><b>Store name</b> Clevolta: GCSE Revision</span>
     <span class="chip"><b>Guide</b> Pip</span>
   </div>
 </header>
@@ -292,27 +294,27 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
 <section class="section" id="name">
   <div class="section-head">
     <div class="eyebrow">The name</div>
-    <h2>One word, four meanings, all already in the app</h2>
-    <p class="lede">Most names in this market describe the product ("Save My Exams") or bolt on a prefix ("Revvo", "Revu"). Volta tells the product's story in a word a 15-year-old can say, spell and use as a verb.</p>
+    <h2>Clever, joined to Volta at the v</h2>
+    <p class="lede">Clevolta is a new word, so no one else owns it. It overlaps two words the way Pinterest overlaps pin and interest: <b>clev</b>er and <b>volta</b> share the v. A student reads "clever" first, so the name leads with learning, and all of Volta is still inside it.</p>
   </div>
   <div class="meanings">
-    <article class="meaning">{{ICON_VOLT}}<h3>Volt</h3><p>Volt lime is already the app's one reward colour: the go button, earned stars and mastered tiles. The name makes that colour the brand.</p></article>
-    <article class="meaning">{{ICON_PILE}}<h3>The pile</h3><p>In 1800 Alessandro Volta made the first battery by stacking discs. Circuit emblems also stack layers, and each layer comes from marked answers.</p></article>
+    <article class="meaning">{{ICON_CLEVER}}<h3>Clever</h3><p>The learning half. Clever is what revision is for, and it is a word every 15-year-old already uses. It comes first, so the name reads as learning before energy.</p></article>
+    <article class="meaning">{{ICON_PILE}}<h3>Volt and the pile</h3><p>Volt lime is the app's one reward colour. In 1800 Alessandro Volta made the first battery by stacking discs, and emblems also stack a layer for each marked success.</p></article>
     <article class="meaning">{{ICON_TURN}}<h3>The turn</h3><p>In a sonnet the volta is the turning point, where the argument changes direction. GCSE English students learn the term, and a fixed mistake is the same kind of turning point.</p></article>
     <article class="meaning">{{ICON_AGAIN}}<h3>Una volta</h3><p>In Italian, <i>ancora una volta</i> means "one more time". Mistakes come back after 1, 3, 7 and 21 days, and each return is one more go.</p></article>
   </div>
   <div class="say">
-    <div class="say-row"><strong>Volta Maths</strong><span>Replaces MathsMate. Foundation and Higher are tiers inside it, not separate brands.</span></div>
-    <div class="say-row"><strong>Volta English</strong><span>Replaces EnglishMate. Same mark, tangerine subject colour.</span></div>
-    <div class="say-row"><strong>“I'm on a 12-day Volta streak”</strong><span>Works in a sentence and as a verb: “Have you Volta'd today?”</span></div>
-    <div class="say-row"><strong>Pip, your Volta guide</strong><span>The mascot stays. Pip is already volt-coloured, so it fits the brand without a redraw.</span></div>
+    <div class="say-row"><strong>Clevolta Maths</strong><span>Replaces MathsMate. Foundation and Higher are tiers inside it, not separate brands.</span></div>
+    <div class="say-row"><strong>Clevolta English</strong><span>Replaces EnglishMate. Same mark, tangerine subject colour.</span></div>
+    <div class="say-row"><strong>“I'm on a 12-day Clevolta streak”</strong><span>Works in a sentence: “Have you done your Clevolta today?”</span></div>
+    <div class="say-row"><strong>Pip, your Clevolta guide</strong><span>The mascot stays. Pip is already volt-coloured, so it fits the brand without a redraw.</span></div>
   </div>
 </section>
 
 <section class="section" id="mark">
   <div class="section-head">
     <div class="eyebrow">The mark</div>
-    <h2>The Volta disc</h2>
+    <h2>The disc</h2>
     <p class="lede">The mark reuses the Shapez quadrant grammar behind every topic emblem, so the logo and the app use the same shapes. It keeps the favicon you already ship and adds one idea: the volt quarter is still growing.</p>
   </div>
   <div class="construct">
@@ -346,8 +348,8 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <figure class="art volt"><div class="art-wrap">{{WORDMARK_VOLT}}</div><figcaption>Wordmark alone · on volt</figcaption></figure>
   </div>
   <div class="subs">
-    <div class="sub">{{SUB_MATHS}}<p class="sub-note">Volta Maths · Foundation (8300) and Higher (8300H)</p></div>
-    <div class="sub">{{SUB_ENGLISH}}<p class="sub-note">Volta English · English Language (8700)</p></div>
+    <div class="sub">{{SUB_MATHS}}<p class="sub-note">Clevolta Maths · Foundation (8300) and Higher (8300H)</p></div>
+    <div class="sub">{{SUB_ENGLISH}}<p class="sub-note">Clevolta English · English Language (8700)</p></div>
   </div>
 </section>
 
@@ -369,7 +371,7 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <div class="mock">
       <div class="mock-app">
         <div class="mock-rail">
-          <div class="mock-brand">{{RAIL_MARK}}<div class="t"><b>Volta Maths</b><span>AQA Foundation</span></div></div>
+          <div class="mock-brand">{{RAIL_MARK}}<div class="t"><b>Clevolta Maths</b><span>AQA Foundation</span></div></div>
           <div class="mock-hud"><span>1 day</span><span>213 XP</span><span>Lvl 3</span></div>
           <div class="mock-nav"><span class="on">Dashboard</span><span>Practice</span><span>Learn</span><span>Notebook</span></div>
         </div>
@@ -384,11 +386,11 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <div class="mock-phone">
       <div class="grid">
         <div class="app"><i></i><span>Photos</span></div>
-        <div class="app">{{ICON_SMALL}}<span>Volta</span></div>
+        <div class="app">{{ICON_SMALL}}<span>Clevolta</span></div>
         <div class="app"><i></i><span>Music</span></div>
         <div class="app"><i></i><span>Notes</span></div>
       </div>
-      <div class="avatar">{{AVATAR}}<div><b>@volta.study</b><span>Fix what you missed.</span></div></div>
+      <div class="avatar">{{AVATAR}}<div><b>@clevolta</b><span>Fix what you missed.</span></div></div>
     </div>
   </div>
 </section>
@@ -402,7 +404,7 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <div class="rule do"><span class="tag">Do</span><ul>
       <li>Leave clear space equal to the volt quarter on every side.</li>
       <li>Use the night outline on light grounds. On night grounds it merges into the background and leaves gaps, which is intended.</li>
-      <li>Keep the minimum size at 16px for the mark and 72px wide for the lockup.</li>
+      <li>Keep the minimum size at 16px for the mark and 96px wide for the lockup.</li>
       <li>Use the closed disc only for a real, server-marked success.</li>
     </ul></div>
     <div class="rule dont"><span class="tag">Don't</span><div class="dont-art">{{DONTS}}</div></div>
@@ -464,15 +466,15 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <div class="camp"><h3>Descriptive</h3><div class="names"><span>Save My Exams</span><span>Maths Genie</span><span>Revision Village</span><span>Physics &amp; Maths Tutor</span><span>GCSE Study Desk</span></div><p>Clear on day one but impossible to own or trademark. The current name sits here.</p></div>
     <div class="camp"><h3>"Rev-" coinages</h3><div class="names"><span>Revvo</span><span>Revu</span><span>Reviso</span><span>Revlo</span><span>Revizoo</span></div><p>Five apps found on one page of store results. The prefix is saturated and they blur together.</p></div>
     <div class="camp"><h3>"AI" suffix</h3><div class="names"><span>Medly AI</span><span>Piply AI</span><span>Quira</span><span>Pippit</span></div><p>Positions the product as an AI tutor, which PRODUCT.md says Study Desk is not.</p></div>
-    <div class="camp gap"><h3>Story names</h3><div class="names"><span>Seneca</span><span>Volta</span></div><p>A real word with a story. Seneca, the market leader, is the one clear example. Volta joins it with a scientist and a poetry term.</p></div>
+    <div class="camp gap"><h3>Coined, with a story</h3><div class="names"><span>Clevolta</span></div><p>Duolingo and Memrise show the pattern: a new word built from parts that mean something. It tells a story, as Seneca does, and no one else can own it.</p></div>
   </div>
   <div class="section-head">
     <h3>What that means for the brand</h3>
   </div>
   <div class="rules">
-    <div class="rule"><span class="tag">Stay away from the bolt</span><p>Save My Exams' logo is a lightning bolt and Seneca's hero uses ⚡. Volta says electricity in its name, so the mark uses the quadrant disc instead.</p></div>
+    <div class="rule"><span class="tag">Stay away from the bolt</span><p>Save My Exams' logo is a lightning bolt and Seneca's hero uses ⚡. Clevolta already has volt in its name, so the mark uses the quadrant disc instead.</p></div>
     <div class="rule"><span class="tag">Sell the loop, not the bank</span><p>Free papers and questions are everywhere (Maths Genie, Corbettmaths, PMT, Bitesize). The only story here that competitors can't copy by adding content is the mistake-to-mastery loop, and the closing disc shows it.</p></div>
-    <div class="rule"><span class="tag">Be the game, not the library</span><p>Seneca, Save My Exams and Medly all open on white with flat blue or black, and none of them leads with a character. Their gamification is a feature, not the brand. Volta can make it the brand, with Pip and the night stage.</p></div>
+    <div class="rule"><span class="tag">Be the game, not the library</span><p>Seneca, Save My Exams and Medly all open on white with flat blue or black, and none of them leads with a character. Their gamification is a feature, not the brand. Clevolta can make it the brand, with Pip and the night stage.</p></div>
   </div>
   <div class="section-head">
     <h3>What the brands you like teach us</h3>
@@ -480,7 +482,7 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
   <div class="inspo">
     <div><b>Duolingo</b><span>A custom typeface drawn from the mascot's shapes.</span><em>The wordmark and Pip share the quadrant shapes.</em></div>
     <div><b>Mimo</b><span>A robot companion and a game HUD for a serious skill.</span><em>Pip plus the streak, XP and level chips.</em></div>
-    <div><b>Pied Piper</b><span>A name that is a story: the piper who leads everyone.</span><em>Volta carries four stories in five letters.</em></div>
+    <div><b>Pied Piper</b><span>A name that is a story: the piper who leads everyone.</span><em>Clevolta packs five ideas into one new word.</em></div>
     <div><b>Lego</b><span>A sticker outline, bold colour, and play made of pieces that click.</span><em>The night outline and a disc built from quarters.</em></div>
     <div><b>Kahoot!</b><span>Four answer shapes became the whole visual system.</span><em>Four quadrant shapes (C, R, S, W) already run every emblem.</em></div>
     <div><b>Intel and AMD</b><span>Chip heritage, lower case or all caps, strict geometry.</span><em>The circuit metaphor and an all-geometric mark.</em></div>
@@ -489,27 +491,30 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
   </div>
   <div class="section-head">
     <h3>Names considered</h3>
+    <p class="lede">Round two screened 119 invented names against the .com, .co.uk and .app registries. Only 26 were unregistered on all three, and Clevolta was the strongest of those.</p>
   </div>
+  <div class="camp"><div class="names"><span>clevolta</span><span>learnvolta</span><span>clevolt</span><span>clevola</span><span>voltademy</span><span>mindvolta</span><span>brainvolta</span><span>knowvolta</span><span>lernvolt</span><span>lernvolta</span><span>learnolta</span><span>learnivolt</span><span>lernivolt</span><span>studolta</span><span>whizvolt</span><span>swotvolt</span><span>lernbolt</span><span>knowquad</span><span>ahaquad</span><span>oopsaha</span><span>brainolo</span><span>lernolo</span><span>quizoba</span><span>lernaroo</span><span>learnoop</span><span>swotzilla</span></div><p>The 26 names with no registration on .com, .co.uk or .app.</p></div>
   <div class="shortlist">
-    <div class="cand"><strong>Volta</strong><span class="pill pick">Recommended</span><p>Four meanings that match the product and easy to say. No GCSE or UK revision brand found with the name, though a tutoring-management app and a US academy use it. Plain "Volta" is taken on the App Store by a college wellbeing app, so list as "Volta: GCSE Revision".</p></div>
-    <div class="cand"><strong>Quado</strong><span class="pill alt">Runner-up</span><p>"Quad" plus "o", like Lego and Mimo, for the four quarters. Cleaner trademark space (only Quadoo, a word game, and Kuado nearby) but a thinner story. Use it if Volta fails the trade-mark search.</p></div>
-    <div class="cand"><strong>Pipit</strong><span class="pill no">Rejected</span><p>Promotes the mascot, but it collides with Piply (a study app) and Pippit (ByteDance's AI content tool).</p></div>
-    <div class="cand"><strong>Pila</strong><span class="pill no">Rejected</span><p>Italian and Spanish for "battery" and "stack", but the OECD runs PILA, an education assessment platform. The pronunciation is also unclear in English.</p></div>
-    <div class="cand"><strong>Revo / Revvo</strong><span class="pill no">Rejected</span><p>Taken, and part of the crowded "Rev-" group.</p></div>
-    <div class="cand"><strong>Sparko, Bitsy</strong><span class="pill no">Rejected</span><p>Too close to Sparx and BBC Bitesize, two of the biggest names in UK schools.</p></div>
+    <div class="cand"><strong>Clevolta</strong><span class="pill pick">Recommended</span><p>Clever plus Volta. It leads with learning, keeps the Volta story and says easily. Every check below came back empty: no app, company, business or domain uses it.</p></div>
+    <div class="cand"><strong>Learnvolta</strong><span class="pill alt">Backup</span><p>The most literal version, and also unused everywhere checked. It is longer and less catchy, so keep it in reserve in case the trade-mark search blocks Clevolta.</p></div>
+    <div class="cand"><strong>Volta</strong><span class="pill no">Replaced</span><p>Too crowded to own. Volta AI, Volta Live, Volta EV, Volta Driver, a college wellbeing app and a tutoring-management app all use it.</p></div>
+    <div class="cand"><strong>Clevolt</strong><span class="pill no">Rejected</span><p>Unregistered, but klevolt.com is registered and sounds the same.</p></div>
+    <div class="cand"><strong>Quado</strong><span class="pill no">Rejected</span><p>Round one's runner-up. It is clean, but it has no learning in it.</p></div>
+    <div class="cand"><strong>Pipit, Pila, Revvo, Sparko</strong><span class="pill no">Rejected</span><p>Round one. Taken or too close to Piply and Pippit, the OECD's PILA, the "Rev-" apps, Sparx and BBC Bitesize.</p></div>
   </div>
   <div class="checks">
-    <div class="check"><h3>Checked on 29 September 2026</h3><ul>
-      <li><span class="s free">No record</span><span>volta.study · voltarevision.co.uk · voltarevision.com · govolta.app · voltarevise.com · voltaapp.co.uk (no RDAP registration found)</span></li>
-      <li><span class="s taken">Taken</span><span>volta.app · getvolta.app · volta.academy · volta.co.uk</span></li>
-      <li><span class="s taken">Taken</span><span>"Volta" on the App Store (indeHealth, college wellbeing) and on Google Play (tutoring-class management)</span></li>
-      <li><span class="s taken">Exists</span><span>Volta Tech Ltd and Volta Technologies Ltd at Companies House. No education activity found.</span></li>
+    <div class="check"><h3>Clevolta, checked on 29 September 2026</h3><ul>
+      <li><span class="s free">Clear</span><span>No domain registration for clevolta.com, .co.uk, .uk, .app, .net, .org, .io, .co, .study, .school, .academy, .education, .de or .eu</span></li>
+      <li><span class="s free">Clear</span><span>App Store (GB and US): no app with the name. Google Play: no results, where a "duolingo" control search returns 41 apps.</span></li>
+      <li><span class="s free">Clear</span><span>Companies House: "No results found".</span></li>
+      <li><span class="s free">Clear</span><span>Web search: no business, product or app with the name. The nearest are Les Clés de Volta, a French electrician, and Hager's "clé Volta" cabinet key.</span></li>
+      <li><span class="s warn">Watch</span><span>"Clev-" starts like Clever, the US school sign-in platform that Kahoot owns, and Cleva, a neobank. The words differ, but raise both in the trade-mark search.</span></li>
     </ul></div>
-    <div class="check"><h3>Still to do before spending money</h3><ul>
-      <li><span class="s todo">To do</span><span>UK IPO search for VOLTA in classes 9 (apps), 41 (education) and 42 (software as a service), as GO_TO_MARKET.md requires</span></li>
-      <li><span class="s todo">To do</span><span>Search the EU and US registers (TMview, USPTO) before an international release</span></li>
-      <li><span class="s todo">To do</span><span>Claim social handles (@volta.study or similar) on TikTok, Instagram and YouTube</span></li>
-      <li><span class="s todo">To do</span><span>Register the domain you pick. The records above only show that no registration existed on the day.</span></li>
+    <div class="check"><h3>Still to do</h3><ul>
+      <li><span class="s todo">Today</span><span>Register clevolta.com, clevolta.co.uk and clevolta.app. An unregistered name can be taken at any time.</span></li>
+      <li><span class="s todo">To do</span><span>Search the UK trade marks register for CLEVOLTA in classes 9 (apps), 41 (education) and 42 (software as a service), then file. The registers could not be searched from here.</span></li>
+      <li><span class="s todo">To do</span><span>Claim @clevolta on TikTok, Instagram, YouTube and X. Handles could not be checked from here.</span></li>
+      <li><span class="s todo">Later</span><span>Search the EU and US registers (TMview, USPTO) before an international release.</span></li>
     </ul></div>
   </div>
 </section>
@@ -520,10 +525,10 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <h2>From proposal to rename</h2>
   </div>
   <ol class="next">
-    <li><div><b>Clear the name</b><span>Run the UK IPO search. If VOLTA is live in class 41 for education, switch to Quado. The mark and system work unchanged.</span></div></li>
-    <li><div><b>Buy the domain and handles</b><span>Recommended: volta.study, plus voltarevision.co.uk as a redirect.</span></div></li>
-    <li><div><b>Rename in the code</b><span>"GCSE Study Desk", "MathsMate" and "EnglishMate" appear 161 times in 57 files, including store listings, legal pages, SEO metadata and the Expo config.</span></div></li>
-    <li><div><b>Ship the icon</b><span>Swap the favicon, the Expo icon sources and the rail brand mark for the Volta disc. The SVG sources are in <span class="mono">website/design/brand/</span>.</span></div></li>
+    <li><div><b>Register the domains</b><span>clevolta.com, clevolta.co.uk and clevolta.app, plus the social handles.</span></div></li>
+    <li><div><b>Clear and file the trade mark</b><span>Search the UK register, then file in classes 9 and 41. If Clevolta is blocked, use Learnvolta; the mark and system work unchanged.</span></div></li>
+    <li><div><b>Rename in the code</b><span>"GCSE Study Desk", "MathsMate" and "EnglishMate" appear on 163 lines in 64 files, including store listings, legal pages, SEO metadata, the pitch deck and the Expo config.</span></div></li>
+    <li><div><b>Ship the icon</b><span>Swap the favicon, the Expo icon sources and the rail brand mark for the Clevolta disc. The SVG sources are in <span class="mono">website/design/brand/</span>.</span></div></li>
   </ol>
 </section>
 
@@ -532,5 +537,5 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
   <ul class="sources">{{SOURCES}}</ul>
 </section>
 
-<footer>Proposal for Mayer Digital. Volta is not yet cleared as a trade mark, and nothing here implies AQA endorsement.</footer>
+<footer>Proposal for Mayer Digital. Clevolta is not yet a registered trade mark, and nothing here implies AQA endorsement.</footer>
 </main>

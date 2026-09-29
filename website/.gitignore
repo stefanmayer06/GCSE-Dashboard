@@ -59,3 +59,6 @@ playwright.local.config.mjs
 
 # Design doc copy without the <html> wrapper (for hosts that add their own)
 design/design-doc.fragment.html
+
+# Python bytecode from the brand generator (design/brand/src)
+__pycache__/

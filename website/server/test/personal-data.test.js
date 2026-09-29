@@ -20,12 +20,11 @@ async function temporaryStorage(t) {
 }
 
 test('personal model normalizes preferences, plans and mistake rows defensively', () => {
-  assert.deepEqual(normalizePreferences(null), { examDate: '', targetGrade: '', passMode: 'balanced', restDays: [], minutesPerDay: null });
+  assert.deepEqual(normalizePreferences(null), { examDate: '', targetGrade: '', restDays: [], minutesPerDay: null });
   assert.deepEqual(normalizePreferences({ examDate: '2027-06-01', targetGrade: '6', passMode: 'foundation-pass' }), {
-    examDate: '2027-06-01', targetGrade: '6', passMode: 'foundation-pass', restDays: [], minutesPerDay: null,
+    examDate: '2027-06-01', targetGrade: '6', restDays: [], minutesPerDay: null,
   });
   assert.equal(normalizePreferences({ examDate: 'nonsense' }).examDate, '');
-  assert.equal(normalizePreferences({ passMode: 'chaos' }).passMode, 'balanced');
   assert.deepEqual(normalizePreferences({ restDays: [0, 6, 6, 9, -1, 'sat'] }).restDays, [0, 6]);
   assert.equal(normalizePreferences({ minutesPerDay: 25 }).minutesPerDay, 25);
   assert.equal(normalizePreferences({ minutesPerDay: 500 }).minutesPerDay, 120);
@@ -135,8 +134,8 @@ test('JSON storage persists personal data per user and subject', async (t) => {
   await storage.init();
   assert.deepEqual(await storage.getPersonal('user-a', 'maths'), { preferences: null, plan: null, mistakes: [] });
 
-  const preferences = await storage.savePreferences('user-a', 'maths', { examDate: '2027-06-01', targetGrade: '6', passMode: 'foundation-pass' });
-  assert.deepEqual(preferences, { examDate: '2027-06-01', targetGrade: '6', passMode: 'foundation-pass' });
+  const preferences = await storage.savePreferences('user-a', 'maths', { examDate: '2027-06-01', targetGrade: '6' });
+  assert.deepEqual(preferences, { examDate: '2027-06-01', targetGrade: '6' });
 
   const plan = normalizePlan({
     from: '2026-09-01',

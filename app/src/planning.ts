@@ -1,8 +1,7 @@
 import type { Subject } from './theme';
 
-export type PassMode = 'balanced' | 'foundation-pass';
-export type PlanningPreferences = { examDate: string; targetGrade: string; passMode: PassMode; restDays: number[]; minutesPerDay: number | null };
-export const defaultPlanningPreferences: PlanningPreferences = { examDate: '', targetGrade: '', passMode: 'balanced', restDays: [], minutesPerDay: null };
+export type PlanningPreferences = { examDate: string; targetGrade: string; restDays: number[]; minutesPerDay: number | null };
+export const defaultPlanningPreferences: PlanningPreferences = { examDate: '', targetGrade: '', restDays: [], minutesPerDay: null };
 
 export type MissionResult = {
   percent: number;
@@ -44,7 +43,6 @@ export function parsePlanningPreferences(value: string | null): PlanningPreferen
     return {
       examDate: typeof raw.examDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.examDate) ? raw.examDate : '',
       targetGrade: typeof raw.targetGrade === 'string' ? raw.targetGrade.slice(0, 2) : '',
-      passMode: raw.passMode === 'foundation-pass' ? 'foundation-pass' : 'balanced',
       restDays: Array.isArray(raw.restDays) ? [...new Set((raw.restDays as unknown[]).filter((d): d is number => Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6))].sort((a, b) => a - b) : [],
       minutesPerDay: Number.isInteger(raw.minutesPerDay) ? Math.max(5, Math.min(120, raw.minutesPerDay as number)) : null,
     };
@@ -64,20 +62,19 @@ export function dateKey(now = new Date()) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
-function minutesFor(subject: Subject, passMode: PassMode, preferences?: PlanningPreferences) {
+function minutesFor(subject: Subject, preferences?: PlanningPreferences) {
   if (preferences && Number.isInteger(preferences.minutesPerDay)) {
     return Math.max(5, Math.min(120, preferences.minutesPerDay as number));
   }
-  if (passMode === 'foundation-pass' && subject === 'maths') return 15;
   return subject === 'english' ? 20 : 15;
 }
 
 const weekdayOf = (date: Date) => (date.getDay() + 6) % 7; // Monday = 0 … Sunday = 6
 
-export function buildPlan(subject: Subject, passMode: PassMode, focus: FocusTopic[], now = new Date(), preferences?: PlanningPreferences): PlanState {
+export function buildPlan(subject: Subject, focus: FocusTopic[], now = new Date(), preferences?: PlanningPreferences): PlanState {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
   const restDays = new Set(preferences?.restDays ?? []);
-  const minutes = minutesFor(subject, passMode, preferences);
+  const minutes = minutesFor(subject, preferences);
   let cursor = 0;
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(start.getTime() + index * 86_400_000);
@@ -182,10 +179,10 @@ export function fixupEnglishPlan(topicIds: string[], limit = 5): { skillIds: str
   };
 }
 
-export function stablePlan(stored: PlanState | null, subject: Subject, passMode: PassMode, focus: FocusTopic[], now = new Date(), preferences?: PlanningPreferences) {
+export function stablePlan(stored: PlanState | null, subject: Subject, focus: FocusTopic[], now = new Date(), preferences?: PlanningPreferences) {
   const today = dateKey(now);
   if (stored && stored.from === today && Array.isArray(stored.days) && stored.days.length === 7) return { plan: stored, changed: false };
-  return { plan: buildPlan(subject, passMode, focus, now, preferences), changed: true };
+  return { plan: buildPlan(subject, focus, now, preferences), changed: true };
 }
 
 function parseMissionResult(value: unknown): MissionResult | undefined {

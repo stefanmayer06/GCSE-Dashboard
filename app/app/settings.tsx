@@ -30,7 +30,6 @@ export default function Settings(){
     <Text style={[styles.copy,{color:colors.quiet}]}>These unvalidated planning preferences shape suggestions only. Server marks and progress remain authoritative.</Text>
     <TextInput accessibilityLabel="Exam date in YYYY-MM-DD format" value={planning.examDate} onChangeText={examDate=>setPlanning({...planning,examDate})} placeholder="Exam date: YYYY-MM-DD" placeholderTextColor={colors.quiet} style={[styles.input,{color:colors.ink,borderColor:colors.strong,backgroundColor:colors.raised}]}/>
     <TextInput accessibilityLabel="Target grade" value={planning.targetGrade} onChangeText={targetGrade=>setPlanning({...planning,targetGrade})} placeholder="Target grade" placeholderTextColor={colors.quiet} keyboardType="number-pad" style={[styles.input,{color:colors.ink,borderColor:colors.strong,backgroundColor:colors.raised}]}/>
-    {choice('Study mode',['balanced','foundation-pass'] as const,planning.passMode,passMode=>setPlanning({...planning,passMode}))}
     <Text style={[styles.copy,{color:colors.quiet}]}>Rest days each week (Mon–Sun). Rest days never carry a mission and never count as missed.</Text>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
       {['M','T','W','T','F','S','S'].map((label, index) => {

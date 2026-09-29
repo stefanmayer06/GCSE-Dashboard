@@ -39,7 +39,7 @@ function fakeApi(overrides = {}) {
 
 test('weeks run Monday to Sunday with today highlighted and review slots fixed', () => {
   // Tuesday 1 Sep 2026: the week anchor is Monday 31 Aug, today lands on day 2.
-  const plan = buildWeekPlan([{ id: 'fractions', name: 'Fractions' }, { id: 'ratio', name: 'Ratio' }], 'maths', true, new Date(2026, 8, 1, 9, 0));
+  const plan = buildWeekPlan([{ id: 'fractions', name: 'Fractions' }, { id: 'ratio', name: 'Ratio' }], 'maths', new Date(2026, 8, 1, 9, 0));
   assert.equal(plan.from, '2026-08-31');
   assert.equal(plan.days.length, 7);
   assert.equal(plan.days[0].date, '2026-08-31');
@@ -63,7 +63,7 @@ test('weekStartKey anchors every weekday to the same Monday', () => {
 });
 
 test('plan state helpers keep completion scoped to today and the started day', () => {
-  const plan = buildWeekPlan([{ id: 'fractions', name: 'Fractions' }], 'maths', false, new Date(2026, 8, 1, 9, 0));
+  const plan = buildWeekPlan([{ id: 'fractions', name: 'Fractions' }], 'maths', new Date(2026, 8, 1, 9, 0));
   const started = startPlanDayInState(plan, '2026-09-01', 'fractions');
   assert.deepEqual(started.intent, { date: '2026-09-01', topicId: 'fractions' });
   const done = completePlanDayInState(started, 'fractions', missionOutcome({ correctMarks: 4, totalMarks: 5, reward: { scoreXp: 12 } }));
@@ -77,7 +77,7 @@ test('plan state helpers keep completion scoped to today and the started day', (
 });
 
 test('lesson quick practice completes today without requiring a start intent', () => {
-  const plan = buildWeekPlan([{ id: 'sequences', name: 'Sequences' }], 'maths', false, new Date(2026, 8, 1, 9, 0));
+  const plan = buildWeekPlan([{ id: 'sequences', name: 'Sequences' }], 'maths', new Date(2026, 8, 1, 9, 0));
   const done = completePlanDayInState(plan, 'sequences', missionOutcome({ correctMarks: 3, totalMarks: 5 }), '2026-09-01');
   assert.equal(done.days[1].status, 'done');
   assert.equal(done.days[1].result.percent, 60);
@@ -123,7 +123,7 @@ test('mistake rows build, merge, advance and go due on schedule', () => {
 
 test('legacy local data imports once, uploads only empty domains and clears the keys', async (t) => {
   const values = memoryStorage(t, {
-    [personalKey('user', 'maths', 'study')]: JSON.stringify({ examDate: '2027-06-01', passMode: true }),
+    [personalKey('user', 'maths', 'study')]: JSON.stringify({ examDate: '2027-06-01' }),
     [personalKey('user', 'maths', 'plan')]: JSON.stringify({ from: '2026-09-01', days: [{ date: '2026-09-01', task: 'Fractions', topicId: 'fractions', status: 'todo' }] }),
     [personalKey('user', 'maths', 'mistakes')]: JSON.stringify([{ id: 'legacy:1', qid: 'q1', topic: 'Ratio', question: 'Simplify', marks: 1, max: 3, interval: 0, added: Date.now() }]),
   });
@@ -148,7 +148,7 @@ test('remote data wins and legacy data is never uploaded over it', async (t) => 
   const values = memoryStorage(t, {
     [personalKey('user', 'maths', 'study')]: JSON.stringify({ examDate: '2027-06-01' }),
   });
-  const { api, calls } = fakeApi({ personal: { preferences: { examDate: '2028-01-01', targetGrade: '', passMode: 'balanced' }, plan: null, mistakes: [] } });
+  const { api, calls } = fakeApi({ personal: { preferences: { examDate: '2028-01-01', targetGrade: '' }, plan: null, mistakes: [] } });
   await importLegacyPersonal(api, 'user', 'maths', { preferences: { examDate: '2028-01-01' }, plan: null, mistakes: [] });
   assert.equal(calls.preferences, 0);
   assert.equal(values.has(personalKey('user', 'maths', 'study')), false, 'legacy keys still cleared after skipping upload');
@@ -213,7 +213,7 @@ test('buildWeekPlan honours rest days and per-day minutes', async () => {
   const { buildWeekPlan, movePlanDay } = await import('../../clients/shared/study.js');
   const priority = [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }, { id: 'c', name: 'C' }];
   const prefs = { restDays: [6], minutesPerDay: 25 };
-  const plan = buildWeekPlan(priority, 'maths', false, new Date(2026, 8, 1, 9, 0), [], prefs);
+  const plan = buildWeekPlan(priority, 'maths', new Date(2026, 8, 1, 9, 0), [], prefs);
   const sunday = plan.days.find((d) => d.date === '2026-09-06');
   assert.equal(sunday.rest, true);
   assert.equal(sunday.task, 'Rest day');

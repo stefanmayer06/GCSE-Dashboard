@@ -18,26 +18,22 @@ export function readiness(progress) {
   return { ready: true, score: Math.round(correct / answered * 100), answered, topics: rows.length };
 }
 
-export function priorityTopics(topics, progress, passMode = false) {
+export function priorityTopics(topics, progress) {
   const stats = progress?.topicStats || {};
   return [...topics].sort((a, b) => {
     const aa = stats[a.id];
     const bb = stats[b.id];
     const aScore = aa ? aa.correct / aa.total : -1;
     const bScore = bb ? bb.correct / bb.total : -1;
-    // examWeight is a relative study-planning score, not a per-topic exam percentage.
-    const aCore = passMode ? -(Number(a.examWeight) || 0) / 100 : 0;
-    const bCore = passMode ? -(Number(b.examWeight) || 0) / 100 : 0;
-    return (aScore + aCore) - (bScore + bCore);
+    return aScore - bScore;
   });
 }
 
-function planMinutes(subject, passMode, preferences) {
+function planMinutes(subject, preferences) {
   const override = Number.isInteger(preferences?.minutesPerDay)
     ? Math.max(5, Math.min(120, preferences.minutesPerDay))
     : null;
   if (override) return override;
-  if (passMode && subject === 'maths') return 15;
   return subject === 'english' ? 20 : 15;
 }
 
@@ -51,7 +47,7 @@ export function weekStartKey(now = new Date()) {
 
 const weekdayOf = (date) => (date.getDay() + 6) % 7; // Monday = 0 … Sunday = 6
 
-export function buildWeekPlan(priority, subject, passMode, now = new Date(), seeds = [], preferences = null) {
+export function buildWeekPlan(priority, subject, now = new Date(), seeds = [], preferences = null) {
   const start = new Date(`${weekStartKey(now)}T12:00:00`);
   const today = dateKey(now);
   const restDays = new Set(
@@ -59,7 +55,7 @@ export function buildWeekPlan(priority, subject, passMode, now = new Date(), see
       ? preferences.restDays.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
       : [],
   );
-  const minutes = planMinutes(subject, passMode, preferences);
+  const minutes = planMinutes(subject, preferences);
   let lessonCursor = 0;
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(start.getTime() + index * DAY);

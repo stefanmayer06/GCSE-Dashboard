@@ -23,6 +23,7 @@
     "art:export": "node scripts/export-art.mjs",
     "design:shots": "node scripts/capture-design-shots.mjs",
     "design:doc": "node scripts/build-design-doc.mjs",
+    "social:build": "node scripts/build-social.mjs",
     "test:ui": "playwright test",
     "support:list": "node scripts/support-ops.mjs list",
     "support:prune": "node scripts/support-ops.mjs prune",

@@ -155,12 +155,14 @@ visual reference. The guides for extending it are:
 - `design/GRAPHICS.md`: how every custom graphic is built
 - `design/VIDEO_AUTHORING.md`: writing interactive explainer scripts
 - `design/NEW_SUBJECT.md`: the checklist for adding a subject
+- `design/social/README.md`: the Instagram and Reddit adverts
 
 ```bash
 npm run explainers:check   # validate explainer scripts
 npm run art:export         # re-render graphics for the public pages
 npm run design:shots       # recapture screens (app running on :3000)
 npm run design:doc         # rebuild design/design-doc.html
+npm run social:build       # re-render the adverts in design/social
 ```
 
 ## Routes

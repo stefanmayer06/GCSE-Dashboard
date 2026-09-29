@@ -9,6 +9,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { acquisitionReport, summarizeEvents } from '../event-report.js';
+import { feedbackExtras, feedbackReport } from '../feedback-report.js';
 
 const SCHEMA_VERSION = 1;
 const DEFAULT_STUDY_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
@@ -944,6 +945,7 @@ export function createJsonStorage({ dataDir } = {}) {
       message: requiredString(String(input.message), 'message'),
       email: typeof input.email === 'string' && input.email ? String(input.email) : null,
       source: typeof input.source === 'string' && input.source ? String(input.source) : null,
+      ...feedbackExtras(input),
       userAgent: typeof input.userAgent === 'string' && input.userAgent ? String(input.userAgent) : null,
       createdAt: isoDate(input.createdAt, 'createdAt', Date.now()),
     };
@@ -954,6 +956,12 @@ export function createJsonStorage({ dataDir } = {}) {
       await atomicWrite(feedbackFile, feedback);
       return true;
     });
+  }
+
+  async function getFeedbackReport(sinceDays = 90) {
+    await init();
+    const feedback = await readObject(feedbackFile);
+    return feedbackReport(Object.values(feedback), { sinceDays });
   }
 
   async function saveSupportRequest(input) {
@@ -1044,6 +1052,7 @@ export function createJsonStorage({ dataDir } = {}) {
     getAcquisitionReport,
     pruneEvents,
     saveFeedback,
+    getFeedbackReport,
     saveSupportRequest,
     listSupportRequests,
     pruneSupportRequests,

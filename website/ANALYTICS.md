@@ -70,6 +70,18 @@ environment. A blank report means no signup events were recorded in the selected
 window, not proof that nobody visited the site. Counts can lag when event writes
 fail or when a learner completes work on an untracked platform.
 
+## Beta feedback report
+
+The public feedback form (`selector/feedback.html`) stores optional design
+answers (a 1–5 clarity rating and a short note) and optional pricing answers
+(who would pay, preferred payment model and four Van Westendorp prices in pounds
+per month) in `beta_feedback`. `npm run feedback:report -- 90` aggregates them
+by role and source: response counts, average ratings, price medians and the
+four price-curve crossings. It uses only complete answer sets whose prices
+do not decrease. Like the acquisition report, it outputs no messages, notes,
+emails or identifiers. Treat price points from fewer than about 30 complete
+answers as directional.
+
 ## Non-goals
 
 - Events are not learning evidence. XP, streaks and readiness stay subject-scoped aggregates.

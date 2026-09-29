@@ -78,6 +78,53 @@ test('feedback route stores valid submissions through the JSON driver', async (t
   assert.ok(records[0].createdAt);
 });
 
+test('feedback route stores optional design and pricing answers', async (t) => {
+  const { dataDir, storage } = await temporaryStorage(t);
+  const routes = await listen(feedbackRoutes({ storage }));
+  t.after(routes.close);
+
+  const response = await routes.post(validBody({
+    role: 'parent',
+    designRating: 3,
+    designNote: '  The results page hides the retry button.  ',
+    payer: 'parent',
+    priceModel: 'season-pass',
+    priceTooCheap: '1',
+    priceBargain: '£4.50',
+    priceExpensive: 9.999,
+    priceTooExpensive: '',
+  }));
+  assert.equal(response.status, 201);
+
+  const [record] = Object.values(JSON.parse(await readFile(path.join(dataDir, 'feedback.json'), 'utf8')));
+  assert.equal(record.designRating, 3);
+  assert.equal(record.designNote, 'The results page hides the retry button.');
+  assert.equal(record.payer, 'parent');
+  assert.equal(record.priceModel, 'season-pass');
+  assert.equal(record.priceTooCheap, 1);
+  assert.equal(record.priceBargain, 4.5);
+  assert.equal(record.priceExpensive, 10);
+  assert.equal(record.priceTooExpensive, null);
+
+  const report = await storage.getFeedbackReport(90);
+  assert.equal(report.responses, 1);
+  assert.deepEqual(report.byRole, { parent: 1 });
+  assert.equal(report.designRating.average, 3);
+  assert.equal(JSON.stringify(report).includes('retry button'), false, 'the report never returns free text');
+});
+
+test('feedback without design or pricing answers stores nulls', async (t) => {
+  const { dataDir, storage } = await temporaryStorage(t);
+  const routes = await listen(feedbackRoutes({ storage }));
+  t.after(routes.close);
+
+  assert.equal((await routes.post(validBody({ payer: '', priceModel: '', designRating: null }))).status, 201);
+  const [record] = Object.values(JSON.parse(await readFile(path.join(dataDir, 'feedback.json'), 'utf8')));
+  for (const key of ['designRating', 'designNote', 'payer', 'priceModel', 'priceTooCheap', 'priceBargain', 'priceExpensive', 'priceTooExpensive']) {
+    assert.equal(record[key], null, key);
+  }
+});
+
 test('feedback route rejects invalid payloads without storing them', async (t) => {
   const { storage } = await temporaryStorage(t);
   const routes = await listen(feedbackRoutes({ storage, maxPerWindow: 50 }));
@@ -89,6 +136,12 @@ test('feedback route rejects invalid payloads without storing them', async (t) =
     validBody({ rating: 9 }),
     validBody({ rating: 'excellent' }),
     validBody({ message: '   ' }),
+    validBody({ designRating: 6 }),
+    validBody({ payer: 'grandparent' }),
+    validBody({ priceModel: 'lifetime' }),
+    validBody({ priceBargain: -1 }),
+    validBody({ priceExpensive: 'a lot' }),
+    validBody({ priceTooExpensive: 250 }),
     {},
   ]) {
     const response = await routes.post(body);

@@ -46,6 +46,7 @@ The clients remain separate because their question formats, grading logic and gl
 - `server/src/personal.js`: per-subject `/personal` routes backing preferences, the saved 7-day plan, the mistake notebook and durable paper attempts.
 - `server/src/analytics.js`: authenticated `POST /api/events` append route and `GET /api/events/summary` activation/funnel summary, backed by the storage driver (`events.json` locally, `product_events` on Supabase). See `ANALYTICS.md` for the event taxonomy, activation definition and retention policy.
 - `server/src/feedback.js`: public, rate-limited `POST /api/feedback` route storing beta-tester feedback through the storage driver (`feedback.json` locally, `beta_feedback` table on Supabase).
+- `server/src/feedback-report.js`: aggregate-only beta feedback report (design ratings, payer and payment-model counts, Van Westendorp price summary) behind `npm run feedback:report`. See `BETA_RECRUITMENT.md`.
 - `server/src/support.js`: public, rate-limited `POST /api/support` route storing help and privacy requests privately (`support-requests.json` locally, `support_requests` on Supabase).
 - `clients/shared/study-personal.js`: web personal-data repository, hydration and one-time legacy localStorage import.
 - `server/src/supabase/`: Supabase server client configuration and secret-key handling.

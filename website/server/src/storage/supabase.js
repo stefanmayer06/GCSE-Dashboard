@@ -5,6 +5,7 @@ import {
   supabaseStorageError,
 } from '../supabase/client.js';
 import { acquisitionReport, summarizeEvents } from '../event-report.js';
+import { feedbackExtras, feedbackReport } from '../feedback-report.js';
 
 const DEFAULT_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_LEASE_MS = 30 * 1000;
@@ -820,6 +821,7 @@ export function createSupabaseStorage(options = {}) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) {
       throw storageError('STORAGE_INVALID_ARGUMENT', 'feedback must be an object');
     }
+    const extras = feedbackExtras(input);
     const row = {
       id: requiredString(String(input.id), 'id'),
       role: requiredString(String(input.role), 'role'),
@@ -829,12 +831,38 @@ export function createSupabaseStorage(options = {}) {
       message: requiredString(String(input.message), 'message'),
       email: typeof input.email === 'string' && input.email ? input.email : null,
       source: typeof input.source === 'string' && input.source ? input.source : null,
+      design_rating: extras.designRating,
+      design_note: extras.designNote,
+      payer: extras.payer,
+      price_model: extras.priceModel,
+      price_too_cheap: extras.priceTooCheap,
+      price_bargain: extras.priceBargain,
+      price_expensive: extras.priceExpensive,
+      price_too_expensive: extras.priceTooExpensive,
       user_agent: typeof input.userAgent === 'string' && input.userAgent ? input.userAgent : null,
       created_at: isoDate(input.createdAt, 'createdAt', Date.now()),
     };
     const { error } = await service.from('beta_feedback').insert(row);
     if (error) throw supabaseStorageError(error);
     return true;
+  }
+
+  async function getFeedbackReport(sinceDays = 90) {
+    await init();
+    const days = Math.max(1, Number(sinceDays) || 90);
+    const since = new Date(Date.now() - days * 86400000).toISOString();
+    const rows = [];
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await service.from('beta_feedback')
+        .select('role, rating, source, design_rating, payer, price_model, price_too_cheap, price_bargain, price_expensive, price_too_expensive, created_at')
+        .gte('created_at', since)
+        .order('id', { ascending: true })
+        .range(offset, offset + 999);
+      if (error) throw supabaseStorageError(error);
+      rows.push(...(data || []));
+      if (!data || data.length < 1000) break;
+    }
+    return feedbackReport(rows, { sinceDays: days });
   }
 
   async function saveSupportRequest(input) {
@@ -933,6 +961,7 @@ export function createSupabaseStorage(options = {}) {
     getAcquisitionReport,
     pruneEvents,
     saveFeedback,
+    getFeedbackReport,
     saveSupportRequest,
     listSupportRequests,
     pruneSupportRequests,

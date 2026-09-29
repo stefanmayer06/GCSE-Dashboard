@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en-GB"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Tell us what to improve in GCSE Study Desk — quick feedback from early testers."><meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer"><link rel="canonical" href="https://gcse-dashboard-server.vercel.app/feedback.html"><title>Feedback | GCSE Study Desk</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/circuit-public.css"><link rel="stylesheet" href="/legal.css"></head>
 <body><main class="page"><header class="masthead"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">SD</span><span>GCSE Study Desk</span></a><span class="updated">Early access feedback</span></header><section class="hero"><div><p class="section-label">Beta tester form</p><h1>Tell us what<br>to fix first.</h1></div><p class="lede">You are using an early version of Study Desk. Your feedback helps us decide what to improve next.</p></section>
-<div class="content"><nav class="contents" aria-label="On this page"><strong class="section-label">Before you start</strong><a href="#what">What we ask</a><a href="#privacy">Privacy</a><a href="/">Back to subjects</a></nav><article class="prose">
-<h2 id="what">What we ask</h2><p>Five quick questions. The most useful answers are specific: name the exact screen, question or moment that went wrong (or right). "The Higher paper timing felt tight" helps far more than "it was good".</p>
+<div class="content"><nav class="contents" aria-label="On this page"><strong class="section-label">Before you start</strong><a href="#what">What we ask</a><a href="#design">Design</a><a href="#pricing">Pricing</a><a href="#privacy">Privacy</a><a href="/">Back to subjects</a></nav><article class="prose">
+<h2 id="what">What we ask</h2><p>Five quick questions, then two optional sections on design and price. The most useful answers are specific: name the exact screen, question or moment that went wrong (or right). "The Higher paper timing felt tight" helps far more than "it was good".</p>
 <form class="form" id="feedback-form" novalidate>
   <div class="field">
     <label for="role">I am a…</label>
@@ -39,6 +39,53 @@
     <label for="message">What should we improve first?</label>
     <textarea id="message" name="message" rows="5" maxlength="2000" required placeholder="Be specific — name the screen, topic or question. What happened, and what did you expect?"></textarea>
   </div>
+  <fieldset class="field rating-field" id="design">
+    <legend>How clear and easy to use did the design feel? <span class="optional">optional</span></legend>
+    <div class="rating-row" role="radiogroup" aria-label="Design rating from 1 to 5">
+      <label class="rating"><input type="radio" name="designRating" value="1"><span>1</span></label>
+      <label class="rating"><input type="radio" name="designRating" value="2"><span>2</span></label>
+      <label class="rating"><input type="radio" name="designRating" value="3"><span>3</span></label>
+      <label class="rating"><input type="radio" name="designRating" value="4"><span>4</span></label>
+      <label class="rating"><input type="radio" name="designRating" value="5"><span>5</span></label>
+    </div>
+    <p class="fine rating-hint">1 = I got lost or it looked off · 5 = I always knew what to do next</p>
+  </fieldset>
+  <div class="field">
+    <label for="designNote">Which screen looked confusing, cluttered or off? <span class="optional">optional</span></label>
+    <input id="designNote" name="designNote" maxlength="500" placeholder="e.g. the results page — I couldn't find the retry button">
+  </div>
+  <fieldset class="field pricing" id="pricing">
+    <legend>If Study Desk cost money <span class="optional">optional · 30 seconds</span></legend>
+    <p class="fine">Study Desk is free during the beta and no price has been set. These answers help us decide whether and how to charge. Parents' answers are especially useful.</p>
+    <div class="field">
+      <label for="payer">Who would pay for it?</label>
+      <select id="payer" name="payer">
+        <option value="" selected>Skip</option>
+        <option value="me">I would pay myself</option>
+        <option value="parent">A parent or carer would pay</option>
+        <option value="school">A school or tutor would pay</option>
+        <option value="nobody">Nobody — I would only use it free</option>
+        <option value="unsure">Not sure</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="priceModel">Which would you prefer?</label>
+      <select id="priceModel" name="priceModel">
+        <option value="" selected>Skip</option>
+        <option value="monthly">A monthly subscription you can cancel</option>
+        <option value="season-pass">One payment that lasts until the exams</option>
+        <option value="free-only">Free only, even with fewer features</option>
+        <option value="unsure">Not sure</option>
+      </select>
+    </div>
+    <p class="fine">For each question, type a monthly price in pounds. There are no right answers — your first instinct is fine.</p>
+    <div class="price-grid">
+      <div class="field"><label for="priceTooCheap">So cheap you'd doubt the quality</label><input id="priceTooCheap" name="priceTooCheap" type="number" inputmode="decimal" min="0" max="100" step="0.01" placeholder="£ per month"></div>
+      <div class="field"><label for="priceBargain">A bargain — great value</label><input id="priceBargain" name="priceBargain" type="number" inputmode="decimal" min="0" max="100" step="0.01" placeholder="£ per month"></div>
+      <div class="field"><label for="priceExpensive">Getting expensive, but you'd consider it</label><input id="priceExpensive" name="priceExpensive" type="number" inputmode="decimal" min="0" max="100" step="0.01" placeholder="£ per month"></div>
+      <div class="field"><label for="priceTooExpensive">Too expensive to consider</label><input id="priceTooExpensive" name="priceTooExpensive" type="number" inputmode="decimal" min="0" max="100" step="0.01" placeholder="£ per month"></div>
+    </div>
+  </fieldset>
   <div class="field">
     <label for="heard">How did you hear about Study Desk? <span class="optional">optional</span></label>
     <input id="heard" name="heard" maxlength="120" placeholder="e.g. a Reddit post, a friend, a teacher">
@@ -55,5 +102,5 @@
   <button type="submit" id="feedback-button">Send feedback</button>
   <p class="status" id="status" role="status"></p>
 </form>
-<h2 id="privacy">Privacy</h2><p>The email address is optional and is only used to reply about your feedback. Please do not include passwords, tokens or sensitive personal information in the text. Feedback about AI-assisted marking is reviewed by a human to improve question quality, not to grade anyone.</p>
+<h2 id="privacy">Privacy</h2><p>The email address is optional and is only used to reply about your feedback. Design and pricing answers are optional and are only read in aggregate to decide what to build and whether to charge. Please do not include passwords, tokens or sensitive personal information in the text. Feedback about AI-assisted marking is reviewed by a human to improve question quality, not to grade anyone.</p>
 <p class="fine">Study Desk is an independent revision product and is not affiliated with, approved by or endorsed by AQA.</p></article></div><footer class="footer"><a href="/">Study Desk</a><a href="/privacy.html">Privacy</a><a href="/support.html">Support</a><a href="/subjects">Subjects</a></footer></main><script src="/feedback.js" defer></script></body></html>

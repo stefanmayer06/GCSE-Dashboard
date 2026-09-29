@@ -1,0 +1,536 @@
+<title>Volta Brand Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Unbounded:wght@500;700;800&display=swap">
+<style>
+/* Layout: one reading column (max 1080px) of brand-book sections; the logo
+   always sits on the app's own night stage or paper, never on page chrome.
+   Palette and faces are the product's Circuit tokens, so the kit looks like the app. */
+:root {
+  --bg: #f2f3fa;
+  --surface: #ffffff;
+  --surface-2: #eceefa;
+  --ink: #15172b;
+  --ink-2: #2d3050;
+  --muted: #565b7c;
+  --line: #dfe2f2;
+  --line-strong: #b5bad7;
+  --stage: #191b30;
+  --stage-2: #24273f;
+  --stage-ink: #f2f3ff;
+  --stage-muted: #aeb3d6;
+  --volt: #c3f53c;
+  --volt-ink: #1f2600;
+  --accent: #3d6bff;
+  --good: #07845a;
+  --bad: #cc2f45;
+  --paper-stage: #f2f3fa;
+  /* Fixed brand colours: identical in both themes because they are the logo. */
+  --b-night: #191b30;
+  --b-volt: #c3f53c;
+  --b-blue: #3d6bff;
+  --b-purple: #9b4dff;
+  --b-tangerine: #ff7a2e;
+  --b-paper: #f2f3fa;
+
+  --font-display: 'Unbounded', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif;
+  --font-ui: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', 'Segoe UI', sans-serif;
+  --font-mono: 'Atkinson Hyperlegible Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --t-hero: clamp(2.4rem, 1.4rem + 4vw, 4.6rem);
+  --t-h2: clamp(1.5rem, 1.2rem + 1.2vw, 2.2rem);
+  --t-h3: 1.1rem;
+  --t-body: 1.02rem;
+  --t-small: 0.9rem;
+  --t-micro: 0.74rem;
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 26px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e0f1d; --surface: #161a2e; --surface-2: #1c2038; --ink: #eef0ff; --ink-2: #d2d6f3;
+    --muted: #a4a9cb; --line: #292e4c; --line-strong: #454b73; --stage: #090a15; --stage-2: #151829;
+    --stage-ink: #f2f3ff; --stage-muted: #aeb3d6; --volt: #d4ff5c; --volt-ink: #1f2600; --accent: #8aa6ff;
+    --good: #4fe0a4; --bad: #ff8591; --paper-stage: #e8eaf7;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e0f1d; --surface: #161a2e; --surface-2: #1c2038; --ink: #eef0ff; --ink-2: #d2d6f3;
+  --muted: #a4a9cb; --line: #292e4c; --line-strong: #454b73; --stage: #090a15; --stage-2: #151829;
+  --stage-ink: #f2f3ff; --stage-muted: #aeb3d6; --volt: #d4ff5c; --volt-ink: #1f2600; --accent: #8aa6ff;
+  --good: #4fe0a4; --bad: #ff8591; --paper-stage: #e8eaf7;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: var(--t-body); line-height: 1.6; }
+.page { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 20px 72px; display: grid; gap: 72px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.08; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+h2 { font-size: var(--t-h2); }
+h3 { font-size: var(--t-h3); letter-spacing: -0.01em; }
+p { margin: 0; max-width: 66ch; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.eyebrow { font-family: var(--font-mono); font-size: var(--t-micro); text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); font-weight: 600; }
+.section { display: grid; gap: 28px; }
+.section-head { display: grid; gap: 10px; }
+.lede { color: var(--muted); font-size: 1.08rem; }
+.mono { font-family: var(--font-mono); }
+svg { display: block; max-width: 100%; height: auto; }
+
+/* Hero: the night stage */
+.hero { background: var(--stage); color: var(--stage-ink); border-radius: var(--r-lg); padding: clamp(28px, 5vw, 64px); display: grid; gap: 36px; position: relative; overflow: hidden; }
+.hero::after { content: ''; position: absolute; inset: auto -10% -60% 40%; height: 120%; background: radial-gradient(closest-side, rgba(155, 77, 255, 0.28), transparent); pointer-events: none; }
+.hero > * { position: relative; z-index: 1; }
+.hero .eyebrow { color: var(--b-volt); display: flex; align-items: center; gap: 8px; }
+.hero .eyebrow::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--b-volt); box-shadow: 0 0 0 3px rgba(195, 245, 60, 0.25); }
+.hero-lockup { width: min(640px, 100%); }
+.hero-lines { display: grid; gap: 14px; }
+.hero-tag { font-family: var(--font-display); font-weight: 700; font-size: var(--t-hero); letter-spacing: -0.035em; line-height: 1.02; }
+.hero-tag em { font-style: normal; color: var(--b-volt); }
+.hero p { color: var(--stage-muted); }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(174, 179, 214, 0.28); border-radius: 999px; padding: 5px 12px; font-size: var(--t-small); color: var(--stage-muted); }
+.chip b { color: var(--stage-ink); }
+
+/* The name */
+.meanings { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.meaning { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 22px; display: grid; gap: 10px; align-content: start; }
+.meaning svg { width: 40px; }
+.meaning p { color: var(--muted); font-size: var(--t-small); }
+.say { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.say-row { display: grid; gap: 4px; padding: 16px 0; border-top: 1px solid var(--line); }
+.say-row strong { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; }
+.say-row span { color: var(--muted); font-size: var(--t-small); }
+
+/* Stages for artwork */
+.stage-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.art { border-radius: var(--r-md); padding: clamp(24px, 4vw, 44px); display: grid; place-items: center; min-height: 220px; }
+.art.night { background: var(--b-night); }
+.art.paper { background: var(--b-paper); border: 1px solid var(--line); }
+.art.volt { background: var(--b-volt); }
+.art figcaption { font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: 0.08em; text-transform: uppercase; justify-self: start; align-self: end; }
+.art.night figcaption { color: #aeb3d6; }
+.art.paper figcaption, .art.volt figcaption { color: #565b7c; }
+figure { margin: 0; }
+.art-wrap { display: grid; gap: 18px; width: 100%; justify-items: center; }
+
+/* Construction */
+.construct { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: clamp(20px, 4vw, 40px); }
+.construct ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 16px; }
+.construct > div svg { width: min(360px, 100%); margin-inline: auto; }
+.construct li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start; }
+.construct li i { width: 22px; height: 22px; border-radius: 0 22px 0 0; border: 2px solid var(--b-night); margin-top: 3px; }
+.construct li b { display: block; }
+.construct li span { color: var(--muted); font-size: var(--t-small); }
+
+/* States + sizes */
+.states { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.state { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 22px; display: grid; gap: 14px; justify-items: start; align-content: start; }
+.state svg { width: 96px; }
+.state p { color: var(--muted); font-size: var(--t-small); }
+.sizes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 28px; background: var(--b-paper); border: 1px solid var(--line); border-radius: var(--r-md); padding: 28px; }
+.sizes figure { display: grid; gap: 8px; justify-items: center; }
+.sizes figcaption { font-family: var(--font-mono); font-size: var(--t-micro); color: #565b7c; }
+.sizes.night { background: var(--b-night); border-color: transparent; }
+.sizes.night figcaption { color: #aeb3d6; }
+
+/* Icons */
+.icons { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; }
+.icons figure { display: grid; gap: 10px; justify-items: center; text-align: center; }
+.icons svg { width: 120px; filter: drop-shadow(0 14px 22px rgba(21, 23, 43, 0.22)); }
+.icons figcaption { font-size: var(--t-small); color: var(--muted); }
+.icons figcaption b { display: block; color: var(--ink); font-weight: 600; }
+
+/* Rules */
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.rule { border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); padding: 20px; display: grid; gap: 12px; align-content: start; }
+.rule .tag { font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.rule.do .tag { color: var(--good); }
+.rule.dont .tag { color: var(--bad); }
+.rule > p { color: var(--ink-2); font-size: var(--t-small); }
+.rule ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); font-size: var(--t-small); }
+.dont-art { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.dont-art figure { background: var(--b-paper); border-radius: var(--r-sm); padding: 12px; display: grid; gap: 6px; justify-items: center; border: 1px solid var(--line); }
+.dont-art figcaption { font-size: 0.72rem; color: #565b7c; text-align: center; line-height: 1.3; }
+
+/* Sub-brands */
+.subs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.sub { border-radius: var(--r-md); background: var(--b-night); padding: 26px; display: grid; gap: 12px; }
+.sub .sub-note { color: #aeb3d6; font-size: var(--t-small); }
+
+/* Colour + type */
+.swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.swatch { border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.swatch .chipc { height: 92px; }
+.swatch div.meta { padding: 12px 14px; display: grid; gap: 2px; }
+.swatch b { font-size: var(--t-small); }
+.swatch span { font-family: var(--font-mono); font-size: var(--t-micro); color: var(--muted); }
+.type { display: grid; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.type-row { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 20px; padding: 22px 24px; border-top: 1px solid var(--line); align-items: baseline; }
+.type-row:first-child { border-top: 0; }
+.type-row .eyebrow { align-self: start; padding-top: 6px; }
+.spec-display { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.8rem, 1.2rem + 2.4vw, 3rem); letter-spacing: -0.035em; line-height: 1; }
+.spec-ui { font-size: 1.15rem; }
+.spec-mono { font-family: var(--font-mono); font-size: 0.95rem; letter-spacing: 0.02em; }
+
+/* Voice */
+.voice { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.line-card { background: var(--stage); color: var(--stage-ink); border-radius: var(--r-md); padding: 24px; display: grid; gap: 10px; align-content: space-between; min-height: 150px; }
+.line-card q { font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; letter-spacing: -0.02em; line-height: 1.15; quotes: none; }
+.line-card span { color: var(--stage-muted); font-size: var(--t-small); }
+
+/* In use */
+.inuse { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+.mock { border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.mock-app { display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 300px; }
+.mock-rail { background: #191b30; padding: 18px 14px; display: grid; gap: 14px; align-content: start; }
+.mock-brand { display: flex; gap: 10px; align-items: center; }
+.mock-brand .t { display: grid; }
+.mock-brand .t b { font-family: var(--font-display); font-weight: 700; color: #f2f3ff; font-size: 1rem; letter-spacing: -0.01em; }
+.mock-brand .t span { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.08em; color: #aeb3d6; text-transform: uppercase; }
+.mock-hud { display: flex; flex-wrap: wrap; gap: 6px; }
+.mock-hud span { font-family: var(--font-mono); font-size: 0.7rem; color: #f2f3ff; background: #24273f; border-radius: 999px; padding: 4px 9px; }
+.mock-nav { display: grid; gap: 4px; }
+.mock-nav span { color: #aeb3d6; font-weight: 600; font-size: 0.86rem; padding: 7px 10px; border-radius: 10px; }
+.mock-nav span.on { background: #30344f; color: #f2f3ff; box-shadow: inset 3px 0 0 #c3f53c; }
+.mock-main { padding: 22px; display: grid; gap: 12px; align-content: start; background: #f2f3fa; }
+.mock-main .eyebrow { color: #565b7c; }
+.mock-main h3 { font-size: 1.5rem; color: #15172b; }
+.mock-main p { color: #565b7c; font-size: var(--t-small); }
+.mock-btn { justify-self: start; background: #c3f53c; color: #1f2600; font-weight: 700; border-radius: 999px; padding: 10px 18px; box-shadow: 0 4px 0 #1f2600; font-size: 0.92rem; }
+.mock-phone { background: #dfe3f8; border-radius: var(--r-lg); padding: 22px; display: grid; gap: 16px; align-content: center; justify-items: center; }
+.mock-phone .grid { display: grid; grid-template-columns: repeat(4, 56px); gap: 16px 18px; }
+.mock-phone .app { display: grid; gap: 5px; justify-items: center; }
+.mock-phone .app i { width: 56px; height: 56px; border-radius: 14px; background: rgba(255, 255, 255, 0.8); display: block; }
+.mock-phone .app svg { width: 56px; }
+.mock-phone .app span { font-size: 0.62rem; color: #2d3050; font-weight: 600; }
+.mock-phone .avatar { display: flex; gap: 12px; align-items: center; background: #191b30; border-radius: 16px; padding: 10px 14px; }
+.mock-phone .avatar svg { width: 44px; }
+.mock-phone .avatar b { color: #f2f3ff; font-size: 0.9rem; display: block; }
+.mock-phone .avatar span { color: #aeb3d6; font-size: 0.78rem; }
+
+/* Research */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: var(--t-small); }
+th, td { text-align: left; padding: 12px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+thead th { border-top: 0; font-family: var(--font-mono); font-size: var(--t-micro); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; background: var(--surface-2); }
+td:first-child { font-weight: 700; white-space: nowrap; }
+td .muted { color: var(--muted); }
+.camps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.camp { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 20px; display: grid; gap: 10px; align-content: start; }
+.camp .names { display: flex; flex-wrap: wrap; gap: 6px; }
+.camp .names span { font-family: var(--font-mono); font-size: var(--t-micro); background: var(--surface-2); border-radius: 999px; padding: 3px 9px; color: var(--ink-2); }
+.camp p { color: var(--muted); font-size: var(--t-small); }
+.camp.gap { background: var(--stage); border-color: transparent; color: var(--stage-ink); }
+.camp.gap p { color: var(--stage-muted); }
+.camp.gap .names span { background: var(--b-volt); color: var(--volt-ink); }
+.inspo { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+.inspo div { padding: 18px 20px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); margin: -1px 0 0 -1px; display: grid; gap: 6px; align-content: start; }
+.inspo b { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; }
+.inspo span { color: var(--muted); font-size: var(--t-small); }
+.inspo em { font-style: normal; color: var(--ink-2); font-size: var(--t-small); }
+.shortlist { display: grid; gap: 10px; }
+.cand { display: grid; grid-template-columns: 150px 120px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 14px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); }
+.cand strong { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; letter-spacing: -0.01em; }
+.cand p { color: var(--muted); font-size: var(--t-small); }
+.pill { font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; border-radius: 999px; padding: 3px 10px; justify-self: start; }
+.pill.pick { background: var(--b-volt); color: var(--volt-ink); }
+.pill.alt { background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line-strong); }
+.pill.no { color: var(--bad); border: 1px solid currentColor; }
+.checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.check { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 20px; display: grid; gap: 10px; align-content: start; }
+.check ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: var(--t-small); }
+.check li { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; }
+.check li .s { font-family: var(--font-mono); font-size: var(--t-micro); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; padding-top: 2px; }
+.s.free { color: var(--good); }
+.s.taken { color: var(--bad); }
+.s.todo { color: var(--muted); }
+.next { margin: 0; padding: 0; display: grid; gap: 0; counter-reset: step; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+.next li { list-style: none; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 14px; padding: 16px 20px; border-top: 1px solid var(--line); counter-increment: step; }
+.next li:first-child { border-top: 0; }
+.next li::before { content: counter(step); font-family: var(--font-display); font-weight: 700; width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; font-size: 0.85rem; }
+.next li b { display: block; }
+.next li span { color: var(--muted); font-size: var(--t-small); }
+.sources { font-size: var(--t-small); color: var(--muted); display: grid; gap: 6px; padding-left: 18px; margin: 0; }
+footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid var(--line); padding-top: 20px; }
+
+/* Motion: the volt quarter closes the circle once on load. */
+.close-anim .vq { transform-box: view-box; transform-origin: 0 0; animation: vq-grow 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both; }
+@keyframes vq-grow { 0% { transform: scale(0.2); } 55% { transform: scale(1); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .close-anim .vq { animation: none; } }
+
+@media (max-width: 760px) {
+  .construct, .inuse, .stage-pair, .voice { grid-template-columns: 1fr; }
+  .type-row { grid-template-columns: 1fr; gap: 6px; }
+  .cand { grid-template-columns: 1fr; gap: 6px; }
+  .mock-app { grid-template-columns: 1fr; }
+  .dont-art { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .page { gap: 56px; }
+}
+</style>
+
+<main class="page">
+
+<header class="hero">
+  <div class="eyebrow">Brand proposal · GCSE Study Desk · September 2026</div>
+  <div class="hero-lockup"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-60 -836 4429.9 913" role="img"><title>Volta</title><g transform="translate(396.5 -379.5) scale(10.01)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g><path d="M435 -110 358 -111 545 -573H788L524 0H263L-1 -573H252ZM1148 17Q1037 17 953.0 -21.0Q869 -59 822.0 -127.5Q775 -196 775 -286Q775 -378 822.0 -446.5Q869 -515 953.0 -552.5Q1037 -590 1149 -590Q1260 -590 1344.0 -552.5Q1428 -515 1474.5 -446.5Q1521 -378 1521 -286Q1521 -196 1474.5 -127.5Q1428 -59 1344.0 -21.0Q1260 17 1148 17ZM1149 -151Q1194 -151 1225.5 -167.0Q1257 -183 1273.5 -213.5Q1290 -244 1290 -286Q1290 -329 1273.5 -359.5Q1257 -390 1225.5 -406.0Q1194 -422 1149 -422Q1104 -422 1072.0 -406.0Q1040 -390 1023.5 -359.5Q1007 -329 1007 -287Q1007 -244 1023.5 -213.5Q1040 -183 1072.0 -167.0Q1104 -151 1149 -151ZM1597 -770H1826V0H1597ZM1881 -405V-504L1995 -556L2095 -728H2225V-573H2457V-405H2225V-262Q2225 -204 2247.5 -180.0Q2270 -156 2336 -156Q2377 -156 2409.0 -162.5Q2441 -169 2467 -179V-10Q2435 0 2386.0 8.5Q2337 17 2283 17Q2185 17 2121.5 -13.0Q2058 -43 2026.5 -99.0Q1995 -155 1995 -231V-405ZM3040 0 3013 -204 3041 -286 3013 -367 3040 -573H3278L3240 -287L3278 0ZM3091 -286Q3079 -195 3038.5 -126.5Q2998 -58 2934.5 -20.5Q2871 17 2789 17Q2706 17 2642.0 -21.0Q2578 -59 2542.5 -127.5Q2507 -196 2507 -286Q2507 -378 2542.5 -446.5Q2578 -515 2642.0 -552.5Q2706 -590 2789 -590Q2871 -590 2934.5 -553.0Q2998 -516 3039.0 -447.5Q3080 -379 3091 -286ZM2738 -286Q2738 -248 2753.5 -219.0Q2769 -190 2797.0 -173.0Q2825 -156 2861 -156Q2898 -156 2932.0 -173.0Q2966 -190 2992.0 -219.0Q3018 -248 3030 -286Q3018 -324 2992.0 -353.5Q2966 -383 2932.0 -400.0Q2898 -417 2861 -417Q2825 -417 2797.0 -400.0Q2769 -383 2753.5 -353.5Q2738 -324 2738 -286Z" fill="#f2f3ff" transform="translate(1031.9 0) scale(1)"/></svg></div>
+  <div class="hero-lines">
+    <div class="hero-tag">Fix what you <em>missed.</em></div>
+    <p>Volta is the proposed name for the product now called GCSE Study Desk. The mark is built from the app's own quadrant shapes: three quarters for the three courses, and a fourth in volt for the mastery you earn. The circle only closes when you fix what you missed.</p>
+  </div>
+  <div class="hero-meta">
+    <span class="chip"><b>Name</b> Volta</span>
+    <span class="chip"><b>Say it</b> VOL-tuh</span>
+    <span class="chip"><b>Store name</b> Volta: GCSE Revision</span>
+    <span class="chip"><b>Guide</b> Pip</span>
+  </div>
+</header>
+
+<section class="section" id="name">
+  <div class="section-head">
+    <div class="eyebrow">The name</div>
+    <h2>One word, four meanings, all already in the app</h2>
+    <p class="lede">Most names in this market describe the product ("Save My Exams") or bolt on a prefix ("Revvo", "Revu"). Volta tells the product's story in a word a 15-year-old can say, spell and use as a verb.</p>
+  </div>
+  <div class="meanings">
+    <article class="meaning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 48 48" aria-hidden="true"><path d="M0 0V-30A30 30 0 0 1 30 0Z" transform="translate(-13 13)" fill="#c3f53c" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg><h3>Volt</h3><p>Volt lime is already the app's one reward colour: the go button, earned stars and mastered tiles. The name makes that colour the brand.</p></article>
+    <article class="meaning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 48 48" aria-hidden="true"><path d="M-17 11v4a17 7 0 0 0 34 0v-4" fill="#9b4dff" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="0" cy="11" rx="17" ry="7" fill="#9b4dff" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><path d="M-17 2v4a17 7 0 0 0 34 0v-4" fill="#ff7a2e" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="0" cy="2" rx="17" ry="7" fill="#ff7a2e" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><path d="M-17 -7v4a17 7 0 0 0 34 0v-4" fill="#c3f53c" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="0" cy="-7" rx="17" ry="7" fill="#c3f53c" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg><h3>The pile</h3><p>In 1800 Alessandro Volta made the first battery by stacking discs. Circuit emblems also stack layers, and each layer comes from marked answers.</p></article>
+    <article class="meaning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 48 48" aria-hidden="true"><path d="M0 0V-15A15 15 0 0 1 15 0Z" transform="translate(-4 4)" fill="#3d6bff" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><path d="M-17 4A17 17 0 0 1 4 -16" fill="none" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><path d="M-1 -20l6 4-5 5" fill="none" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg><h3>The turn</h3><p>In a sonnet the volta is the turning point, where the argument changes direction. GCSE English students learn the term, and a fixed mistake is the same kind of turning point.</p></article>
+    <article class="meaning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 48 48" aria-hidden="true"><path d="M15 -9A17 17 0 1 0 17 4" fill="none" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><path d="M9 -12l7 3 1-8" fill="none" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><path d="M0 0V-10A10 10 0 0 1 10 0Z" transform="translate(-5 5)" fill="#c3f53c" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg><h3>Una volta</h3><p>In Italian, <i>ancora una volta</i> means "one more time". Mistakes come back after 1, 3, 7 and 21 days, and each return is one more go.</p></article>
+  </div>
+  <div class="say">
+    <div class="say-row"><strong>Volta Maths</strong><span>Replaces MathsMate. Foundation and Higher are tiers inside it, not separate brands.</span></div>
+    <div class="say-row"><strong>Volta English</strong><span>Replaces EnglishMate. Same mark, tangerine subject colour.</span></div>
+    <div class="say-row"><strong>“I'm on a 12-day Volta streak”</strong><span>Works in a sentence and as a verb: “Have you Volta'd today?”</span></div>
+    <div class="say-row"><strong>Pip, your Volta guide</strong><span>The mascot stays. Pip is already volt-coloured, so it fits the brand without a redraw.</span></div>
+  </div>
+</section>
+
+<section class="section" id="mark">
+  <div class="section-head">
+    <div class="eyebrow">The mark</div>
+    <h2>The Volta disc</h2>
+    <p class="lede">The mark reuses the Shapez quadrant grammar behind every topic emblem, so the logo and the app use the same shapes. It keeps the favicon you already ship and adds one idea: the volt quarter is still growing.</p>
+  </div>
+  <div class="construct">
+    <div class="close-anim"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-56 -56 112 112" role="img"><title>Construction of the Volta disc</title><circle r="38" fill="none" stroke="var(--line-strong)" stroke-width="0.8" stroke-dasharray="3 3"/><circle r="23.56" fill="none" stroke="var(--line-strong)" stroke-width="0.6" stroke-dasharray="2 3"/><path d="M-52 0H52M0 -52V52" stroke="var(--line-strong)" stroke-width="0.6"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><g class="vq"><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g><g font-family="Atkinson Hyperlegible Mono, ui-monospace, monospace" font-size="4.2" fill="var(--muted)"><text x="27.36" y="-30.36">R</text><text x="-50" y="-44">0.62 R</text><path d="M-40 -42.5L-14.61 -16.96" stroke="var(--muted)" stroke-width="0.5"/></g></svg></div>
+    <ol>
+      <li><i style="background: var(--b-blue)"></i><div><b>Maths Foundation</b><span>Blue, top right. The first course and the first audience.</span></div></li>
+      <li><i style="background: var(--b-tangerine)"></i><div><b>English Language</b><span>Tangerine, bottom right.</span></div></li>
+      <li><i style="background: var(--b-purple)"></i><div><b>Maths Higher</b><span>Purple, bottom left.</span></div></li>
+      <li><i style="background: var(--b-volt)"></i><div><b>The volt quarter</b><span>Mastery. It is drawn at 62% size, a piece still being built. The gap it leaves is the mistake you haven't fixed yet.</span></div></li>
+    </ol>
+  </div>
+  <div class="states">
+    <div class="state"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-54 -54 108 108" role="img"><title>Blueprint state</title><circle r="44" fill="rgba(25,27,48,0.07)"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="none" stroke="#3d6bff" stroke-width="2.6" stroke-linejoin="round" stroke-dasharray="5 4"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="none" stroke="#ff7a2e" stroke-width="2.6" stroke-linejoin="round" stroke-dasharray="5 4"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="none" stroke="#9b4dff" stroke-width="2.6" stroke-linejoin="round" stroke-dasharray="5 4"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(270)" fill="none" stroke="#8fb31f" stroke-width="2.6" stroke-linejoin="round" stroke-dasharray="5 4"/></svg><h3>Blueprint</h3><p>Dashed outline, for empty states and loading. It matches the "new" topic emblem.</p></div>
+    <div class="state"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-49.6 -49.6 99.2 99.2" role="img"><title>Building state</title><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><h3>Building</h3><p>The resting logo. Use it everywhere by default.</p></div>
+    <div class="state"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-58 -58 116 116" role="img"><title>Closed state</title><circle r="46" fill="none" stroke="#c3f53c" stroke-width="3" stroke-dasharray="6 5" stroke-linecap="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><h3>Closed</h3><p>The full disc, for celebrations only: a topic mastered, a streak milestone, a finished paper.</p></div>
+  </div>
+  <div class="sizes"><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="16" height="16" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>16px</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="24" height="24" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>24px</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="32" height="32" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>32px</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="48" height="48" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>48px</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="64" height="64" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>64px</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="96" height="96" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>96px</figcaption></figure></div>
+  <div class="sizes night"><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="16" height="16" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>16px</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="24" height="24" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>24px</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="32" height="32" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>32px</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="48" height="48" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>48px</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="64" height="64" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>64px</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41.6 -41.6 83.2 83.2" width="96" height="96" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>96px</figcaption></figure></div>
+</section>
+
+<section class="section" id="wordmark">
+  <div class="section-head">
+    <div class="eyebrow">Wordmark and lockups</div>
+    <h2>Lower case, heavy, tight</h2>
+    <p class="lede">The wordmark is set in Unbounded ExtraBold, the app's display face, with tighter spacing and converted to outlines. Lower case keeps it friendly, in the tradition of duolingo, mimo and intel.</p>
+  </div>
+  <div class="stage-pair">
+    <figure class="art night"><div class="art-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-60 -836 4429.9 913" role="img"><title>Volta</title><g transform="translate(396.5 -379.5) scale(10.01)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g><path d="M435 -110 358 -111 545 -573H788L524 0H263L-1 -573H252ZM1148 17Q1037 17 953.0 -21.0Q869 -59 822.0 -127.5Q775 -196 775 -286Q775 -378 822.0 -446.5Q869 -515 953.0 -552.5Q1037 -590 1149 -590Q1260 -590 1344.0 -552.5Q1428 -515 1474.5 -446.5Q1521 -378 1521 -286Q1521 -196 1474.5 -127.5Q1428 -59 1344.0 -21.0Q1260 17 1148 17ZM1149 -151Q1194 -151 1225.5 -167.0Q1257 -183 1273.5 -213.5Q1290 -244 1290 -286Q1290 -329 1273.5 -359.5Q1257 -390 1225.5 -406.0Q1194 -422 1149 -422Q1104 -422 1072.0 -406.0Q1040 -390 1023.5 -359.5Q1007 -329 1007 -287Q1007 -244 1023.5 -213.5Q1040 -183 1072.0 -167.0Q1104 -151 1149 -151ZM1597 -770H1826V0H1597ZM1881 -405V-504L1995 -556L2095 -728H2225V-573H2457V-405H2225V-262Q2225 -204 2247.5 -180.0Q2270 -156 2336 -156Q2377 -156 2409.0 -162.5Q2441 -169 2467 -179V-10Q2435 0 2386.0 8.5Q2337 17 2283 17Q2185 17 2121.5 -13.0Q2058 -43 2026.5 -99.0Q1995 -155 1995 -231V-405ZM3040 0 3013 -204 3041 -286 3013 -367 3040 -573H3278L3240 -287L3278 0ZM3091 -286Q3079 -195 3038.5 -126.5Q2998 -58 2934.5 -20.5Q2871 17 2789 17Q2706 17 2642.0 -21.0Q2578 -59 2542.5 -127.5Q2507 -196 2507 -286Q2507 -378 2542.5 -446.5Q2578 -515 2642.0 -552.5Q2706 -590 2789 -590Q2871 -590 2934.5 -553.0Q2998 -516 3039.0 -447.5Q3080 -379 3091 -286ZM2738 -286Q2738 -248 2753.5 -219.0Q2769 -190 2797.0 -173.0Q2825 -156 2861 -156Q2898 -156 2932.0 -173.0Q2966 -190 2992.0 -219.0Q3018 -248 3030 -286Q3018 -324 2992.0 -353.5Q2966 -383 2932.0 -400.0Q2898 -417 2861 -417Q2825 -417 2797.0 -400.0Q2769 -383 2753.5 -353.5Q2738 -324 2738 -286Z" fill="#f2f3ff" transform="translate(1031.9 0) scale(1)"/></svg></div><figcaption>Primary lockup · night</figcaption></figure>
+    <figure class="art paper"><div class="art-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-60 -836 4429.9 913" role="img"><title>Volta</title><g transform="translate(396.5 -379.5) scale(10.01)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g><path d="M435 -110 358 -111 545 -573H788L524 0H263L-1 -573H252ZM1148 17Q1037 17 953.0 -21.0Q869 -59 822.0 -127.5Q775 -196 775 -286Q775 -378 822.0 -446.5Q869 -515 953.0 -552.5Q1037 -590 1149 -590Q1260 -590 1344.0 -552.5Q1428 -515 1474.5 -446.5Q1521 -378 1521 -286Q1521 -196 1474.5 -127.5Q1428 -59 1344.0 -21.0Q1260 17 1148 17ZM1149 -151Q1194 -151 1225.5 -167.0Q1257 -183 1273.5 -213.5Q1290 -244 1290 -286Q1290 -329 1273.5 -359.5Q1257 -390 1225.5 -406.0Q1194 -422 1149 -422Q1104 -422 1072.0 -406.0Q1040 -390 1023.5 -359.5Q1007 -329 1007 -287Q1007 -244 1023.5 -213.5Q1040 -183 1072.0 -167.0Q1104 -151 1149 -151ZM1597 -770H1826V0H1597ZM1881 -405V-504L1995 -556L2095 -728H2225V-573H2457V-405H2225V-262Q2225 -204 2247.5 -180.0Q2270 -156 2336 -156Q2377 -156 2409.0 -162.5Q2441 -169 2467 -179V-10Q2435 0 2386.0 8.5Q2337 17 2283 17Q2185 17 2121.5 -13.0Q2058 -43 2026.5 -99.0Q1995 -155 1995 -231V-405ZM3040 0 3013 -204 3041 -286 3013 -367 3040 -573H3278L3240 -287L3278 0ZM3091 -286Q3079 -195 3038.5 -126.5Q2998 -58 2934.5 -20.5Q2871 17 2789 17Q2706 17 2642.0 -21.0Q2578 -59 2542.5 -127.5Q2507 -196 2507 -286Q2507 -378 2542.5 -446.5Q2578 -515 2642.0 -552.5Q2706 -590 2789 -590Q2871 -590 2934.5 -553.0Q2998 -516 3039.0 -447.5Q3080 -379 3091 -286ZM2738 -286Q2738 -248 2753.5 -219.0Q2769 -190 2797.0 -173.0Q2825 -156 2861 -156Q2898 -156 2932.0 -173.0Q2966 -190 2992.0 -219.0Q3018 -248 3030 -286Q3018 -324 2992.0 -353.5Q2966 -383 2932.0 -400.0Q2898 -417 2861 -417Q2825 -417 2797.0 -400.0Q2769 -383 2753.5 -353.5Q2738 -324 2738 -286Z" fill="#191b30" transform="translate(1031.9 0) scale(1)"/></svg></div><figcaption>Primary lockup · paper</figcaption></figure>
+    <figure class="art night"><div class="art-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-1699.5 -560 3399 2137" height="200" role="img"><title>Volta</title><g transform="scale(12.63)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g><path d="M435 -110 358 -111 545 -573H788L524 0H263L-1 -573H252ZM1148 17Q1037 17 953.0 -21.0Q869 -59 822.0 -127.5Q775 -196 775 -286Q775 -378 822.0 -446.5Q869 -515 953.0 -552.5Q1037 -590 1149 -590Q1260 -590 1344.0 -552.5Q1428 -515 1474.5 -446.5Q1521 -378 1521 -286Q1521 -196 1474.5 -127.5Q1428 -59 1344.0 -21.0Q1260 17 1148 17ZM1149 -151Q1194 -151 1225.5 -167.0Q1257 -183 1273.5 -213.5Q1290 -244 1290 -286Q1290 -329 1273.5 -359.5Q1257 -390 1225.5 -406.0Q1194 -422 1149 -422Q1104 -422 1072.0 -406.0Q1040 -390 1023.5 -359.5Q1007 -329 1007 -287Q1007 -244 1023.5 -213.5Q1040 -183 1072.0 -167.0Q1104 -151 1149 -151ZM1597 -770H1826V0H1597ZM1881 -405V-504L1995 -556L2095 -728H2225V-573H2457V-405H2225V-262Q2225 -204 2247.5 -180.0Q2270 -156 2336 -156Q2377 -156 2409.0 -162.5Q2441 -169 2467 -179V-10Q2435 0 2386.0 8.5Q2337 17 2283 17Q2185 17 2121.5 -13.0Q2058 -43 2026.5 -99.0Q1995 -155 1995 -231V-405ZM3040 0 3013 -204 3041 -286 3013 -367 3040 -573H3278L3240 -287L3278 0ZM3091 -286Q3079 -195 3038.5 -126.5Q2998 -58 2934.5 -20.5Q2871 17 2789 17Q2706 17 2642.0 -21.0Q2578 -59 2542.5 -127.5Q2507 -196 2507 -286Q2507 -378 2542.5 -446.5Q2578 -515 2642.0 -552.5Q2706 -590 2789 -590Q2871 -590 2934.5 -553.0Q2998 -516 3039.0 -447.5Q3080 -379 3091 -286ZM2738 -286Q2738 -248 2753.5 -219.0Q2769 -190 2797.0 -173.0Q2825 -156 2861 -156Q2898 -156 2932.0 -173.0Q2966 -190 2992.0 -219.0Q3018 -248 3030 -286Q3018 -324 2992.0 -353.5Q2966 -383 2932.0 -400.0Q2898 -417 2861 -417Q2825 -417 2797.0 -400.0Q2769 -383 2753.5 -353.5Q2738 -324 2738 -286Z" fill="#f2f3ff" transform="translate(-1638.5 1500) scale(1)"/></svg></div><figcaption>Stacked · square spaces</figcaption></figure>
+    <figure class="art volt"><div class="art-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-41 -810 3359 867" height="90" role="img"><title>Volta</title><path d="M435 -110 358 -111 545 -573H788L524 0H263L-1 -573H252ZM1148 17Q1037 17 953.0 -21.0Q869 -59 822.0 -127.5Q775 -196 775 -286Q775 -378 822.0 -446.5Q869 -515 953.0 -552.5Q1037 -590 1149 -590Q1260 -590 1344.0 -552.5Q1428 -515 1474.5 -446.5Q1521 -378 1521 -286Q1521 -196 1474.5 -127.5Q1428 -59 1344.0 -21.0Q1260 17 1148 17ZM1149 -151Q1194 -151 1225.5 -167.0Q1257 -183 1273.5 -213.5Q1290 -244 1290 -286Q1290 -329 1273.5 -359.5Q1257 -390 1225.5 -406.0Q1194 -422 1149 -422Q1104 -422 1072.0 -406.0Q1040 -390 1023.5 -359.5Q1007 -329 1007 -287Q1007 -244 1023.5 -213.5Q1040 -183 1072.0 -167.0Q1104 -151 1149 -151ZM1597 -770H1826V0H1597ZM1881 -405V-504L1995 -556L2095 -728H2225V-573H2457V-405H2225V-262Q2225 -204 2247.5 -180.0Q2270 -156 2336 -156Q2377 -156 2409.0 -162.5Q2441 -169 2467 -179V-10Q2435 0 2386.0 8.5Q2337 17 2283 17Q2185 17 2121.5 -13.0Q2058 -43 2026.5 -99.0Q1995 -155 1995 -231V-405ZM3040 0 3013 -204 3041 -286 3013 -367 3040 -573H3278L3240 -287L3278 0ZM3091 -286Q3079 -195 3038.5 -126.5Q2998 -58 2934.5 -20.5Q2871 17 2789 17Q2706 17 2642.0 -21.0Q2578 -59 2542.5 -127.5Q2507 -196 2507 -286Q2507 -378 2542.5 -446.5Q2578 -515 2642.0 -552.5Q2706 -590 2789 -590Q2871 -590 2934.5 -553.0Q2998 -516 3039.0 -447.5Q3080 -379 3091 -286ZM2738 -286Q2738 -248 2753.5 -219.0Q2769 -190 2797.0 -173.0Q2825 -156 2861 -156Q2898 -156 2932.0 -173.0Q2966 -190 2992.0 -219.0Q3018 -248 3030 -286Q3018 -324 2992.0 -353.5Q2966 -383 2932.0 -400.0Q2898 -417 2861 -417Q2825 -417 2797.0 -400.0Q2769 -383 2753.5 -353.5Q2738 -324 2738 -286Z" fill="#191b30" transform="translate(0 0) scale(1)"/></svg></div><figcaption>Wordmark alone · on volt</figcaption></figure>
+  </div>
+  <div class="subs">
+    <div class="sub"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-60 -836 8565.9 913" role="img"><title>Volta maths</title><g transform="translate(396.5 -379.5) scale(10.01)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g><path d="M435 -110 358 -111 545 -573H788L524 0H263L-1 -573H252ZM1148 17Q1037 17 953.0 -21.0Q869 -59 822.0 -127.5Q775 -196 775 -286Q775 -378 822.0 -446.5Q869 -515 953.0 -552.5Q1037 -590 1149 -590Q1260 -590 1344.0 -552.5Q1428 -515 1474.5 -446.5Q1521 -378 1521 -286Q1521 -196 1474.5 -127.5Q1428 -59 1344.0 -21.0Q1260 17 1148 17ZM1149 -151Q1194 -151 1225.5 -167.0Q1257 -183 1273.5 -213.5Q1290 -244 1290 -286Q1290 -329 1273.5 -359.5Q1257 -390 1225.5 -406.0Q1194 -422 1149 -422Q1104 -422 1072.0 -406.0Q1040 -390 1023.5 -359.5Q1007 -329 1007 -287Q1007 -244 1023.5 -213.5Q1040 -183 1072.0 -167.0Q1104 -151 1149 -151ZM1597 -770H1826V0H1597ZM1881 -405V-504L1995 -556L2095 -728H2225V-573H2457V-405H2225V-262Q2225 -204 2247.5 -180.0Q2270 -156 2336 -156Q2377 -156 2409.0 -162.5Q2441 -169 2467 -179V-10Q2435 0 2386.0 8.5Q2337 17 2283 17Q2185 17 2121.5 -13.0Q2058 -43 2026.5 -99.0Q1995 -155 1995 -231V-405ZM3040 0 3013 -204 3041 -286 3013 -367 3040 -573H3278L3240 -287L3278 0ZM3091 -286Q3079 -195 3038.5 -126.5Q2998 -58 2934.5 -20.5Q2871 17 2789 17Q2706 17 2642.0 -21.0Q2578 -59 2542.5 -127.5Q2507 -196 2507 -286Q2507 -378 2542.5 -446.5Q2578 -515 2642.0 -552.5Q2706 -590 2789 -590Q2871 -590 2934.5 -553.0Q2998 -516 3039.0 -447.5Q3080 -379 3091 -286ZM2738 -286Q2738 -248 2753.5 -219.0Q2769 -190 2797.0 -173.0Q2825 -156 2861 -156Q2898 -156 2932.0 -173.0Q2966 -190 2992.0 -219.0Q3018 -248 3030 -286Q3018 -324 2992.0 -353.5Q2966 -383 2932.0 -400.0Q2898 -417 2861 -417Q2825 -417 2797.0 -400.0Q2769 -383 2753.5 -353.5Q2738 -324 2738 -286Z" fill="#f2f3ff" transform="translate(1031.9 0) scale(1)"/><path d="M42 -566H172L206 -362V0H76V-381ZM415 -580Q490 -580 542.5 -548.0Q595 -516 622.5 -456.5Q650 -397 650 -313V0H520V-292Q520 -381 482.5 -426.5Q445 -472 373 -472Q322 -472 284.5 -447.5Q247 -423 226.5 -379.0Q206 -335 206 -276L160 -301Q169 -389 203.5 -451.0Q238 -513 292.5 -546.5Q347 -580 415 -580ZM858 -580Q933 -580 986.0 -548.0Q1039 -516 1066.5 -456.5Q1094 -397 1094 -313V0H964V-292Q964 -381 926.5 -426.5Q889 -472 817 -472Q766 -472 728.5 -447.5Q691 -423 670.5 -379.0Q650 -335 650 -276L604 -301Q613 -389 647.5 -451.0Q682 -513 736.5 -546.5Q791 -580 858 -580ZM1752 0 1730 -210 1756 -283 1730 -355 1752 -566H1886L1856 -283L1886 0ZM1792 -283Q1773 -194 1729.0 -127.0Q1685 -60 1620.5 -23.0Q1556 14 1477 14Q1394 14 1330.0 -23.5Q1266 -61 1230.0 -128.0Q1194 -195 1194 -283Q1194 -372 1230.0 -438.5Q1266 -505 1330.0 -542.5Q1394 -580 1477 -580Q1556 -580 1620.5 -543.0Q1685 -506 1729.5 -439.5Q1774 -373 1792 -283ZM1326 -283Q1326 -226 1349.5 -182.5Q1373 -139 1414.0 -114.5Q1455 -90 1508 -90Q1562 -90 1608.0 -114.5Q1654 -139 1689.5 -182.5Q1725 -226 1746 -283Q1725 -340 1689.5 -383.5Q1654 -427 1608.0 -451.5Q1562 -476 1508 -476Q1455 -476 1414.0 -451.5Q1373 -427 1349.5 -383.5Q1326 -340 1326 -283ZM1947 -466V-525L2068 -556L2122 -714H2198V-566H2461V-466H2198V-221Q2198 -150 2228.5 -121.5Q2259 -93 2328 -93Q2372 -93 2406.0 -102.5Q2440 -112 2471 -130V-23Q2445 -10 2397.5 2.0Q2350 14 2300 14Q2217 14 2166.0 -13.5Q2115 -41 2091.5 -89.5Q2068 -138 2068 -201V-466ZM2566 -770H2696V0H2566ZM2921 -580Q3001 -580 3057.0 -548.0Q3113 -516 3142.5 -456.5Q3172 -397 3172 -313V0H3042V-292Q3042 -381 3000.5 -426.5Q2959 -472 2879 -472Q2824 -472 2782.5 -447.5Q2741 -423 2718.5 -379.0Q2696 -335 2696 -276L2650 -301Q2659 -389 2696.0 -451.0Q2733 -513 2791.0 -546.5Q2849 -580 2921 -580ZM3888 -172Q3888 -115 3856.0 -73.0Q3824 -31 3759.0 -8.5Q3694 14 3596 14Q3495 14 3421.0 -11.5Q3347 -37 3306.5 -83.5Q3266 -130 3263 -191H3395Q3401 -159 3427.5 -134.5Q3454 -110 3497.5 -97.0Q3541 -84 3597 -84Q3678 -84 3719.0 -103.5Q3760 -123 3760 -163Q3760 -190 3732.5 -204.0Q3705 -218 3629 -225L3518 -235Q3428 -243 3376.0 -267.5Q3324 -292 3302.0 -327.5Q3280 -363 3280 -403Q3280 -461 3316.0 -500.0Q3352 -539 3416.0 -559.5Q3480 -580 3565 -580Q3653 -580 3722.0 -555.5Q3791 -531 3832.0 -487.5Q3873 -444 3878 -387H3746Q3742 -410 3722.5 -431.5Q3703 -453 3663.5 -467.5Q3624 -482 3558 -482Q3488 -482 3448.5 -464.0Q3409 -446 3409 -411Q3409 -389 3433.0 -373.5Q3457 -358 3522 -352L3665 -339Q3751 -331 3799.5 -308.5Q3848 -286 3868.0 -251.0Q3888 -216 3888 -172Z" fill="#6f93ff" transform="translate(4557.9 0)"/></svg><p class="sub-note">Volta Maths · Foundation (8300) and Higher (8300H)</p></div>
+    <div class="sub"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-60 -836 8816.9 913" role="img"><title>Volta english</title><g transform="translate(396.5 -379.5) scale(10.01)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g><path d="M435 -110 358 -111 545 -573H788L524 0H263L-1 -573H252ZM1148 17Q1037 17 953.0 -21.0Q869 -59 822.0 -127.5Q775 -196 775 -286Q775 -378 822.0 -446.5Q869 -515 953.0 -552.5Q1037 -590 1149 -590Q1260 -590 1344.0 -552.5Q1428 -515 1474.5 -446.5Q1521 -378 1521 -286Q1521 -196 1474.5 -127.5Q1428 -59 1344.0 -21.0Q1260 17 1148 17ZM1149 -151Q1194 -151 1225.5 -167.0Q1257 -183 1273.5 -213.5Q1290 -244 1290 -286Q1290 -329 1273.5 -359.5Q1257 -390 1225.5 -406.0Q1194 -422 1149 -422Q1104 -422 1072.0 -406.0Q1040 -390 1023.5 -359.5Q1007 -329 1007 -287Q1007 -244 1023.5 -213.5Q1040 -183 1072.0 -167.0Q1104 -151 1149 -151ZM1597 -770H1826V0H1597ZM1881 -405V-504L1995 -556L2095 -728H2225V-573H2457V-405H2225V-262Q2225 -204 2247.5 -180.0Q2270 -156 2336 -156Q2377 -156 2409.0 -162.5Q2441 -169 2467 -179V-10Q2435 0 2386.0 8.5Q2337 17 2283 17Q2185 17 2121.5 -13.0Q2058 -43 2026.5 -99.0Q1995 -155 1995 -231V-405ZM3040 0 3013 -204 3041 -286 3013 -367 3040 -573H3278L3240 -287L3278 0ZM3091 -286Q3079 -195 3038.5 -126.5Q2998 -58 2934.5 -20.5Q2871 17 2789 17Q2706 17 2642.0 -21.0Q2578 -59 2542.5 -127.5Q2507 -196 2507 -286Q2507 -378 2542.5 -446.5Q2578 -515 2642.0 -552.5Q2706 -590 2789 -590Q2871 -590 2934.5 -553.0Q2998 -516 3039.0 -447.5Q3080 -379 3091 -286ZM2738 -286Q2738 -248 2753.5 -219.0Q2769 -190 2797.0 -173.0Q2825 -156 2861 -156Q2898 -156 2932.0 -173.0Q2966 -190 2992.0 -219.0Q3018 -248 3030 -286Q3018 -324 2992.0 -353.5Q2966 -383 2932.0 -400.0Q2898 -417 2861 -417Q2825 -417 2797.0 -400.0Q2769 -383 2753.5 -353.5Q2738 -324 2738 -286Z" fill="#f2f3ff" transform="translate(1031.9 0) scale(1)"/><path d="M378 14Q279 14 202.0 -23.5Q125 -61 81.0 -128.0Q37 -195 37 -284Q37 -372 78.5 -438.5Q120 -505 193.5 -542.5Q267 -580 362 -580Q457 -580 526.5 -537.5Q596 -495 634.0 -418.0Q672 -341 672 -237H139V-336H607L542 -299Q539 -355 515.5 -395.0Q492 -435 452.5 -456.5Q413 -478 359 -478Q302 -478 259.5 -455.0Q217 -432 193.0 -390.5Q169 -349 169 -292Q169 -229 197.5 -183.0Q226 -137 278.5 -112.5Q331 -88 403 -88Q468 -88 536.0 -108.5Q604 -129 656 -166V-72Q604 -32 529.5 -9.0Q455 14 378 14ZM752 -566H882L916 -362V0H786V-381ZM1141 -580Q1221 -580 1277.0 -548.0Q1333 -516 1362.5 -456.5Q1392 -397 1392 -313V0H1262V-292Q1262 -381 1220.5 -426.5Q1179 -472 1099 -472Q1044 -472 1002.5 -447.5Q961 -423 938.5 -379.0Q916 -335 916 -276L870 -301Q879 -389 916.0 -451.0Q953 -513 1011.0 -546.5Q1069 -580 1141 -580ZM2036 -139V-239L2041 -257V-366L2036 -386V-566H2166V-151Q2166 -42 2120.0 31.5Q2074 105 1994.0 142.0Q1914 179 1810 179Q1734 179 1670.0 159.0Q1606 139 1546 98V-10Q1607 38 1672.0 57.5Q1737 77 1802 77Q1916 77 1976.0 21.0Q2036 -35 2036 -139ZM1764 -44Q1686 -44 1624.0 -77.5Q1562 -111 1526.0 -171.0Q1490 -231 1490 -312Q1490 -393 1526.0 -453.0Q1562 -513 1624.0 -546.5Q1686 -580 1764 -580Q1822 -580 1871.5 -562.0Q1921 -544 1960.5 -514.5Q2000 -485 2027.5 -449.5Q2055 -414 2070.0 -377.5Q2085 -341 2085 -311Q2085 -272 2062.0 -225.5Q2039 -179 1996.5 -138.0Q1954 -97 1895.0 -70.5Q1836 -44 1764 -44ZM1804 -140Q1875 -140 1934.5 -181.0Q1994 -222 2041 -312Q1994 -404 1934.5 -444.5Q1875 -485 1804 -485Q1746 -485 1705.0 -463.0Q1664 -441 1642.5 -402.0Q1621 -363 1621 -312Q1621 -262 1642.5 -223.0Q1664 -184 1705.0 -162.0Q1746 -140 1804 -140ZM2301 -770H2431V0H2301ZM2569 -570 2634 -558 2699 -570V0H2569ZM2634 -641Q2597 -641 2573.0 -661.5Q2549 -682 2549 -715Q2549 -748 2573.0 -768.5Q2597 -789 2634 -789Q2672 -789 2695.5 -768.5Q2719 -748 2719 -715Q2719 -682 2695.5 -661.5Q2672 -641 2634 -641ZM3423 -172Q3423 -115 3391.0 -73.0Q3359 -31 3294.0 -8.5Q3229 14 3131 14Q3030 14 2956.0 -11.5Q2882 -37 2841.5 -83.5Q2801 -130 2798 -191H2930Q2936 -159 2962.5 -134.5Q2989 -110 3032.5 -97.0Q3076 -84 3132 -84Q3213 -84 3254.0 -103.5Q3295 -123 3295 -163Q3295 -190 3267.5 -204.0Q3240 -218 3164 -225L3053 -235Q2963 -243 2911.0 -267.5Q2859 -292 2837.0 -327.5Q2815 -363 2815 -403Q2815 -461 2851.0 -500.0Q2887 -539 2951.0 -559.5Q3015 -580 3100 -580Q3188 -580 3257.0 -555.5Q3326 -531 3367.0 -487.5Q3408 -444 3413 -387H3281Q3277 -410 3257.5 -431.5Q3238 -453 3198.5 -467.5Q3159 -482 3093 -482Q3023 -482 2983.5 -464.0Q2944 -446 2944 -411Q2944 -389 2968.0 -373.5Q2992 -358 3057 -352L3200 -339Q3286 -331 3334.5 -308.5Q3383 -286 3403.0 -251.0Q3423 -216 3423 -172ZM3528 -770H3658V0H3528ZM3883 -580Q3963 -580 4019.0 -548.0Q4075 -516 4104.5 -456.5Q4134 -397 4134 -313V0H4004V-292Q4004 -381 3962.5 -426.5Q3921 -472 3841 -472Q3786 -472 3744.5 -447.5Q3703 -423 3680.5 -379.0Q3658 -335 3658 -276L3612 -301Q3621 -389 3658.0 -451.0Q3695 -513 3753.0 -546.5Q3811 -580 3883 -580Z" fill="#ff9d61" transform="translate(4562.9 0)"/></svg><p class="sub-note">Volta English · English Language (8700)</p></div>
+  </div>
+</section>
+
+<section class="section" id="icons">
+  <div class="section-head">
+    <div class="eyebrow">App icon</div>
+    <h2>Night by default, like the rail</h2>
+    <p class="lede">The icon puts the disc on the night stage used by the rail, heroes and explainer player, so the app icon and the first screen match. The paper version is for Android themed backgrounds and light contexts.</p>
+  </div>
+  <div class="icons"><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img"><title>iOS icon</title><rect width="1024" height="1024" rx="230" fill="#191b30"/><g transform="translate(497.61 497.61) scale(7.58)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g></svg><figcaption><b>iOS</b>Night, the default</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img"><title>Android adaptive icon</title><circle cx="512" cy="512" r="512" fill="#191b30"/><g transform="translate(500.01 500.01) scale(6.31)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g></svg><figcaption><b>Android adaptive</b>Circle mask, safe zone</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img"><title>Paper icon</title><rect width="1024" height="1024" rx="230" fill="#f2f3fa"/><g transform="translate(497.61 497.61) scale(7.58)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g></svg><figcaption><b>Paper</b>Light contexts</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img"><title>Themed icon</title><rect width="1024" height="1024" rx="230" fill="#e1e4f5"/><g transform="translate(497.61 497.61) scale(7.58)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="translate(2.2 -2.2) rotate(0)" fill="#191b30"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="translate(2.2 2.2) rotate(90)" fill="#191b30"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="translate(-2.2 2.2) rotate(180)" fill="#191b30"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="translate(-2.2 -2.2) rotate(270)" fill="#191b30"/></g></svg><figcaption><b>Themed</b>Monochrome, Android 13+</figcaption></figure></div>
+</section>
+
+<section class="section" id="inuse">
+  <div class="section-head">
+    <div class="eyebrow">In use</div>
+    <h2>How it would sit in the product</h2>
+  </div>
+  <div class="inuse">
+    <div class="mock">
+      <div class="mock-app">
+        <div class="mock-rail">
+          <div class="mock-brand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-40.6 -40.6 81.2 81.2" width="36" height="36" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><div class="t"><b>Volta Maths</b><span>AQA Foundation</span></div></div>
+          <div class="mock-hud"><span>1 day</span><span>213 XP</span><span>Lvl 3</span></div>
+          <div class="mock-nav"><span class="on">Dashboard</span><span>Practice</span><span>Learn</span><span>Notebook</span></div>
+        </div>
+        <div class="mock-main">
+          <div class="eyebrow">Today's revision</div>
+          <h3>Factors, Multiples &amp; Primes</h3>
+          <p>You have set aside 15 minutes. Read the lesson, then try the short practice.</p>
+          <span class="mock-btn">Start today's revision</span>
+        </div>
+      </div>
+    </div>
+    <div class="mock-phone">
+      <div class="grid">
+        <div class="app"><i></i><span>Photos</span></div>
+        <div class="app"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img"><title>Volta</title><rect width="1024" height="1024" rx="230" fill="#191b30"/><g transform="translate(497.61 497.61) scale(7.58)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g></svg><span>Volta</span></div>
+        <div class="app"><i></i><span>Music</span></div>
+        <div class="app"><i></i><span>Notes</span></div>
+      </div>
+      <div class="avatar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="50" fill="#191b30"/><g transform="translate(48.63 48.63) scale(0.72)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g></svg><div><b>@volta.study</b><span>Fix what you missed.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="rules">
+  <div class="section-head">
+    <div class="eyebrow">Usage</div>
+    <h2>Keep the disc honest</h2>
+  </div>
+  <div class="rules">
+    <div class="rule do"><span class="tag">Do</span><ul>
+      <li>Leave clear space equal to the volt quarter on every side.</li>
+      <li>Use the night outline on light grounds. On night grounds it merges into the background and leaves gaps, which is intended.</li>
+      <li>Keep the minimum size at 16px for the mark and 72px wide for the lockup.</li>
+      <li>Use the closed disc only for a real, server-marked success.</li>
+    </ul></div>
+    <div class="rule dont"><span class="tag">Don't</span><div class="dont-art"><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-52 -52 104 104" aria-hidden="true"><g transform="rotate(90)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g></svg><figcaption>Rotate it: volt sits top left</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-52 -52 104 104" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#ff5566" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></svg><figcaption>Recolour a quarter</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-52 -52 104 104" aria-hidden="true"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M4 -30L-10 4h10l-6 26 18-36H6l8-24z" fill="#c3f53c" stroke="#191b30" stroke-width="2.4" stroke-linejoin="round"/></svg><figcaption>Add a lightning bolt</figcaption></figure><figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="-52 -52 104 104" aria-hidden="true"><g transform="scale(1.3 0.78)"><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(0)" fill="#3d6bff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(90)" fill="#ff7a2e" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-38A38 38 0 0 1 38 0Z" transform="rotate(180)" fill="#9b4dff" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/><path d="M0 0V-23.56A23.56 23.56 0 0 1 23.56 0Z" transform="rotate(270)" fill="#c3f53c" stroke="#191b30" stroke-width="3.2" stroke-linejoin="round"/></g></svg><figcaption>Stretch or squash</figcaption></figure></div></div>
+  </div>
+</section>
+
+<section class="section" id="system">
+  <div class="section-head">
+    <div class="eyebrow">Colour and type</div>
+    <h2>Nothing new to learn</h2>
+    <p class="lede">The brand palette is the Circuit token set, and the rule stays the same: volt means "go" or "reward" and nothing else.</p>
+  </div>
+  <div class="swatches"><div class="swatch"><div class="chipc" style="background:#191b30"></div><div class="meta"><b>Night</b><span>#191B30 · Stage, outline, ink</span></div></div><div class="swatch"><div class="chipc" style="background:#c3f53c"></div><div class="meta"><b>Volt</b><span>#C3F53C · Go and reward only</span></div></div><div class="swatch"><div class="chipc" style="background:#3d6bff"></div><div class="meta"><b>Foundation blue</b><span>#3D6BFF · Maths Foundation</span></div></div><div class="swatch"><div class="chipc" style="background:#9b4dff"></div><div class="meta"><b>Higher purple</b><span>#9B4DFF · Maths Higher</span></div></div><div class="swatch"><div class="chipc" style="background:#ff7a2e"></div><div class="meta"><b>English tangerine</b><span>#FF7A2E · English Language</span></div></div><div class="swatch"><div class="chipc" style="background:#f2f3fa"></div><div class="meta"><b>Paper</b><span>#F2F3FA · Light ground</span></div></div></div>
+  <div class="type">
+    <div class="type-row"><span class="eyebrow">Display · Unbounded</span><div class="spec-display">Learn it. Play with it.</div></div>
+    <div class="type-row"><span class="eyebrow">UI · Atkinson Hyperlegible Next</span><div class="spec-ui">Know what to revise next, practise it in the exam's format, and see exactly why an answer lost marks.</div></div>
+    <div class="type-row"><span class="eyebrow">Labels · Atkinson Mono</span><div class="spec-mono">PAPER 1 · NON-CALCULATOR · 1H 30M · 80 MARKS</div></div>
+  </div>
+</section>
+
+<section class="section" id="voice">
+  <div class="section-head">
+    <div class="eyebrow">Voice</div>
+    <h2>Direct, useful, a little bit loud</h2>
+    <p class="lede">The existing product voice (honest, specific, never inflated) plus some of the attitude you like in Emofest. Confidence comes from the loop, never from promised grades.</p>
+  </div>
+  <div class="voice">
+    <div class="line-card"><q>Fix what you missed.</q><span>Primary line. Already the landing page's promise.</span></div>
+    <div class="line-card"><q>One more go.</q><span>Retries, notifications, the notebook.</span></div>
+    <div class="line-card"><q>Close the loop.</q><span>Mastery moments, when the disc closes.</span></div>
+    <div class="line-card"><q>Revision with a turn in it.</q><span>Campaigns, the English launch.</span></div>
+  </div>
+</section>
+
+<section class="section" id="research">
+  <div class="section-head">
+    <div class="eyebrow">Market research</div>
+    <h2>Who else is on a GCSE student's phone</h2>
+    <p class="lede">A scan of the UK GCSE revision market in September 2026, from reviews, comparison guides and the brands' own sites. Prices are as reported by those sources and change often.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Brand</th><th>What it is</th><th>Model</th><th>Core mechanic</th><th>Brand character</th></tr></thead>
+      <tbody>
+        <tr><td>Seneca</td><td>Spec-aligned courses, KS2 to A-level</td><td>Free core, Premium upgrade</td><td>Quick recall quizzes, teacher-set homework</td><td class="muted">Named after the Stoic philosopher. Light blue, rounded sans, a spark mark and a ⚡ in the hero.</td></tr>
+        <tr><td>Save My Exams</td><td>Revision notes, past papers, topic questions</td><td>Limited free, subscription</td><td>Notes library, SmartMark AI feedback</td><td class="muted">Descriptive name. The logo is a blue lightning bolt.</td></tr>
+        <tr><td>BBC Bitesize</td><td>Guides, videos, quizzes</td><td>Free</td><td>Explanations and recaps, mostly passive</td><td class="muted">Most-trusted UK name. Rules out any "bite" or "byte" naming.</td></tr>
+        <tr><td>Medly</td><td>AI tutor with marked written answers</td><td>Free tier, £24.99/month for AI marking</td><td>AI marking, topic tracking, levels</td><td class="muted">Black and white, minimal, "AI tutor" positioning.</td></tr>
+        <tr><td>Quizlet</td><td>Community flashcards</td><td>Free, Plus tier</td><td>User-made decks, game modes</td><td class="muted">Global brand, not exam-board aligned.</td></tr>
+        <tr><td>Sparx Maths</td><td>School-assigned homework</td><td>School licence</td><td>Personalised homework, teacher reporting</td><td class="muted">Says it serves over half of UK schools. Owns the "spark" sound.</td></tr>
+        <tr><td>Tassomai</td><td>Adaptive science quizzing</td><td>About £8/month</td><td>Daily goals, weak-topic priority</td><td class="muted">Science only.</td></tr>
+        <tr><td>GCSEPod</td><td>Short video "pods"</td><td>School licence</td><td>3–5 minute videos with check questions</td><td class="muted">Descriptive. Not sold to students directly.</td></tr>
+        <tr><td>Corbettmaths, Maths Genie, PMT</td><td>Free worksheets, papers, videos</td><td>Free</td><td>5-a-day, graded question banks</td><td class="muted">Loved, but dated interfaces and no tracking. They set the free baseline.</td></tr>
+        <tr><td>New AI apps</td><td>Lightbulb Learning, UpGrades, Piply, Revvo, Revu</td><td>Freemium</td><td>AI flashcards, AI marking, plans</td><td class="muted">Crowded, mostly generic names and interchangeable looks.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="camps">
+    <div class="camp"><h3>Descriptive</h3><div class="names"><span>Save My Exams</span><span>Maths Genie</span><span>Revision Village</span><span>Physics &amp; Maths Tutor</span><span>GCSE Study Desk</span></div><p>Clear on day one but impossible to own or trademark. The current name sits here.</p></div>
+    <div class="camp"><h3>"Rev-" coinages</h3><div class="names"><span>Revvo</span><span>Revu</span><span>Reviso</span><span>Revlo</span><span>Revizoo</span></div><p>Five apps found on one page of store results. The prefix is saturated and they blur together.</p></div>
+    <div class="camp"><h3>"AI" suffix</h3><div class="names"><span>Medly AI</span><span>Piply AI</span><span>Quira</span><span>Pippit</span></div><p>Positions the product as an AI tutor, which PRODUCT.md says Study Desk is not.</p></div>
+    <div class="camp gap"><h3>Story names</h3><div class="names"><span>Seneca</span><span>Volta</span></div><p>A real word with a story. Seneca, the market leader, is the one clear example. Volta joins it with a scientist and a poetry term.</p></div>
+  </div>
+  <div class="section-head">
+    <h3>What that means for the brand</h3>
+  </div>
+  <div class="rules">
+    <div class="rule"><span class="tag">Stay away from the bolt</span><p>Save My Exams' logo is a lightning bolt and Seneca's hero uses ⚡. Volta says electricity in its name, so the mark uses the quadrant disc instead.</p></div>
+    <div class="rule"><span class="tag">Sell the loop, not the bank</span><p>Free papers and questions are everywhere (Maths Genie, Corbettmaths, PMT, Bitesize). The only story here that competitors can't copy by adding content is the mistake-to-mastery loop, and the closing disc shows it.</p></div>
+    <div class="rule"><span class="tag">Be the game, not the library</span><p>Seneca, Save My Exams and Medly all open on white with flat blue or black, and none of them leads with a character. Their gamification is a feature, not the brand. Volta can make it the brand, with Pip and the night stage.</p></div>
+  </div>
+  <div class="section-head">
+    <h3>What the brands you like teach us</h3>
+  </div>
+  <div class="inspo">
+    <div><b>Duolingo</b><span>A custom typeface drawn from the mascot's shapes.</span><em>The wordmark and Pip share the quadrant shapes.</em></div>
+    <div><b>Mimo</b><span>A robot companion and a game HUD for a serious skill.</span><em>Pip plus the streak, XP and level chips.</em></div>
+    <div><b>Pied Piper</b><span>A name that is a story: the piper who leads everyone.</span><em>Volta carries four stories in five letters.</em></div>
+    <div><b>Lego</b><span>A sticker outline, bold colour, and play made of pieces that click.</span><em>The night outline and a disc built from quarters.</em></div>
+    <div><b>Kahoot!</b><span>Four answer shapes became the whole visual system.</span><em>Four quadrant shapes (C, R, S, W) already run every emblem.</em></div>
+    <div><b>Intel and AMD</b><span>Chip heritage, lower case or all caps, strict geometry.</span><em>The circuit metaphor and an all-geometric mark.</em></div>
+    <div><b>Apple</b><span>One silhouette with one missing piece.</span><em>The gap by the volt quarter is our bite.</em></div>
+    <div><b>Emofest</b><span>Night palettes, attitude, never "just a phase".</span><em>Night is the default stage, with confident copy.</em></div>
+  </div>
+  <div class="section-head">
+    <h3>Names considered</h3>
+  </div>
+  <div class="shortlist">
+    <div class="cand"><strong>Volta</strong><span class="pill pick">Recommended</span><p>Four meanings that match the product and easy to say. No GCSE or UK revision brand found with the name, though a tutoring-management app and a US academy use it. Plain "Volta" is taken on the App Store by a college wellbeing app, so list as "Volta: GCSE Revision".</p></div>
+    <div class="cand"><strong>Quado</strong><span class="pill alt">Runner-up</span><p>"Quad" plus "o", like Lego and Mimo, for the four quarters. Cleaner trademark space (only Quadoo, a word game, and Kuado nearby) but a thinner story. Use it if Volta fails the trade-mark search.</p></div>
+    <div class="cand"><strong>Pipit</strong><span class="pill no">Rejected</span><p>Promotes the mascot, but it collides with Piply (a study app) and Pippit (ByteDance's AI content tool).</p></div>
+    <div class="cand"><strong>Pila</strong><span class="pill no">Rejected</span><p>Italian and Spanish for "battery" and "stack", but the OECD runs PILA, an education assessment platform. The pronunciation is also unclear in English.</p></div>
+    <div class="cand"><strong>Revo / Revvo</strong><span class="pill no">Rejected</span><p>Taken, and part of the crowded "Rev-" group.</p></div>
+    <div class="cand"><strong>Sparko, Bitsy</strong><span class="pill no">Rejected</span><p>Too close to Sparx and BBC Bitesize, two of the biggest names in UK schools.</p></div>
+  </div>
+  <div class="checks">
+    <div class="check"><h3>Checked on 29 September 2026</h3><ul>
+      <li><span class="s free">No record</span><span>volta.study · voltarevision.co.uk · voltarevision.com · govolta.app · voltarevise.com · voltaapp.co.uk (no RDAP registration found)</span></li>
+      <li><span class="s taken">Taken</span><span>volta.app · getvolta.app · volta.academy · volta.co.uk</span></li>
+      <li><span class="s taken">Taken</span><span>"Volta" on the App Store (indeHealth, college wellbeing) and on Google Play (tutoring-class management)</span></li>
+      <li><span class="s taken">Exists</span><span>Volta Tech Ltd and Volta Technologies Ltd at Companies House. No education activity found.</span></li>
+    </ul></div>
+    <div class="check"><h3>Still to do before spending money</h3><ul>
+      <li><span class="s todo">To do</span><span>UK IPO search for VOLTA in classes 9 (apps), 41 (education) and 42 (software as a service), as GO_TO_MARKET.md requires</span></li>
+      <li><span class="s todo">To do</span><span>Search the EU and US registers (TMview, USPTO) before an international release</span></li>
+      <li><span class="s todo">To do</span><span>Claim social handles (@volta.study or similar) on TikTok, Instagram and YouTube</span></li>
+      <li><span class="s todo">To do</span><span>Register the domain you pick. The records above only show that no registration existed on the day.</span></li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="section" id="next">
+  <div class="section-head">
+    <div class="eyebrow">Next steps</div>
+    <h2>From proposal to rename</h2>
+  </div>
+  <ol class="next">
+    <li><div><b>Clear the name</b><span>Run the UK IPO search. If VOLTA is live in class 41 for education, switch to Quado. The mark and system work unchanged.</span></div></li>
+    <li><div><b>Buy the domain and handles</b><span>Recommended: volta.study, plus voltarevision.co.uk as a redirect.</span></div></li>
+    <li><div><b>Rename in the code</b><span>"GCSE Study Desk", "MathsMate" and "EnglishMate" appear 161 times in 57 files, including store listings, legal pages, SEO metadata and the Expo config.</span></div></li>
+    <li><div><b>Ship the icon</b><span>Swap the favicon, the Expo icon sources and the rail brand mark for the Volta disc. The SVG sources are in <span class="mono">website/design/brand/</span>.</span></div></li>
+  </ol>
+</section>
+
+<section class="section" id="sources">
+  <div class="section-head"><div class="eyebrow">Sources</div></div>
+  <ul class="sources"><li><a href="https://www.medlyai.com/uk/blog/best_gcse_revision_apps_2026">Medly: Best GCSE revision apps 2026</a></li><li><a href="https://lightbulblearning.co/guides/best-gcse-revision-apps-and-websites">Lightbulb Learning: Best GCSE revision apps and websites</a></li><li><a href="https://www.upgrades.app/blog/best-gcse-revision-apps/">UpGrades: Best GCSE revision apps for 2026</a></li><li><a href="https://www.theaccessgroup.com/en-gb/education/software/education-resources/gcse/gcsepod-versus-gcse-revision-resources/">The Access Group: GCSEPod versus other revision resources</a></li><li><a href="https://sparxmaths.com/">Sparx Maths</a></li><li><a href="https://senecalearning.com/en-GB/">Seneca homepage (visual review)</a></li><li><a href="https://www.savemyexams.com/">Save My Exams homepage (visual review)</a></li><li><a href="https://www.creativebloq.com/news/feather-bold">Creative Bloq: Duolingo Feather Bold</a></li><li><a href="https://kahoot.com/library/kahoot-logo/">Kahoot! brand guidelines</a></li><li><a href="https://medium.com/getmimo/breathing-life-into-mimos-designs-fb1a162e22a0">Making Mimo: Breathing life into Mimo’s designs</a></li><li><a href="https://www.emofest.co.uk/">Emofest UK</a></li><li><a href="https://en.wikipedia.org/wiki/Voltaic_pile">Wikipedia: Voltaic pile</a></li><li><a href="https://www.poetryfoundation.org/education/glossary/volta">Poetry Foundation: Volta</a></li><li><a href="https://apps.apple.com/us/app/volta/id6547832204">App Store: Volta (indeHealth)</a></li><li><a href="https://play.google.com/store/apps/details?id=co.penny.pujwh">Google Play: Volta (tutoring management)</a></li><li><a href="https://apps.apple.com/us/app/revvo/id6775417070">App Store: Revvo</a></li><li><a href="https://apps.apple.com/us/app/piply-ai-study-exam-prep/id6759463981">App Store: Piply AI</a></li><li><a href="https://www.pippit.ai/tools/education">Pippit education tools</a></li><li><a href="https://pilaproject.org/">OECD PILA</a></li><li><a href="https://apps.apple.com/us/app/quadoo/id6756758644">App Store: Quadoo</a></li><li><a href="https://find-and-update.company-information.service.gov.uk/company/12531643">Companies House: Volta Tech Ltd</a></li><li><a href="https://www.gov.uk/search-for-trademark">GOV.UK: Search for a trade mark</a></li><li><a href="https://rdap.org/">RDAP domain lookups via rdap.org</a></li></ul>
+</section>
+
+<footer>Proposal for Mayer Digital. Volta is not yet cleared as a trade mark, and nothing here implies AQA endorsement.</footer>
+</main>

@@ -11,6 +11,8 @@ Companion guides:
 - [GRAPHICS.md](GRAPHICS.md): emblems, level tiles, scenes, icons and Pip.
 - [VIDEO_AUTHORING.md](VIDEO_AUTHORING.md): interactive explainer scripts.
 - [NEW_SUBJECT.md](NEW_SUBJECT.md): the checklist for adding a subject.
+- [brand/BRAND.md](brand/BRAND.md): the proposed Volta name, logo and
+  brand kit (not adopted yet).
 
 ## The idea
 

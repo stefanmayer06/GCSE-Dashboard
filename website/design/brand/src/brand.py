@@ -1,4 +1,4 @@
-"""Build the Clevolta brand assets and the brand-kit page.
+"""Build the Revisaurus brand assets and the brand-kit page.
 
 Run from website/: python3 design/brand/src/brand.py
 Needs: pip install fonttools brotli uharfbuzz
@@ -17,7 +17,8 @@ SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(SRC_DIR)
 os.makedirs(OUT, exist_ok=True)
 
-NAME = 'Clevolta'   # clever + Volta
+NAME = 'Revisaurus'   # revise + thesaurus, with a dinosaur's roar
+ALTERNATES = ['fixcalibur', 'missterpiece']
 WORD = NAME.lower()
 
 NIGHT = '#191b30'
@@ -59,7 +60,7 @@ def quarter(idx, fill, r=R, line=NIGHT, sw=SW, cls=None, dash=None, stroke=None)
 
 
 def disc(state='building', line=NIGHT, vq_class=None, volt=VOLT, hues=None, ghost='rgba(25,27,48,0.07)'):
-    """The Clevolta disc in mark units, centred on 0,0."""
+    """The disc in mark units, centred on 0,0."""
     hues = hues or QUARTERS
     if state == 'blueprint':
         body = f'<circle r="{f(R + 6)}" fill="{ghost}"/>'
@@ -220,27 +221,30 @@ def construct():
 
 def meaning_icons():
     L = f'stroke="{NIGHT}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"'
-    pts = []
-    for i in range(10):
-        r = 18 if i % 2 == 0 else 7.6
-        t = math.radians(-90 + i * 36)
-        pts.append(f'{f(r * math.cos(t))} {f(r * math.sin(t) + 1.5)}')
-    clever = svg('-24 -24 48 48', f'<path d="M{"L".join(pts)}Z" fill="#f5a300" {L}/>')
-    pile = ''
-    for i, c in enumerate([PURP, TANG, VOLT]):
-        y = 11 - i * 9
-        pile += (f'<path d="M-17 {f(y)}v4a17 7 0 0 0 34 0v-4" fill="{c}" {L}/>'
-                 f'<ellipse cx="0" cy="{f(y)}" rx="17" ry="7" fill="{c}" {L}/>')
-    pile = svg('-24 -24 48 48', pile)
-    turn = svg('-24 -24 48 48',
-               f'<path d="{qd(15)}" transform="translate(-4 4)" fill="{BLUE}" {L}/>'
-               f'<path d="M-17 4A17 17 0 0 1 4 -16" fill="none" {L}/>'
-               f'<path d="M-1 -20l6 4-5 5" fill="none" {L}/>')
-    again = svg('-24 -24 48 48',
-                f'<path d="M15 -9A17 17 0 1 0 17 4" fill="none" {L}/>'
-                f'<path d="M9 -12l7 3 1-8" fill="none" {L}/>'
-                f'<path d="{qd(10)}" transform="translate(-5 5)" fill="{VOLT}" {L}/>')
-    return clever, pile, turn, again
+    revise = svg('-24 -24 48 48',
+                 f'<path d="{qd(15)}" transform="translate(-4 4)" fill="{BLUE}" {L}/>'
+                 f'<path d="M-17 4A17 17 0 0 1 4 -16" fill="none" {L}/>'
+                 f'<path d="M-1 -20l6 4-5 5" fill="none" {L}/>')
+    book = svg('-24 -24 48 48',
+               f'<path d="M0 -12C-6 -17 -14 -17 -20 -14V15C-14 12 -6 12 0 17Z" fill="{PAPER}" {L}/>'
+               f'<path d="M0 -12C6 -17 14 -17 20 -14V15C14 12 6 12 0 17Z" fill="{TANG}" {L}/>'
+               f'<path d="M-15 -7C-11 -9 -7 -9 -4 -7M-15 0C-11 -2 -7 -2 -4 0" fill="none" {L}/>')
+    toes = ''.join(f'<ellipse cx="{x}" cy="{y}" rx="4.2" ry="6" transform="rotate({r} {x} {y})" fill="{PURP}" {L}/>'
+                   for x, y, r in ((-11, -9, -24), (0, -14, 0), (11, -9, 24)))
+    saurus = svg('-24 -24 48 48', toes + f'<path d="M-11 4C-11 -3 11 -3 11 4C11 13 5 18 0 18C-5 18 -11 13 -11 4Z" fill="{PURP}" {L}/>')
+    extinct = svg('-24 -24 48 48',
+                  f'<path d="M15 -9A17 17 0 1 0 17 4" fill="none" {L}/>'
+                  f'<path d="M9 -12l7 3 1-8" fill="none" {L}/>'
+                  f'<path d="{qd(10)}" transform="translate(-5 5)" fill="{VOLT}" {L}/>')
+    return revise, book, saurus, extinct
+
+
+def word_svg(word, ink, height=None):
+    """Any word set like the wordmark, for comparing name options."""
+    d, _, (x0, y0, x1, y1) = shape(word, WM_WGHT, WM_TRACK)
+    pad = 40
+    return svg(f'{f(x0 - pad)} {f(y0 - pad)} {f(x1 - x0 + pad * 2)} {f(y1 - y0 + pad * 2)}',
+               f'<path d="{d}" fill="{ink}"/>', height=height, title=word.capitalize())
 
 
 def sizes(line_bg):
@@ -286,31 +290,25 @@ SOURCES = [
     ('Sparx Maths', 'https://sparxmaths.com/'),
     ('Seneca homepage (visual review)', 'https://senecalearning.com/en-GB/'),
     ('Save My Exams homepage (visual review)', 'https://www.savemyexams.com/'),
+    ('ScienceDirect: Sounds cute, sound reduplication in brand names (2025)', 'https://www.sciencedirect.com/science/article/pii/S0167811625000084'),
+    ('Brandingmag: The science of sound symbolism', 'https://www.brandingmag.com/david-placek/the-science-of-sound-symbolism-and-the-importance-of-your-brand-name/'),
+    ('ResearchGate: Phonetic symbolism and brand name preference', 'https://www.researchgate.net/publication/23547390_Phonetic_Symbolism_and_Brand_Name_Preference'),
+    ('Wikipedia: Duolingo', 'https://en.wikipedia.org/wiki/Duolingo'),
+    ('Wisdom Library: Meaning of the name Kahoot', 'https://www.wisdomlib.org/names/kahoot'),
     ('Creative Bloq: Duolingo Feather Bold', 'https://www.creativebloq.com/news/feather-bold'),
     ('Kahoot! brand guidelines', 'https://kahoot.com/library/kahoot-logo/'),
     ('Making Mimo: Breathing life into Mimo’s designs', 'https://medium.com/getmimo/breathing-life-into-mimos-designs-fb1a162e22a0'),
     ('Emofest UK', 'https://www.emofest.co.uk/'),
-    ('Wikipedia: Voltaic pile', 'https://en.wikipedia.org/wiki/Voltaic_pile'),
-    ('Poetry Foundation: Volta', 'https://www.poetryfoundation.org/education/glossary/volta'),
     ('App Store: Volta (indeHealth)', 'https://apps.apple.com/us/app/volta/id6547832204'),
-    ('Google Play: Volta (tutoring management)', 'https://play.google.com/store/apps/details?id=co.penny.pujwh'),
     ('App Store: Volta AI', 'https://apps.apple.com/us/app/volta-ai/id1628105999'),
-    ('App Store: Volta Live', 'https://apps.apple.com/us/app/volta-live/id6769760087'),
-    ('App Store: Volta EV', 'https://apps.apple.com/us/app/volta-ev/id6754547857'),
-    ('Google Play: Volta Driver', 'https://play.google.com/store/apps/details?id=com.yourvolta.driver&hl=en_US'),
-    ('Wikipedia: Clever (company), owned by Kahoot', 'https://en.wikipedia.org/wiki/Clever_(company)'),
-    ('Y Combinator: Cleva', 'https://www.ycombinator.com/companies/cleva'),
-    ('Les Clés de Volta', 'https://www.lesclesdevolta.fr/'),
-    ('Hager: Volta replacement key', 'https://hager.com/intl-fr/produits/informations/vz304n-cle-de-rechange-volta-fermet-vz302n'),
-    ('Apple iTunes Search API (App Store lookups, GB and US)', 'https://itunes.apple.com/search?term=clevolta&entity=software&country=gb'),
-    ('Google Play search: clevolta', 'https://play.google.com/store/search?q=clevolta&c=apps'),
-    ('Companies House search: clevolta', 'https://find-and-update.company-information.service.gov.uk/search/companies?q=clevolta'),
     ('App Store: Revvo', 'https://apps.apple.com/us/app/revvo/id6775417070'),
-    ('App Store: Piply AI', 'https://apps.apple.com/us/app/piply-ai-study-exam-prep/id6759463981'),
-    ('Pippit education tools', 'https://www.pippit.ai/tools/education'),
-    ('OECD PILA', 'https://pilaproject.org/'),
-    ('App Store: Quadoo', 'https://apps.apple.com/us/app/quadoo/id6756758644'),
-    ('Companies House: Volta Tech Ltd', 'https://find-and-update.company-information.service.gov.uk/company/12531643'),
+    ('Messterpieces', 'https://www.messterpieces.com/collections/all'),
+    ('YouTube: FIFA 22 match featuring "Fixcalibur FC"', 'https://www.youtube.com/watch?v=R7mCwqEdiIY'),
+    ('Fandom fan wiki page listing a "ReVisaurus" form', 'https://autobot-academy.fandom.com/wiki/Vaxasaurian'),
+    ('Tes: GCSE revision games', 'https://www.tes.com/teaching-resources/gcse-exam-revision/gcse-revision-games'),
+    ('Apple iTunes Search API (App Store lookups, GB and US)', 'https://itunes.apple.com/search?term=revisaurus&entity=software&country=gb'),
+    ('Google Play search: revisaurus', 'https://play.google.com/store/search?q=revisaurus&c=apps'),
+    ('Companies House search: revisaurus', 'https://find-and-update.company-information.service.gov.uk/search/companies?q=revisaurus'),
     ('GOV.UK: Search for a trade mark', 'https://www.gov.uk/search-for-trademark'),
     ('RDAP domain lookups via rdap.org', 'https://rdap.org/'),
 ]
@@ -318,7 +316,7 @@ SOURCES = [
 
 def page():
     tpl = open(os.path.join(SRC_DIR, 'brand-template.html')).read()
-    c, p, t, a = meaning_icons()
+    rv, bk, sr, ex = meaning_icons()
     rail = mark_svg(size=36, title=None, pad=1)
     fills = {
         'LOCKUP_NIGHT': lockup(NIGHT_INK),
@@ -328,7 +326,10 @@ def page():
         'WORDMARK_VOLT': wordmark_svg(NIGHT, height=90),
         'SUB_MATHS': lockup(NIGHT_INK, 'maths', BLUE_ON_NIGHT),
         'SUB_ENGLISH': lockup(NIGHT_INK, 'english', TANG_ON_NIGHT),
-        'ICON_CLEVER': c, 'ICON_PILE': p, 'ICON_TURN': t, 'ICON_AGAIN': a,
+        'ICON_REVISE': rv, 'ICON_BOOK': bk, 'ICON_SAURUS': sr, 'ICON_EXTINCT': ex,
+        'ALT_REVISAURUS': word_svg(WORD, NIGHT, height=34),
+        'ALT_FIXCALIBUR': word_svg('fixcalibur', NIGHT, height=34),
+        'ALT_MISSTERPIECE': word_svg('missterpiece', NIGHT, height=34),
         'MARK_CONSTRUCT': construct(),
         'STATE_BLUEPRINT': mark_svg('blueprint', title='Blueprint state'),
         'STATE_BUILDING': mark_svg('building', title='Building state'),

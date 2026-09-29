@@ -1,4 +1,4 @@
-<title>Clevolta Brand Kit</title>
+<title>Revisaurus Brand Kit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Unbounded:wght@500;700;800&display=swap">
@@ -241,6 +241,17 @@ td .muted { color: var(--muted); }
 .pill.pick { background: var(--b-volt); color: var(--volt-ink); }
 .pill.alt { background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line-strong); }
 .pill.no { color: var(--bad); border: 1px solid currentColor; }
+.rules.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.finalists { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.fin { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; display: grid; align-content: start; }
+.fin .prev { background: var(--b-paper); padding: 22px 20px; border-bottom: 1px solid var(--line); }
+.fin .prev svg { height: 34px; width: auto; max-width: 100%; }
+.fin .body { padding: 18px 20px 20px; display: grid; gap: 12px; }
+.fin .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.fin .top strong { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; }
+.fin dl { margin: 0; display: grid; gap: 10px; font-size: var(--t-small); }
+.fin dt { font-family: var(--font-mono); font-size: var(--t-micro); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.fin dd { margin: 2px 0 0; color: var(--ink-2); }
 .checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
 .check { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 20px; display: grid; gap: 10px; align-content: start; }
 .check ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: var(--t-small); }
@@ -268,6 +279,7 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
   .construct, .inuse, .stage-pair, .voice { grid-template-columns: 1fr; }
   .type-row { grid-template-columns: 1fr; gap: 6px; }
   .cand { grid-template-columns: 1fr; gap: 6px; }
+  .rules.two { grid-template-columns: 1fr; }
   .mock-app { grid-template-columns: 1fr; }
   .dont-art { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .page { gap: 56px; }
@@ -280,13 +292,13 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
   <div class="eyebrow">Brand proposal · GCSE Study Desk · September 2026</div>
   <div class="hero-lockup">{{LOCKUP_NIGHT}}</div>
   <div class="hero-lines">
-    <div class="hero-tag">Fix what you <em>missed.</em></div>
-    <p>Clevolta is the proposed name for the product now called GCSE Study Desk: clever and Volta, joined at the v. It leads with learning and keeps everything Volta meant. No app, company, business or domain was found using it. The mark is unchanged: three quarters for the three courses, and a fourth in volt for the mastery you earn.</p>
+    <div class="hero-tag">Make mistakes <em>extinct.</em></div>
+    <p>Revisaurus is the proposed name for the product now called GCSE Study Desk: revise plus thesaurus, with a dinosaur's roar. It says what the app is for in its first two syllables and fits the study creatures already in the app. No app, company, business or domain was found using it. The mark is unchanged.</p>
   </div>
   <div class="hero-meta">
-    <span class="chip"><b>Name</b> Clevolta</span>
-    <span class="chip"><b>Say it</b> kleh-VOL-tuh</span>
-    <span class="chip"><b>Store name</b> Clevolta: GCSE Revision</span>
+    <span class="chip"><b>Name</b> Revisaurus</span>
+    <span class="chip"><b>Say it</b> rev-ih-SAW-rus</span>
+    <span class="chip"><b>Store name</b> Revisaurus: GCSE Maths &amp; English</span>
     <span class="chip"><b>Guide</b> Pip</span>
   </div>
 </header>
@@ -294,20 +306,20 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
 <section class="section" id="name">
   <div class="section-head">
     <div class="eyebrow">The name</div>
-    <h2>Clever, joined to Volta at the v</h2>
-    <p class="lede">Clevolta is a new word, so no one else owns it. It overlaps two words the way Pinterest overlaps pin and interest: <b>clev</b>er and <b>volta</b> share the v. A student reads "clever" first, so the name leads with learning, and all of Volta is still inside it.</p>
+    <h2>Revise, plus a word everyone can already spell</h2>
+    <p class="lede">Revisaurus follows the pattern of the names you like. Duolingo is duo plus lingo and Emofest is emo plus fest: a plain meaning with a playful twist. Here the meaning is revise and the twist is thesaurus, a word students already know how to say and spell, so the name sticks after one hearing.</p>
   </div>
   <div class="meanings">
-    <article class="meaning">{{ICON_CLEVER}}<h3>Clever</h3><p>The learning half. Clever is what revision is for, and it is a word every 15-year-old already uses. It comes first, so the name reads as learning before energy.</p></article>
-    <article class="meaning">{{ICON_PILE}}<h3>Volt and the pile</h3><p>Volt lime is the app's one reward colour. In 1800 Alessandro Volta made the first battery by stacking discs, and emblems also stack a layer for each marked success.</p></article>
-    <article class="meaning">{{ICON_TURN}}<h3>The turn</h3><p>In a sonnet the volta is the turning point, where the argument changes direction. GCSE English students learn the term, and a fixed mistake is the same kind of turning point.</p></article>
-    <article class="meaning">{{ICON_AGAIN}}<h3>Una volta</h3><p>In Italian, <i>ancora una volta</i> means "one more time". Mistakes come back after 1, 3, 7 and 21 days, and each return is one more go.</p></article>
+    <article class="meaning">{{ICON_REVISE}}<h3>Revise</h3><p>The job, in the first two syllables. Nobody has to ask what the app is for.</p></article>
+    <article class="meaning">{{ICON_BOOK}}<h3>Thesaurus</h3><p>The rhythm comes from a word every student knows, so the name is easy to say and spell after hearing it once. A thesaurus is also a book of words, a nod to English.</p></article>
+    <article class="meaning">{{ICON_SAURUS}}<h3>-saurus</h3><p>Big, loud and friendly. It joins the study creatures already in the app: Rexam the T. rex, Memmoth the mammoth and Redo the phoenix chick.</p></article>
+    <article class="meaning">{{ICON_EXTINCT}}<h3>Make mistakes extinct</h3><p>The promise in four words. Every miss comes back after 1, 3, 7 and 21 days until it is gone for good.</p></article>
   </div>
   <div class="say">
-    <div class="say-row"><strong>Clevolta Maths</strong><span>Replaces MathsMate. Foundation and Higher are tiers inside it, not separate brands.</span></div>
-    <div class="say-row"><strong>Clevolta English</strong><span>Replaces EnglishMate. Same mark, tangerine subject colour.</span></div>
-    <div class="say-row"><strong>“I'm on a 12-day Clevolta streak”</strong><span>Works in a sentence: “Have you done your Clevolta today?”</span></div>
-    <div class="say-row"><strong>Pip, your Clevolta guide</strong><span>The mascot stays. Pip is already volt-coloured, so it fits the brand without a redraw.</span></div>
+    <div class="say-row"><strong>Revisaurus Maths</strong><span>Replaces MathsMate. Foundation and Higher are tiers inside it, not separate brands.</span></div>
+    <div class="say-row"><strong>Revisaurus English</strong><span>Replaces EnglishMate. Same mark, tangerine subject colour.</span></div>
+    <div class="say-row"><strong>“I'm on a 12-day Revisaurus streak”</strong><span>It shortens naturally too: “Done your Revi today?”</span></div>
+    <div class="say-row"><strong>Pip, your Revisaurus guide</strong><span>Pip stays as the guide, and the creatures give the name its prehistoric company.</span></div>
   </div>
 </section>
 
@@ -348,8 +360,8 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <figure class="art volt"><div class="art-wrap">{{WORDMARK_VOLT}}</div><figcaption>Wordmark alone · on volt</figcaption></figure>
   </div>
   <div class="subs">
-    <div class="sub">{{SUB_MATHS}}<p class="sub-note">Clevolta Maths · Foundation (8300) and Higher (8300H)</p></div>
-    <div class="sub">{{SUB_ENGLISH}}<p class="sub-note">Clevolta English · English Language (8700)</p></div>
+    <div class="sub">{{SUB_MATHS}}<p class="sub-note">Revisaurus Maths · Foundation (8300) and Higher (8300H)</p></div>
+    <div class="sub">{{SUB_ENGLISH}}<p class="sub-note">Revisaurus English · English Language (8700)</p></div>
   </div>
 </section>
 
@@ -371,7 +383,7 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <div class="mock">
       <div class="mock-app">
         <div class="mock-rail">
-          <div class="mock-brand">{{RAIL_MARK}}<div class="t"><b>Clevolta Maths</b><span>AQA Foundation</span></div></div>
+          <div class="mock-brand">{{RAIL_MARK}}<div class="t"><b>Revisaurus Maths</b><span>AQA Foundation</span></div></div>
           <div class="mock-hud"><span>1 day</span><span>213 XP</span><span>Lvl 3</span></div>
           <div class="mock-nav"><span class="on">Dashboard</span><span>Practice</span><span>Learn</span><span>Notebook</span></div>
         </div>
@@ -386,11 +398,11 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <div class="mock-phone">
       <div class="grid">
         <div class="app"><i></i><span>Photos</span></div>
-        <div class="app">{{ICON_SMALL}}<span>Clevolta</span></div>
+        <div class="app">{{ICON_SMALL}}<span>Revisaurus</span></div>
         <div class="app"><i></i><span>Music</span></div>
         <div class="app"><i></i><span>Notes</span></div>
       </div>
-      <div class="avatar">{{AVATAR}}<div><b>@clevolta</b><span>Fix what you missed.</span></div></div>
+      <div class="avatar">{{AVATAR}}<div><b>@revisaurus</b><span>Make mistakes extinct.</span></div></div>
     </div>
   </div>
 </section>
@@ -432,10 +444,10 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <p class="lede">The existing product voice (honest, specific, never inflated) plus some of the attitude you like in Emofest. Confidence comes from the loop, never from promised grades.</p>
   </div>
   <div class="voice">
-    <div class="line-card"><q>Fix what you missed.</q><span>Primary line. Already the landing page's promise.</span></div>
+    <div class="line-card"><q>Make mistakes extinct.</q><span>Brand line: the hero, the store subtitle, campaigns.</span></div>
+    <div class="line-card"><q>Fix what you missed.</q><span>The product promise, already on the landing page.</span></div>
     <div class="line-card"><q>One more go.</q><span>Retries, notifications, the notebook.</span></div>
     <div class="line-card"><q>Close the loop.</q><span>Mastery moments, when the disc closes.</span></div>
-    <div class="line-card"><q>Revision with a turn in it.</q><span>Campaigns, the English launch.</span></div>
   </div>
 </section>
 
@@ -466,15 +478,15 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <div class="camp"><h3>Descriptive</h3><div class="names"><span>Save My Exams</span><span>Maths Genie</span><span>Revision Village</span><span>Physics &amp; Maths Tutor</span><span>GCSE Study Desk</span></div><p>Clear on day one but impossible to own or trademark. The current name sits here.</p></div>
     <div class="camp"><h3>"Rev-" coinages</h3><div class="names"><span>Revvo</span><span>Revu</span><span>Reviso</span><span>Revlo</span><span>Revizoo</span></div><p>Five apps found on one page of store results. The prefix is saturated and they blur together.</p></div>
     <div class="camp"><h3>"AI" suffix</h3><div class="names"><span>Medly AI</span><span>Piply AI</span><span>Quira</span><span>Pippit</span></div><p>Positions the product as an AI tutor, which PRODUCT.md says Study Desk is not.</p></div>
-    <div class="camp gap"><h3>Coined, with a story</h3><div class="names"><span>Clevolta</span></div><p>Duolingo and Memrise show the pattern: a new word built from parts that mean something. It tells a story, as Seneca does, and no one else can own it.</p></div>
+    <div class="camp gap"><h3>A twist on a known word</h3><div class="names"><span>Revisaurus</span></div><p>Duolingo, Kahoot and Emofest all start from familiar words. A twist on a known word is quicker to remember than a made-up one, and still owned by no one.</p></div>
   </div>
   <div class="section-head">
     <h3>What that means for the brand</h3>
   </div>
   <div class="rules">
-    <div class="rule"><span class="tag">Stay away from the bolt</span><p>Save My Exams' logo is a lightning bolt and Seneca's hero uses ⚡. Clevolta already has volt in its name, so the mark uses the quadrant disc instead.</p></div>
+    <div class="rule"><span class="tag">Stay away from the bolt</span><p>Save My Exams' logo is a lightning bolt and Seneca's hero uses ⚡. The volt colour already carries the energy, so the mark uses the quadrant disc instead.</p></div>
     <div class="rule"><span class="tag">Sell the loop, not the bank</span><p>Free papers and questions are everywhere (Maths Genie, Corbettmaths, PMT, Bitesize). The only story here that competitors can't copy by adding content is the mistake-to-mastery loop, and the closing disc shows it.</p></div>
-    <div class="rule"><span class="tag">Be the game, not the library</span><p>Seneca, Save My Exams and Medly all open on white with flat blue or black, and none of them leads with a character. Their gamification is a feature, not the brand. Clevolta can make it the brand, with Pip and the night stage.</p></div>
+    <div class="rule"><span class="tag">Be the game, not the library</span><p>Seneca, Save My Exams and Medly all open on white with flat blue or black, and none of them leads with a character. Their gamification is a feature, not the brand. Revisaurus makes it the brand, with Pip, the creatures and the night stage.</p></div>
   </div>
   <div class="section-head">
     <h3>What the brands you like teach us</h3>
@@ -482,7 +494,7 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
   <div class="inspo">
     <div><b>Duolingo</b><span>A custom typeface drawn from the mascot's shapes.</span><em>The wordmark and Pip share the quadrant shapes.</em></div>
     <div><b>Mimo</b><span>A robot companion and a game HUD for a serious skill.</span><em>Pip plus the streak, XP and level chips.</em></div>
-    <div><b>Pied Piper</b><span>A name that is a story: the piper who leads everyone.</span><em>Clevolta packs five ideas into one new word.</em></div>
+    <div><b>Pied Piper</b><span>A name that is a story: the piper who leads everyone.</span><em>Revisaurus says what it does and has a character.</em></div>
     <div><b>Lego</b><span>A sticker outline, bold colour, and play made of pieces that click.</span><em>The night outline and a disc built from quarters.</em></div>
     <div><b>Kahoot!</b><span>Four answer shapes became the whole visual system.</span><em>Four quadrant shapes (C, R, S, W) already run every emblem.</em></div>
     <div><b>Intel and AMD</b><span>Chip heritage, lower case or all caps, strict geometry.</span><em>The circuit metaphor and an all-geometric mark.</em></div>
@@ -490,30 +502,60 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <div><b>Emofest</b><span>Night palettes, attitude, never "just a phase".</span><em>Night is the default stage, with confident copy.</em></div>
   </div>
   <div class="section-head">
-    <h3>Names considered</h3>
-    <p class="lede">Round two screened 119 invented names against the .com, .co.uk and .app registries. Only 26 were unregistered on all three, and Clevolta was the strongest of those.</p>
+    <h3>What makes a name stick</h3>
+    <p class="lede">Round three started from the research on memorable brand names rather than from word lists.</p>
   </div>
-  <div class="camp"><div class="names"><span>clevolta</span><span>learnvolta</span><span>clevolt</span><span>clevola</span><span>voltademy</span><span>mindvolta</span><span>brainvolta</span><span>knowvolta</span><span>lernvolt</span><span>lernvolta</span><span>learnolta</span><span>learnivolt</span><span>lernivolt</span><span>studolta</span><span>whizvolt</span><span>swotvolt</span><span>lernbolt</span><span>knowquad</span><span>ahaquad</span><span>oopsaha</span><span>brainolo</span><span>lernolo</span><span>quizoba</span><span>lernaroo</span><span>learnoop</span><span>swotzilla</span></div><p>The 26 names with no registration on .com, .co.uk or .app.</p></div>
+  <div class="rules two">
+    <div class="rule"><span class="tag">Two or three beats</span><p>Names of two or three syllables are remembered better than longer ones, and a strong stress helps (GOO-gle, CO-ca-CO-la). Revisaurus has four, like Duolingo, and gets away with it because its rhythm is borrowed from thesaurus.</p></div>
+    <div class="rule"><span class="tag">Echoes stick</span><p>Repeated sounds make a name more noticeable, more memorable and better liked, especially when it is said aloud. Revisaurus repeats its r and s sounds.</p></div>
+    <div class="rule"><span class="tag">Twist a word people know</span><p>Kahoot came from "cahoots", and Duolingo from duo and lingo. A twist on a known word is learnt in one hearing. The short made-up names were all taken: Fixfox, Unoops, Tickety, Examigo, Redoku and Gradiator are already registered.</p></div>
+    <div class="rule"><span class="tag">Say what it does</span><p>The strongest names in this market hint at the job: Save My Exams, Quizlet, Duolingo. Revisaurus starts with it.</p></div>
+  </div>
+  <div class="section-head">
+    <h3>Names considered</h3>
+    <p class="lede">Round three screened 116 names built on those rules. 28 had no registration on .com, .co.uk or .app, and three of those stood out.</p>
+  </div>
+  <div class="camp"><div class="names"><span>boomerevise</span><span>eurekall</span><span>examoku</span><span>fixcalibur</span><span>fixdoku</span><span>fixmiss</span><span>gradeasaurus</span><span>misfixer</span><span>missterpiece</span><span>mistakasaurus</span><span>mistakeover</span><span>mistakle</span><span>oopsadoku</span><span>quizasaurus</span><span>rangback</span><span>recallasaurus</span><span>redosaurus</span><span>rematchy</span><span>revisadabra</span><span>revisaur</span><span>revisaurs</span><span>revisaurus</span><span>reviseum</span><span>swotasaurus</span><span>swotley</span><span>swotlock</span><span>swotstein</span><span>whoopsa</span></div><p>The 28 names with no registration on .com, .co.uk or .app.</p></div>
+  <div class="finalists">
+    <article class="fin"><div class="prev">{{ALT_REVISAURUS}}</div><div class="body">
+      <div class="top"><strong>Revisaurus</strong><span class="pill pick">Recommended</span></div>
+      <dl><div><dt>Says</dt><dd>Revision, straight away, with a character.</dd></div>
+      <div><dt>Built on</dt><dd>Revise, thesaurus and a dinosaur.</dd></div>
+      <div><dt>Beats</dt><dd>Four: rev-ih-SAW-rus.</dd></div>
+      <div><dt>Watch</dt><dd>Could feel young to some Year 11s. The night stage and confident copy keep it from looking babyish.</dd></div></dl>
+    </div></article>
+    <article class="fin"><div class="prev">{{ALT_FIXCALIBUR}}</div><div class="body">
+      <div class="top"><strong>Fixcalibur</strong><span class="pill alt">Alternative</span></div>
+      <dl><div><dt>Says</dt><dd>Fix what you missed, with a legendary edge that matches the creatures' Legend rank.</dd></div>
+      <div><dt>Built on</dt><dd>Fix and Excalibur, King Arthur's sword.</dd></div>
+      <div><dt>Beats</dt><dd>Four: fix-CAL-ih-bur.</dd></div>
+      <div><dt>Watch</dt><dd>It doesn't say revision and could read as a repair company. A FIFA 22 gaming team used the name in one YouTube video.</dd></div></dl>
+    </div></article>
+    <article class="fin"><div class="prev">{{ALT_MISSTERPIECE}}</div><div class="body">
+      <div class="top"><strong>Missterpiece</strong><span class="pill alt">Alternative</span></div>
+      <dl><div><dt>Says</dt><dd>Turn every miss into a masterpiece: the whole loop in one word.</dd></div>
+      <div><dt>Built on</dt><dd>Miss and masterpiece.</dd></div>
+      <div><dt>Beats</dt><dd>Three: MISS-ter-peace.</dd></div>
+      <div><dt>Watch</dt><dd>Heard aloud it sounds like "misterpiece", "Miss" can read as a title, and Messterpieces is a craft brand.</dd></div></dl>
+    </div></article>
+  </div>
   <div class="shortlist">
-    <div class="cand"><strong>Clevolta</strong><span class="pill pick">Recommended</span><p>Clever plus Volta. It leads with learning, keeps the Volta story and says easily. Every check below came back empty: no app, company, business or domain uses it.</p></div>
-    <div class="cand"><strong>Learnvolta</strong><span class="pill alt">Backup</span><p>The most literal version, and also unused everywhere checked. It is longer and less catchy, so keep it in reserve in case the trade-mark search blocks Clevolta.</p></div>
-    <div class="cand"><strong>Volta</strong><span class="pill no">Replaced</span><p>Too crowded to own. Volta AI, Volta Live, Volta EV, Volta Driver, a college wellbeing app and a tutoring-management app all use it.</p></div>
-    <div class="cand"><strong>Clevolt</strong><span class="pill no">Rejected</span><p>Unregistered, but klevolt.com is registered and sounds the same.</p></div>
-    <div class="cand"><strong>Quado</strong><span class="pill no">Rejected</span><p>Round one's runner-up. It is clean, but it has no learning in it.</p></div>
-    <div class="cand"><strong>Pipit, Pila, Revvo, Sparko</strong><span class="pill no">Rejected</span><p>Round one. Taken or too close to Piply and Pippit, the OECD's PILA, the "Rev-" apps, Sparx and BBC Bitesize.</p></div>
+    <div class="cand"><strong>Swotlock</strong><span class="pill no">Rejected</span><p>Two syllables and unregistered, but "swot" is a mild insult and "lock" clashes with the rule that nothing in the app is locked.</p></div>
+    <div class="cand"><strong>Fixfox, Unoops, Tickety, Examigo, Redoku, Gradiator</strong><span class="pill no">Taken</span><p>Short and catchy, but every one already has its .com registered, and most have other domains taken too.</p></div>
+    <div class="cand"><strong>Volta, Clevolta</strong><span class="pill no">Earlier rounds</span><p>Volta is used by too many apps to own. Clevolta was unused but didn't land.</p></div>
   </div>
   <div class="checks">
-    <div class="check"><h3>Clevolta, checked on 29 September 2026</h3><ul>
-      <li><span class="s free">Clear</span><span>No domain registration for clevolta.com, .co.uk, .uk, .app, .net, .org, .io, .co, .study, .school, .academy, .education, .de or .eu</span></li>
-      <li><span class="s free">Clear</span><span>App Store (GB and US): no app with the name. Google Play: no results, where a "duolingo" control search returns 41 apps.</span></li>
+    <div class="check"><h3>Revisaurus, checked on 29 September 2026</h3><ul>
+      <li><span class="s free">Clear</span><span>No domain registration for revisaurus.com, .co.uk, .uk, .app, .net, .org, .io, .co, .study, .school, .academy, .education, .de, .eu or .ai</span></li>
+      <li><span class="s free">Clear</span><span>App Store (GB and US): no app with the name; the nearest results are reptile apps. Google Play: no app with the name; the results are unrelated dinosaur games.</span></li>
       <li><span class="s free">Clear</span><span>Companies House: "No results found".</span></li>
-      <li><span class="s free">Clear</span><span>Web search: no business, product or app with the name. The nearest are Les Clés de Volta, a French electrician, and Hager's "clé Volta" cabinet key.</span></li>
-      <li><span class="s warn">Watch</span><span>"Clev-" starts like Clever, the US school sign-in platform that Kahoot owns, and Cleva, a neobank. The words differ, but raise both in the trade-mark search.</span></li>
+      <li><span class="s free">Clear</span><span>Web search: no business, product or revision resource with the name, including on Tes. The only mention is a character form on a fan wiki.</span></li>
+      <li><span class="s warn">Watch</span><span>The "Rev-" start is shared with Revvo, Revu and Reviso. They are different words, but list them in the trade-mark search.</span></li>
     </ul></div>
     <div class="check"><h3>Still to do</h3><ul>
-      <li><span class="s todo">Today</span><span>Register clevolta.com, clevolta.co.uk and clevolta.app. An unregistered name can be taken at any time.</span></li>
-      <li><span class="s todo">To do</span><span>Search the UK trade marks register for CLEVOLTA in classes 9 (apps), 41 (education) and 42 (software as a service), then file. The registers could not be searched from here.</span></li>
-      <li><span class="s todo">To do</span><span>Claim @clevolta on TikTok, Instagram, YouTube and X. Handles could not be checked from here.</span></li>
+      <li><span class="s todo">Today</span><span>Register revisaurus.com, revisaurus.co.uk and revisaurus.app. An unregistered name can be taken at any time.</span></li>
+      <li><span class="s todo">To do</span><span>Search the UK trade marks register for REVISAURUS in classes 9 (apps), 41 (education) and 42 (software as a service), then file. The registers could not be searched from here.</span></li>
+      <li><span class="s todo">To do</span><span>Claim @revisaurus on TikTok, Instagram, YouTube and X. Handles could not be checked from here.</span></li>
       <li><span class="s todo">Later</span><span>Search the EU and US registers (TMview, USPTO) before an international release.</span></li>
     </ul></div>
   </div>
@@ -525,10 +567,10 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
     <h2>From proposal to rename</h2>
   </div>
   <ol class="next">
-    <li><div><b>Register the domains</b><span>clevolta.com, clevolta.co.uk and clevolta.app, plus the social handles.</span></div></li>
-    <li><div><b>Clear and file the trade mark</b><span>Search the UK register, then file in classes 9 and 41. If Clevolta is blocked, use Learnvolta; the mark and system work unchanged.</span></div></li>
-    <li><div><b>Rename in the code</b><span>"GCSE Study Desk", "MathsMate" and "EnglishMate" appear on 163 lines in 64 files, including store listings, legal pages, SEO metadata, the pitch deck and the Expo config.</span></div></li>
-    <li><div><b>Ship the icon</b><span>Swap the favicon, the Expo icon sources and the rail brand mark for the Clevolta disc. The SVG sources are in <span class="mono">website/design/brand/</span>.</span></div></li>
+    <li><div><b>Register the domains</b><span>revisaurus.com, revisaurus.co.uk and revisaurus.app, plus the social handles.</span></div></li>
+    <li><div><b>Clear and file the trade mark</b><span>Search the UK register, then file in classes 9 and 41. If Revisaurus is blocked, Fixcalibur and Missterpiece passed the same checks, and the mark and system work unchanged.</span></div></li>
+    <li><div><b>Rename in the code</b><span>"GCSE Study Desk", "MathsMate" and "EnglishMate" appear on 162 lines in 65 files, including store listings, legal pages, SEO metadata, the pitch deck and the Expo config.</span></div></li>
+    <li><div><b>Ship the icon</b><span>Swap the favicon, the Expo icon sources and the rail brand mark for the disc. The SVG sources are in <span class="mono">website/design/brand/</span>.</span></div></li>
   </ol>
 </section>
 
@@ -537,5 +579,5 @@ footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid v
   <ul class="sources">{{SOURCES}}</ul>
 </section>
 
-<footer>Proposal for Mayer Digital. Clevolta is not yet a registered trade mark, and nothing here implies AQA endorsement.</footer>
+<footer>Proposal for Mayer Digital. Revisaurus is not yet a registered trade mark, and nothing here implies AQA endorsement.</footer>
 </main>

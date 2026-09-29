@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { authRoutes, requireAuth } from './auth.js';
 import { feedbackRoutes } from './feedback.js';
+import { supportRoutes } from './support.js';
 import mathsRouter from './subjects/maths/router.js';
 import englishRouter from './subjects/english/router.js';
 import { analyticsRoutes } from './analytics.js';
@@ -95,6 +96,7 @@ export function createApp({ serveStatic = true } = {}) {
   });
 
   app.use('/api/feedback', feedbackRoutes());
+  app.use('/api/support', supportRoutes());
 
   app.use('/api', subjectGate, analyticsRoutes(defaultStorage));
 
@@ -128,7 +130,7 @@ export function createApp({ serveStatic = true } = {}) {
     app.get('/gcse-maths-foundation.html', (req, res) => res.redirect(308, '/gcse-maths-foundation'));
     app.get('/gcse-maths-higher.html', (req, res) => res.redirect(308, '/gcse-maths-higher'));
     app.get('/gcse-english-language.html', (req, res) => res.redirect(308, '/gcse-english-language'));
-    app.use(['/delete-account.html', '/feedback.html'], (req, res, next) => {
+    app.use(['/delete-account.html', '/feedback.html', '/support.html'], (req, res, next) => {
       res.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
       next();
     });

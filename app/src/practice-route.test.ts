@@ -50,6 +50,12 @@ test("merges essay choice and writing while requiring actual writing", () => {
     hasQuestionAnswer({ type: "essay", options: [{ id: "b" }] }, selected),
   ).toBe(true);
   expect(hasQuestionAnswer({ type: "mcq", options: ["A"] }, "A")).toBe(true);
+  const fourChoices = { type: "mcq4", input: { items: [{}, {}, {}, {}] } };
+  expect(hasQuestionAnswer(fourChoices, { 0: "A", 1: "B", 2: "C" })).toBe(false);
+  expect(hasQuestionAnswer(fourChoices, { 0: "A", 1: "B", 2: "C", 3: "A" })).toBe(true);
+  const fourTrue = { type: "choose4", input: { statements: Array(8).fill({}) } };
+  expect(hasQuestionAnswer(fourTrue, { 0: true, 1: true, 2: true })).toBe(false);
+  expect(hasQuestionAnswer(fourTrue, { 0: true, 1: true, 2: true, 3: true })).toBe(true);
 });
 
 test.each([

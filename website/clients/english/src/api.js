@@ -117,8 +117,8 @@ export const api = {
       }
       return result;
     },
-    signup: async ({ username, email, password }) => {
-      const result = await authReq('/signup', { method: 'POST', body: { username, email, password } });
+    signup: async ({ username, email, password, source }) => {
+      const result = await authReq('/signup', { method: 'POST', body: { username, email, password, source } });
       if (result.session) {
         storeSupabaseSession(result.session);
         if (supabase) {

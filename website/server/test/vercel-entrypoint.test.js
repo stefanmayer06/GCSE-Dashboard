@@ -1,10 +1,19 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import handler from '../../api/index.js';
+
+test('Vercel static support page has a noindex header', async () => {
+  const config = JSON.parse(await readFile(new URL('../../vercel.json', import.meta.url), 'utf8'));
+  const supportRoute = config.headers.find(({ source }) => source === '/support.html');
+  assert.equal(
+    supportRoute?.headers.find(({ key }) => key.toLowerCase() === 'x-robots-tag')?.value,
+    'noindex, nofollow, noarchive',
+  );
+});
 
 async function listen(server) {
   await new Promise((resolve, reject) => {

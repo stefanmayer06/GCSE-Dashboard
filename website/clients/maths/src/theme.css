@@ -1,44 +1,6 @@
-:root {
-  --accent: #6849e8;
-  --accent-strong: #4d34bd;
-  --accent2: #9b3d63;
-  --accent-wash: #ece8ff;
-  --subject-tint: #e2dcff;
-  --subject-ink: #201a3d;
-  --desk-pattern:
-    linear-gradient(rgba(32, 26, 61, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(32, 26, 61, 0.04) 1px, transparent 1px);
-}
-
-:root[data-theme='dark'] {
-  --accent: #8c5cf0;
-  --accent-strong: #c4b2ff;
-  --accent2: #d07aa5;
-  --accent-wash: rgba(140, 92, 240, 0.18);
-  --subject-tint: rgba(140, 92, 240, 0.16);
-  --subject-ink: #c4b2ff;
-  --desk-pattern:
-    linear-gradient(rgba(196, 178, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(196, 178, 255, 0.05) 1px, transparent 1px);
-}
-
-.app.higher-tier {
-  --accent: #287c68;
-  --accent-strong: #1b5b4b;
-  --accent2: #9a6b2f;
-  --accent-wash: #d8eee7;
-  --subject-tint: #d0e9df;
-  --subject-ink: #173b35;
-}
-
-:root[data-theme='dark'] .app.higher-tier {
-  --accent: #76c9b2;
-  --accent-strong: #b9eadb;
-  --accent2: #d9a65d;
-  --accent-wash: rgba(40, 124, 104, 0.2);
-  --subject-tint: rgba(40, 124, 104, 0.18);
-  --subject-ink: #b9eadb;
-}
+/* MathsMate — subject-only component rules. Colour + type tokens come from
+   shared/circuit/tokens.css (Foundation = blue, Higher = purple via
+   html[data-subject] / .app.higher-tier). */
 
 .formula-body,
 .answer-input,
@@ -52,29 +14,20 @@
 
 .q-card { position: relative; }
 
-.q-card::after {
-  content: "";
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  width: 34px;
-  height: 34px;
-  border: 1px solid rgba(104, 73, 232, 0.18);
-  border-radius: 50%;
-  pointer-events: none;
-}
+.q-card::after { content: none; }
 
 .graph-stimulus {
   margin: 18px 0;
   padding: 14px;
   border: 1px solid var(--line-strong);
-  background: var(--paper-muted);
+  border-radius: var(--r-md);
+  background: var(--c-surface-2);
 }
 
 .graph-stimulus figcaption {
   margin-bottom: 8px;
   color: var(--quiet);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -85,7 +38,7 @@
 .graph-paper { fill: var(--paper); stroke: var(--line-strong); }
 .graph-grid { stroke: var(--line); stroke-width: 1; }
 .graph-axis { stroke: var(--ink); stroke-width: 1.7; }
-.graph-label, .graph-axis-title { fill: var(--quiet); font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.graph-label, .graph-axis-title { fill: var(--quiet); font-size: 11px; font-family: var(--font-mono); }
 .graph-axis-title { fill: var(--ink); font-weight: 700; }
 .graph-series { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
 .histogram-bar { fill: var(--accent-wash); stroke: var(--accent); stroke-width: 2; }

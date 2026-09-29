@@ -130,6 +130,24 @@ export function trueFalseLines(value: unknown): TrueFalseLine[] {
     .filter((line): line is TrueFalseLine => line !== undefined);
 }
 
+/** Render the current English Paper 1 and Paper 2 Q1 answer reviews. */
+export function englishChoiceLines(value: unknown, format: "mcq4" | "choose4"): TrueFalseLine[] {
+  return asArray(value).map((item, index) => {
+    const row = record(item);
+    const prompt = scalar(row.text) ?? `Item ${index + 1}`;
+    const correct = row.right === true;
+    if (format === "mcq4") {
+      const selected = scalar(row.selected) ?? "nothing";
+      const answer = scalar(row.answer) ?? "";
+      return { correct, text: `${index + 1}. ${prompt} — you chose ${selected}; answer: ${answer}` };
+    }
+    const label = String.fromCharCode(65 + index);
+    const selected = row.selected === true ? "selected" : "not selected";
+    const answer = row.answer === true ? "true" : "false";
+    return { correct, text: `${label}. ${prompt} — ${selected}; statement is ${answer}` };
+  });
+}
+
 /** "1, 2 and 5" style joining for unanswered-question summaries. */
 export function joinNumbers(values: number[]): string {
   if (values.length === 0) return "";

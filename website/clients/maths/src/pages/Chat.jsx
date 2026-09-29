@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
 import { setResourceValue, useResource } from '../../../shared/resource-cache.js';
 import MarkdownMessage from '../../../shared/MarkdownMessage.jsx';
+import Pip from '../../../shared/circuit/Pip.jsx';
+import Icon from '../../../shared/circuit/Icon.jsx';
 
 const SUGGESTIONS = [
   'Explain how to add fractions with different denominators',
@@ -125,7 +127,7 @@ export default function Chat({ health, userId }) {
         <div className="chat-scroll">
           {(messages ?? []).map((m, i) => (
             <div key={i} className={`msg ${m.role}`}>
-              <div className="msg-avatar">{m.role === 'user' ? '🧑' : '🤖'}</div>
+              <div className="msg-avatar" aria-hidden="true">{m.role === 'user' ? <Icon name="pen" size={18} /> : <Pip mood="happy" size={34} />}</div>
               <div className="msg-body">
                 <div className="msg-text"><MarkdownMessage content={m.content} /></div>
                 {m.role === 'assistant' && m.model && <div className="msg-model">{m.model}</div>}
@@ -134,7 +136,7 @@ export default function Chat({ health, userId }) {
           ))}
           {busy && (
             <div className="msg assistant">
-              <div className="msg-avatar">🤖</div>
+              <div className="msg-avatar" aria-hidden="true"><Pip mood="think" size={34} /></div>
               <div className="msg-body typing">
                 <span className="dot" /><span className="dot" /><span className="dot" />
               </div>

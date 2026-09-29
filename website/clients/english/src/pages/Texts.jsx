@@ -11,11 +11,12 @@ export default function Texts() {
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>The Texts 📜</h1>
+          <h1>The Texts</h1>
           <p className="sub">
-            Every source used in the practice papers: Paper 1 fiction extracts and Paper 2
-            source pairs (19th century + modern). Read them here before or after you meet them
-            in an exam.
+            Current practice sources: six original contemporary fiction passages for Paper 1,
+            and Paper 2 pairs of 19th-century non-fiction and modern original non-fiction in either order.
+            Read them before or after a practice set. These are independent practice materials;
+            use official AQA samples as well for published exam passages.
           </p>
         </div>
       </header>

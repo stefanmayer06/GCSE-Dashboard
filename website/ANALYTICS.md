@@ -52,18 +52,27 @@ A learner counts as **activated** when, within their first seven days:
 1. they complete a diagnostic (`diagnostic_complete`), **and**
 2. they finish one marked study session (`session_marked`).
 
-This is computed by `GET /api/events/summary` (`activated: true|false`) and mirrors the roadmap
-definition "completing a diagnostic and one marked study session within seven days".
+This is computed by `GET /api/events/summary` (`activated: true|false`) using each
+event's timestamp relative to the learner's first recorded event. Merely completing
+both milestones eventually does not count as first-week activation.
 
 ## Retention measurement
 
 The summary endpoint also reports `counts` (per event name over the retention window), `firstSeen`
-and `lastSeen`. Cohort reporting (D1/D7/D30 and exam-season cohorts) is derived from these events
-by `firstSeen` week; no extra identifiers are added.
+and `lastSeen`. For private operator review, `npm run acquisition:report -- 90` aggregates
+signups by their recorded `src` source, diagnostics, marked sessions and activation
+within seven days of signup. It also reports day-7 return: any event on days 7–13
+after signup, among learners old enough to have completed that observation window.
+The command outputs counts only, never account identifiers or event content. Sources
+are small labels such as `home-foundation` or `parent-group`, never a free-text URL.
+Run the command with production Supabase credentials only in a private operator
+environment. A blank report means no signup events were recorded in the selected
+window, not proof that nobody visited the site. Counts can lag when event writes
+fail or when a learner completes work on an untracked platform.
 
 ## Non-goals
 
 - Events are not learning evidence. XP, streaks and readiness stay subject-scoped aggregates.
 - Events never contain tutor conversations, prompts, responses or self-marked drafts.
-- There is no cross-user analytics join: product-level funnels are computed offline from the
-  same table by aggregating per-user counts, without exposing other users' rows.
+- There is no public cross-user analytics route. The private operator command reads
+  the same server-side event store and outputs aggregate counts only.

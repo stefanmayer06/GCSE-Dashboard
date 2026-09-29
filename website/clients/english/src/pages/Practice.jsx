@@ -4,6 +4,8 @@ import { api } from '../api.js';
 import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 import { personalKey } from '../../../shared/study-personal.js';
+import Mark from '../../../shared/circuit/Mark.jsx';
+import Icon from '../../../shared/circuit/Icon.jsx';
 
 function activeTestKey(userId) {
   return userId ? personalKey(userId, 'english', 'active-test') : null;
@@ -294,7 +296,7 @@ export default function Practice({ health, onProgress, userId }) {
         <div>
           <h1>Practice papers</h1>
           <p className="sub">
-            Choose Paper 1 or Paper 2. Each practice paper has the correct mark total, exam timing and a suggested time for each question.
+            Choose Paper 1 or Paper 2. Each practice set has an 80-mark total, exam timing and suggested time for each question. Paper 1 uses original contemporary fiction; Paper 2 pairs include both older-first and modern-first non-fiction sources. Use official AQA samples as well to practise with published exam passages.
           </p>
         </div>
       </header>
@@ -406,7 +408,7 @@ function AdhocSection({ onProgress, diagnostic = false, fixup = false, memri = f
 
   const fixupActive = fixup || memri;
 
-  const labels = { listing: 'List four things', truefalse: 'True or false', analysis: 'Language analysis' };
+  const labels = { listing: 'Four quick choices', truefalse: 'Choose four true', analysis: 'Language analysis' };
 
   return (
     <section className="panel" id="adhoc">
@@ -480,7 +482,7 @@ function AdhocRunner({ set, onExit, onNew, onProgress, fixupMeta = null, userId 
   const sessionId = set.sessionId;
 
   async function checkOne(q, value) {
-    if (q.type === 'list' || q.type === 'truefalse') return checkAuto(sessionId, q, value);
+    if (['list', 'mcq4', 'choose4', 'truefalse'].includes(q.type)) return checkAuto(sessionId, q, value);
     return checkText(q, value);
   }
 
@@ -635,6 +637,8 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
   }
 
   function answerReady() {
+    if (q.type === 'mcq4') return q.input?.items?.every((_, i) => ['A', 'B', 'C'].includes(value?.[i]));
+    if (q.type === 'choose4') return Object.values(value || {}).filter((on) => on === true).length === 4;
     if (q.type === 'truefalse') {
       return q.input?.statements?.every((_, i) => Object.prototype.hasOwnProperty.call(value || {}, i));
     }
@@ -646,6 +650,8 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
   }
 
   function answerControl() {
+    if (q.type === 'mcq4') return <McqFourBlock q={q} value={value} onAnswer={onAnswer} disabled={!!fb} />;
+    if (q.type === 'choose4') return <ChooseFourBlock q={q} value={value} onAnswer={onAnswer} disabled={!!fb} />;
     if (q.type === 'list') {
       return (
         <>
@@ -752,11 +758,27 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
             <span className="mark-chip auto">auto-marked</span>
           </div>
           {fb.matched?.map((m, j) => (
-            <div key={j} className="fb-text">✅ Your point “{m.line}” matches “{m.point}”.</div>
+            <div key={j} className="fb-text"><Mark ok /> Your point “{m.line}” matches “{m.point}”.</div>
           ))}
           {fb.missed?.map((m, j) => (
             <div key={`m${j}`} className="fb-text" style={{ color: 'var(--muted)' }}>· You could also have said: “{m}”</div>
           ))}
+        </div>
+      );
+    }
+    if (fb.rows && fb.format === 'mcq4') {
+      return (
+        <div className="fb-box">
+          <div className="fb-head"><span className="fb-marks">{fb.got}<span className="outof"> / 4</span></span><span className="mark-chip auto">auto-marked</span></div>
+          {fb.rows.map((r, j) => <div key={j} className="fb-text">{r.right ? <Mark ok /> : <Mark />} {j + 1}. {r.text} — {r.right ? r.answer : `You chose ${r.selected || 'nothing'}; answer: ${r.answer}`}</div>)}
+        </div>
+      );
+    }
+    if (fb.rows && fb.format === 'choose4') {
+      return (
+        <div className="fb-box">
+          <div className="fb-head"><span className="fb-marks">{fb.got}<span className="outof"> / 4</span></span><span className="mark-chip auto">auto-marked</span></div>
+          {fb.rows.map((r, j) => <div key={j} className="fb-text">{r.selected ? (r.answer ? <Mark ok /> : <Mark />) : '·'} {String.fromCharCode(65 + j)}. {r.text} — {r.answer ? 'TRUE' : 'FALSE'}</div>)}
         </div>
       );
     }
@@ -769,7 +791,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
           </div>
           {fb.rows.map((r, j) => (
             <div key={j} className="fb-text">
-              {r.right ? '✅' : '❌'} “{r.text}” → {r.answer ? 'TRUE' : 'FALSE'}
+              {r.right ? <Mark ok /> : <Mark />} “{r.text}” → {r.answer ? 'TRUE' : 'FALSE'}
             </div>
           ))}
         </div>
@@ -847,7 +869,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
             Check answer
           </button>
           {q.type !== 'truefalse' && q.type !== 'list' && (
-            <span className="hint-inline">{q.markType === 'ai' ? '🤖 AI will mark this against the AQA rubric' : 'Show the model answer when you\u2019re done'}</span>
+            <span className="hint-inline">{q.markType === 'ai' ? <><Icon name="sparkle" size={14} /> AI will mark this against the AQA rubric</> : 'Show the model answer when you\u2019re done'}</span>
           )}
         </div>
       ) : (
@@ -884,7 +906,7 @@ export function RubricBands({ rubric, level }) {
 }
 
 export function SourceBox({ ref_ }) {
-  const [tab, setTab] = useState(ref_.paperId === 2 ? 'B' : 'A');
+  const [tab, setTab] = useState('A');
   const p2 = ref_.paperId === 2 && Boolean(ref_.textA && ref_.textB);
   const title = p2 ? (tab === 'A' ? ref_.titleA : ref_.titleB) : ref_.title;
   const text = p2 ? (tab === 'A' ? ref_.textA : ref_.textB) : (ref_.text || '');
@@ -894,8 +916,8 @@ export function SourceBox({ ref_ }) {
         <span className="source-flag">Source</span>
         {p2 && (
           <div className="source-tabs">
-            <button className={`source-tab ${tab === 'A' ? 'on' : ''}`} onClick={() => setTab('A')}>Source A (19thC)</button>
-            <button className={`source-tab ${tab === 'B' ? 'on' : ''}`} onClick={() => setTab('B')}>Source B (modern)</button>
+            <button className={`source-tab ${tab === 'A' ? 'on' : ''}`} onClick={() => setTab('A')}>Source A ({ref_.centuryA || 'extract'})</button>
+            <button className={`source-tab ${tab === 'B' ? 'on' : ''}`} onClick={() => setTab('B')}>Source B ({ref_.centuryB || 'extract'})</button>
           </div>
         )}
       </div>
@@ -925,6 +947,8 @@ function TestScreen(props) {
   const doneBefore = test.questions.slice(0, current).reduce((a, x) => a + x.targetMins, 0);
   const answeredCount = test.questions.filter((x) => {
     const v = answers[x.id];
+    if (x.type === 'mcq4') return x.input.items.every((_, i) => ['A', 'B', 'C'].includes(v?.[i]));
+    if (x.type === 'choose4') return Object.values(v || {}).filter((on) => on === true).length === 4;
     if (x.type === 'truefalse') return v && Object.keys(v).length === x.input.statements.length;
     return v && String(typeof v === 'object' ? v.text ?? '' : v).trim().length > 0;
   }).length;
@@ -1022,6 +1046,7 @@ function TestScreen(props) {
             {test.paperId === 1 ? (
               <>
                 <div className="source-title">{test.source.title} — {test.source.author}, {test.source.year}</div>
+                {test.source.provenance && <div className="source-flag">{test.source.provenance}</div>}
                 <div className="source-text">{test.source.text.split('\n\n').map((p, i) => <p key={i}>{p}</p>)}</div>
               </>
             ) : (
@@ -1034,7 +1059,11 @@ function TestScreen(props) {
           <aside className="q-nav">
             {test.questions.map((x, i) => {
               const v = answers[x.id];
-              const done = v && (x.type === 'truefalse'
+              const done = v && (x.type === 'mcq4'
+                ? x.input.items.every((_, j) => ['A', 'B', 'C'].includes(v[j]))
+                : x.type === 'choose4'
+                ? Object.values(v).filter((on) => on === true).length === 4
+                : x.type === 'truefalse'
                 ? Object.keys(v).length === x.input.statements.length
                 : String(typeof v === 'object' ? v.text ?? '' : v).trim().length > 0);
               let cls = 'q-dot';
@@ -1065,12 +1094,16 @@ function TestScreen(props) {
               <span className="q-tag">Q{current + 1}</span>
               <span className="q-tag marks">{q.marks} marks</span>
               <span className="q-tag topic">~{q.targetMins} min</span>
-              {q.markType === 'ai' && <span className="q-tag stretch">🤖 AI-marked</span>}
+              {q.markType === 'ai' && <span className="q-tag stretch"><Icon name="sparkle" size={12} /> AI-marked</span>}
               {q.markType === 'auto' && <span className="q-tag">auto-marked</span>}
             </div>
             <div className="q-text">{q.text.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>
 
             <ImagePrompt image={q.image} />
+
+            {q.type === 'mcq4' && <McqFourBlock q={q} value={answers[q.id]} onAnswer={(v) => onAnswer(q.id, v)} />}
+
+            {q.type === 'choose4' && <ChooseFourBlock q={q} value={answers[q.id]} onAnswer={(v) => onAnswer(q.id, v)} />}
 
             {q.type === 'list' && (
               <>
@@ -1148,8 +1181,8 @@ function TestScreen(props) {
             </p>
             <div className="marking-note">
               <span>{markingReady
-                ? '🤖 Your long answers will be marked by the AI examiner against summarised AQA mark schemes.'
-                : '⚠️ No OpenRouter key is configured — long answers will be returned with model answers and rubrics so you can self-mark.'}</span>
+                ? <><Icon name="sparkle" size={14} /> Your long answers will be marked by the AI examiner against summarised AQA mark schemes.</>
+                : <><Icon name="warning" size={14} /> No OpenRouter key is configured — long answers will be returned with model answers and rubrics so you can self-mark.</>}</span>
             </div>
             <div className="modal-actions">
               <button className="btn" onClick={() => setConfirmOpen(false)}>Keep working</button>
@@ -1171,6 +1204,45 @@ function TestScreen(props) {
         </div>
       )}
       {error && <div className="error-banner" role="alert">{error}</div>}
+    </div>
+  );
+}
+
+function McqFourBlock({ q, value, onAnswer, disabled = false }) {
+  const selected = value || {};
+  return (
+    <div className="mcq4-grid" aria-label="Four multiple-choice answers">
+      {q.input.items.map((item, i) => (
+        <fieldset className="mcq4-item" key={i}>
+          <legend>{i + 1}. {item.text}</legend>
+          <div className="mcq4-choices">
+            {item.choices.map((choice) => (
+              <button key={choice.id} type="button" className={`tf-btn ${selected[i] === choice.id ? 'on-true' : ''}`}
+                aria-pressed={selected[i] === choice.id} disabled={disabled}
+                onClick={() => onAnswer({ ...selected, [i]: choice.id })}>
+                <strong>{choice.id}</strong> {choice.text}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      ))}
+    </div>
+  );
+}
+
+function ChooseFourBlock({ q, value, onAnswer, disabled = false }) {
+  const selected = value || {};
+  const count = Object.values(selected).filter((on) => on === true).length;
+  return (
+    <div className="tf-grid" role="group" aria-label="Choose four true statements">
+      <p className="input-hint">{count} of 4 selected</p>
+      {q.input.statements.map((statement, i) => (
+        <button key={i} type="button" className={`choose4-row ${selected[i] ? 'selected' : ''}`}
+          aria-pressed={selected[i] === true} disabled={disabled || (count >= 4 && !selected[i])}
+          onClick={() => onAnswer({ ...selected, [i]: !selected[i] })}>
+          <strong>{String.fromCharCode(65 + i)}</strong><span>{statement.text}</span><span aria-hidden="true">{selected[i] ? '✓' : ''}</span>
+        </button>
+      ))}
     </div>
   );
 }

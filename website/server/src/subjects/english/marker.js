@@ -64,3 +64,33 @@ export function markTrueFalse(value, statements) {
   });
   return { marks: correct, rows };
 }
+
+/** Mark four single-answer multiple-choice items, one mark apiece. */
+export function markMultipleChoiceFour(value, items, answers) {
+  const selections = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const rows = items.map((item, i) => {
+    const selected = String(selections[i] ?? '').toUpperCase();
+    const answer = answers[i];
+    const choice = item.choices.find((option) => option.id === answer);
+    return {
+      text: item.text,
+      selected: item.choices.find((option) => option.id === selected)?.text || null,
+      answer: choice?.text || '',
+      right: selected === answer,
+    };
+  });
+  return { marks: rows.filter((row) => row.right).length, rows };
+}
+
+/** Mark up to four selected statements, as on Paper 2 Q1. */
+export function markChooseFour(value, statements) {
+  const selections = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const selected = statements.map((_, i) => selections[i] === true).map((on, i) => on ? i : -1).filter((i) => i >= 0).slice(0, 4);
+  const rows = statements.map((statement, i) => ({
+    text: statement.t,
+    selected: selected.includes(i),
+    answer: statement.a === true,
+    right: selected.includes(i) === (statement.a === true),
+  }));
+  return { marks: selected.filter((i) => statements[i].a === true).length, rows };
+}

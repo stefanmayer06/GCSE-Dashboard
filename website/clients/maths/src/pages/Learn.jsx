@@ -1,65 +1,26 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useResource } from '../../../shared/resource-cache.js';
+import CourseMap, { recommendTile } from '../../../shared/CourseMap.jsx';
 
 export default function Learn({ userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const subject = higherTier ? 'maths-higher' : 'maths';
   const { data, error } = useResource(userId ? `topics:${subject}:${userId}` : null, () => api.topics());
-  const [open, setOpen] = useState({ number: true });
+  const groups = data ? Object.values(data.strands).filter((strand) => strand.topics?.length) : [];
 
   return (
-    <div className="page">
-      <header className="page-head">
-        <div>
-          <h1>Learn</h1>
-          <p className="sub">
-             Every AQA {higherTier ? 'Higher' : 'Foundation'} topic: bite-size notes, worked examples, practice questions and
-            free external resources.
-          </p>
-        </div>
-      </header>
-      {!data && !error && <div className="loading">Loading topics…</div>}
+    <div className="page learn-page">
+      {!data && !error && <div className="loading">Loading your map…</div>}
       {error && !data && <div className="loading">Could not load topics. Check your connection and try again.</div>}
-      {data &&
-        Object.values(data.strands).map((s) => (
-          <section key={s.id} className="panel strand-panel">
-            <button
-              className="strand-head"
-              onClick={() => setOpen((o) => ({ ...o, [s.id]: !o[s.id] }))}
-            >
-              <span className="strand-dot" style={{ background: s.color }} />
-              <h2>{s.name}</h2>
-              <span className="strand-blurb">{s.blurb}</span>
-              <span className="strand-weight">{s.weight}% of exam</span>
-              <span className="chev">{open[s.id] ? '▾' : '▸'}</span>
-            </button>
-            {open[s.id] && (
-              <div className="topic-grid">
-                {s.topics.map((t) => (
-                  <Link key={t.id} to={`/learn/${t.id}`} className="topic-card">
-                    <div className="topic-name">{t.name}</div>
-                    <div className="topic-blurb">{t.blurb}</div>
-                    {t.completed && <div className="lesson-stamp">Lesson completed</div>}
-                    <div className="topic-foot">
-                      <span className="topic-acc">
-                        {t.accuracy != null ? (
-                          <span className={`acc-pill ${t.accuracy >= 70 ? 'good' : t.accuracy >= 40 ? 'mid' : 'low'}`}>
-                            {t.accuracy}%
-                          </span>
-                        ) : (
-                          <span className="acc-pill new">not practised</span>
-                        )}
-                      </span>
-                      <span className="topic-go">Study →</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
-        ))}
+      {data ? (
+        <CourseMap
+          groups={groups}
+          title={higherTier ? 'Higher Maths map' : 'Foundation Maths map'}
+          sub={`Every AQA ${higherTier ? 'Higher' : 'Foundation'} topic as a level: watch, learn, practise, then replay to build its emblem and earn all three stars.`}
+          recommendedId={recommendTile(groups)}
+          bossLabel="Sit a timed paper"
+        />
+      ) : null}
     </div>
   );
 }

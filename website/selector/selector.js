@@ -27,33 +27,54 @@ if (themeToggle) {
   themeToggle.addEventListener('click', () => applyTheme(theme === 'dark' ? 'light' : 'dark'));
 }
 
-async function setSubjectStatus(subject, endpoint, update) {
-  const status = document.getElementById(`${subject}-status`);
-  if (!status) return;
+async function loadSubjectFact(endpoint, update) {
   try {
     const response = await fetch(endpoint);
-    if (!response.ok) throw new Error('unavailable');
+    if (!response.ok) return;
     const data = await response.json();
-    status.classList.add('ready');
-    status.lastChild.textContent = ' Ready';
     update(data);
-  } catch {
-    status.lastChild.textContent = ' Offline';
-  }
+  } catch {}
 }
 
-setSubjectStatus('maths', '/api/maths/health', (data) => {
+loadSubjectFact('/api/maths/health', (data) => {
   if (data.bankSize) document.getElementById('maths-bank').textContent = `${data.bankSize.toLocaleString()} questions`;
 });
 
-setSubjectStatus('higher', '/api/maths-higher/health', (data) => {
+loadSubjectFact('/api/maths-higher/health', (data) => {
   const el = document.getElementById('higher-bank');
   if (el && data.bankSize) el.textContent = `${data.bankSize.toLocaleString()} questions`;
 });
 
-setSubjectStatus('english', '/api/english/health', (data) => {
+loadSubjectFact('/api/english/health', (data) => {
   if (data.texts) document.getElementById('english-texts').textContent = `${data.texts} source texts`;
 });
+
+const exampleForm = document.getElementById('example-form');
+if (exampleForm) {
+  const prompt = document.getElementById('example-prompt');
+  const result = document.getElementById('example-result');
+  const outcome = document.getElementById('example-outcome');
+  exampleForm.addEventListener('change', () => {
+    prompt.hidden = true;
+    result.hidden = true;
+  });
+  exampleForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const answer = new FormData(exampleForm).get('example-answer');
+    if (!answer) {
+      prompt.hidden = false;
+      result.hidden = true;
+      return;
+    }
+    prompt.hidden = true;
+    const correct = answer === '5';
+    result.dataset.correct = String(correct);
+    outcome.textContent = correct
+      ? 'Correct. You have the method.'
+      : `Not quite. You chose ${answer}; x = 5.`;
+    result.hidden = false;
+  });
+}
 
 // v3 — "Pick up where you left off": the last subject desk visited.
 // The banner is injected only when a previous visit exists, so the static
@@ -87,9 +108,23 @@ try {
   for (const a of document.querySelectorAll('a.enter-link')) {
     a.addEventListener('click', () => {
       try {
-        const href = a.getAttribute('href');
+        const href = new URL(a.href).pathname;
         if (['/maths/', '/maths-higher/', '/english/'].includes(href)) localStorage.setItem('gcse-last-subject', href);
       } catch {}
     });
   }
 } catch {}
+
+// Keep a campaign source with the course link until signup. An internal source
+// labels the entry point when there is no campaign tag. No learner data is sent
+// by the public example itself.
+const querySource = new URLSearchParams(window.location.search).get('src') || '';
+const campaignSource = /^[a-z0-9][a-z0-9_-]{0,59}$/i.test(querySource) ? querySource : '';
+for (const anchor of document.querySelectorAll('a[href]')) {
+  const url = new URL(anchor.href, window.location.href);
+  if (url.origin !== window.location.origin || !/^\/(?:maths|maths-higher|english|subjects|gcse-maths-foundation|gcse-maths-higher|gcse-english-language)(?:\/|$)/.test(url.pathname)) continue;
+  const source = campaignSource || anchor.dataset.acquisition || (anchor.classList.contains('continue-link') ? 'home-return' : '');
+  if (!source) continue;
+  url.searchParams.set('src', source);
+  anchor.href = `${url.pathname}${url.search}${url.hash}`;
+}

@@ -1,8 +1,15 @@
 import { makeRand, shuffle } from '../util.js';
 import { P1_TEXTS } from '../texts/p1.js';
+import { LEGACY_P1_TEXTS } from '../texts/p1-legacy.js';
+import { P1_Q1_ITEMS } from '../texts/p1-q1.js';
 import { P2_PAIRS } from '../texts/p2.js';
+import { LEGACY_P2_SOURCES } from '../texts/p2-legacy.js';
 import { exemplarsFor } from '../texts/exemplars.js';
 import { rubricFor } from '../marking.js';
+
+// Archived IDs remain resolvable, but only the current collection is sampled.
+const P1_TEXT_LOOKUP = [...P1_TEXTS, ...LEGACY_P1_TEXTS];
+const ARCHIVED_P1_IDS = new Set(LEGACY_P1_TEXTS.map(({ id }) => id));
 
 export const PAPERS = {
   1: {
@@ -10,7 +17,7 @@ export const PAPERS = {
     code: '8700/1',
     name: 'Paper 1',
     title: 'Explorations in Creative Reading and Writing',
-    blurb: 'One fiction extract · Questions 1–5 (4 + 8 + 8 + 20 + 40 marks)',
+    blurb: 'Original contemporary fiction practice · Questions 1–5 (4 + 8 + 8 + 20 + 40 marks)',
     minutes: 105,
     quickMinutes: 50,
   },
@@ -19,7 +26,7 @@ export const PAPERS = {
     code: '8700/2',
     name: 'Paper 2',
     title: 'Writers\u2019 Viewpoints and Perspectives',
-    blurb: 'Two non-fiction sources (19th century + modern) · Questions 1–5 (4 + 8 + 12 + 16 + 40 marks)',
+    blurb: 'Source-pair practice (older and modern non-fiction) · Questions 1–5 (4 + 8 + 12 + 16 + 40 marks)',
     minutes: 105,
     quickMinutes: 50,
   },
@@ -67,11 +74,12 @@ export function allTexts() {
 }
 
 export function getTextDetail(id) {
-  const p1 = P1_TEXTS.find((t) => t.id === id);
+  const p1 = P1_TEXT_LOOKUP.find((t) => t.id === id);
   if (p1) {
     return {
       id: p1.id,
-      paper: 'Paper 1 — Fiction extract',
+      paper: ARCHIVED_P1_IDS.has(id) ? 'Archived classic skills practice' : 'Paper 1 — Fiction extract',
+      archived: ARCHIVED_P1_IDS.has(id),
       title: p1.title,
       author: p1.author,
       year: p1.year,
@@ -92,18 +100,32 @@ export function getTextDetail(id) {
       author: `${p2.sourceA.author} (${p2.sourceA.year}) · ${p2.sourceB.author} (${p2.sourceB.year})`,
       year: p2.sourceA.year,
       century: `${p2.sourceA.century} + ${p2.sourceB.century}`,
-      kind: p2.kind,
+      kind: 'Non-fiction source pair',
       source: p2.sourceA.source,
       gutenberg: p2.sourceA.gutenberg || null,
       theme: p2.theme,
       textA: p2.sourceA.text,
-      textMetaA: { title: p2.sourceA.title, author: p2.sourceA.author, year: p2.sourceA.year, century: p2.sourceA.century },
+      textMetaA: { title: p2.sourceA.title, author: p2.sourceA.author, year: p2.sourceA.year, century: p2.sourceA.century, source: p2.sourceA.source, gutenberg: p2.sourceA.gutenberg || null },
       textB: p2.sourceB.text,
-      textMetaB: { title: p2.sourceB.title, author: p2.sourceB.author, year: p2.sourceB.year, century: p2.sourceB.century },
+      textMetaB: { title: p2.sourceB.title, author: p2.sourceB.author, year: p2.sourceB.year, century: p2.sourceB.century, source: p2.sourceB.source, gutenberg: p2.sourceB.gutenberg || null },
       skills: p2.skills,
     };
   }
   return null;
+}
+
+/** New sessions carry a snapshot; snapshotless older sessions need their old text. */
+export function sourceTextForSession(session) {
+  if (typeof session.sourceText === 'string' && session.sourceText) return session.sourceText;
+  if (session.paperId === 2) {
+    const legacy = LEGACY_P2_SOURCES.find(({ id }) => id === session.entryId);
+    if (legacy) return `${legacy.textA}\n\n${legacy.textB}`;
+  }
+  const entry = getTextDetail(session.entryId);
+  if (!entry) return '';
+  return session.paperId === 1
+    ? entry.text || ''
+    : `${entry.textA || ''}\n\n${entry.textB || ''}`;
 }
 
 /* ---------------- question assembly ---------------- */
@@ -135,11 +157,12 @@ function q5ImageFor(entry) {
 function p1QuestionSet(entry) {
   const ex = exemplarsFor(entry.id);
   const qs = [];
+  const q1Items = P1_Q1_ITEMS[entry.id];
   qs.push(
-    baseQ(entry.id, 1, 'list', 4, 5, 'Q1 · List four things', entry.q1.focus, ['listing'], {
-      input: { kind: 'list', placeholder: 'Write one thing per line…', hint: 'Short, separate points — no analysis.' },
+    baseQ(entry.id, 1, 'mcq4', 4, 5, 'Q1 · Choose four answers', `${entry.q1.focus.split('\n')[0]}\nChoose ONE answer for each of the four questions.`, ['listing'], {
+      input: { kind: 'mcq4', items: q1Items.map(([text, choices]) => ({ text, choices: choices.map((choice, i) => ({ id: 'ABC'[i], text: choice })) })) },
       markType: 'auto',
-      markCtx: { kind: 'list', points: entry.q1.points },
+      markCtx: { kind: 'mcq4', answers: q1Items.map(([, , answer]) => 'ABC'[answer]) },
     })
   );
   qs.push(
@@ -191,10 +214,10 @@ function p2QuestionSet(pair) {
   const ex = exemplarsFor(pair.id);
   const qs = [];
   qs.push(
-    baseQ(pair.id, 1, 'truefalse', 4, 5, 'Q1 · Choose four true statements', 'Read both sources. Choose whether each statement is TRUE or FALSE.', ['listing'], {
-      input: { kind: 'truefalse', statements: pair.q1.statements.map((s) => ({ text: s.t })) },
+    baseQ(pair.id, 1, 'choose4', 4, 5, 'Q1 · Choose four true statements', pair.q1.source === 'A' ? 'Refer only to Source A. Choose the FOUR statements that are true.' : 'Read the statements below. Choose the FOUR that are true.', ['listing'], {
+      input: { kind: 'choose4', statements: pair.q1.statements.map((s) => ({ text: s.t })) },
       markType: 'auto',
-      markCtx: { kind: 'truefalse', answers: pair.q1.statements },
+      markCtx: { kind: 'choose4', answers: pair.q1.statements },
     })
   );
   qs.push(
@@ -303,6 +326,7 @@ export function buildPaper(type = 'full', paperId = 1) {
       author: entry.author,
       year: entry.year,
       century: entry.century,
+      provenance: entry.source,
       text: entry.text,
     };
   } else {
@@ -318,7 +342,7 @@ export function buildPaper(type = 'full', paperId = 1) {
 /** Store full question sets (with answers/rubrics) for active tests. */
 export function fullSetFor(entryId, paperId) {
   if (paperId === 1) {
-    const e = P1_TEXTS.find((t) => t.id === entryId);
+    const e = P1_TEXT_LOOKUP.find((t) => t.id === entryId);
     return e ? p1QuestionSet(e) : [];
   }
   const p = P2_PAIRS.find((t) => t.id === entryId);
@@ -350,12 +374,10 @@ function buildPracticeQ(topicId, entry, paperId, idx) {
   const ex = exemplarsFor(entry.id);
   if (topicId === 'listing') {
     const e = P1_TEXTS.find((t) => t.id === entry.id);
-    return baseQ(entry.id, idx, 'list', 4, 5, 'Practice · List four things', e.q1.focus, ['listing'], {
-      sourceRef: { paperId: 1, text: e.text.slice(0, 1500) },
-      input: { kind: 'list', placeholder: 'Write one thing per line…' },
-      markType: 'auto',
-      markCtx: { kind: 'list', points: e.q1.points },
-    });
+    const q = p1QuestionSet(e)[0];
+    return { ...q, id: `${entry.id}-q${idx}`, qn: idx, title: 'Practice · Choose four answers',
+      sourceRef: { paperId: 1, text: e.text, title: e.title },
+    };
   }
   if (topicId === 'language') {
     const e = P1_TEXTS.find((t) => t.id === entry.id);
@@ -400,7 +422,7 @@ function buildPracticeQ(topicId, entry, paperId, idx) {
   if (topicId === 'summarising') {
     const p = P2_PAIRS.find((t) => t.id === entry.id);
     return baseQ(entry.id, idx, 'text', 8, 8, 'Practice · Summary', p.q2.focus, ['summarising'], {
-      sourceRef: { paperId: 2, textA: p.sourceA.text, titleA: p.sourceA.title, textB: p.sourceB.text, titleB: p.sourceB.title },
+      sourceRef: { paperId: 2, textA: p.sourceA.text, titleA: p.sourceA.title, centuryA: p.sourceA.century, textB: p.sourceB.text, titleB: p.sourceB.title, centuryB: p.sourceB.century },
       input: { kind: 'textarea', rows: 8 },
       markType: 'ai',
       rubricKey: 'p2q2',
@@ -410,7 +432,7 @@ function buildPracticeQ(topicId, entry, paperId, idx) {
   if (topicId === 'comparing') {
     const p = P2_PAIRS.find((t) => t.id === entry.id);
     return baseQ(entry.id, idx, 'text', 16, 16, 'Practice · Comparing viewpoints', p.q4.focus, ['comparing'], {
-      sourceRef: { paperId: 2, textA: p.sourceA.text, titleA: p.sourceA.title, textB: p.sourceB.text, titleB: p.sourceB.title },
+      sourceRef: { paperId: 2, textA: p.sourceA.text, titleA: p.sourceA.title, centuryA: p.sourceA.century, textB: p.sourceB.text, titleB: p.sourceB.title, centuryB: p.sourceB.century },
       input: { kind: 'textarea', rows: 12 },
       markType: 'ai',
       rubricKey: 'p2q4',
@@ -419,12 +441,14 @@ function buildPracticeQ(topicId, entry, paperId, idx) {
   }
   if (topicId === 'reading-19c') {
     const p = P2_PAIRS.find((t) => t.id === entry.id);
-    return baseQ(entry.id, idx, 'text', 8, 8, 'Practice · Decode the 19th-century source', `Read Source A (${p.sourceA.title}, ${p.sourceA.century}).\nIn your own words, explain what the writer says and what their attitude seems to be. Then pick TWO phrases you had to work out and explain how you decoded them.`, ['reading-19c'], {
-      sourceRef: { paperId: 2, textA: p.sourceA.text, titleA: p.sourceA.title },
+    const olderLabel = p.sourceA.century === '19th century' ? 'A' : 'B';
+    const older = olderLabel === 'A' ? p.sourceA : p.sourceB;
+    return baseQ(entry.id, idx, 'text', 8, 8, 'Practice · Decode the 19th-century source', `Read Source ${olderLabel} (${older.title}, ${older.century}).\nIn your own words, explain what the writer says and what their attitude seems to be. Then pick TWO phrases you had to work out and explain how you decoded them.`, ['reading-19c'], {
+      sourceRef: { paperId: 2, text: older.text, title: older.title },
       input: { kind: 'textarea', rows: 8 },
       markType: 'ai',
-      rubricKey: 'p2q2',
-      modelAnswer: ex.q2 || '',
+      rubricKey: 'reading19c',
+      modelAnswer: ex.reading19c || '',
     });
   }
   if (topicId === 'creative-writing') {
@@ -504,21 +528,23 @@ export function buildAdhoc(count = 12, kinds = ['listing', 'truefalse', 'analysi
       usedTexts.add(e.id);
       const q = p1QuestionSet(e)[0];
       q.qn = qs.length + 1;
-      q.title = 'Quick-fire · List four things';
-      q.sourceRef = { paperId: 1, text: e.text.slice(0, 1800), title: e.title };
+      q.title = 'Quick-fire · Choose four answers';
+      q.sourceRef = { paperId: 1, text: e.text, title: e.title };
       qs.push(q);
     } else if (kind === 'truefalse') {
       const p = p2.find((t) => !usedTexts.has(t.id)) || p2[qs.length % p2.length];
       usedTexts.add(p.id);
       const q = p2QuestionSet(p)[0];
       q.qn = qs.length + 1;
-      q.title = 'Quick-fire · True or false';
+      q.title = 'Quick-fire · Choose four true statements';
       q.sourceRef = {
         paperId: 2,
         textA: p.sourceA.text,
         titleA: p.sourceA.title,
+        centuryA: p.sourceA.century,
         textB: p.sourceB.text,
         titleB: p.sourceB.title,
+        centuryB: p.sourceB.century,
       };
       qs.push(q);
     } else {

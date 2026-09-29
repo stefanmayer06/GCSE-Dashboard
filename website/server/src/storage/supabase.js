@@ -4,6 +4,7 @@ import {
   requireSupabaseConfig,
   supabaseStorageError,
 } from '../supabase/client.js';
+import { acquisitionReport, summarizeEvents } from '../event-report.js';
 
 const DEFAULT_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_LEASE_MS = 30 * 1000;
@@ -788,16 +789,25 @@ export function createSupabaseStorage(options = {}) {
       .gte('occurred_at', since)
       .order('occurred_at', { ascending: true });
     if (error) throw supabaseStorageError(error);
-    const counts = {};
-    let firstSeen = null;
-    let lastSeen = null;
-    for (const row of data || []) {
-      counts[row.name] = (counts[row.name] || 0) + 1;
-      if (!firstSeen) firstSeen = row.occurred_at;
-      lastSeen = row.occurred_at;
+    return summarizeEvents(data || []);
+  }
+
+  async function getAcquisitionReport(sinceDays = 90) {
+    await init();
+    const days = Math.max(1, Number(sinceDays) || 90);
+    const since = new Date(Date.now() - days * 86400000).toISOString();
+    const events = [];
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await service.from('product_events')
+        .select('id, user_id, name, metadata, occurred_at')
+        .gte('occurred_at', since)
+        .order('id', { ascending: true })
+        .range(offset, offset + 999);
+      if (error) throw supabaseStorageError(error);
+      events.push(...(data || []));
+      if (!data || data.length < 1000) break;
     }
-    const activated = (counts.diagnostic_complete || 0) > 0 && (counts.session_marked || 0) > 0;
-    return { counts, firstSeen, lastSeen, activated };
+    return acquisitionReport(events, { sinceDays: days });
   }
 
   async function pruneEvents(keepDays = 540) {
@@ -826,6 +836,44 @@ export function createSupabaseStorage(options = {}) {
       created_at: isoDate(input.createdAt, 'createdAt', Date.now()),
     };
     const { error } = await service.from('beta_feedback').insert(row);
+    if (error) throw supabaseStorageError(error);
+    return true;
+  }
+
+  async function saveSupportRequest(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      throw storageError('STORAGE_INVALID_ARGUMENT', 'support request must be an object');
+    }
+    const row = {
+      id: requiredString(String(input.id), 'id'),
+      topic: requiredString(input.topic, 'topic'),
+      message: requiredString(input.message, 'message'),
+      email: typeof input.email === 'string' && input.email ? input.email : null,
+      created_at: isoDate(input.createdAt, 'createdAt', Date.now()),
+    };
+    const { error } = await service.from('support_requests').insert(row);
+    if (error) throw supabaseStorageError(error);
+    return true;
+  }
+
+  async function listSupportRequests(limit = 50) {
+    const { data, error } = await service.from('support_requests')
+      .select('id, topic, message, email, created_at')
+      .order('created_at', { ascending: false })
+      .limit(Math.max(1, Math.min(100, Number(limit) || 50)));
+    if (error) throw supabaseStorageError(error);
+    return (data || []).map((row) => ({
+      id: row.id,
+      topic: row.topic,
+      message: row.message,
+      email: row.email,
+      createdAt: row.created_at,
+    }));
+  }
+
+  async function pruneSupportRequests(keepDays = 180) {
+    const cutoff = new Date(Date.now() - Math.max(30, Number(keepDays) || 180) * 24 * 60 * 60 * 1000).toISOString();
+    const { error } = await service.from('support_requests').delete().lt('created_at', cutoff);
     if (error) throw supabaseStorageError(error);
     return true;
   }
@@ -885,8 +933,12 @@ export function createSupabaseStorage(options = {}) {
     listAttempts,
     recordEvent,
     getEventSummary,
+    getAcquisitionReport,
     pruneEvents,
     saveFeedback,
+    saveSupportRequest,
+    listSupportRequests,
+    pruneSupportRequests,
   };
 }
 

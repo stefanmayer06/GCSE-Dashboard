@@ -50,12 +50,11 @@ async function refreshStats() {
 
   let subjects = 3;
   let papers = 8;
-  let bank = '4,300+';
+  let bank = '4,600+';
 
   if (maths && maths.bankSize) {
      subjects = 3;
      papers = 8;
-     bank = `${maths.bankSize.toLocaleString()}+`;
     const q = document.getElementById('dir-maths-q');
     if (q) q.textContent = maths.bankSize.toLocaleString();
   }
@@ -64,7 +63,7 @@ async function refreshStats() {
     if (q) q.textContent = higher.bankSize.toLocaleString();
     const card = document.getElementById('maths-higher-bank');
     if (card) card.textContent = `${higher.bankSize.toLocaleString()}+ questions`;
-    if (bankEl && maths?.bankSize) bankEl.textContent = `${(maths.bankSize + higher.bankSize).toLocaleString()}+`;
+    if (maths?.bankSize) bank = `${(maths.bankSize + higher.bankSize).toLocaleString()}+`;
   }
   if (english && english.texts) {
     const texts = document.getElementById('dir-english-texts');
@@ -77,3 +76,13 @@ async function refreshStats() {
 }
 
 refreshStats();
+
+const querySource = new URLSearchParams(window.location.search).get('src') || '';
+if (/^[a-z0-9][a-z0-9_-]{0,59}$/i.test(querySource)) {
+  for (const anchor of document.querySelectorAll('a[href]')) {
+    const url = new URL(anchor.href, window.location.href);
+    if (url.origin !== window.location.origin || !/^\/(?:maths|maths-higher|english|gcse-maths-foundation|gcse-maths-higher|gcse-english-language)(?:\/|$)/.test(url.pathname)) continue;
+    url.searchParams.set('src', querySource);
+    anchor.href = `${url.pathname}${url.search}${url.hash}`;
+  }
+}

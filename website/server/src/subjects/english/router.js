@@ -9,10 +9,10 @@ import {
   fullSetFor,
   allTexts,
   getTextDetail,
+  sourceTextForSession,
 } from './bank/index.js';
 import { TOPICS, SECTIONS } from './topics.js';
-import { BOUNDARIES, predictGrade, gradeLabel, nextBoundaryGap } from './grades.js';
-import { markList, markTrueFalse } from './marker.js';
+import { markList, markTrueFalse, markMultipleChoiceFour, markChooseFour } from './marker.js';
 import { markAnswer, askTutor, aiConfig } from './ai.js';
 import { createDb } from '../../db.js';
 import { defaultStorage } from '../../storage/index.js';
@@ -123,8 +123,8 @@ const stripMarkCtx = (q) => {
 // Editorial metadata for the coverage audit trail (see ENGLISH_AUDIT.md).
 const ENGLISH_EDITORIAL = {
   spec: 'AQA 8700',
-  reviewer: 'Study Desk content team',
-  markingRationale: 'List and true/false questions are marked deterministically against fixed answers; extended answers use AQA-style rubrics and never promise an official mark.',
+  reviewer: 'Subject review pending',
+  markingRationale: 'Multiple-choice and four-statement selection questions are marked deterministically against fixed answers; extended answers use AQA-style rubrics and never promise an official mark.',
   reportIssueUrl: '/support.html',
 };
 
@@ -135,7 +135,6 @@ app.get('/health', (req, res) => {
     model,
     chatReady: !!apiKey,
     aiMarking: !!apiKey,
-    boundaries: BOUNDARIES,
     papers: paperList(),
     editorial: ENGLISH_EDITORIAL,
   });
@@ -230,6 +229,9 @@ app.post('/test/new', asyncRoute(async (req, res) => {
       entryId: paper.entryId,
       totalMarks: paper.totalMarks,
       questions: privateQuestions,
+      sourceText: paper.source.kind === 'single'
+        ? paper.source.text
+        : `${paper.source.sourceA.text}\n\n${paper.source.sourceB.text}`,
       startedAt: new Date().toISOString(),
     },
   });
@@ -253,13 +255,6 @@ app.delete('/test/:id', asyncRoute(async (req, res) => {
   return sessionFailure(res, outcome);
 }));
 
-function sourceTextFor(test) {
-  const entry = getTextDetail(test.entryId);
-  if (!entry) return '';
-  if (test.paperId === 1) return entry.text || '';
-  return `${entry.textA || ''}\n\n${entry.textB || ''}`.slice(0, 7000);
-}
-
 app.post('/test/:id/submit', asyncRoute(async (req, res) => {
   const criteria = sessionCriteria(req, req.params.id, 'paper');
   const claimed = await claimSession(req, req.params.id, 'paper');
@@ -268,7 +263,7 @@ app.post('/test/:id/submit', asyncRoute(async (req, res) => {
   const test = claimed.session.payload;
   const answers = req.body?.answers || [];
   const durationSec = req.body?.durationSec || null;
-  const sourceText = sourceTextFor(test);
+  const sourceText = sourceTextForSession(test);
 
   const perQuestion = [];
   let scored = 0;
@@ -289,12 +284,24 @@ app.post('/test/:id/submit', asyncRoute(async (req, res) => {
       text: q.text,
       value: ans,
     };
-    if (q.type === 'list') {
+    if (q.type === 'mcq4') {
+      const r = markMultipleChoiceFour(ans, q.input.items, q.markCtx.answers);
+      scored += r.marks;
+      base.got = r.marks;
+      base.correct = r.marks === q.marks;
+      base.mcqResult = r.rows;
+    } else if (q.type === 'list') {
       const r = markList(ans, full.markCtx.points);
       scored += r.marks;
       base.got = r.marks;
       base.correct = r.marks === q.marks;
       base.listResult = { matched: r.matched, missed: r.missed, points: full.markCtx.points };
+    } else if (q.type === 'choose4') {
+      const r = markChooseFour(ans, full.markCtx.answers);
+      scored += r.marks;
+      base.got = r.marks;
+      base.correct = r.marks === q.marks;
+      base.choose4Result = r.rows;
     } else if (q.type === 'truefalse') {
       const r = markTrueFalse(ans, full.markCtx.answers);
       scored += r.marks;
@@ -325,8 +332,6 @@ app.post('/test/:id/submit', asyncRoute(async (req, res) => {
 
   const totalMarks = test.totalMarks;
   const incomplete = pending > 0;
-  const grade = incomplete ? null : predictGrade(scored, totalMarks);
-  const gap = incomplete ? null : nextBoundaryGap(scored, totalMarks);
 
   const skillAgg = new Map();
   for (const row of perQuestion) {
@@ -357,9 +362,9 @@ app.post('/test/:id/submit', asyncRoute(async (req, res) => {
     totalMarks,
     correctMarks: Math.round(scored * 10) / 10,
     percent: incomplete ? null : Math.round((100 * scored) / totalMarks),
-    grade,
-    gradeLabel: gradeLabel(grade),
-    nextBoundary: gap,
+    grade: null,
+    gradeLabel: null,
+    nextBoundary: null,
     incomplete,
     aiMarked: incomplete === false,
     durationSec,
@@ -454,6 +459,14 @@ app.post('/check', asyncRoute(async (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session expired — start again.' });
   const q = session.payload.questions.find((x) => x.id === qid);
   if (!q) return res.status(404).json({ error: 'Question not found.' });
+  if (q.type === 'mcq4') {
+    const r = markMultipleChoiceFour(value, q.input.items, q.markCtx.answers);
+    return res.json({ correct: r.marks === 4, got: r.marks, max: 4, rows: r.rows, format: 'mcq4' });
+  }
+  if (q.type === 'choose4') {
+    const r = markChooseFour(value, q.markCtx.answers);
+    return res.json({ correct: r.marks === 4, got: r.marks, max: 4, rows: r.rows, format: 'choose4' });
+  }
   if (q.type === 'list') {
     const r = markList(value, q.markCtx.points);
     return res.json({ correct: r.marks === 4, got: r.marks, max: 4, matched: r.matched, missed: r.missed, points: q.markCtx.points });
@@ -483,7 +496,9 @@ async function scoreEnglishSession(req, res, kind, includeLesson) {
     const attempts = markAttemptsFor(s, q.id);
     const latestAttempt = attempts.at(-1);
     let got = 0;
-    if (q.type === 'list') got = markList(ans, q.markCtx.points).marks;
+    if (q.type === 'mcq4') got = markMultipleChoiceFour(ans, q.input.items, q.markCtx.answers).marks;
+    else if (q.type === 'list') got = markList(ans, q.markCtx.points).marks;
+    else if (q.type === 'choose4') got = markChooseFour(ans, q.markCtx.answers).marks;
     else if (q.type === 'truefalse') got = markTrueFalse(ans, q.markCtx.answers).marks;
     else if (q.markType === 'self') got = 0;
     else got = Math.min(q.marks, Number(s.aiMarks?.[q.id]) || 0);

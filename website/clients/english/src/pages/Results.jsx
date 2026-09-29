@@ -6,6 +6,8 @@ import { RubricBands } from './Practice.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 import { TriagePanel } from '../../../shared/StudyTools.jsx';
 import { mergeMistakeRows, mistakeRowsFromResult, personalKey } from '../../../shared/study-personal.js';
+import Mark from '../../../shared/circuit/Mark.jsx';
+import Icon from '../../../shared/circuit/Icon.jsx';
 
 export default function Results({ userId }) {
   const navigate = useNavigate();
@@ -57,7 +59,7 @@ export default function Results({ userId }) {
       <div className="page">
         <div className="panel">
           <h2>No result yet</h2>
-          <p className="sub">Complete a practice paper to see your predicted grade.</p>
+          <p className="sub">Complete a practice set to see your marked score and skills to revisit.</p>
           <button className="btn btn-primary" onClick={() => navigate('/practice')}>Start a paper</button>
         </div>
       </div>
@@ -65,9 +67,6 @@ export default function Results({ userId }) {
   }
 
   const mins = result.durationSec ? `${Math.floor(result.durationSec / 60)}m ${result.durationSec % 60}s` : null;
-  const gradeColor =
-    result.grade === null ? (result.incomplete ? 'ok' : 'u') : result.grade >= 6 ? 'great' : result.grade >= 4 ? 'ok' : 'bad';
-
   return (
     <div className="page results">
       <header className="page-head">
@@ -80,9 +79,9 @@ export default function Results({ userId }) {
       </header>
 
       <div className="result-hero">
-        <div className={`grade-badge ${gradeColor}`}>
-          <div className="grade-num">{result.incomplete ? '—' : result.gradeLabel}</div>
-          <div className="grade-label">{result.incomplete ? 'pending self-mark' : 'predicted grade'}</div>
+        <div className="grade-badge ok">
+          <div className="grade-num">{result.incomplete || result.percent == null ? '—' : `${result.percent}%`}</div>
+          <div className="grade-label">{result.incomplete ? 'pending self-mark' : 'practice score'}</div>
         </div>
         <div className="score-block">
           <div className="score-num">{result.correctMarks}<span className="score-total"> / {result.totalMarks}</span></div>
@@ -90,11 +89,7 @@ export default function Results({ userId }) {
           <div className="score-note">
             {result.incomplete
               ? 'Some long answers still need marking. Use the rubrics and model answers below to finish your result.'
-              : result.grade === null
-                ? 'This score is below grade 1. Review the targets below before your next paper.'
-                : result.nextBoundary
-                  ? `Just ${result.nextBoundary.marksToGo} more mark${result.nextBoundary.marksToGo === 1 ? '' : 's'} to reach a grade ${result.nextBoundary.grade}.`
-                  : 'This score is at the top of the estimated grade range.'}
+              : 'This score is feedback on an original practice set. Use the skills below to choose your next revision step.'}
           </div>
         </div>
         <div className="actions-col">
@@ -115,17 +110,16 @@ export default function Results({ userId }) {
 
       {attempts?.length > 0 && (
         <section className="panel attempts-panel">
-          <h2>Your past papers</h2>
-          <p className="sub">Your past papers are saved here. Open one to review your answers.</p>
+          <h2>Your paper attempts</h2>
+          <p className="sub">Your completed practice sets are saved here. Open one to review your answers.</p>
           <table className="bound-table attempts-table">
-            <thead><tr><th>Date</th><th>Paper</th><th>Score</th><th>Grade</th><th></th></tr></thead>
+            <thead><tr><th>Date</th><th>Paper</th><th>Score</th><th></th></tr></thead>
             <tbody>
               {attempts.map((attempt) => (
                 <tr key={attempt.sessionId} className={attempt.sessionId === result.id ? 'me' : ''}>
                   <td>{new Date(attempt.completedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</td>
                   <td>{attempt.paperCode || attempt.paperName || 'Paper'}</td>
                   <td>{attempt.correctMarks}/{attempt.totalMarks} ({attempt.percent ?? '—'}%)</td>
-                  <td>{attempt.grade ?? '—'}</td>
                   <td>{attempt.sessionId === result.id
                     ? <span className="sub small">viewing</span>
                     : <button type="button" className="link link-button" onClick={() => openSession(attempt.sessionId)}>Review</button>}</td>
@@ -138,29 +132,9 @@ export default function Results({ userId }) {
 
       <section className="two-col">
         <div className="panel">
-          <h2>Grade boundaries (per paper, /80)</h2>
-          <table className="bound-table">
-            <thead>
-              <tr><th>Grade</th><th>Marks needed</th><th>You</th></tr>
-            </thead>
-            <tbody>
-              {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((g) => {
-                const boundary = { 9: 64, 8: 58, 7: 52, 6: 45, 5: 39, 4: 33, 3: 26, 2: 18, 1: 11 }[g];
-                const scaled = Math.round((result.correctMarks / result.totalMarks) * 80);
-                return (
-                  <tr key={g} className={result.grade === g ? 'me' : ''}>
-                    <td>{g}</td>
-                    <td>{boundary}</td>
-                    <td>{result.grade === g ? '← you' : scaled >= boundary ? '✓' : ''}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <p className="sub small">
-            Averaged from published AQA 8700 boundaries (2018–2024) scaled to one 80-mark paper.
-            English Language has no tiers — grades run 9 to 1.
-          </p>
+          <h2>How to use this score</h2>
+          <p className="sub">Your marks show how you did on this practice set. The texts are adaptations and extended answers may use AI feedback, so this score is not an exam grade prediction.</p>
+          <p className="sub">Review the question feedback and retry your lowest-scoring skills. For exam rehearsal, use an official AQA sample paper alongside this practice.</p>
         </div>
 
         <div className="panel">
@@ -226,11 +200,25 @@ export default function Results({ userId }) {
                     <div className="fb-box">
                       <div className="fb-head"><span className="fb-marks">{q.got}<span className="outof"> / 4</span></span></div>
                       {q.listResult.matched.map((m, j) => (
-                        <div key={j} className="fb-text">✅ “{m.line}” — matches “{m.point}”.</div>
+                        <div key={j} className="fb-text"><Mark ok /> “{m.line}” — matches “{m.point}”.</div>
                       ))}
                       {q.listResult.missed.map((m, j) => (
                         <div key={`m${j}`} className="fb-text" style={{ color: 'var(--muted)' }}>· You could also have said: “{m}”</div>
                       ))}
+                    </div>
+                  )}
+
+                  {q.mcqResult && (
+                    <div className="fb-box">
+                      <div className="fb-head"><span className="fb-marks">{q.got}<span className="outof"> / 4</span></span></div>
+                      {q.mcqResult.map((r, j) => <div key={j} className="fb-text">{r.right ? <Mark ok /> : <Mark />} {j + 1}. {r.text} — {r.right ? r.answer : `You chose ${r.selected || 'nothing'}; answer: ${r.answer}`}</div>)}
+                    </div>
+                  )}
+
+                  {q.choose4Result && (
+                    <div className="fb-box">
+                      <div className="fb-head"><span className="fb-marks">{q.got}<span className="outof"> / 4</span></span></div>
+                      {q.choose4Result.map((r, j) => <div key={j} className="fb-text">{r.selected ? (r.answer ? <Mark ok /> : <Mark />) : '·'} {String.fromCharCode(65 + j)}. {r.text} — {r.answer ? 'TRUE' : 'FALSE'}</div>)}
                     </div>
                   )}
 
@@ -239,7 +227,7 @@ export default function Results({ userId }) {
                       <div className="fb-head"><span className="fb-marks">{q.got}<span className="outof"> / 4</span></span></div>
                       {q.tfResult.map((r, j) => (
                         <div key={j} className="fb-text">
-                          {r.right ? '✅' : '❌'} “{r.text}” → {r.answer ? 'TRUE' : 'FALSE'}
+                          {r.right ? <Mark ok /> : <Mark />} “{r.text}” → {r.answer ? 'TRUE' : 'FALSE'}
                         </div>
                       ))}
                     </div>

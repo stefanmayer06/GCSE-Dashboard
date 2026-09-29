@@ -23,6 +23,15 @@
       ]
     },
     {
+      "source": "/:subject(maths|maths-higher|english)/",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    },
+    {
       "source": "/maths/:path*",
       "headers": [
         {
@@ -60,6 +69,15 @@
     },
     {
       "source": "/feedback.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    },
+    {
+      "source": "/support.html",
       "headers": [
         {
           "key": "X-Robots-Tag",

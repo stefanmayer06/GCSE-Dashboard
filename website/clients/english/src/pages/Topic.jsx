@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
 import { QuestionCard } from './Practice.jsx';
 import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
 import { recordLessonResult } from '../../../shared/study-personal.js';
+import { flattenTopics } from '../../../shared/study.js';
+import { ComboMeter, LessonExplainer, LessonHeader, MasteryPanel, NotesDeck, ResourceGrid, StageSection, TutorPromo, useStages } from '../../../shared/LessonKit.jsx';
+import { explainerForTopic } from '../../../shared/explainer/library/english/index.js';
 
 export default function Topic({ onProgress, userId }) {
   const { topicId } = useParams();
@@ -22,6 +25,9 @@ export default function Topic({ onProgress, userId }) {
   const [celebration, setCelebration] = useState(null);
   const [busy, setBusy] = useState(false);
   const [quizError, setQuizError] = useState('');
+  const [combo, setCombo] = useState(0);
+  const [stagesDone, markStage] = useStages(topicId);
+  const { data: catalog } = useResource(userId ? `topics:english:${userId}` : null, () => api.topics());
   const topic = topicOverride && topicOverride.topicId === topicId ? topicOverride.value : fetchedTopic;
 
   useEffect(() => {
@@ -32,6 +38,7 @@ export default function Topic({ onProgress, userId }) {
     setAiResults({});
     setDone(null);
     setCelebration(null);
+    setCombo(0);
   }, [topicId]);
 
   // v3 continue-strip: remember the last skill per subject.
@@ -67,6 +74,7 @@ export default function Topic({ onProgress, userId }) {
     if (q.type === 'list' || q.type === 'truefalse') {
       const res = await api.check(session.sessionId, q.id, value);
       setFeedback((f) => ({ ...f, [q.id]: res }));
+      setCombo((current) => (res.correct ? current + 1 : 0));
       return;
     }
     if (q.markType === 'self') {
@@ -97,7 +105,9 @@ export default function Topic({ onProgress, userId }) {
         }
       }
       setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
+      markStage('practise');
       invalidateResources(`topic:${userId}:${topicId}`);
+      invalidateResources(`topics:english:${userId}`);
       if (res.reward?.firstCompletion) {
         setTopicOverride({ topicId, value: { ...(topicOverride?.value ?? fetchedTopic), completed: true } });
       }
@@ -113,19 +123,23 @@ export default function Topic({ onProgress, userId }) {
 
   if (!topic) return <div className="page"><div className="loading">Loading…</div></div>;
 
+  const sectionTopics = flattenTopics(catalog, 'sections').filter((t) => (t.section || t.strand) === topic.section);
+  const position = sectionTopics.findIndex((t) => t.id === topicId);
+  const nextTopic = position >= 0 ? sectionTopics[position + 1] || null : null;
+  const authored = explainerForTopic(topicId);
+
   return (
-    <div className="page topic-page">
-      <Link to="/learn" className="back-link">← All skills</Link>
-      <header className="page-head">
-        <div>
-          <h1>{topic.name}</h1>
-          <p className="sub">
-            {topic.sectionName} · worth roughly {topic.examWeight} marks across the two papers
-            {topic.accuracy != null ? ` · your accuracy so far: ${topic.accuracy}%` : ''}
-          </p>
-          {topic.completed && <div className="lesson-stamp topic-complete-stamp">Lesson completed</div>}
-        </div>
-      </header>
+    <div className="page topic-page lesson-page english-lesson">
+      <LessonHeader
+        topic={topic}
+        strand={topic.section}
+        eyebrow={`${topic.sectionName} · AQA 8700`}
+        backLabel="All skills"
+        sub={`${topic.sectionName} · AQA 8700 revision${topic.accuracy != null ? ` · your accuracy so far: ${topic.accuracy}%` : ''}`}
+        stagesDone={stagesDone}
+      >
+        {topic.completed && <div className="lesson-stamp topic-complete-stamp">Lesson completed</div>}
+      </LessonHeader>
 
       <div className="editorial-note" aria-label="Editorial metadata">
         <span>AQA 8700{topic.specRefs?.length ? ` · ${topic.specRefs.join(', ')}` : ''}</span>
@@ -135,37 +149,16 @@ export default function Topic({ onProgress, userId }) {
         <a href={topic.editorial?.reportIssueUrl || '/support.html'}>Report an issue</a>
       </div>
 
-      <section className="panel">
-        <h2>Notes</h2>
-        <div className="notes">
-          {topic.notes.map((n, i) => {
-            if (n.t === 'p') return <p key={i} className="note-p">{n.text}</p>;
-            if (n.t === 'b')
-              return (
-                <ul key={i} className="note-bullets">
-                  {n.items.map((it, j) => <li key={j}>{it}</li>)}
-                </ul>
-              );
-            if (n.t === 'f')
-              return (
-                <div key={i} className="formula-card">
-                  <div className="formula-title">{n.title}</div>
-                  <div className="formula-body">{n.text}</div>
-                </div>
-              );
-            if (n.t === 'e')
-              return (
-                <div key={i} className="example-card">
-                  <div className="example-q"><b>Example</b> — {n.q}</div>
-                  <div className="example-a">{n.a}</div>
-                </div>
-              );
-            return null;
-          })}
-        </div>
-      </section>
+      <StageSection id="watch" index={1} title={authored ? 'Watch & play' : 'Watch the talk-through'} sub={authored ? 'A narrated explainer that zooms into real sentences and stops for you to answer.' : 'A narrated run through the skill, with an example to plan before the model is revealed.'}>
+        <LessonExplainer topic={topic} subject="english" authored={authored} onDone={() => markStage('watch')} />
+      </StageSection>
 
-      <section className="panel">
+      <StageSection id="learn" index={2} title="Learn the skill" sub="Frameworks, examples and exam moves — plan your own answer before revealing each model.">
+        <NotesDeck notes={topic.notes} english onSeen={() => markStage('learn')} />
+      </StageSection>
+
+      <StageSection id="practise" index={3} title="Practise" sub="Real-bank questions. Short answers are checked instantly; longer ones get AQA-style feedback.">
+      <section className="panel quiz-panel">
         <div className="quiz-head">
           <div>
             <h2>Quick practice</h2>
@@ -173,8 +166,9 @@ export default function Topic({ onProgress, userId }) {
               Real-bank questions, instant checking — AI-marked against the AQA rubric when a key is set.
             </p>
           </div>
+          <ComboMeter streak={combo} />
           {!session && (
-            <button className="btn btn-primary" onClick={startQuiz} disabled={busy}>
+            <button className="btn btn-go" onClick={startQuiz} disabled={busy}>
               {busy ? 'Loading…' : 'Start 3 questions'}
             </button>
           )}
@@ -214,24 +208,17 @@ export default function Topic({ onProgress, userId }) {
         )}
       </section>
 
-      <section className="panel">
-        <h2>Free external resources</h2>
-        <p className="sub">More lessons and practice on this exact skill — all free.</p>
-        <div className="res-grid">
-          {topic.resources.map((res) => (
-            <a key={res.label} className="res-card" href={res.url} target="_blank" rel="noreferrer">
-              <div className="res-name">{res.label}</div>
-              <div className="res-why">{res.why}</div>
-            </a>
-          ))}
-        </div>
-      </section>
+      </StageSection>
 
-      <section className="panel">
-        <h2>Want a hand with this skill?</h2>
-        <p className="sub">Ask the AI tutor to walk you through {topic.name.toLowerCase()} step by step.</p>
-        <Link className="btn btn-primary" to="/chat">Open AI tutor →</Link>
-      </section>
+      <StageSection id="master" index={4} title="Master it" sub="Stars and emblem layers are earned from marked answers. Replay the practice to build them up.">
+        <MasteryPanel topic={topic} strand={topic.section} nextTopic={nextTopic} result={done} />
+        <section className="panel">
+          <h2>Free external resources</h2>
+          <p className="sub">More lessons and practice on this exact skill — all free.</p>
+          <ResourceGrid resources={topic.resources} />
+        </section>
+        <TutorPromo text={`Ask the AI tutor to walk you through ${topic.name.toLowerCase()} step by step.`} />
+      </StageSection>
 
       {celebration && (
         <RewardCelebration

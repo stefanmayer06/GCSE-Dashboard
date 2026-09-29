@@ -25,6 +25,7 @@ import { useTheme } from "@/theme";
 import { MathsVisual } from "@/practice/MathsVisual";
 import {
   formatAnswerValue,
+  englishChoiceLines,
   listResultLines,
   rubricLines,
   trueFalseLines,
@@ -83,8 +84,8 @@ export default function Results() {
     );
   const cached = readCachedResult(raw);
   const result = parseResult(cached.serverResult);
-  const nextMarks = finite(result.nextBoundary.marksToGo);
-  const nextGrade = show(result.nextBoundary.grade);
+  const nextMarks = subject === "english" ? undefined : finite(result.nextBoundary.marksToGo);
+  const nextGrade = subject === "english" ? undefined : show(result.nextBoundary.grade);
   const rewardXp =
     finite(result.reward.xpEarned) ??
     finite(result.reward.xp) ??
@@ -98,8 +99,7 @@ export default function Results() {
       {result.incomplete && (
         <Notice kind="offline" title="SELF-MARKING NEEDED">
           Some English responses could not be AI-marked. Use the server-provided
-          rubrics and model answers below; no grade is shown unless the server
-          returned one.
+          rubrics and model answers below to finish your review.
         </Notice>
       )}
       <View
@@ -120,7 +120,7 @@ export default function Results() {
             </Text>
           )}
         </View>
-        <View style={[styles.grade, { borderColor: tokens.accent }]}>
+        {subject !== "english" && <View style={[styles.grade, { borderColor: tokens.accent }]}>
           <Text style={[styles.meta, { color: colors.quiet }]}>
             {result.incomplete
               ? "PENDING"
@@ -133,7 +133,7 @@ export default function Results() {
               ? "—"
               : (result.gradeLabel ?? show(result.grade) ?? "—")}
           </Text>
-        </View>
+        </View>}
       </View>
       {result.percent != null && (
         <ProgressMeter
@@ -141,6 +141,7 @@ export default function Results() {
           label="Marks confirmed by server"
         />
       )}
+      {subject === "english" && <Notice title="PRACTICE SCORE">These marks reflect an original practice set, not a predicted exam grade. Use the skill feedback to plan your next attempt.</Notice>}
       {nextMarks != null && (
         <Notice title="NEXT BOUNDARY">
           {nextMarks} more mark{nextMarks === 1 ? "" : "s"}
@@ -232,6 +233,7 @@ export default function Results() {
         const solution = asArray(question.solution);
         const model = text(marking.modelAnswer) ?? text(question.modelAnswer);
         const rubric = rec(marking.rubric ?? question.rubric);
+        const choiceLines = [...englishChoiceLines(question.mcqResult, "mcq4"), ...englishChoiceLines(question.choose4Result, "choose4")];
         return (
           <View
             key={qid}
@@ -365,6 +367,16 @@ export default function Results() {
                           lineHeight: 21,
                         }}
                       >
+                        {line.correct ? "✓ " : "• "}{line.text}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+                {choiceLines.length > 0 && (
+                  <View style={{ gap: 4 }}>
+                    <Text style={[styles.meta, { color: colors.quiet }]}>CHOICE BY CHOICE</Text>
+                    {choiceLines.map((line, i) => (
+                      <Text key={i} selectable style={{ color: line.correct ? colors.positive : colors.ink, lineHeight: 21 }}>
                         {line.correct ? "✓ " : "• "}{line.text}
                       </Text>
                     ))}

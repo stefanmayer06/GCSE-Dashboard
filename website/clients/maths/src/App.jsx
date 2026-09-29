@@ -7,6 +7,7 @@ import { flattenTopics } from '../../shared/study.js';
 import { dueMistakeRows, hydratePersonal } from '../../shared/study-personal.js';
 import AppShell from '../../shared/AppShell.jsx';
 import LoginScreen from '../../shared/login.jsx';
+import Pip from '../../shared/circuit/Pip.jsx';
 
 // Route pages are code-split: the app shell renders first and each page
 // chunk streams in on demand. The core revision loop is prefetched during
@@ -17,6 +18,7 @@ const Results = lazy(() => import('./pages/Results.jsx'));
 const Learn = lazy(() => import('./pages/Learn.jsx'));
 const Topic = lazy(() => import('./pages/Topic.jsx'));
 const Chat = lazy(() => import('./pages/Chat.jsx'));
+const GraphicsLab = lazy(() => import('../../shared/GraphicsLab.jsx'));
 const Notebook = lazy(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.Notebook })));
 const WeeklySummary = lazy(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.WeeklySummary })));
 
@@ -186,7 +188,7 @@ export default function App() {
   if (auth === null) {
     return (
       <div className="login-loading">
-        <div className="loading-mark" aria-hidden="true">M</div>
+        <Pip mood="calm" size={72} bob />
         <p className="login-loading-text">Loading Study Desk…</p>
       </div>
     );
@@ -207,7 +209,7 @@ export default function App() {
   return (
     <AppShell
       tierClass={higherTier ? 'higher-tier' : 'foundation-tier'}
-      brand={{ letter: higherTier ? 'H' : 'M', name: higherTier ? 'Higher Maths' : 'MathsMate', sub: `AQA ${higherTier ? 'Higher' : 'Foundation'}` }}
+      brand={{ letter: higherTier ? 'H' : 'M', name: higherTier ? 'Higher Maths' : 'MathsMate', sub: `AQA ${higherTier ? 'Higher' : 'Foundation'}`, strand: higherTier ? 'algebra' : 'number' }}
       nav={NAV}
       auth={auth}
       progress={progress}
@@ -228,6 +230,7 @@ export default function App() {
           <Route path="/notebook" element={<Notebook userId={userId} subject={higherTier ? 'maths-higher' : 'maths'} api={api} />} />
           <Route path="/summary" element={<WeeklySummary userId={userId} subject={higherTier ? 'maths-higher' : 'maths'} progress={progress} api={api} username={auth.username} />} />
           <Route path="/chat" element={<Chat health={health} userId={userId} />} />
+          <Route path="/lab" element={<GraphicsLab subject={subject} />} />
         </Routes>
       </Suspense>
     </AppShell>

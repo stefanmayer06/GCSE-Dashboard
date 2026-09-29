@@ -90,7 +90,7 @@ export async function markAnswer({ rubricKey, questionText, sourceText, answer, 
   const splitJson = r.split
     ? 'Include integers "content" (0-' + r.split.content.max + ') and "accuracy" (0-' + r.split.accuracy.max + '), and set "marks" to their sum.'
     : '';
-  const system = `You are an experienced AQA GCSE English Language (8700) examiner with 20 years of experience marking real exam papers. Mark the following student answer against the official-style mark scheme provided. Be fair, consistent and deserved, exactly as a live examiner would be: neither generous nor harsh.
+  const system = `Provide careful, provisional feedback on this AQA-style GCSE English Language (8700) practice answer using the rubric provided. Explain the evidence behind the suggested mark and avoid implying that this is an official examiner grade.
 
 QUESTION:
 ${questionText}

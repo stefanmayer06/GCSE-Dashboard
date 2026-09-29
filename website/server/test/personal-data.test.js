@@ -212,6 +212,10 @@ test('JSON storage records and summarises the product event trail', async (t) =>
 
   const other = await storage.getEventSummary('user-b');
   assert.equal(other.activated, false);
+  const acquisition = await storage.getAcquisitionReport(90);
+  assert.deepEqual(acquisition.sources.map(({ source, signups, activated }) => ({ source, signups, activated })), [
+    { source: 'direct', signups: 2, activated: 1 },
+  ]);
 
   // Retention pruning removes only events older than the window.
   await storage.recordEvent('user-a', 'mistake_retry', {});

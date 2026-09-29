@@ -7,6 +7,7 @@ import { flattenTopics } from '../../shared/study.js';
 import { dueMistakeRows, hydratePersonal } from '../../shared/study-personal.js';
 import AppShell from '../../shared/AppShell.jsx';
 import LoginScreen from '../../shared/login.jsx';
+import Pip from '../../shared/circuit/Pip.jsx';
 
 // Route pages are code-split: the app shell renders first and each page
 // chunk streams in on demand. The core revision loop is prefetched during
@@ -19,6 +20,7 @@ const Topic = lazy(() => import('./pages/Topic.jsx'));
 const Texts = lazy(() => import('./pages/Texts.jsx'));
 const TextDetail = lazy(() => import('./pages/TextDetail.jsx'));
 const Chat = lazy(() => import('./pages/Chat.jsx'));
+const GraphicsLab = lazy(() => import('../../shared/GraphicsLab.jsx'));
 const Notebook = lazy(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.Notebook })));
 const WeeklySummary = lazy(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.WeeklySummary })));
 
@@ -186,7 +188,7 @@ export default function App() {
   if (auth === null) {
     return (
       <div className="login-loading">
-        <div className="loading-mark" aria-hidden="true">E</div>
+        <Pip mood="calm" size={72} bob />
         <p className="login-loading-text">Loading Study Desk…</p>
       </div>
     );
@@ -207,7 +209,7 @@ export default function App() {
   return (
     <AppShell
       tierClass="english-tier"
-      brand={{ letter: 'E', name: 'EnglishMate', sub: 'AQA English Language' }}
+      brand={{ letter: 'E', name: 'EnglishMate', sub: 'AQA English Language', strand: 'reading' }}
       nav={NAV}
       auth={auth}
       progress={progress}
@@ -230,6 +232,7 @@ export default function App() {
           <Route path="/notebook" element={<Notebook userId={userId} subject="english" api={api} />} />
           <Route path="/summary" element={<WeeklySummary userId={userId} subject="english" progress={progress} api={api} username={auth.username} />} />
           <Route path="/chat" element={<Chat health={health} userId={userId} />} />
+          <Route path="/lab" element={<GraphicsLab subject="english" />} />
         </Routes>
       </Suspense>
     </AppShell>

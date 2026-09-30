@@ -19,7 +19,7 @@ import {
 } from './study-personal.js';
 import { buildWeekPlan, dateKey, fixupEnglishPlan, fixupTargets, movePlanDay, priorityTopics, readiness } from './study.js';
 
-const defaultPreferences = { examDate: '', targetGrade: '', passMode: 'balanced', restDays: [], minutesPerDay: null };
+const defaultPreferences = { examDate: '', targetGrade: '', restDays: [], minutesPerDay: null };
 const planMinutesDefault = (subject) => (subject === 'english' ? 20 : 15);
 const DAY = 86400000;
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -169,8 +169,7 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
   const error = [loadError && `Could not load your saved study data: ${loadError}`, saveError].filter(Boolean).join(' ');
   const evidence = readiness(progress);
   const preferences = personal?.preferences ?? defaultPreferences;
-  const passMode = foundation && preferences.passMode === 'foundation-pass';
-  const priority = priorityTopics(topics, progress, passMode);
+  const priority = priorityTopics(topics, progress);
 
   useEffect(() => {
     const onPersonalUpdated = (event) => {
@@ -186,7 +185,7 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
     // The plan covers Monday to Sunday; a fresh week is built the first time
     // the saved plan has no row for today (new account or Monday rollover).
     if (personal.plan?.days.some((day) => day.date === dateKey())) return;
-    persistPlan(buildWeekPlan(priority, subject, passMode, undefined, [], preferences));
+    persistPlan(buildWeekPlan(priority, subject, undefined, [], preferences));
     // Seed a first plan once topics are available; the plan stays stable for the whole day.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [personal, topics.length, foundation]);
@@ -260,7 +259,6 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
         </div>
         <div className="panel plan-card">
           <div className="plan-head"><div><div className="eyebrow">Exam plan</div><h2>{planHeadline(days, preferences.examDate)}</h2></div><input aria-label="Exam date" type="date" value={preferences.examDate} onChange={(e) => updatePreferences({ examDate: e.target.value })} /></div>
-          {foundation && <label className="pass-toggle"><input type="checkbox" checked={preferences.passMode === 'foundation-pass'} onChange={(e) => updatePreferences({ passMode: e.target.checked ? 'foundation-pass' : 'balanced' })} /><span><strong>Pass mode · grade 4 goal</strong><small>Prioritise core and weak Foundation topics.</small></span></label>}
           <div className="plan-flex">
             <div className="plan-rest" role="group" aria-label="Rest days each week">
               <span className="adhoc-label">Rest days</span>
@@ -811,7 +809,7 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
       </section>
       <section className="panel">
         <h2>What to do next</h2>
-        <p>{preferences.passMode === 'foundation-pass' ? 'Keep working through the core Foundation topics in your plan.' : 'Check today’s plan on the dashboard and retry any questions that are due.'}</p>
+        <p>Check today’s plan on the dashboard and retry any questions that are due.</p>
         <p className="sub">This summary is based on your marked work.</p>
         <div className="evidence-signature no-print" aria-hidden="true">
           <span>Print or save this page as a PDF to share it with a teacher or parent.</span>

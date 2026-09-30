@@ -19,6 +19,9 @@ Higher Maths and English remain available without diluting the first campaign.
 
 ## Free beta acquisition test
 
+The working plan, channel labels and paste-ready messages for the first 50
+testers are in [`BETA_RECRUITMENT.md`](BETA_RECRUITMENT.md).
+
 1. Invite a small, known group of learners and parents through channels where
    invitations are permitted. Give each channel a short `?src=` label (for
    example `?src=parent-group`). Do not attach names, emails or school data to

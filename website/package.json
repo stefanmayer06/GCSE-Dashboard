@@ -27,7 +27,8 @@
     "test:ui": "playwright test",
     "support:list": "node scripts/support-ops.mjs list",
     "support:prune": "node scripts/support-ops.mjs prune",
-    "acquisition:report": "node scripts/acquisition-report.mjs"
+    "acquisition:report": "node scripts/acquisition-report.mjs",
+    "feedback:report": "node scripts/feedback-report.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

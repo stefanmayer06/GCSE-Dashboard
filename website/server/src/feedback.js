@@ -5,7 +5,13 @@ import { defaultStorage } from './storage/index.js';
 
 const ROLES = new Set(['student', 'parent', 'teacher', 'other']);
 const SUBJECTS = new Set(['maths', 'maths-higher', 'english', 'multiple']);
+export const PAYERS = new Set(['me', 'parent', 'school', 'nobody', 'unsure']);
+export const PRICE_MODELS = new Set(['monthly', 'season-pass', 'free-only', 'unsure']);
+// Van Westendorp price-sensitivity answers, in pounds per month.
+export const PRICE_FIELDS = ['priceTooCheap', 'priceBargain', 'priceExpensive', 'priceTooExpensive'];
+const MAX_PRICE = 100;
 const MAX_MESSAGE_LENGTH = 2000;
+const MAX_DESIGN_NOTE_LENGTH = 500;
 const MAX_EMAIL_LENGTH = 200;
 const MAX_SHORT_TEXT_LENGTH = 120;
 
@@ -18,6 +24,29 @@ function optionalText(value, maxLength) {
   const trimmed = value.trim();
   if (!trimmed) return null;
   return trimmed.slice(0, maxLength);
+}
+
+function isBlank(value) {
+  return value === undefined || value === null || (typeof value === 'string' && !value.trim());
+}
+
+// Optional enum: blank is null, anything outside the set is invalid (undefined).
+function optionalChoice(value, choices) {
+  if (isBlank(value)) return null;
+  return typeof value === 'string' && choices.has(value) ? value : undefined;
+}
+
+function optionalRating(value) {
+  if (isBlank(value)) return null;
+  const rating = Number(value);
+  return Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : undefined;
+}
+
+function optionalPrice(value) {
+  if (isBlank(value)) return null;
+  const price = typeof value === 'string' ? Number(value.trim().replace(/^£/, '')) : value;
+  if (typeof price !== 'number' || !Number.isFinite(price) || price < 0 || price > MAX_PRICE) return undefined;
+  return Math.round(price * 100) / 100;
 }
 
 function clientKey(req) {
@@ -93,6 +122,26 @@ export function feedbackRoutes({
         return;
       }
 
+      const designRating = optionalRating(body.designRating);
+      if (designRating === undefined) {
+        res.status(400).json({ error: 'Please pick a design rating from 1 to 5, or leave it blank.' });
+        return;
+      }
+      const payer = optionalChoice(body.payer, PAYERS);
+      const priceModel = optionalChoice(body.priceModel, PRICE_MODELS);
+      if (payer === undefined || priceModel === undefined) {
+        res.status(400).json({ error: 'Please choose one of the listed pricing answers, or leave it blank.' });
+        return;
+      }
+      const prices = {};
+      for (const field of PRICE_FIELDS) {
+        prices[field] = optionalPrice(body[field]);
+        if (prices[field] === undefined) {
+          res.status(400).json({ error: `Please enter prices as pounds per month between 0 and ${MAX_PRICE}, or leave them blank.` });
+          return;
+        }
+      }
+
       const stored = await storage.saveFeedback({
         id: crypto.randomUUID(),
         role,
@@ -102,6 +151,11 @@ export function feedbackRoutes({
         message: message.slice(0, MAX_MESSAGE_LENGTH),
         email: optionalText(body.email, MAX_EMAIL_LENGTH),
         source: optionalText(body.source, MAX_SHORT_TEXT_LENGTH),
+        designRating,
+        designNote: optionalText(body.designNote, MAX_DESIGN_NOTE_LENGTH),
+        payer,
+        priceModel,
+        ...prices,
         userAgent: optionalText(req.headers['user-agent'], MAX_SHORT_TEXT_LENGTH),
         createdAt: new Date(now).toISOString(),
       });

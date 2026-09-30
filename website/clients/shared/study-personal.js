@@ -188,7 +188,7 @@ export async function importLegacyPersonal(api, userId, subject, remote) {
   if (localStorage.getItem(flag)) return false;
   const legacy = legacyPersonalData(userId, subject);
   const hasLegacy = legacy.plan
-    || (legacy.study && (legacy.study.examDate || legacy.study.passMode))
+    || (legacy.study && legacy.study.examDate)
     || (Array.isArray(legacy.mistakes) && legacy.mistakes.length > 0);
   if (!hasLegacy) {
     localStorage.setItem(flag, 'v1');
@@ -197,11 +197,10 @@ export async function importLegacyPersonal(api, userId, subject, remote) {
   const preferences = {
     examDate: legacy.study?.examDate || '',
     targetGrade: '',
-    passMode: legacy.study?.passMode === true ? 'foundation-pass' : 'balanced',
   };
   const plan = mapLegacyPlan(legacy.plan);
   const mistakes = mapLegacyMistakes(legacy.mistakes);
-  if (!remote.preferences && (preferences.examDate || preferences.passMode !== 'balanced')) {
+  if (!remote.preferences && preferences.examDate) {
     await api.savePreferences(preferences);
   }
   if (!remote.plan && plan) await api.savePlan(plan);

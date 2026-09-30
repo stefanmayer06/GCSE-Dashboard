@@ -39,19 +39,18 @@ export function normalizeSubject(subject) {
 
 export function normalizePreferences(payload) {
   if (payload === null || payload === undefined) {
-    return { examDate: '', targetGrade: '', passMode: 'balanced', restDays: [], minutesPerDay: null };
+    return { examDate: '', targetGrade: '', restDays: [], minutesPerDay: null };
   }
   const raw = record(payload);
   const examDate = typeof raw.examDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.examDate.trim()) ? raw.examDate.trim() : '';
   const targetGrade = typeof raw.targetGrade === 'string' ? raw.targetGrade.trim().slice(0, 1) : '';
-  const passMode = raw.passMode === 'foundation-pass' ? 'foundation-pass' : 'balanced';
   const restDays = Array.isArray(raw.restDays)
     ? [...new Set(raw.restDays.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b) => a - b)
     : [];
   const minutesPerDay = Number.isInteger(raw.minutesPerDay)
     ? Math.max(5, Math.min(120, raw.minutesPerDay))
     : null;
-  return { examDate, targetGrade, passMode, restDays, minutesPerDay };
+  return { examDate, targetGrade, restDays, minutesPerDay };
 }
 
 export function normalizeResult(payload) {

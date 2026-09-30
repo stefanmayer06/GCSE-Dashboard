@@ -92,8 +92,8 @@ export function TodayScreen() {
 
   useEffect(() => {
     if (!planLoaded || loading || !hasAllData || !topicsQuery.data || !session?.user.id) return;
-    const prioritized = rankedTopics(parseTopics(topicsQuery.data), planning.passMode === 'foundation-pass' && subject === 'maths');
-    const { plan, changed } = stablePlan(planState, subject, planning.passMode, prioritized.slice(0, 3).map(topic => ({ id: topic.id, name: topic.name })), todayNow, planning);
+    const prioritized = rankedTopics(parseTopics(topicsQuery.data));
+    const { plan, changed } = stablePlan(planState, subject, prioritized.slice(0, 3).map(topic => ({ id: topic.id, name: topic.name })), todayNow, planning);
     if (changed) {
       // Seeding the account plan mirrors hydration of externally persisted data.
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -102,7 +102,7 @@ export function TodayScreen() {
     }
     // The personal client is recreated per render; its storage identity is the subject.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planLoaded, loading, hasAllData, planState, subject, planning.passMode, topicsQuery.data, todayNow, session?.user.id]);
+  }, [planLoaded, loading, hasAllData, planState, subject, topicsQuery.data, todayNow, session?.user.id]);
 
   if (loading && !hasAllData) return <SafeAreaView style={[styles.screen, { backgroundColor: colors.paper }]}><PaperPattern/><View style={styles.content}><DeskHeader title="Today at the desk" eyebrow="REVISION REGISTER"/><Skeleton height={44}/><Skeleton height={210}/><Skeleton height={92}/></View></SafeAreaView>;
 
@@ -115,7 +115,7 @@ export function TodayScreen() {
   const progress = parseProgress(progressQuery.data!);
   const topics = parseTopics(topicsQuery.data);
   const papers = parsePapers(papersQuery.data);
-  const prioritized = rankedTopics(topics, planning.passMode === 'foundation-pass' && subject === 'maths');
+  const prioritized = rankedTopics(topics);
   const recommendation = recommendSession(subject, prioritized);
   const paperPrompt = nextPaper(papers, progress.history);
   const focus = prioritized.slice(0, 3);

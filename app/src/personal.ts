@@ -30,7 +30,7 @@ export async function importLegacyPersonal(client: ApiClient, userId: string | u
   const legacyPrefs = parsePlanningPreferences(prefsRaw);
   const legacyPlan = parsePlanState(planRaw);
   const legacyMistakes = parseMistakeRows(notebookRaw, subject);
-  const hasPrefs = legacyPrefs.examDate || legacyPrefs.targetGrade || legacyPrefs.passMode !== 'balanced';
+  const hasPrefs = legacyPrefs.examDate || legacyPrefs.targetGrade;
   const hasLegacy = Boolean(legacyPlan) || hasPrefs || legacyMistakes.length > 0;
   if (!hasLegacy) {
     await AsyncStorage.setItem(flag, 'v1');

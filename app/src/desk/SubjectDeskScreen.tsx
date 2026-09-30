@@ -79,15 +79,15 @@ export function SubjectDeskScreen() {
 
   useEffect(() => {
     if (!planLoaded || loading || !hasAllData || !topicsQuery.data || !session?.user.id) return;
-    const prioritized = rankedTopics(parseTopics(topicsQuery.data), planning.passMode === 'foundation-pass' && subject === 'maths');
-    const { plan, changed } = stablePlan(planState, subject, planning.passMode, prioritized.slice(0, 3).map((t) => ({ id: t.id, name: t.name })), todayNow, planning);
+    const prioritized = rankedTopics(parseTopics(topicsQuery.data));
+    const { plan, changed } = stablePlan(planState, subject, prioritized.slice(0, 3).map((t) => ({ id: t.id, name: t.name })), todayNow, planning);
     if (changed) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPlanState(plan);
       personalClient.savePlan(plan).catch(() => setPlanError('Plan could not be saved. Check your connection and try again.'));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planLoaded, loading, hasAllData, planState, subject, planning.passMode, topicsQuery.data, todayNow, session?.user.id]);
+  }, [planLoaded, loading, hasAllData, planState, subject, topicsQuery.data, todayNow, session?.user.id]);
 
   if (loading && !hasAllData) {
     return <SafeAreaView style={[styles.screen, { backgroundColor: colors.paper }]}><PaperPattern /><View style={styles.content}><DeskHeader title={`${tokens.label} today`} eyebrow={tokens.code} /><Notice kind="loading" title="OPENING STUDY AREA">Fetching topics, papers and progress.</Notice></View></SafeAreaView>;
@@ -99,7 +99,7 @@ export function SubjectDeskScreen() {
   const progress = parseProgress(progressQuery.data!);
   const topics = parseTopics(topicsQuery.data);
   const papers = parsePapers(papersQuery.data);
-  const prioritized = rankedTopics(topics, planning.passMode === 'foundation-pass' && subject === 'maths');
+  const prioritized = rankedTopics(topics);
   const recommendation = recommendSession(subject, prioritized);
   const paperPrompt = nextPaper(papers, progress.history);
   const focus = prioritized.slice(0, 5);

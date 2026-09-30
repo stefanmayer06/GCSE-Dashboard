@@ -78,7 +78,7 @@ function ContinueStrip({ subjectKey }) {
   if (!saved?.href || !saved?.label) return null;
   return (
     <div className="continue-strip" role="note" aria-label="Continue where you left off">
-      <span className="continue-icon" aria-hidden="true"><Icon name="replay" size={20} /></span>
+      <span className="continue-icon" aria-hidden="true"><Icon name="replay" size={40} strokeWidth={1.5} /></span>
       <div>
         <strong>Pick up where you left off</strong>
         <span>{saved.label}{saved.detail ? ` · ${saved.detail}` : ''}</span>

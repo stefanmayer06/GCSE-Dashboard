@@ -32,12 +32,26 @@
     message('');
     if (!form.reportValidity()) return;
 
+    const priceFields = ['priceTooCheap', 'priceBargain', 'priceExpensive', 'priceTooExpensive'];
+    const prices = priceFields.map((name) => form[name].value.trim());
+    if (prices.every(Boolean) && prices.map(Number).some((price, i, all) => i > 0 && price < all[i - 1])) {
+      message('Each pricing answer should be the same or higher than the one before it. Please check the four prices.', 'error');
+      form.priceTooCheap.focus();
+      return;
+    }
+
     const ratingInput = form.querySelector('input[name="rating"]:checked');
+    const designInput = form.querySelector('input[name="designRating"]:checked');
     const payload = {
       role: form.role.value,
       subject: form.subject.value,
       rating: ratingInput ? Number(ratingInput.value) : 0,
       message: form.message.value,
+      designRating: designInput ? Number(designInput.value) : null,
+      designNote: form.designNote.value,
+      payer: form.payer.value,
+      priceModel: form.priceModel.value,
+      ...Object.fromEntries(priceFields.map((name, i) => [name, prices[i]])),
       heard: form.heard.value,
       email: form.email.value,
       website: form.website.value,

@@ -93,9 +93,11 @@ features, so describe it as a tool learners use on their own.
 ### 4. r/GCSE: `reddit-gcse` (aim: 10 testers)
 
 Read the rules first, then message the moderators to ask whether an
-"I built this" post is welcome. A post asking for criticism does better than
-an announcement. Attach the four ready-made images in `design/social/` as a
-gallery, with alt text from `design/social/alt-text.md`. Use the
+"I built this" post is welcome (there's a modmail under
+[Messages to paste](#messages-to-paste)). A post asking for criticism does
+better than an announcement. Make it an image post led by
+`design/social/05-beta-testers-wanted.png`; the other four images can follow
+it as a gallery. Paste alt text from `design/social/alt-text.md`. Use the
 subreddit-specific label `reddit-gcse` rather than the generic `reddit` in
 that README, so each subreddit can be compared. Post once, answer every comment the same day, and don't
 repost. Mock season (November) is a natural moment for a follow-up if the mods
@@ -229,24 +231,55 @@ Replace `<label>` with the channel's label.
 >
 > <your name>, GCSE Study Desk
 
+**r/GCSE modmail (before posting)**
+
+> Subject: OK to post a free revision site I built, asking for beta testers?
+>
+> Hi mods. I've built a free revision site for AQA GCSE Maths and English
+> Language (GCSE Study Desk) and I'd like to post once asking for beta testers
+> and honest feedback. It's free, there's nothing to buy, and it's not
+> affiliated with AQA. Is that OK, and is there a flair or thread you'd like me
+> to use? Happy to send the draft first. Thanks!
+
 **r/GCSE (after moderator approval)**
 
-> Title: I built a free AQA revision tool. Please tear the design apart
->
-> I'm building GCSE Study Desk, a free beta for AQA Maths (Foundation and
-> Higher) and English Language. The idea: a 10-question check tells you what to
-> revise, Maths is marked with worked methods and English gets written
-> feedback, and anything you get
-> wrong comes back 1, 3, 7 and 21 days later until you've actually got it.
->
-> I need honest feedback from people actually sitting GCSEs: what's confusing,
-> what's ugly, what you'd never use. There's a short form (the pricing part is
-> optional; nothing costs money now).
->
-> Try it: https://gcse-dashboard-server.vercel.app/?src=reddit-gcse
-> Feedback: https://gcse-dashboard-server.vercel.app/feedback.html?src=reddit-gcse
->
-> Not affiliated with AQA. Happy to answer anything in the comments.
+An image post with `design/social/05-beta-testers-wanted.png` first. The
+body is Reddit markdown, so paste it in the Markdown editor.
+
+> Title: I built a free revision site for AQA Maths and English Language.
+> Looking for beta testers to mark my work (please be brutal)
+
+```markdown
+For once, I'm the one asking you to mark my work.
+
+I've been building **GCSE Study Desk**, a free revision site for **AQA GCSE Maths (Foundation and Higher) and English Language**. It's in beta, and I'm looking for 50 people who are actually sitting GCSEs to try it and tell me what's confusing, broken or pointless.
+
+**What it does**
+
+* **10-question check:** pick your course, answer 10 questions (about 10 minutes), and it uses your answers to plan your first week.
+* **Marking you can see:** Maths is marked against exact answers (no AI) and shows the full worked method. In English, short questions are marked automatically and long answers get AI feedback against AQA-style mark schemes, with a model answer. It's guidance, not an official grade.
+* **Mistake notebook:** get something wrong in a lesson or practice paper and it goes in your notebook. You pick why you missed it (didn't know it, wrong method, misread the question, arithmetic slip...) and it comes back 1, 3, 7 and 21 days later until you've actually got it.
+* Also: explainers that stop and ask you questions, timed AQA-style papers, and a map where every topic is a level you can replay.
+
+**What I'm asking (about 15 minutes)**
+
+1. Sign up and do the 10-question check for your course.
+2. Fill in the feedback form. The design questions help me most.
+3. Or just comment. "I didn't get what X was for" is genuinely useful.
+
+**Try it:** https://gcse-dashboard-server.vercel.app/?src=reddit-gcse
+
+**Feedback form:** https://gcse-dashboard-server.vercel.app/feedback.html?src=reddit-gcse
+
+**Before you click**
+
+* AQA only for now, so not Edexcel or OCR, sorry.
+* You'll need an account (email and password) so it can save your progress and bring mistakes back. If you just want a look first, the homepage has a one-question example that doesn't need an account.
+* It's free and there's nothing to pay. The form has a few optional questions about whether something like this should ever cost money; skip them if you like.
+* It's independent and not affiliated with AQA, and it won't magically raise your grade. The aim is to take the guesswork out of what to revise next.
+
+I'll be in the comments. Don't hold back.
+```
 
 **Parent group (after admin approval)**
 

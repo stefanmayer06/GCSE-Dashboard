@@ -3,6 +3,7 @@ import Emblem, { StrandBadge } from './circuit/Emblem.jsx';
 import IsoTile from './circuit/IsoTile.jsx';
 import Icon, { ICON_NAMES } from './circuit/Icon.jsx';
 import Pip from './circuit/Pip.jsx';
+import Critter, { CritterBadge, CRITTER_ART_IDS } from './circuit/Critter.jsx';
 import { CircuitHero, StrandScene, SubjectScene } from './circuit/Scenes.jsx';
 import { Confetti, HudChip, ProgressRing, SegmentBar, Stars, WeekStrip } from './circuit/bits.jsx';
 import { STRANDS } from './circuit/palette.js';
@@ -23,6 +24,7 @@ const TILE_STATES = ['new', 'current', 'started', 'done', 'mastered', 'boss'];
 export default function GraphicsLab({ subject = 'maths' }) {
   const [burst, setBurst] = useState(0);
   const [video, setVideo] = useState(0);
+  const [hatch, setHatch] = useState(66);
   return (
     <div className="page lab-page">
       <header className="page-head">
@@ -82,6 +84,24 @@ export default function GraphicsLab({ subject = 'maths' }) {
         <h2>Pip</h2>
         <div className="lab-row">
           {['happy', 'think', 'cheer', 'wow', 'calm'].map((mood) => <Pip key={mood} mood={mood} size={88} title={`Pip ${mood}`} />)}
+        </div>
+      </section>
+
+      <section className="panel">
+        <h2>Study creatures · milestone ranks</h2>
+        <p className="sub">Egg, Bronze, Silver, Gold and Legend badges, then the bare evolutions and a locked silhouette. Drag the slider to check egg cracks and the hatch ring.</p>
+        <label className="lab-pick">Hatch progress{' '}
+          <input type="range" min="0" max="100" value={hatch} onChange={(event) => setHatch(Number(event.target.value))} />
+        </label>
+        <div className="lab-grid">
+          {CRITTER_ART_IDS.map((id) => (
+            <div key={id} className="lab-row">
+              <strong>{id}</strong>
+              {[0, 1, 2, 3, 4].map((tier) => <CritterBadge key={tier} id={id} tier={tier} toNext={hatch / 100} size={92} title={`${id} rank ${tier}`} />)}
+              {[1, 2, 3, 4].map((tier) => <Critter key={tier} id={id} tier={tier} size={72} />)}
+              <Critter id={id} tier={4} size={72} silhouette title={`${id} locked`} />
+            </div>
+          ))}
         </div>
       </section>
 

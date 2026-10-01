@@ -165,6 +165,51 @@ Use Pip at checkpoints, empty states, the tutor and celebrations. Never put
 Pip on dense working screens such as the exam hall. Pip colours come from
 `--pip-*` tokens.
 
+## Study creatures (`Critter.jsx`)
+
+Milestones are eight original, collectible creatures. Each is fed by one
+evidence track and evolves through four ranks. The evidence rules live in
+`clients/shared/critters.js`; this component only draws.
+
+```jsx
+<Critter id="ember" tier={2} size={96} />                 // standalone, 120×120 art box
+<Critter id="quill" tier={0} progress={0.7} />             // tier 0 = egg; cracks at 30/60/90%
+<Critter id="tock" tier={3} silhouette />                   // locked form: "who's that?"
+<Critter id="redo" tier={2} mood="joy" />                   // happy face when petted
+<CritterBadge id="prismo" tier={3} toNext={0.4} size={120} /> // rank badge (Credly-style)
+```
+
+| Creature | Evidence | Hues |
+| --- | --- | --- |
+| Ember (fox) | Day streak | amber / tangerine |
+| Quillby (hedgehog) | Marked answers | blue / cyan |
+| Tock (owl) | Timed papers | purple / blue |
+| Rexam (dinosaur) | Paper average | coral / amber |
+| Tortile (tortoise) | Topics explored | green / cyan |
+| Prismo (crystal beetle) | 3-star topics | cyan / purple |
+| Redo (phoenix chick) | Notebook mistakes fixed | rose / tangerine |
+| Memmoth (mammoth) | Memory checks passed | slate / cyan |
+
+- **Hues** come from `CRITTER_HUES` in `palette.js` and reach the art as
+  `--cr-main` / `--cr-alt`. `critters.css` derives `--cr-light` (belly),
+  `--cr-deep` and `--cr-side` (shading, mixed with `--tile-shade`) and
+  `--cr-wash` (badge ground), so both themes follow.
+- **Evolutions add parts, never replace the body.** Tier 1 is small
+  (`CRITTER_SCALE`), each tier adds one readable feature (ears, quills,
+  wings, spikes, tiles, gems), and Legend (tier 4) adds volt accents,
+  a crown or halo and orbiting sparkles. Volt is reserved for Legend.
+- **Badges** are a hexagon medal whose frame grows with rank: Bronze plain,
+  Silver rivets, Gold wings, Legend crown and a spinning volt halo. Metals
+  are the `--rank-*` tokens. The ribbon shows one star per rank. Tier 0 is
+  a dashed nest with the egg and a volt hatch ring.
+- **Motion:** breathing body, blinking eyes, wagging tails, rocking eggs
+  (faster when close to hatching). All in `critters.css`, all off under
+  `prefers-reduced-motion`.
+- **Adding a creature:** add its hues to `CRITTER_HUES`, a draw function to
+  `ART` in `Critter.jsx` (keep the ground at y≈106 and faces reading at
+  44px), and its evidence row to `CRITTERS` in `critters.js`. Check it in
+  the lab at every tier, as a silhouette and as a badge, in both themes.
+
 ## Small bits (`bits.jsx`) and `Mark.jsx`
 
 `Stars`, `HudChip`, `ProgressRing`, `SegmentBar`, `Confetti` (quadrant

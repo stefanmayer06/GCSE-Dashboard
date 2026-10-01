@@ -1,0 +1,85 @@
+/* ==========================================================================
+   Circuit — study creatures (circuit/Critter.jsx): creature art, eggs and
+   rank badges. Graphics only; the collection UI lives in home.css.
+   Colours derive from --cr-main / --cr-alt (set inline from hue keys) and
+   the --rank-* metals in tokens.css, so both themes follow automatically.
+   ========================================================================== */
+
+.critter,
+.critter-badge {
+  --cr-light: color-mix(in srgb, var(--cr-main) 34%, var(--tile-inset));
+  --cr-deep: color-mix(in srgb, var(--cr-main) 74%, var(--tile-shade));
+  --cr-side: color-mix(in srgb, var(--cr-main) 54%, var(--tile-shade));
+  --cr-wash: color-mix(in srgb, var(--cr-main) 20%, var(--c-surface));
+  --rank-shine: color-mix(in srgb, var(--rank, var(--rank-silver)) 45%, var(--tile-inset));
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+
+.critter-badge.rank-legend { --cr-wash: color-mix(in srgb, var(--hue-volt) 24%, var(--c-surface)); }
+
+/* Idle life: a slow breath, blinking eyes, wagging tails. Each animated
+   group has no transform attribute of its own (see GRAPHICS.md rule 6). */
+.critter .cr-body,
+.critter-badge .cr-body {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: cr-breathe 3.2s var(--ease-in-out) infinite;
+  animation-delay: calc(var(--i, 0) * -0.7s);
+}
+.cr-eyes { transform-box: fill-box; transform-origin: 50% 50%; animation: cr-blink 5s infinite; animation-delay: calc(var(--i, 0) * -1.3s); }
+.cr-wag { transform-box: fill-box; transform-origin: 30% 100%; animation: cr-wag 2.4s var(--ease-in-out) infinite; }
+.cr-flap { transform-box: fill-box; transform-origin: 50% 70%; animation: cr-flap 1.8s var(--ease-in-out) infinite; }
+.cr-trunk { transform-box: fill-box; transform-origin: 50% 0%; animation: cr-wag 3s var(--ease-in-out) infinite; }
+.cr-clock-hand { transform-box: view-box; transform-origin: 60px 86px; animation: c-spin 6s steps(12) infinite; }
+.cr-quills { transform-box: fill-box; transform-origin: 50% 100%; animation: cr-bristle 3.2s var(--ease-in-out) infinite; }
+.cr-flag { transform-box: fill-box; transform-origin: 0 50%; animation: cr-flag 1.4s var(--ease-in-out) infinite; }
+.cr-trail { animation: cr-march 0.9s linear infinite; }
+.cr-orbit { transform-box: fill-box; transform-origin: 50% 50%; animation: cr-orbit 4s linear infinite; }
+.cr-spin-slow { transform-box: view-box; transform-origin: 60px 56px; animation: c-spin 16s linear infinite; }
+.cr-sparkle { transform-box: fill-box; transform-origin: 50% 50%; animation: cr-sparkle 2.4s var(--ease-in-out) infinite; animation-delay: calc(var(--i, 0) * -0.6s); }
+.cr-peek { animation: cr-peek 3s infinite; }
+
+/* Eggs rock now and then; they rock harder when close to hatching. */
+.cr-egg { transform-box: fill-box; transform-origin: 50% 100%; animation: cr-egg 4.2s var(--ease-in-out) infinite; }
+.cr-egg.is-close { animation-duration: 2s; }
+
+/* Evolutions not reached yet: a mystery silhouette ("who's that?"). */
+.critter.is-silhouette .cr-art * {
+  fill: var(--cr-mystery, color-mix(in srgb, var(--c-ink) 42%, var(--c-surface))) !important;
+  stroke: var(--cr-mystery, color-mix(in srgb, var(--c-ink) 42%, var(--c-surface))) !important;
+  opacity: 1 !important;
+}
+.critter.is-silhouette .cr-eyes,
+.critter.is-silhouette .cr-cheeks,
+.critter.is-silhouette .cr-legend-sparkles { display: none; }
+.critter.is-silhouette .cr-body { animation: none; }
+
+/* Badge frame motion */
+.critter-badge .badge-halo { transform-box: fill-box; transform-origin: 50% 50%; animation: c-spin 20s linear infinite; }
+.critter-badge .badge-hatch { transition: stroke-dasharray var(--d-4) var(--ease-out); }
+.critter-badge.rank-legend .badge-wings { animation: c-pulse 2.6s var(--ease-in-out) infinite; }
+
+@keyframes cr-breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.025, 0.97); } }
+@keyframes cr-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes cr-wag { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(5deg); } }
+@keyframes cr-flap { 0%, 100% { transform: rotate(0); } 50% { transform: translateY(-2px) scale(1.03); } }
+@keyframes cr-bristle { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes cr-flag { 0%, 100% { transform: skewY(0); } 50% { transform: skewY(-8deg); } }
+@keyframes cr-orbit { to { stroke-dashoffset: -26; } }
+@keyframes cr-march { to { stroke-dashoffset: -16; } }
+@keyframes cr-sparkle { 0%, 100% { transform: scale(0.6) rotate(0); opacity: 0.6; } 50% { transform: scale(1.1) rotate(45deg); opacity: 1; } }
+@keyframes cr-peek { 0%, 60%, 100% { opacity: 1; } 70%, 80% { opacity: 0; } }
+@keyframes cr-egg {
+  0%, 70%, 100% { transform: rotate(0); }
+  76% { transform: rotate(-7deg); }
+  82% { transform: rotate(6deg); }
+  88% { transform: rotate(-4deg); }
+  94% { transform: rotate(2deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .critter *,
+  .critter-badge * { animation: none !important; }
+}

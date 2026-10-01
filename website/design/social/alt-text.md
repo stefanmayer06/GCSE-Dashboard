@@ -18,3 +18,7 @@ GCSE Study Desk advert on a dark background. Headline: Explainers that stop and 
 ## 04-misses-come-back.png
 
 GCSE Study Desk advert on a light background. Headline: Misses come back until they stick. A mistake notebook card for Solve 3x + 5 = 20 shows the answer x = 6 marked wrong, the correct answer x = 5, the worked method, and the reason chosen for the miss: arithmetic slip. The question comes back after 1, 3, 7 and 21 days, then counts as mastered. Free beta at gcse-dashboard-server.vercel.app. Independent revision tool, not affiliated with AQA.
+
+## 05-beta-testers-wanted.png
+
+GCSE Study Desk call for beta testers on a dark navy background. Eyebrow: Wanted, 50 beta testers. Headline: Mark my work. Be brutal. Below it: I’m building a free revision site for AQA GCSE Maths and English Language. Try it, then tell me what to fix. A white exam paper headed Beta test, Paper 1, time allowed 15 minutes: answer all questions, there are no wrong answers. Question 1, 1 mark: pick your course, Maths Foundation, Maths Higher or English Language. Question 2, 10 marks: take the 10-question check, which takes about 10 minutes and plans your first week. Question 3, 1 mark: how clear did the design feel, with a blank scale from 1 to 5. Question 4, 2 marks: what should I fix first, with two blank answer lines. Join the beta at gcse-dashboard-server.vercel.app. Independent revision tool, not affiliated with AQA.

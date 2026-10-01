@@ -32,7 +32,8 @@ const tokens = readFileSync(path.join(root, 'clients/shared/circuit/tokens.css')
 const darkMatch = tokens.match(/:root\[data-theme='dark'\] \{([\s\S]*?)\n\}/);
 const darkBody = darkMatch ? darkMatch[1] : '';
 const base = readFileSync(path.join(root, 'clients/shared/circuit/base.css'), 'utf8');
-const graphics = base.slice(base.indexOf('/* @public:start'), base.indexOf('/* @public:end */'));
+const graphics = base.slice(base.indexOf('/* @public:start'), base.indexOf('/* @public:end */'))
+  + readFileSync(path.join(root, 'clients/shared/circuit/critters.css'), 'utf8');
 const tokenCss = `${tokens}
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {${darkBody}
@@ -83,6 +84,8 @@ const emblemRows = Object.entries(DOC.art.emblems).map(([id, stages]) => `
   <div class="emblem-row"><span class="emblem-name">${esc(DOC.strands[id].name)}</span>${stages.map((svg) => `<span class="emblem-cell">${svg}</span>`).join('')}</div>`).join('');
 
 const tiles = DOC.art.tiles.map((tile) => `<figure class="tile-fig">${tile.svg}<figcaption><b>${tile.state}</b></figcaption></figure>`).join('');
+const critterRows = DOC.art.critters.map((row) => `
+  <div class="critter-row"><span class="emblem-name">${esc(row.family)}<small>${esc(row.track)}</small></span>${row.badges.map((svg, tier) => `<figure class="emblem-cell">${svg}<figcaption>${tier ? esc(row.forms[tier - 1]) : 'Egg'}</figcaption></figure>`).join('')}</div>`).join('');
 const pips = DOC.art.pip.map((p) => `<figure class="pip-fig">${p.svg}<figcaption>${p.mood}</figcaption></figure>`).join('');
 const icons = DOC.art.icons.map((icon) => `<li>${icon.svg}<small>${icon.name}</small></li>`).join('');
 
@@ -103,6 +106,7 @@ const INSPIRATION = [
   ['Mimo', 'A game HUD (streak, gems, level), pressable 3D buttons, and progress you can see filling.', 'Rail HUD chips, volt “go” buttons, lesson progress bar, combo meter'],
   ['Shapez', 'Shapes built from four quadrants, stacked in layers, flowing along conveyor belts.', 'Emblem grammar (C R S W quadrants), mastery layers, animated circuit traces'],
   ['Polly', 'A friendly conversational guide that makes a chat feel like a companion rather than a form.', 'Pip, the guide: tutor avatar, checkpoints, empty states, celebrations'],
+  ['Duolingo · Credly', 'Collectible achievements that level up, and credential-style badges with a frame, ribbon and rank you would want to show someone.', 'Study creatures: evidence-fed milestones that hatch and evolve Bronze → Silver → Gold → Legend'],
   ['Coursera', 'Units, lessons and a clear sense of where you are in a course.', 'Units as worlds, lesson stages (Watch → Learn → Practise → Master)'],
   ['Substack', 'Calm long-form reading with a serif that invites you to read closely.', 'Literata for English sources, notes and the reader-style lesson column'],
 ].map(([name, what, where]) => `<tr><td><b>${name}</b></td><td>${what}</td><td>${where}</td></tr>`).join('');
@@ -179,6 +183,11 @@ td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .emblem-head { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.06em; text-align: center; }
 .emblem-name { font-weight: 800; font-size: 0.9rem; }
 .emblem-cell { display: grid; place-items: center; }
+.critter-grid { display: grid; gap: 10px; margin-top: 14px; padding: 14px; border: 1px solid var(--c-line); border-radius: var(--r-md); background: var(--c-surface); overflow-x: auto; }
+.critter-row { display: grid; grid-template-columns: 150px repeat(5, 100px); align-items: center; gap: 8px; min-width: 670px; }
+.critter-row small { display: block; color: var(--c-muted); font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.critter-row figure { margin: 0; }
+.critter-row figcaption { color: var(--c-muted); font-family: var(--font-mono); font-size: 0.7rem; text-align: center; }
 .gallery { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; padding: 16px; border: 1px solid var(--c-line); border-radius: var(--r-md); background: var(--c-surface); }
 .gallery figure { margin: 0; text-align: center; }
 .gallery figcaption { color: var(--c-muted); font-family: var(--font-mono); font-size: 0.78rem; }
@@ -252,6 +261,7 @@ footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--c-line
     <a href="#shapes">Shape grammar</a>
     <a href="#tiles">Level tiles</a>
     <a href="#pip">Pip</a>
+    <a href="#creatures">Creatures</a>
     <a href="#icons">Icons &amp; scenes</a>
     <a href="#components">Components</a>
     <a href="#screens">Screens</a>
@@ -351,6 +361,14 @@ footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--c-line
       <div class="gallery">${pips}</div>
     </section>
 
+    <section id="creatures">
+      <p class="kicker">Milestones</p>
+      <h2>Study creatures</h2>
+      <p class="lead">Milestones are a collection of eight original creatures. Each one is fed by a single evidence track — day streak, marked answers, timed papers, paper average, topics explored, 3-star topics, notebook mistakes fixed and memory checks — so it hatches and evolves only from real, marked work. Ranks rise Bronze → Silver → Gold → Legend, and the badge frame grows with them: rivets, then wings, then a volt crown and halo.</p>
+      <div class="critter-grid">${critterRows}</div>
+      <p>Tap a creature to meet it: it reacts, shows its whole evolution line (future forms as silhouettes with their target) and offers the one action that grows it. Evolutions since your last visit replay as a celebration. Built in <code>circuit/Critter.jsx</code>; evidence rules in <code>critters.js</code>.</p>
+    </section>
+
     <section id="icons">
       <p class="kicker">Icons &amp; scenes</p>
       <h2>Drawn for this product</h2>
@@ -444,7 +462,7 @@ export default {
       <h2>Extending Circuit to a new subject</h2>
       <div class="two">
         <div class="card"><h3>Where things live</h3><ul>
-          <li><code>clients/shared/circuit/</code> — tokens, CSS, palette + shape grammar, Emblem, IsoTile, Icon, Pip, Scenes.</li>
+          <li><code>clients/shared/circuit/</code> — tokens, CSS, palette + shape grammar, Emblem, IsoTile, Icon, Pip, Scenes, Critter.</li>
           <li><code>clients/shared/explainer/</code> — engine, primitives, player, narration, autoscript, library.</li>
           <li><code>clients/shared/CourseMap.jsx</code>, <code>LessonKit.jsx</code>, <code>DashboardHome.jsx</code>, <code>AppShell.jsx</code>.</li>
           <li><code>selector/</code> — public pages; <code>art.js</code> and <code>circuit-public.css</code> are generated.</li>

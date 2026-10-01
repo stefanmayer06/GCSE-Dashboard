@@ -6,6 +6,8 @@ import { CircuitHero, StrandScene, SubjectScene } from '../../clients/shared/cir
 import Emblem from '../../clients/shared/circuit/Emblem.jsx';
 import IsoTile from '../../clients/shared/circuit/IsoTile.jsx';
 import Pip from '../../clients/shared/circuit/Pip.jsx';
+import { CritterBadge, CRITTER_ART_IDS } from '../../clients/shared/circuit/Critter.jsx';
+import { CRITTERS } from '../../clients/shared/critters.js';
 import Icon, { ICON_NAMES } from '../../clients/shared/circuit/Icon.jsx';
 import { Stars, WeekStrip, ProgressRing, SegmentBar, HudChip } from '../../clients/shared/circuit/bits.jsx';
 import { HUES, STRANDS, SUBJECTS } from '../../clients/shared/circuit/palette.js';
@@ -35,6 +37,16 @@ export const DOC = {
       svg: render(<IsoTile topicId={`doc-tile-${index}`} strand={['number', 'algebra', 'geometry', 'reading', 'writing', 'statistics'][index]} hue={['blue', 'purple', 'green', 'tangerine', 'rose', 'coral'][index]} state={state} stage={STAGES[Math.min(4, index)]} size={120} />),
     })),
     pip: ['happy', 'think', 'cheer', 'wow', 'calm'].map((mood) => ({ mood, svg: render(<Pip mood={mood} size={84} />) })),
+    critters: CRITTER_ART_IDS.map((id) => {
+      const critter = CRITTERS.find((row) => row.id === id);
+      return {
+        id,
+        family: critter.family,
+        track: critter.track,
+        forms: critter.forms,
+        badges: [0, 1, 2, 3, 4].map((tier) => render(<CritterBadge id={id} tier={tier} toNext={0.66} size={96} />)),
+      };
+    }),
     icons: ICON_NAMES.map((name) => ({ name, svg: render(<Icon name={name} size={28} />) })),
     stars: [0, 1, 2, 3].map((count) => render(<Stars count={count} size={20} />)),
     week: render(<WeekStrip days={['done', 'done', 'rest', 'done', 'open', 'open', 'open']} todayIndex={4} />),

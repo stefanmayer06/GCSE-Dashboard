@@ -36,7 +36,7 @@ validated against an allow-list in `server/src/personal-model.js`; unknown names
 | `fixup_complete` | client (Fix-Up 5 scoring) | A targeted repair set scored, with marks |
 | `memri_start` | client (memory-check entry) | A mastered-item resurrection set started |
 | `memri_complete` | client (memory-check scoring) | A resurrection set scored, with re-proofed count |
-| `milestone_shared` | client (milestone shelf) | A reached milestone was shared or copied |
+| `milestone_shared` | client (creature collection) | A hatched or evolved study creature was shared or copied (`milestone`: `<creature>-<tier>`, e.g. `ember-2`) |
 | `onboarding_complete` | client (onboarding wizard) | New learner set exam date and target |
 | `week_return` | client (returning within 7 days of first event) | Week-one retention signal |
 | `evidence_report` | client (evidence report printed/exported) | Learner shared evidence with a teacher/parent |

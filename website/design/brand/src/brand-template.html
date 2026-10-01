@@ -1,0 +1,583 @@
+<title>Revisaurus Brand Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Unbounded:wght@500;700;800&display=swap">
+<style>
+/* Layout: one reading column (max 1080px) of brand-book sections; the logo
+   always sits on the app's own night stage or paper, never on page chrome.
+   Palette and faces are the product's Circuit tokens, so the kit looks like the app. */
+:root {
+  --bg: #f2f3fa;
+  --surface: #ffffff;
+  --surface-2: #eceefa;
+  --ink: #15172b;
+  --ink-2: #2d3050;
+  --muted: #565b7c;
+  --line: #dfe2f2;
+  --line-strong: #b5bad7;
+  --stage: #191b30;
+  --stage-2: #24273f;
+  --stage-ink: #f2f3ff;
+  --stage-muted: #aeb3d6;
+  --volt: #c3f53c;
+  --volt-ink: #1f2600;
+  --accent: #3d6bff;
+  --good: #07845a;
+  --bad: #cc2f45;
+  --warn: #9a5c00;
+  --paper-stage: #f2f3fa;
+  /* Fixed brand colours: identical in both themes because they are the logo. */
+  --b-night: #191b30;
+  --b-volt: #c3f53c;
+  --b-blue: #3d6bff;
+  --b-purple: #9b4dff;
+  --b-tangerine: #ff7a2e;
+  --b-paper: #f2f3fa;
+
+  --font-display: 'Unbounded', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif;
+  --font-ui: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', 'Segoe UI', sans-serif;
+  --font-mono: 'Atkinson Hyperlegible Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --t-hero: clamp(2.4rem, 1.4rem + 4vw, 4.6rem);
+  --t-h2: clamp(1.5rem, 1.2rem + 1.2vw, 2.2rem);
+  --t-h3: 1.1rem;
+  --t-body: 1.02rem;
+  --t-small: 0.9rem;
+  --t-micro: 0.74rem;
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 26px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e0f1d; --surface: #161a2e; --surface-2: #1c2038; --ink: #eef0ff; --ink-2: #d2d6f3;
+    --muted: #a4a9cb; --line: #292e4c; --line-strong: #454b73; --stage: #090a15; --stage-2: #151829;
+    --stage-ink: #f2f3ff; --stage-muted: #aeb3d6; --volt: #d4ff5c; --volt-ink: #1f2600; --accent: #8aa6ff;
+    --good: #4fe0a4; --bad: #ff8591; --warn: #ffc443; --paper-stage: #e8eaf7;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e0f1d; --surface: #161a2e; --surface-2: #1c2038; --ink: #eef0ff; --ink-2: #d2d6f3;
+  --muted: #a4a9cb; --line: #292e4c; --line-strong: #454b73; --stage: #090a15; --stage-2: #151829;
+  --stage-ink: #f2f3ff; --stage-muted: #aeb3d6; --volt: #d4ff5c; --volt-ink: #1f2600; --accent: #8aa6ff;
+  --good: #4fe0a4; --bad: #ff8591; --warn: #ffc443; --paper-stage: #e8eaf7;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: var(--t-body); line-height: 1.6; }
+.page { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 20px 72px; display: grid; gap: 72px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.08; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+h2 { font-size: var(--t-h2); }
+h3 { font-size: var(--t-h3); letter-spacing: -0.01em; }
+p { margin: 0; max-width: 66ch; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.eyebrow { font-family: var(--font-mono); font-size: var(--t-micro); text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); font-weight: 600; }
+.section { display: grid; gap: 28px; }
+.section-head { display: grid; gap: 10px; }
+.lede { color: var(--muted); font-size: 1.08rem; }
+.mono { font-family: var(--font-mono); }
+svg { display: block; max-width: 100%; height: auto; }
+
+/* Hero: the night stage */
+.hero { background: var(--stage); color: var(--stage-ink); border-radius: var(--r-lg); padding: clamp(28px, 5vw, 64px); display: grid; gap: 36px; position: relative; overflow: hidden; }
+.hero::after { content: ''; position: absolute; inset: auto -10% -60% 40%; height: 120%; background: radial-gradient(closest-side, rgba(155, 77, 255, 0.28), transparent); pointer-events: none; }
+.hero > * { position: relative; z-index: 1; }
+.hero .eyebrow { color: var(--b-volt); display: flex; align-items: center; gap: 8px; }
+.hero .eyebrow::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--b-volt); box-shadow: 0 0 0 3px rgba(195, 245, 60, 0.25); }
+.hero-lockup { width: min(640px, 100%); }
+.hero-lines { display: grid; gap: 14px; }
+.hero-tag { font-family: var(--font-display); font-weight: 700; font-size: var(--t-hero); letter-spacing: -0.035em; line-height: 1.02; }
+.hero-tag em { font-style: normal; color: var(--b-volt); }
+.hero p { color: var(--stage-muted); }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(174, 179, 214, 0.28); border-radius: 999px; padding: 5px 12px; font-size: var(--t-small); color: var(--stage-muted); }
+.chip b { color: var(--stage-ink); }
+
+/* The name */
+.meanings { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.meaning { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 22px; display: grid; gap: 10px; align-content: start; }
+.meaning svg { width: 40px; }
+.meaning p { color: var(--muted); font-size: var(--t-small); }
+.say { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.say-row { display: grid; gap: 4px; padding: 16px 0; border-top: 1px solid var(--line); }
+.say-row strong { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; }
+.say-row span { color: var(--muted); font-size: var(--t-small); }
+
+/* Stages for artwork */
+.stage-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.art { border-radius: var(--r-md); padding: clamp(24px, 4vw, 44px); display: grid; place-items: center; min-height: 220px; }
+.art.night { background: var(--b-night); }
+.art.paper { background: var(--b-paper); border: 1px solid var(--line); }
+.art.volt { background: var(--b-volt); }
+.art figcaption { font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: 0.08em; text-transform: uppercase; justify-self: start; align-self: end; }
+.art.night figcaption { color: #aeb3d6; }
+.art.paper figcaption, .art.volt figcaption { color: #565b7c; }
+figure { margin: 0; }
+.art-wrap { display: grid; gap: 18px; width: 100%; justify-items: center; }
+
+/* Construction */
+.construct { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: clamp(20px, 4vw, 40px); }
+.construct ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 16px; }
+.construct > div svg { width: min(360px, 100%); margin-inline: auto; }
+.construct li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start; }
+.construct li i { width: 22px; height: 22px; border-radius: 0 22px 0 0; border: 2px solid var(--b-night); margin-top: 3px; }
+.construct li b { display: block; }
+.construct li span { color: var(--muted); font-size: var(--t-small); }
+
+/* States + sizes */
+.states { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.state { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 22px; display: grid; gap: 14px; justify-items: start; align-content: start; }
+.state svg { width: 96px; }
+.state p { color: var(--muted); font-size: var(--t-small); }
+.sizes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 28px; background: var(--b-paper); border: 1px solid var(--line); border-radius: var(--r-md); padding: 28px; }
+.sizes figure { display: grid; gap: 8px; justify-items: center; }
+.sizes figcaption { font-family: var(--font-mono); font-size: var(--t-micro); color: #565b7c; }
+.sizes.night { background: var(--b-night); border-color: transparent; }
+.sizes.night figcaption { color: #aeb3d6; }
+
+/* Icons */
+.icons { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; }
+.icons figure { display: grid; gap: 10px; justify-items: center; text-align: center; }
+.icons svg { width: 120px; filter: drop-shadow(0 14px 22px rgba(21, 23, 43, 0.22)); }
+.icons figcaption { font-size: var(--t-small); color: var(--muted); }
+.icons figcaption b { display: block; color: var(--ink); font-weight: 600; }
+
+/* Rules */
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.rule { border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); padding: 20px; display: grid; gap: 12px; align-content: start; }
+.rule .tag { font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.rule.do .tag { color: var(--good); }
+.rule.dont .tag { color: var(--bad); }
+.rule > p { color: var(--ink-2); font-size: var(--t-small); }
+.rule ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); font-size: var(--t-small); }
+.dont-art { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.dont-art figure { background: var(--b-paper); border-radius: var(--r-sm); padding: 12px; display: grid; gap: 6px; justify-items: center; border: 1px solid var(--line); }
+.dont-art figcaption { font-size: 0.72rem; color: #565b7c; text-align: center; line-height: 1.3; }
+
+/* Sub-brands */
+.subs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.sub { border-radius: var(--r-md); background: var(--b-night); padding: 26px; display: grid; gap: 12px; }
+.sub .sub-note { color: #aeb3d6; font-size: var(--t-small); }
+
+/* Colour + type */
+.swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.swatch { border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.swatch .chipc { height: 92px; }
+.swatch div.meta { padding: 12px 14px; display: grid; gap: 2px; }
+.swatch b { font-size: var(--t-small); }
+.swatch span { font-family: var(--font-mono); font-size: var(--t-micro); color: var(--muted); }
+.type { display: grid; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.type-row { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 20px; padding: 22px 24px; border-top: 1px solid var(--line); align-items: baseline; }
+.type-row:first-child { border-top: 0; }
+.type-row .eyebrow { align-self: start; padding-top: 6px; }
+.spec-display { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.8rem, 1.2rem + 2.4vw, 3rem); letter-spacing: -0.035em; line-height: 1; }
+.spec-ui { font-size: 1.15rem; }
+.spec-mono { font-family: var(--font-mono); font-size: 0.95rem; letter-spacing: 0.02em; }
+
+/* Voice */
+.voice { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.line-card { background: var(--stage); color: var(--stage-ink); border-radius: var(--r-md); padding: 24px; display: grid; gap: 10px; align-content: space-between; min-height: 150px; }
+.line-card q { font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; letter-spacing: -0.02em; line-height: 1.15; quotes: none; }
+.line-card span { color: var(--stage-muted); font-size: var(--t-small); }
+
+/* In use */
+.inuse { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+.mock { border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.mock-app { display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 300px; }
+.mock-rail { background: #191b30; padding: 18px 14px; display: grid; gap: 14px; align-content: start; }
+.mock-brand { display: flex; gap: 10px; align-items: center; }
+.mock-brand .t { display: grid; }
+.mock-brand .t b { font-family: var(--font-display); font-weight: 700; color: #f2f3ff; font-size: 1rem; letter-spacing: -0.01em; }
+.mock-brand .t span { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.08em; color: #aeb3d6; text-transform: uppercase; }
+.mock-hud { display: flex; flex-wrap: wrap; gap: 6px; }
+.mock-hud span { font-family: var(--font-mono); font-size: 0.7rem; color: #f2f3ff; background: #24273f; border-radius: 999px; padding: 4px 9px; }
+.mock-nav { display: grid; gap: 4px; }
+.mock-nav span { color: #aeb3d6; font-weight: 600; font-size: 0.86rem; padding: 7px 10px; border-radius: 10px; }
+.mock-nav span.on { background: #30344f; color: #f2f3ff; box-shadow: inset 3px 0 0 #c3f53c; }
+.mock-main { padding: 22px; display: grid; gap: 12px; align-content: start; background: #f2f3fa; }
+.mock-main .eyebrow { color: #565b7c; }
+.mock-main h3 { font-size: 1.5rem; color: #15172b; }
+.mock-main p { color: #565b7c; font-size: var(--t-small); }
+.mock-btn { justify-self: start; background: #c3f53c; color: #1f2600; font-weight: 700; border-radius: 999px; padding: 10px 18px; box-shadow: 0 4px 0 #1f2600; font-size: 0.92rem; }
+.mock-phone { background: #dfe3f8; border-radius: var(--r-lg); padding: 22px; display: grid; gap: 16px; align-content: center; justify-items: center; }
+.mock-phone .grid { display: grid; grid-template-columns: repeat(4, 56px); gap: 16px 18px; }
+.mock-phone .app { display: grid; gap: 5px; justify-items: center; }
+.mock-phone .app i { width: 56px; height: 56px; border-radius: 14px; background: rgba(255, 255, 255, 0.8); display: block; }
+.mock-phone .app svg { width: 56px; }
+.mock-phone .app span { font-size: 0.62rem; color: #2d3050; font-weight: 600; }
+.mock-phone .avatar { display: flex; gap: 12px; align-items: center; background: #191b30; border-radius: 16px; padding: 10px 14px; }
+.mock-phone .avatar svg { width: 44px; }
+.mock-phone .avatar b { color: #f2f3ff; font-size: 0.9rem; display: block; }
+.mock-phone .avatar span { color: #aeb3d6; font-size: 0.78rem; }
+
+/* Research */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: var(--t-small); }
+th, td { text-align: left; padding: 12px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+thead th { border-top: 0; font-family: var(--font-mono); font-size: var(--t-micro); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; background: var(--surface-2); }
+td:first-child { font-weight: 700; white-space: nowrap; }
+td .muted { color: var(--muted); }
+.camps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.camp { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 20px; display: grid; gap: 10px; align-content: start; }
+.camp .names { display: flex; flex-wrap: wrap; gap: 6px; }
+.camp .names span { font-family: var(--font-mono); font-size: var(--t-micro); background: var(--surface-2); border-radius: 999px; padding: 3px 9px; color: var(--ink-2); }
+.camp p { color: var(--muted); font-size: var(--t-small); }
+.camp.gap { background: var(--stage); border-color: transparent; color: var(--stage-ink); }
+.camp.gap p { color: var(--stage-muted); }
+.camp.gap .names span { background: var(--b-volt); color: var(--volt-ink); }
+.inspo { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+.inspo div { padding: 18px 20px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); margin: -1px 0 0 -1px; display: grid; gap: 6px; align-content: start; }
+.inspo b { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; }
+.inspo span { color: var(--muted); font-size: var(--t-small); }
+.inspo em { font-style: normal; color: var(--ink-2); font-size: var(--t-small); }
+.shortlist { display: grid; gap: 10px; }
+.cand { display: grid; grid-template-columns: 150px 120px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 14px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); }
+.cand strong { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; letter-spacing: -0.01em; }
+.cand p { color: var(--muted); font-size: var(--t-small); }
+.pill { font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; border-radius: 999px; padding: 3px 10px; justify-self: start; }
+.pill.pick { background: var(--b-volt); color: var(--volt-ink); }
+.pill.alt { background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line-strong); }
+.pill.no { color: var(--bad); border: 1px solid currentColor; }
+.rules.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.finalists { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.fin { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; display: grid; align-content: start; }
+.fin .prev { background: var(--b-paper); padding: 22px 20px; border-bottom: 1px solid var(--line); }
+.fin .prev svg { height: 34px; width: auto; max-width: 100%; }
+.fin .body { padding: 18px 20px 20px; display: grid; gap: 12px; }
+.fin .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.fin .top strong { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; }
+.fin dl { margin: 0; display: grid; gap: 10px; font-size: var(--t-small); }
+.fin dt { font-family: var(--font-mono); font-size: var(--t-micro); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.fin dd { margin: 2px 0 0; color: var(--ink-2); }
+.checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.check { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 20px; display: grid; gap: 10px; align-content: start; }
+.check ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: var(--t-small); }
+.check li { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; }
+.check li .s { font-family: var(--font-mono); font-size: var(--t-micro); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; padding-top: 2px; }
+.s.free { color: var(--good); }
+.s.taken { color: var(--bad); }
+.s.todo { color: var(--muted); }
+.s.warn { color: var(--warn); }
+.next { margin: 0; padding: 0; display: grid; gap: 0; counter-reset: step; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+.next li { list-style: none; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 14px; padding: 16px 20px; border-top: 1px solid var(--line); counter-increment: step; }
+.next li:first-child { border-top: 0; }
+.next li::before { content: counter(step); font-family: var(--font-display); font-weight: 700; width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; font-size: 0.85rem; }
+.next li b { display: block; }
+.next li span { color: var(--muted); font-size: var(--t-small); }
+.sources { font-size: var(--t-small); color: var(--muted); display: grid; gap: 6px; padding-left: 18px; margin: 0; }
+footer { color: var(--muted); font-size: var(--t-small); border-top: 1px solid var(--line); padding-top: 20px; }
+
+/* Motion: the volt quarter closes the circle once on load. */
+.close-anim .vq { transform-box: view-box; transform-origin: 0 0; animation: vq-grow 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both; }
+@keyframes vq-grow { 0% { transform: scale(0.2); } 55% { transform: scale(1); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .close-anim .vq { animation: none; } }
+
+@media (max-width: 760px) {
+  .construct, .inuse, .stage-pair, .voice { grid-template-columns: 1fr; }
+  .type-row { grid-template-columns: 1fr; gap: 6px; }
+  .cand { grid-template-columns: 1fr; gap: 6px; }
+  .rules.two { grid-template-columns: 1fr; }
+  .mock-app { grid-template-columns: 1fr; }
+  .dont-art { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .page { gap: 56px; }
+}
+</style>
+
+<main class="page">
+
+<header class="hero">
+  <div class="eyebrow">Brand proposal · GCSE Study Desk · September 2026</div>
+  <div class="hero-lockup">{{LOCKUP_NIGHT}}</div>
+  <div class="hero-lines">
+    <div class="hero-tag">Make mistakes <em>extinct.</em></div>
+    <p>Revisaurus is the proposed name for the product now called GCSE Study Desk: revise plus thesaurus, with a dinosaur's roar. It says what the app is for in its first two syllables and fits the study creatures already in the app. No app, company, business or domain was found using it. The mark is unchanged.</p>
+  </div>
+  <div class="hero-meta">
+    <span class="chip"><b>Name</b> Revisaurus</span>
+    <span class="chip"><b>Say it</b> rev-ih-SAW-rus</span>
+    <span class="chip"><b>Store name</b> Revisaurus: GCSE Maths &amp; English</span>
+    <span class="chip"><b>Guide</b> Pip</span>
+  </div>
+</header>
+
+<section class="section" id="name">
+  <div class="section-head">
+    <div class="eyebrow">The name</div>
+    <h2>Revise, plus a word everyone can already spell</h2>
+    <p class="lede">Revisaurus follows the pattern of the names you like. Duolingo is duo plus lingo and Emofest is emo plus fest: a plain meaning with a playful twist. Here the meaning is revise and the twist is thesaurus, a word students already know how to say and spell, so the name sticks after one hearing.</p>
+  </div>
+  <div class="meanings">
+    <article class="meaning">{{ICON_REVISE}}<h3>Revise</h3><p>The job, in the first two syllables. Nobody has to ask what the app is for.</p></article>
+    <article class="meaning">{{ICON_BOOK}}<h3>Thesaurus</h3><p>The rhythm comes from a word every student knows, so the name is easy to say and spell after hearing it once. A thesaurus is also a book of words, a nod to English.</p></article>
+    <article class="meaning">{{ICON_SAURUS}}<h3>-saurus</h3><p>Big, loud and friendly. It joins the study creatures already in the app: Rexam the T. rex, Memmoth the mammoth and Redo the phoenix chick.</p></article>
+    <article class="meaning">{{ICON_EXTINCT}}<h3>Make mistakes extinct</h3><p>The promise in four words. Every miss comes back after 1, 3, 7 and 21 days until it is gone for good.</p></article>
+  </div>
+  <div class="say">
+    <div class="say-row"><strong>Revisaurus Maths</strong><span>Replaces MathsMate. Foundation and Higher are tiers inside it, not separate brands.</span></div>
+    <div class="say-row"><strong>Revisaurus English</strong><span>Replaces EnglishMate. Same mark, tangerine subject colour.</span></div>
+    <div class="say-row"><strong>“I'm on a 12-day Revisaurus streak”</strong><span>It shortens naturally too: “Done your Revi today?”</span></div>
+    <div class="say-row"><strong>Pip, your Revisaurus guide</strong><span>Pip stays as the guide, and the creatures give the name its prehistoric company.</span></div>
+  </div>
+</section>
+
+<section class="section" id="mark">
+  <div class="section-head">
+    <div class="eyebrow">The mark</div>
+    <h2>The disc</h2>
+    <p class="lede">The mark reuses the Shapez quadrant grammar behind every topic emblem, so the logo and the app use the same shapes. It keeps the favicon you already ship and adds one idea: the volt quarter is still growing.</p>
+  </div>
+  <div class="construct">
+    <div class="close-anim">{{MARK_CONSTRUCT}}</div>
+    <ol>
+      <li><i style="background: var(--b-blue)"></i><div><b>Maths Foundation</b><span>Blue, top right. The first course and the first audience.</span></div></li>
+      <li><i style="background: var(--b-tangerine)"></i><div><b>English Language</b><span>Tangerine, bottom right.</span></div></li>
+      <li><i style="background: var(--b-purple)"></i><div><b>Maths Higher</b><span>Purple, bottom left.</span></div></li>
+      <li><i style="background: var(--b-volt)"></i><div><b>The volt quarter</b><span>Mastery. It is drawn at 62% size, a piece still being built. The gap it leaves is the mistake you haven't fixed yet.</span></div></li>
+    </ol>
+  </div>
+  <div class="states">
+    <div class="state">{{STATE_BLUEPRINT}}<h3>Blueprint</h3><p>Dashed outline, for empty states and loading. It matches the "new" topic emblem.</p></div>
+    <div class="state">{{STATE_BUILDING}}<h3>Building</h3><p>The resting logo. Use it everywhere by default.</p></div>
+    <div class="state">{{STATE_CLOSED}}<h3>Closed</h3><p>The full disc, for celebrations only: a topic mastered, a streak milestone, a finished paper.</p></div>
+  </div>
+  <div class="sizes">{{SIZES_PAPER}}</div>
+  <div class="sizes night">{{SIZES_NIGHT}}</div>
+</section>
+
+<section class="section" id="wordmark">
+  <div class="section-head">
+    <div class="eyebrow">Wordmark and lockups</div>
+    <h2>Lower case, heavy, tight</h2>
+    <p class="lede">The wordmark is set in Unbounded ExtraBold, the app's display face, with tighter spacing and converted to outlines. Lower case keeps it friendly, in the tradition of duolingo, mimo and intel.</p>
+  </div>
+  <div class="stage-pair">
+    <figure class="art night"><div class="art-wrap">{{LOCKUP_NIGHT_M}}</div><figcaption>Primary lockup · night</figcaption></figure>
+    <figure class="art paper"><div class="art-wrap">{{LOCKUP_PAPER_M}}</div><figcaption>Primary lockup · paper</figcaption></figure>
+    <figure class="art night"><div class="art-wrap">{{STACKED_NIGHT}}</div><figcaption>Stacked · square spaces</figcaption></figure>
+    <figure class="art volt"><div class="art-wrap">{{WORDMARK_VOLT}}</div><figcaption>Wordmark alone · on volt</figcaption></figure>
+  </div>
+  <div class="subs">
+    <div class="sub">{{SUB_MATHS}}<p class="sub-note">Revisaurus Maths · Foundation (8300) and Higher (8300H)</p></div>
+    <div class="sub">{{SUB_ENGLISH}}<p class="sub-note">Revisaurus English · English Language (8700)</p></div>
+  </div>
+</section>
+
+<section class="section" id="icons">
+  <div class="section-head">
+    <div class="eyebrow">App icon</div>
+    <h2>Night by default, like the rail</h2>
+    <p class="lede">The icon puts the disc on the night stage used by the rail, heroes and explainer player, so the app icon and the first screen match. The paper version is for Android themed backgrounds and light contexts.</p>
+  </div>
+  <div class="icons">{{ICONS}}</div>
+</section>
+
+<section class="section" id="inuse">
+  <div class="section-head">
+    <div class="eyebrow">In use</div>
+    <h2>How it would sit in the product</h2>
+  </div>
+  <div class="inuse">
+    <div class="mock">
+      <div class="mock-app">
+        <div class="mock-rail">
+          <div class="mock-brand">{{RAIL_MARK}}<div class="t"><b>Revisaurus Maths</b><span>AQA Foundation</span></div></div>
+          <div class="mock-hud"><span>1 day</span><span>213 XP</span><span>Lvl 3</span></div>
+          <div class="mock-nav"><span class="on">Dashboard</span><span>Practice</span><span>Learn</span><span>Notebook</span></div>
+        </div>
+        <div class="mock-main">
+          <div class="eyebrow">Today's revision</div>
+          <h3>Factors, Multiples &amp; Primes</h3>
+          <p>You have set aside 15 minutes. Read the lesson, then try the short practice.</p>
+          <span class="mock-btn">Start today's revision</span>
+        </div>
+      </div>
+    </div>
+    <div class="mock-phone">
+      <div class="grid">
+        <div class="app"><i></i><span>Photos</span></div>
+        <div class="app">{{ICON_SMALL}}<span>Revisaurus</span></div>
+        <div class="app"><i></i><span>Music</span></div>
+        <div class="app"><i></i><span>Notes</span></div>
+      </div>
+      <div class="avatar">{{AVATAR}}<div><b>@revisaurus</b><span>Make mistakes extinct.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="rules">
+  <div class="section-head">
+    <div class="eyebrow">Usage</div>
+    <h2>Keep the disc honest</h2>
+  </div>
+  <div class="rules">
+    <div class="rule do"><span class="tag">Do</span><ul>
+      <li>Leave clear space equal to the volt quarter on every side.</li>
+      <li>Use the night outline on light grounds. On night grounds it merges into the background and leaves gaps, which is intended.</li>
+      <li>Keep the minimum size at 16px for the mark and 96px wide for the lockup.</li>
+      <li>Use the closed disc only for a real, server-marked success.</li>
+    </ul></div>
+    <div class="rule dont"><span class="tag">Don't</span><div class="dont-art">{{DONTS}}</div></div>
+  </div>
+</section>
+
+<section class="section" id="system">
+  <div class="section-head">
+    <div class="eyebrow">Colour and type</div>
+    <h2>Nothing new to learn</h2>
+    <p class="lede">The brand palette is the Circuit token set, and the rule stays the same: volt means "go" or "reward" and nothing else.</p>
+  </div>
+  <div class="swatches">{{SWATCHES}}</div>
+  <div class="type">
+    <div class="type-row"><span class="eyebrow">Display · Unbounded</span><div class="spec-display">Learn it. Play with it.</div></div>
+    <div class="type-row"><span class="eyebrow">UI · Atkinson Hyperlegible Next</span><div class="spec-ui">Know what to revise next, practise it in the exam's format, and see exactly why an answer lost marks.</div></div>
+    <div class="type-row"><span class="eyebrow">Labels · Atkinson Mono</span><div class="spec-mono">PAPER 1 · NON-CALCULATOR · 1H 30M · 80 MARKS</div></div>
+  </div>
+</section>
+
+<section class="section" id="voice">
+  <div class="section-head">
+    <div class="eyebrow">Voice</div>
+    <h2>Direct, useful, a little bit loud</h2>
+    <p class="lede">The existing product voice (honest, specific, never inflated) plus some of the attitude you like in Emofest. Confidence comes from the loop, never from promised grades.</p>
+  </div>
+  <div class="voice">
+    <div class="line-card"><q>Make mistakes extinct.</q><span>Brand line: the hero, the store subtitle, campaigns.</span></div>
+    <div class="line-card"><q>Fix what you missed.</q><span>The product promise, already on the landing page.</span></div>
+    <div class="line-card"><q>One more go.</q><span>Retries, notifications, the notebook.</span></div>
+    <div class="line-card"><q>Close the loop.</q><span>Mastery moments, when the disc closes.</span></div>
+  </div>
+</section>
+
+<section class="section" id="research">
+  <div class="section-head">
+    <div class="eyebrow">Market research</div>
+    <h2>Who else is on a GCSE student's phone</h2>
+    <p class="lede">A scan of the UK GCSE revision market in September 2026, from reviews, comparison guides and the brands' own sites. Prices are as reported by those sources and change often.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Brand</th><th>What it is</th><th>Model</th><th>Core mechanic</th><th>Brand character</th></tr></thead>
+      <tbody>
+        <tr><td>Seneca</td><td>Spec-aligned courses, KS2 to A-level</td><td>Free core, Premium upgrade</td><td>Quick recall quizzes, teacher-set homework</td><td class="muted">Named after the Stoic philosopher. Light blue, rounded sans, a spark mark and a ⚡ in the hero.</td></tr>
+        <tr><td>Save My Exams</td><td>Revision notes, past papers, topic questions</td><td>Limited free, subscription</td><td>Notes library, SmartMark AI feedback</td><td class="muted">Descriptive name. The logo is a blue lightning bolt.</td></tr>
+        <tr><td>BBC Bitesize</td><td>Guides, videos, quizzes</td><td>Free</td><td>Explanations and recaps, mostly passive</td><td class="muted">Most-trusted UK name. Rules out any "bite" or "byte" naming.</td></tr>
+        <tr><td>Medly</td><td>AI tutor with marked written answers</td><td>Free tier, £24.99/month for AI marking</td><td>AI marking, topic tracking, levels</td><td class="muted">Black and white, minimal, "AI tutor" positioning.</td></tr>
+        <tr><td>Quizlet</td><td>Community flashcards</td><td>Free, Plus tier</td><td>User-made decks, game modes</td><td class="muted">Global brand, not exam-board aligned.</td></tr>
+        <tr><td>Sparx Maths</td><td>School-assigned homework</td><td>School licence</td><td>Personalised homework, teacher reporting</td><td class="muted">Says it serves over half of UK schools. Owns the "spark" sound.</td></tr>
+        <tr><td>Tassomai</td><td>Adaptive science quizzing</td><td>About £8/month</td><td>Daily goals, weak-topic priority</td><td class="muted">Science only.</td></tr>
+        <tr><td>GCSEPod</td><td>Short video "pods"</td><td>School licence</td><td>3–5 minute videos with check questions</td><td class="muted">Descriptive. Not sold to students directly.</td></tr>
+        <tr><td>Corbettmaths, Maths Genie, PMT</td><td>Free worksheets, papers, videos</td><td>Free</td><td>5-a-day, graded question banks</td><td class="muted">Loved, but dated interfaces and no tracking. They set the free baseline.</td></tr>
+        <tr><td>New AI apps</td><td>Lightbulb Learning, UpGrades, Piply, Revvo, Revu</td><td>Freemium</td><td>AI flashcards, AI marking, plans</td><td class="muted">Crowded, mostly generic names and interchangeable looks.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="camps">
+    <div class="camp"><h3>Descriptive</h3><div class="names"><span>Save My Exams</span><span>Maths Genie</span><span>Revision Village</span><span>Physics &amp; Maths Tutor</span><span>GCSE Study Desk</span></div><p>Clear on day one but impossible to own or trademark. The current name sits here.</p></div>
+    <div class="camp"><h3>"Rev-" coinages</h3><div class="names"><span>Revvo</span><span>Revu</span><span>Reviso</span><span>Revlo</span><span>Revizoo</span></div><p>Five apps found on one page of store results. The prefix is saturated and they blur together.</p></div>
+    <div class="camp"><h3>"AI" suffix</h3><div class="names"><span>Medly AI</span><span>Piply AI</span><span>Quira</span><span>Pippit</span></div><p>Positions the product as an AI tutor, which PRODUCT.md says Study Desk is not.</p></div>
+    <div class="camp gap"><h3>A twist on a known word</h3><div class="names"><span>Revisaurus</span></div><p>Duolingo, Kahoot and Emofest all start from familiar words. A twist on a known word is quicker to remember than a made-up one, and still owned by no one.</p></div>
+  </div>
+  <div class="section-head">
+    <h3>What that means for the brand</h3>
+  </div>
+  <div class="rules">
+    <div class="rule"><span class="tag">Stay away from the bolt</span><p>Save My Exams' logo is a lightning bolt and Seneca's hero uses ⚡. The volt colour already carries the energy, so the mark uses the quadrant disc instead.</p></div>
+    <div class="rule"><span class="tag">Sell the loop, not the bank</span><p>Free papers and questions are everywhere (Maths Genie, Corbettmaths, PMT, Bitesize). The only story here that competitors can't copy by adding content is the mistake-to-mastery loop, and the closing disc shows it.</p></div>
+    <div class="rule"><span class="tag">Be the game, not the library</span><p>Seneca, Save My Exams and Medly all open on white with flat blue or black, and none of them leads with a character. Their gamification is a feature, not the brand. Revisaurus makes it the brand, with Pip, the creatures and the night stage.</p></div>
+  </div>
+  <div class="section-head">
+    <h3>What the brands you like teach us</h3>
+  </div>
+  <div class="inspo">
+    <div><b>Duolingo</b><span>A custom typeface drawn from the mascot's shapes.</span><em>The wordmark and Pip share the quadrant shapes.</em></div>
+    <div><b>Mimo</b><span>A robot companion and a game HUD for a serious skill.</span><em>Pip plus the streak, XP and level chips.</em></div>
+    <div><b>Pied Piper</b><span>A name that is a story: the piper who leads everyone.</span><em>Revisaurus says what it does and has a character.</em></div>
+    <div><b>Lego</b><span>A sticker outline, bold colour, and play made of pieces that click.</span><em>The night outline and a disc built from quarters.</em></div>
+    <div><b>Kahoot!</b><span>Four answer shapes became the whole visual system.</span><em>Four quadrant shapes (C, R, S, W) already run every emblem.</em></div>
+    <div><b>Intel and AMD</b><span>Chip heritage, lower case or all caps, strict geometry.</span><em>The circuit metaphor and an all-geometric mark.</em></div>
+    <div><b>Apple</b><span>One silhouette with one missing piece.</span><em>The gap by the volt quarter is our bite.</em></div>
+    <div><b>Emofest</b><span>Night palettes, attitude, never "just a phase".</span><em>Night is the default stage, with confident copy.</em></div>
+  </div>
+  <div class="section-head">
+    <h3>What makes a name stick</h3>
+    <p class="lede">Round three started from the research on memorable brand names rather than from word lists.</p>
+  </div>
+  <div class="rules two">
+    <div class="rule"><span class="tag">Two or three beats</span><p>Names of two or three syllables are remembered better than longer ones, and a strong stress helps (GOO-gle, CO-ca-CO-la). Revisaurus has four, like Duolingo, and gets away with it because its rhythm is borrowed from thesaurus.</p></div>
+    <div class="rule"><span class="tag">Echoes stick</span><p>Repeated sounds make a name more noticeable, more memorable and better liked, especially when it is said aloud. Revisaurus repeats its r and s sounds.</p></div>
+    <div class="rule"><span class="tag">Twist a word people know</span><p>Kahoot came from "cahoots", and Duolingo from duo and lingo. A twist on a known word is learnt in one hearing. The short made-up names were all taken: Fixfox, Unoops, Tickety, Examigo, Redoku and Gradiator are already registered.</p></div>
+    <div class="rule"><span class="tag">Say what it does</span><p>The strongest names in this market hint at the job: Save My Exams, Quizlet, Duolingo. Revisaurus starts with it.</p></div>
+  </div>
+  <div class="section-head">
+    <h3>Names considered</h3>
+    <p class="lede">Round three screened 116 names built on those rules. 28 had no registration on .com, .co.uk or .app, and three of those stood out.</p>
+  </div>
+  <div class="camp"><div class="names"><span>boomerevise</span><span>eurekall</span><span>examoku</span><span>fixcalibur</span><span>fixdoku</span><span>fixmiss</span><span>gradeasaurus</span><span>misfixer</span><span>missterpiece</span><span>mistakasaurus</span><span>mistakeover</span><span>mistakle</span><span>oopsadoku</span><span>quizasaurus</span><span>rangback</span><span>recallasaurus</span><span>redosaurus</span><span>rematchy</span><span>revisadabra</span><span>revisaur</span><span>revisaurs</span><span>revisaurus</span><span>reviseum</span><span>swotasaurus</span><span>swotley</span><span>swotlock</span><span>swotstein</span><span>whoopsa</span></div><p>The 28 names with no registration on .com, .co.uk or .app.</p></div>
+  <div class="finalists">
+    <article class="fin"><div class="prev">{{ALT_REVISAURUS}}</div><div class="body">
+      <div class="top"><strong>Revisaurus</strong><span class="pill pick">Recommended</span></div>
+      <dl><div><dt>Says</dt><dd>Revision, straight away, with a character.</dd></div>
+      <div><dt>Built on</dt><dd>Revise, thesaurus and a dinosaur.</dd></div>
+      <div><dt>Beats</dt><dd>Four: rev-ih-SAW-rus.</dd></div>
+      <div><dt>Watch</dt><dd>Could feel young to some Year 11s. The night stage and confident copy keep it from looking babyish.</dd></div></dl>
+    </div></article>
+    <article class="fin"><div class="prev">{{ALT_FIXCALIBUR}}</div><div class="body">
+      <div class="top"><strong>Fixcalibur</strong><span class="pill alt">Alternative</span></div>
+      <dl><div><dt>Says</dt><dd>Fix what you missed, with a legendary edge that matches the creatures' Legend rank.</dd></div>
+      <div><dt>Built on</dt><dd>Fix and Excalibur, King Arthur's sword.</dd></div>
+      <div><dt>Beats</dt><dd>Four: fix-CAL-ih-bur.</dd></div>
+      <div><dt>Watch</dt><dd>It doesn't say revision and could read as a repair company. A FIFA 22 gaming team used the name in one YouTube video.</dd></div></dl>
+    </div></article>
+    <article class="fin"><div class="prev">{{ALT_MISSTERPIECE}}</div><div class="body">
+      <div class="top"><strong>Missterpiece</strong><span class="pill alt">Alternative</span></div>
+      <dl><div><dt>Says</dt><dd>Turn every miss into a masterpiece: the whole loop in one word.</dd></div>
+      <div><dt>Built on</dt><dd>Miss and masterpiece.</dd></div>
+      <div><dt>Beats</dt><dd>Three: MISS-ter-peace.</dd></div>
+      <div><dt>Watch</dt><dd>Heard aloud it sounds like "misterpiece", "Miss" can read as a title, and Messterpieces is a craft brand.</dd></div></dl>
+    </div></article>
+  </div>
+  <div class="shortlist">
+    <div class="cand"><strong>Swotlock</strong><span class="pill no">Rejected</span><p>Two syllables and unregistered, but "swot" is a mild insult and "lock" clashes with the rule that nothing in the app is locked.</p></div>
+    <div class="cand"><strong>Fixfox, Unoops, Tickety, Examigo, Redoku, Gradiator</strong><span class="pill no">Taken</span><p>Short and catchy, but every one already has its .com registered, and most have other domains taken too.</p></div>
+    <div class="cand"><strong>Volta, Clevolta</strong><span class="pill no">Earlier rounds</span><p>Volta is used by too many apps to own. Clevolta was unused but didn't land.</p></div>
+  </div>
+  <div class="checks">
+    <div class="check"><h3>Revisaurus, checked on 29 September 2026</h3><ul>
+      <li><span class="s free">Clear</span><span>No domain registration for revisaurus.com, .co.uk, .uk, .app, .net, .org, .io, .co, .study, .school, .academy, .education, .de, .eu or .ai</span></li>
+      <li><span class="s free">Clear</span><span>App Store (GB and US): no app with the name; the nearest results are reptile apps. Google Play: no app with the name; the results are unrelated dinosaur games.</span></li>
+      <li><span class="s free">Clear</span><span>Companies House: "No results found".</span></li>
+      <li><span class="s free">Clear</span><span>Web search: no business, product or revision resource with the name, including on Tes. The only mention is a character form on a fan wiki.</span></li>
+      <li><span class="s warn">Watch</span><span>The "Rev-" start is shared with Revvo, Revu and Reviso. They are different words, but list them in the trade-mark search.</span></li>
+    </ul></div>
+    <div class="check"><h3>Still to do</h3><ul>
+      <li><span class="s todo">Today</span><span>Register revisaurus.com, revisaurus.co.uk and revisaurus.app. An unregistered name can be taken at any time.</span></li>
+      <li><span class="s todo">To do</span><span>Search the UK trade marks register for REVISAURUS in classes 9 (apps), 41 (education) and 42 (software as a service), then file. The registers could not be searched from here.</span></li>
+      <li><span class="s todo">To do</span><span>Claim @revisaurus on TikTok, Instagram, YouTube and X. Handles could not be checked from here.</span></li>
+      <li><span class="s todo">Later</span><span>Search the EU and US registers (TMview, USPTO) before an international release.</span></li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="section" id="next">
+  <div class="section-head">
+    <div class="eyebrow">Next steps</div>
+    <h2>From proposal to rename</h2>
+  </div>
+  <ol class="next">
+    <li><div><b>Register the domains</b><span>revisaurus.com, revisaurus.co.uk and revisaurus.app, plus the social handles.</span></div></li>
+    <li><div><b>Clear and file the trade mark</b><span>Search the UK register, then file in classes 9 and 41. If Revisaurus is blocked, Fixcalibur and Missterpiece passed the same checks, and the mark and system work unchanged.</span></div></li>
+    <li><div><b>Rename in the code</b><span>"GCSE Study Desk", "MathsMate" and "EnglishMate" appear on 162 lines in 65 files, including store listings, legal pages, SEO metadata, the pitch deck and the Expo config.</span></div></li>
+    <li><div><b>Ship the icon</b><span>Swap the favicon, the Expo icon sources and the rail brand mark for the disc. The SVG sources are in <span class="mono">website/design/brand/</span>.</span></div></li>
+  </ol>
+</section>
+
+<section class="section" id="sources">
+  <div class="section-head"><div class="eyebrow">Sources</div></div>
+  <ul class="sources">{{SOURCES}}</ul>
+</section>
+
+<footer>Proposal for Mayer Digital. Revisaurus is not yet a registered trade mark, and nothing here implies AQA endorsement.</footer>
+</main>

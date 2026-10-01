@@ -66,6 +66,20 @@ export const STRANDS = {
   writing: { hue: 'rose', alt: 'purple', shapes: ['W', 'R', 'W'], scene: 'writing', name: 'Writing skills' },
 };
 
+// Study creatures (milestone collection, circuit/Critter.jsx): each owns a
+// signature hue and an alt, all distinct so the shelf reads at a glance.
+// Volt never appears here: it is reserved for Legend-rank accents.
+export const CRITTER_HUES = {
+  ember: { hue: 'amber', alt: 'tangerine' },
+  quill: { hue: 'blue', alt: 'cyan' },
+  tock: { hue: 'purple', alt: 'blue' },
+  rexam: { hue: 'coral', alt: 'amber' },
+  tortile: { hue: 'green', alt: 'cyan' },
+  prismo: { hue: 'cyan', alt: 'purple' },
+  redo: { hue: 'rose', alt: 'tangerine' },
+  memmoth: { hue: 'slate', alt: 'cyan' },
+};
+
 export const FALLBACK_STRAND = { hue: 'slate', alt: 'blue', shapes: ['C', 'R', 'S', 'W'], scene: 'number', name: 'Topic' };
 
 export function strandInfo(strandId) {

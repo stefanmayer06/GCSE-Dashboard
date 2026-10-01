@@ -761,6 +761,61 @@ test('lesson rewards persist, update levels live and cannot be claimed twice', a
   await expect(page.locator('.badge-collection')).toBeVisible();
 });
 
+test('milestone creatures hatch from marked work and open as interactive badges', async ({ page }) => {
+  const username = `critter${Date.now()}`;
+  const signup = await page.request.post(`${BASE}/api/auth/signup`, {
+    data: { username, password: 'revision-pass-1' },
+  });
+  expect(signup.ok()).toBeTruthy();
+
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  const cards = page.locator('.critter-card');
+  await expect(cards).toHaveCount(8);
+  await expect(page.locator('.critter-card.rank-egg')).toHaveCount(8);
+  await expect(page.locator('.critter-evolve')).toHaveCount(0);
+
+  // Marked answers are the only thing that feeds Quillby: 25 hatches it.
+  for (const topicId of ['fractions', 'decimals']) {
+    const issued = await (await page.request.post(`${BASE}/api/maths/practice`, { data: { topicId, count: 20 } })).json();
+    const submit = await page.request.post(`${BASE}/api/maths/practice/submit`, {
+      data: { sessionId: issued.sessionId, topicId, answers: issued.questions.map((question) => ({ qid: question.id, value: '1' })) },
+    });
+    expect(submit.ok()).toBeTruthy();
+  }
+  const progress = await (await page.request.get(`${BASE}/api/maths/progress`)).json();
+  expect(progress.practiceAnswered).toBeGreaterThanOrEqual(25);
+  expect(progress.practiceAnswered).toBeLessThan(150);
+
+  await page.reload({ waitUntil: 'networkidle' });
+  await expect(page.locator('.critter-evolve')).toBeVisible();
+  await expect(page.locator('.critter-evolve h2')).toContainText('Quillby hatched into Quillet');
+  // Two topics practised also hatched Tortile (topics explored): queued next.
+  await page.getByRole('button', { name: /Next evolution/ }).click();
+  await expect(page.locator('.critter-evolve h2')).toContainText('Tortile hatched into Tortle');
+  await page.locator('.critter-evolve .reward-close').click();
+  await expect(page.locator('.critter-card.is-new')).toHaveCount(2);
+  await page.locator('.critter-card', { hasText: 'Quillet' }).click();
+
+  const dialog = page.locator('.critter-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('.evo-step')).toHaveCount(4);
+  await expect(dialog.locator('.evo-step.reached')).toHaveCount(1);
+  await expect(dialog.locator('.critter-speech')).toHaveText("Hi! I'm Quillet.");
+  await dialog.getByRole('button', { name: 'Pet Quillet' }).click();
+  await expect(dialog.locator('.critter-speech')).toContainText('marked answers. We did that together!');
+  await expect(dialog.locator('.critter-hearts svg')).toHaveCount(5);
+  await expect(dialog.getByRole('link', { name: /Answer questions/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('.critter-card.rank-bronze')).toHaveCount(2);
+  await expect(page.locator('.critter-card.is-new')).toHaveCount(1);
+
+  // Reloading does not replay an evolution that was already shown.
+  await page.reload({ waitUntil: 'networkidle' });
+  await expect(page.locator('.critter-card').first()).toBeVisible();
+  await expect(page.locator('.critter-evolve')).toHaveCount(0);
+});
+
 test('Maths lesson quick practice completes today in the exam plan', async ({ page }) => {
   const username = `mission${Date.now()}`;
   const signup = await page.request.post(`${BASE}/api/auth/signup`, {

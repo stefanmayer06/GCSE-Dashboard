@@ -99,21 +99,8 @@
 
 .share-card { text-align: center; }
 .share-card .modal-actions { justify-content: center; }
-.share-stamp {
-  display: inline-grid;
-  place-items: center;
-  width: 108px;
-  height: 108px;
-  margin: 0 auto;
-  border: 3px solid var(--emblem-line);
-  border-radius: 50%;
-  background: var(--hue-amber);
-  color: var(--emblem-line);
-  box-shadow: 0 6px 0 var(--emblem-line);
-}
-.share-stamp span { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
-.share-stamp strong { font-size: 2rem; line-height: 1; }
-.share-card h3 { margin: 18px 0 4px; font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; }
+.share-badge { margin: 0 auto; }
+.share-card h3 { margin: 12px 0 4px; font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; }
 .share-proof { color: var(--c-ink); font-family: var(--font-mono); font-weight: 700; }
 
 /* Reward celebration: a night card with a confetti burst, level medal and

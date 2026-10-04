@@ -464,7 +464,7 @@ export default {
         <div class="card"><h3>Where things live</h3><ul>
           <li><code>clients/shared/circuit/</code> — tokens, CSS, palette + shape grammar, Emblem, IsoTile, Icon, Pip, Scenes, Critter.</li>
           <li><code>clients/shared/explainer/</code> — engine, primitives, player, narration, autoscript, library.</li>
-          <li><code>clients/shared/CourseMap.jsx</code>, <code>LessonKit.jsx</code>, <code>DashboardHome.jsx</code>, <code>AppShell.jsx</code>.</li>
+          <li><code>clients/shared/AppShell.jsx</code>, <code>TodayHome.jsx</code>, <code>CourseMap.jsx</code>, <code>LessonKit.jsx</code>, <code>PracticeKit.jsx</code>, <code>CreaturesPage.jsx</code>, <code>MePage.jsx</code>, <code>PipChat.jsx</code>.</li>
           <li><code>selector/</code> — public pages; <code>art.js</code> and <code>circuit-public.css</code> are generated.</li>
           <li><code>/&lt;subject&gt;/lab</code> — the live graphics lab.</li>
         </ul></div>

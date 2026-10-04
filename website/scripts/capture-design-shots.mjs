@@ -66,9 +66,9 @@ await shot('home-light', '/maths/');
 await shot('home-dark', '/maths/', { theme: 'dark' });
 await shot('map', '/maths/learn', { scroll: 330 });
 await shot('lesson', '/maths/learn/fractions');
-await shot('notes', '/maths/learn/fractions', { scroll: 1000 });
+await shot('notes', '/maths/learn/fractions#learn', { scroll: 200 });
 await shot('explainer', '/maths/learn/fractions', {
-  scroll: 470,
+  scroll: 260,
   prepare: async (p) => {
     const player = p.locator('.xp-player');
     await player.getByRole('button', { name: /Watch/ }).click();
@@ -79,7 +79,7 @@ await shot('explainer', '/maths/learn/fractions', {
   },
 });
 await shot('english-explainer', '/english/learn/language', {
-  scroll: 430,
+  scroll: 260,
   prepare: async (p) => {
     const player = p.locator('.xp-player');
     await player.getByRole('button', { name: /Watch/ }).click();

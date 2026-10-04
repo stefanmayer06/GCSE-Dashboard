@@ -409,7 +409,8 @@ button.btn-danger { border-color: var(--c-bad); background: var(--c-bad); color:
 @media (max-width: 900px) {
   .exam-bar { flex-direction: row; align-items: center; }
   .exam-bar-actions { display: flex; }
-  .exam-body .q-nav { order: 0; }
+  .exam-body .q-nav,
+  .q-main > .q-nav { order: 0; }
 }
 
 @media (max-width: 1100px) {

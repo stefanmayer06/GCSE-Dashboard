@@ -18,9 +18,8 @@ import {
   PERSONAL_UPDATED_EVENT,
   saveCorrection,
   startPlanDayInState,
-  touchMistakeRows,
 } from './study-personal.js';
-import { buildWeekPlan, dateKey, fixupEnglishPlan, fixupTargets, movePlanDay, priorityTopics, readiness } from './study.js';
+import { buildWeekPlan, dateKey, fixupEnglishPlan, fixupTargets, priorityTopics, readiness } from './study.js';
 
 const defaultPreferences = { examDate: '', targetGrade: '', restDays: [], minutesPerDay: null };
 const planMinutesDefault = (subject) => (subject === 'english' ? 20 : 15);
@@ -59,16 +58,6 @@ function formatDate(iso) {
 function examMonthLabel(dateStr) {
   const at = Date.parse(dateStr ? `${dateStr}T12:00:00` : '');
   return Number.isFinite(at) ? new Date(at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : null;
-}
-
-function planHeadline(days, examDate) {
-  if (days == null) return 'Set your exam date';
-  if (days < 0) return 'Exam date passed';
-  if (days > 365) {
-    const month = examMonthLabel(examDate);
-    return month ? `Exams ${month}` : 'Exam date set';
-  }
-  return `${days} day${days === 1 ? '' : 's'} to go`;
 }
 
 // One return ping per local calendar day, deduplicated in localStorage

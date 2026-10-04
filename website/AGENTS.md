@@ -63,11 +63,16 @@ The clients remain separate because their question formats, grading logic and gl
 - `clients/shared/explainer/`: interactive explainer engine, board
   primitives, player, narration, the notes-to-video fallback (`autoscript.js`)
   and the authored script library (`library/maths`, `library/english`).
-- `clients/shared/AppShell.jsx`, `DashboardHome.jsx`, `NextStep.jsx`,
-  `CourseMap.jsx`, `LessonKit.jsx`, `rewards.jsx`: the shared shell, home,
-  course map, lesson stages and rewards used by both clients.
-- `clients/shared/Milestones.jsx` and `critters.js`: milestones as a
-  collection of study creatures. Each creature's tier is recomputed from one
+- `clients/shared/AppShell.jsx`, `TodayHome.jsx`, `CourseMap.jsx`,
+  `LessonKit.jsx`, `PracticeKit.jsx`, `CreaturesPage.jsx`, `MePage.jsx`,
+  `PipChat.jsx`, `Sheet.jsx`, `SubjectSheet.jsx`, `rewards.jsx`: the shared
+  five-tab app (Today, Learn, Practice, Creatures, Me), the lesson stepper,
+  one-at-a-time practice and retries, Ask Pip and the lesson-complete
+  celebration used by both clients. `pwa.js` registers the service worker
+  (`selector/sw.js`) and offers the install prompt.
+- `clients/shared/creatures.jsx`, `Milestones.jsx` and `critters.js`: the
+  study creatures, which are the only progression the learner sees (no XP,
+  levels or badge names in the UI). Each creature's tier is recomputed from one
   evidence track (progress or the mistake notebook); art is
   `circuit/Critter.jsx`.
 - `clients/shared/GraphicsLab.jsx`: the `/<subject>/lab` catalogue of every

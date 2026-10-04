@@ -146,9 +146,10 @@ See `FOUNDATION_AUDIT.md` for the Foundation bank review and remaining content b
 
 ## Design System
 
-The web app uses the Circuit design system: custom isometric level maps,
-Shapez-style topic emblems, a mascot guide (Pip) and interactive explainer
-videos that pause to ask questions. Open `design/design-doc.html` for the
+The web app uses the Circuit design system: a five-tab app (Today, Learn,
+Practice, Creatures, Me) that installs to a phone's home screen, custom
+isometric level maps, study creatures that grow with real work, a mascot
+tutor (Pip) and interactive explainer videos that pause to ask questions. Open `design/design-doc.html` for the
 visual reference. The guides for extending it are:
 
 - `design/DESIGN.md`: tokens, type, layout, motion and principles
@@ -176,6 +177,9 @@ npm run social:build       # re-render the adverts in design/social
 | `/maths/*` | MathsMate client (sign-in gated) |
 | `/maths-higher/*` | MathsMate Higher client (sign-in gated) |
 | `/english/*` | EnglishMate client (sign-in gated) |
+| `/<subject>/` · `/learn` · `/practice` · `/creatures` · `/me` | The five app tabs in each subject client: Today, Learn, Practice, Creatures and Me |
+| `/<subject>/notebook`, `/summary`, `/chat` | Mistake notebook and retries, weekly summary, Ask Pip full screen |
+| `/manifest.webmanifest`, `/sw.js` | Installable app manifest and service worker (never caches `/api`) |
 | `/api/auth/*` | Sign-in, session and OAuth endpoints |
 | `/api/events` | Authenticated product-event append (see `ANALYTICS.md`) |
 | `/api/events/summary` | Activation and funnel summary for the signed-in learner |

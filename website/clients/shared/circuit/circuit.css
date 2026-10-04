@@ -1,5 +1,5 @@
-/* Circuit design system (v5) — loaded last by both clients.
-   Order: tokens → base → shell → overlays → video → learn → surfaces.
+/* Circuit design system (v6) — loaded last by both clients.
+   Order: tokens → base → shell → overlays → video → learn → surfaces → app → focus.
    See website/design/DESIGN.md. */
 @import './tokens.css';
 @import './base.css';
@@ -10,3 +10,5 @@
 @import './critters.css';
 @import './home.css';
 @import './pages.css';
+@import './app.css';
+@import './focus.css';

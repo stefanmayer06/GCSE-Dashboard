@@ -566,11 +566,12 @@ export function CritterArt({ id, tier = 1, mood = 'happy', progress = 0 }) {
 
 // A standalone creature. tier 0 draws its egg; `silhouette` hides the
 // details for evolutions the learner has not reached yet.
-export default function Critter({ id, tier = 1, size = 96, mood = 'happy', progress = 0, silhouette = false, title = null, className = '', style = null }) {
+// `viewBox` crops the stage, e.g. for round avatars.
+export default function Critter({ id, tier = 1, size = 96, mood = 'happy', progress = 0, silhouette = false, title = null, className = '', style = null, viewBox = '0 0 120 120' }) {
   return (
     <svg
       className={`critter critter-${id} tier-${tier}${silhouette ? ' is-silhouette' : ''} ${className}`.trim()}
-      viewBox="0 0 120 120"
+      viewBox={viewBox}
       width={size}
       height={size}
       style={rootStyle(id, style)}

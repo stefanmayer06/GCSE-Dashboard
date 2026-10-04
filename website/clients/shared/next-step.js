@@ -7,10 +7,13 @@
 //
 // Priority (strongest learning loop first):
 //   1. Mistakes due for retry  -> the mistake-to-mastery loop
-//   2. Today's mission         -> the exam plan the learner already set
-//   3. Weakest practised topic -> evidence from topicStats
-//   4. Untouched core topic    -> breadth before depth for new learners
-//   5. Diagnostic / practice   -> cold start or everything looks healthy
+//   2. Diagnostic              -> a learner with no marked answers yet starts
+//                                 with the 10-question check, never a plan
+//                                 task built before we knew anything
+//   3. Today's mission         -> the exam plan the learner already set
+//   4. Weakest practised topic -> evidence from topicStats
+//   5. Untouched core topic    -> breadth before depth
+//   6. Timed paper             -> everything looks healthy
 
 export function topicAccuracy(stats) {
   if (!stats || typeof stats.total !== 'number' || stats.total <= 0) return null;
@@ -125,7 +128,20 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
     };
   }
 
-  // 2. Today's plan beats browsing: the learner already chose this.
+  // 2. Cold start: point at the diagnostic, not an auto-built plan task.
+  if (answered === 0 || practisedTopics === 0) {
+    return {
+      kind: 'diagnostic',
+      eyebrow: 'Start here · about 10 min',
+      title: 'Take the 10-question check',
+      detail: 'It shows what you already know, so your first week starts in the right place. No timer.',
+      href: '/practice?diagnostic=1#adhoc',
+      cta: 'Start the check',
+      meta: null,
+    };
+  }
+
+  // 3. Today's plan beats browsing: the learner already chose this.
   if (mission) {
     if (mission.topicId) {
       return {
@@ -152,7 +168,7 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
     };
   }
 
-  // 3. Evidence-led: the weakest practised topic earns attention first.
+  // 4. Evidence-led: the weakest practised topic earns attention first.
   if (weak && weak.accuracy != null && weak.accuracy < 70) {
     return {
       kind: 'weak-topic',
@@ -162,19 +178,6 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
       href: `/learn/${weak.id}`,
       cta: 'Relearn this topic',
       meta: weak.strand,
-    };
-  }
-
-  // 4. Cold start: point at the diagnostic, not an empty dashboard.
-  if (answered === 0 || practisedTopics === 0) {
-    return {
-      kind: 'diagnostic',
-      eyebrow: 'Start here',
-      title: 'Take the 10-question diagnostic',
-      detail: 'It takes about 10 minutes. We’ll use your answers to plan your first week.',
-      href: '/practice?diagnostic=1#adhoc',
-      cta: 'Start diagnostic',
-      meta: null,
     };
   }
 
@@ -202,6 +205,20 @@ export function computeNextStep({ topics = [], progress = null, personal = null,
     cta: 'Open practice desk',
     meta: null,
   };
+}
+
+// Which study creature a next step feeds, so the Today card can show the
+// creature that the one button grows. Mirrors the evidence tracks in
+// critters.js: retries fix mistakes (Redo), lessons and practice add marked
+// answers (Quillby), a new topic is explored (Tortile), papers wake Tock.
+export function creatureForStep(step) {
+  if (!step) return null;
+  if (step.kind === 'retry') return 'redo';
+  if (step.kind === 'fresh-topic') return 'tortile';
+  if (step.kind === 'practice' || step.kind === 'resume') return 'tock';
+  if (step.kind === 'review') return 'redo';
+  if (step.kind === 'mission' && step.href === '/notebook') return 'redo';
+  return 'quill';
 }
 
 // V3 mastery scale: New → Learning → Developing → Secure → Mastered,

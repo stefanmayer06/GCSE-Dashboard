@@ -243,6 +243,34 @@ const ICONS = {
       <path className="i-accent" d="M4 15.8A2.8 2.8 0 0 1 6.8 13H11v7H6.8A2.8 2.8 0 0 1 4 17.2z" />
     </>
   ),
+  egg: (
+    <>
+      <path d="M12 3c3.6 0 6.6 5.4 6.6 9.8A6.6 6.6 0 0 1 12 19.6a6.6 6.6 0 0 1-6.6-6.8C5.4 8.4 8.4 3 12 3z" />
+      <path d="m5.6 12.6 2.1-1.6 2.1 1.6 2.2-1.6 2.1 1.6 2.1-1.6 2.2 1.6" />
+      <circle className="i-accent" cx="9.7" cy="7.6" r="1.3" />
+    </>
+  ),
+  user: (
+    <>
+      <circle cx="12" cy="8.2" r="4" />
+      <path d="M4.5 20.5c.6-4 3.6-6.5 7.5-6.5s6.9 2.5 7.5 6.5" />
+      <path className="i-accent" d="M12 4.2a4 4 0 0 1 4 4h-4z" />
+    </>
+  ),
+  download: (
+    <>
+      <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+      <path d="M12 7v7M9.2 11.2 12 14l2.8-2.8M10.5 18.5h3" />
+      <path className="i-accent" d="M6.5 5a2.5 2.5 0 0 1 2.5-2.5h6A2.5 2.5 0 0 1 17.5 5z" />
+    </>
+  ),
+  share: (
+    <>
+      <path d="M12 15V3.5M7.5 8 12 3.5 16.5 8" />
+      <path d="M5 12v6.5A2 2 0 0 0 7 20.5h10a2 2 0 0 0 2-2V12" />
+      <path className="i-accent" d="M9 20.5v-4h6v4z" />
+    </>
+  ),
 };
 
 export const ICON_NAMES = Object.keys(ICONS);

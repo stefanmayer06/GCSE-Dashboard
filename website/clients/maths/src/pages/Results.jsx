@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api, SUBJECT } from '../api.js';
 import { invalidateResources, preloadResource, useResource } from '../../../shared/resource-cache.js';
 import MathsVisual from '../components/MathsVisual.jsx';
-import { RewardSummary } from '../../../shared/rewards.jsx';
+import { CreatureGains } from '../../../shared/creatures.jsx';
 import { TriagePanel } from '../../../shared/StudyTools.jsx';
 import { mergeMistakeRows, mistakeRowsFromResult, personalKey } from '../../../shared/study-personal.js';
 
@@ -121,7 +121,11 @@ export default function Results({ userId }) {
         </div>
       </div>
 
-      <RewardSummary reward={result.reward} progress={result.progress} label="Paper XP earned" />
+      {result.progressBefore && result.progress ? (
+        <section className="panel results-gains">
+          <CreatureGains before={result.progressBefore} after={result.progress} title="What this paper fed" />
+        </section>
+      ) : null}
 
       <TriagePanel
         result={result}

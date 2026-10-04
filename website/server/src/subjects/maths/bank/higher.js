@@ -655,7 +655,7 @@ function chooseForMarks(rng, pool, marks, { calculator, allowExceptional = false
   return chosen;
 }
 
-function sanitize(item, { withHint = false } = {}) {
+export function sanitizeHigher(item, { withHint = false } = {}) {
   const out = {
     id: item.id, topicId: item.topicId, topic: item.topic, strand: item.strand, strandName: item.strandName,
     marks: item.marks, difficulty: item.difficulty, stretch: !!item.stretch, exceptional: !!item.exceptional,
@@ -723,7 +723,7 @@ export function buildHigherPaper(type = 'full', paperId = 1) {
       .map(({ item }) => item);
     return {
       tier: 'higher', paperId: paper.id, paperCode: paper.code, paperName: paper.name, calculator: paper.calculator,
-      questions: ramp.map((item, index) => ({ ...sanitize(item), qn: index + 1 })), totalMarks: total,
+      questions: ramp.map((item, index) => ({ ...sanitizeHigher(item), qn: index + 1 })), totalMarks: total,
       minutes: total === 80 ? 90 : 45, stretchCount: ramp.filter((item) => item.difficulty === 3).length,
       stretchMarks,
       exceptionalCount,
@@ -736,7 +736,7 @@ export function buildHigherPaper(type = 'full', paperId = 1) {
 export function buildHigherPractice(topicId, count = 8) {
   const set = higherQuestionsFor(topicId);
   if (!set.length) return [];
-  return shuffle(makeRand('higher-practice', Date.now()), [...set]).slice(0, count).map((item, index) => ({ ...sanitize(item, { withHint: true }), qn: index + 1 }));
+  return shuffle(makeRand('higher-practice', Date.now()), [...set]).slice(0, count).map((item, index) => ({ ...sanitizeHigher(item, { withHint: true }), qn: index + 1 }));
 }
 
 export function buildHigherAdhoc(count = 15, paperIds = [1, 2, 3]) {
@@ -745,7 +745,7 @@ export function buildHigherAdhoc(count = 15, paperIds = [1, 2, 3]) {
   const pool = strands.flatMap((strand) => strandPool(strand));
   const rng = makeRand('higher-adhoc', Date.now());
   const picked = shuffle(rng, pool).slice(0, count);
-  return { questions: picked.map((item, index) => ({ ...sanitize(item, { withHint: true }), qn: index + 1 })), papersIncluded: ids.map((id) => HIGHER_PAPERS[id].code), tier: 'higher' };
+  return { questions: picked.map((item, index) => ({ ...sanitizeHigher(item, { withHint: true }), qn: index + 1 })), papersIncluded: ids.map((id) => HIGHER_PAPERS[id].code), tier: 'higher' };
 }
 
 function mark(item, value) {

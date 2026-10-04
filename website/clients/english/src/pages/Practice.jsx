@@ -2,8 +2,12 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { invalidateResources, preloadResource, useResource } from '../../../shared/resource-cache.js';
-import { RewardSummary } from '../../../shared/rewards.jsx';
-import { personalKey } from '../../../shared/study-personal.js';
+import { AppHeader, useFocusMode } from '../../../shared/AppShell.jsx';
+import { useCreatures } from '../../../shared/creatures.jsx';
+import { AskPipButton } from '../../../shared/PipChat.jsx';
+import { QuizDone, QuizProgress, WhyChips } from '../../../shared/LessonKit.jsx';
+import { ConfirmSheet, PracticeLinks, RetryCard, RoundBar, Segmented } from '../../../shared/PracticeKit.jsx';
+import { dueMistakeRows, personalKey, recordRoundMistakes } from '../../../shared/study-personal.js';
 import Mark from '../../../shared/circuit/Mark.jsx';
 import Icon from '../../../shared/circuit/Icon.jsx';
 
@@ -45,11 +49,32 @@ export function preload({ userId }) {
   return preloadResource(papersKey(userId), () => api.papers());
 }
 
-export default function Practice({ health, onProgress, userId }) {
+const KIND_LABELS = { listing: 'Four quick choices', truefalse: 'Choose four true', analysis: 'Language analysis' };
+const ROUND_TITLES = {
+  mixed: 'Quick practice',
+  diagnostic: '10-question check',
+  fixup: 'Questions to revisit',
+  memri: 'Memory check',
+};
+
+// Full marks, some marks or self-checked: the tone of a marked answer.
+function verdict(fb) {
+  if (!fb) return null;
+  if (fb.correct === true) return 'right';
+  if (fb.correct === false) return 'wrong';
+  if (fb.ai && fb.marksTotal) return fb.marks >= fb.marksTotal ? 'right' : 'wrong';
+  if (fb.got != null) return fb.got >= (fb.max ?? 4) ? 'right' : 'wrong';
+  return 'self';
+}
+
+// Practice tab: retries first, then a quick round, then timed papers.
+// Rounds, papers and retries run in focus mode (no tab bar).
+export default function Practice({ health, onProgress, progress = null, userId }) {
   const storageKey = activeTestKey(userId);
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const saved = useRef(loadSaved(storageKey));
+  const { mistakes } = useCreatures();
   const [phase, setPhase] = useState(saved.current ? 'restoring' : 'setup');
   const [test, setTest] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -60,19 +85,75 @@ export default function Practice({ health, onProgress, userId }) {
   const [quitOpen, setQuitOpen] = useState(false);
   const [quitting, setQuitting] = useState(false);
   const [error, setError] = useState('');
+  const [paperType, setPaperType] = useState('full');
+  const [kinds, setKinds] = useState(['listing', 'truefalse', 'analysis']);
+  const [count, setCount] = useState(10);
+  const [round, setRound] = useState(null);
+  const [roundBusy, setRoundBusy] = useState(false);
+  const [roundError, setRoundError] = useState('');
   const { data: papersData } = useResource(userId ? papersKey(userId) : null, () => api.papers());
   const papersMeta = papersData?.papers ?? null;
   const submitting = useRef(false);
   const answersRef = useRef({});
   const elapsedRef = useRef(0);
   const secondsLeftRef = useRef(null);
+  const roundStarted = useRef(false);
+  const progressAtStart = useRef(null);
   const [q5First, setQ5First] = useState(() => {
     try { return localStorage.getItem('gcse-english-q5first') === '1'; } catch { return false; }
   });
 
+  useFocusMode(phase === 'running' || phase === 'submitting' || Boolean(round));
+
   useEffect(() => {
     if (saved.current) resumeSaved();
   }, []);
+
+  // Entry points that open straight into a round: the first-day check, and
+  // Fix-Up / memory-check sets built from the notebook.
+  useEffect(() => {
+    if (roundStarted.current) return;
+    const diagnostic = params.get('diagnostic') === '1';
+    const fixup = params.get('fixup') === '1';
+    const memri = params.get('memri') === '1';
+    if (diagnostic) {
+      roundStarted.current = true;
+      startRound({ count: 10, kinds, mode: 'diagnostic' });
+    } else if (fixup || memri) {
+      roundStarted.current = true;
+      let payload = null;
+      try {
+        payload = JSON.parse(localStorage.getItem('gcse-fixup:english') || 'null');
+      } catch {}
+      try { localStorage.removeItem('gcse-fixup:english'); } catch {}
+      startRound({
+        count: 5,
+        kinds: payload?.kinds || kinds,
+        skillIds: payload?.skillIds || [],
+        mode: payload?.mode === 'memri' ? 'memri' : 'fixup',
+        fixupMeta: payload?.mode === 'memri' ? { touchIds: payload?.touchIds || [] } : null,
+      });
+    }
+  }, []);
+
+  async function startRound(options) {
+    setRoundBusy(true);
+    setRoundError('');
+    try {
+      const set = await api.adhoc(options.count, options.kinds || kinds, options.skillIds);
+      progressAtStart.current = progress;
+      setRound({ set, options, before: progress });
+    } catch (e) {
+      setRoundError(e.message || 'Could not load questions. Try again.');
+    } finally {
+      setRoundBusy(false);
+    }
+  }
+
+  function endRound() {
+    setRound(null);
+    if (params.get('diagnostic') || params.get('fixup') || params.get('memri')) navigate('/practice', { replace: true });
+  }
 
   async function resumeSaved() {
     const s = saved.current;
@@ -156,6 +237,7 @@ export default function Practice({ health, onProgress, userId }) {
       answersRef.current = {};
       elapsedRef.current = 0;
       secondsLeftRef.current = t.minutes * 60;
+      progressAtStart.current = progress;
       // Q5-first mode: the 40-mark writing task opens the paper while fresh.
       // Ordering is display-only — marking maps every answer by question id.
       const ordered = q5First && Array.isArray(t.questions)
@@ -220,7 +302,9 @@ export default function Practice({ health, onProgress, userId }) {
       invalidateResources('personal:');
       if (storageKey) localStorage.removeItem(storageKey);
       const resultKey = lastResultKey(userId);
-      if (resultKey) localStorage.setItem(resultKey, JSON.stringify(result));
+      // The progress before the paper lets Results show what it fed.
+      const before = progressAtStart.current ?? progress;
+      if (resultKey) localStorage.setItem(resultKey, JSON.stringify({ ...result, ...(before ? { progressBefore: before } : {}) }));
       navigate('/results');
     } catch (e) {
       if (e.code === 'TEST_EXPIRED') clearExpiredTest(e.message);
@@ -292,169 +376,133 @@ export default function Practice({ health, onProgress, userId }) {
     );
   }
 
-  const paperCards = papersMeta || [
-    { id: 1, code: '8700/1', name: 'Paper 1', blurb: 'Explorations in Creative Reading and Writing' },
-    { id: 2, code: '8700/2', name: 'Paper 2', blurb: 'Writers\u2019 Viewpoints and Perspectives' },
-  ];
-
-  return (
-    <div className="page">
-      <header className="page-head">
-        <div>
-          <h1>Practice papers</h1>
-          <p className="sub">
-            Choose Paper 1 or Paper 2. Each practice set has an 80-mark total, exam timing and suggested time for each question. Paper 1 uses original contemporary fiction; Paper 2 pairs include both older-first and modern-first non-fiction sources. Use official AQA samples as well to practise with published exam passages.
-          </p>
-        </div>
-      </header>
-
-      <section className="panel">
-        <h2>Pick your paper</h2>
-        <div className="papers-grid two">
-          {papersMeta ? (
-            paperCards.map((p) => (
-              <div key={p.id} className="paper-card pick">
-                <div className="paper-top">
-                  <span className="paper-type">{p.code}</span>
-                  <span className="calc-badge yes">{p.id === 1 ? 'Fiction extract' : 'Two sources'}</span>
-                </div>
-                <div className="paper-desc">{p.blurb}</div>
-                <div className="paper-actions">
-                  <button className="btn btn-primary" onClick={() => start('full', p.id)}>
-                    Full · 80 marks · 1h 45m
-                  </button>
-                  <button className="btn" onClick={() => start('short', p.id)}>
-                    Quick · Q1 + Q5 · 50m
-                  </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            [1, 2].map((p) => <div key={p} className="skeleton" aria-hidden="true" />)
-          )}
-        </div>
-        <p className="sub small" style={{ marginTop: 12 }}>
-          Long answers are checked against an AQA-style mark scheme. {health?.aiMarking ? 'Automatic feedback is available.' : 'Use the model answers and rubrics to mark your own work.'}
-        </p>
-        <label className="pass-toggle">
-          <input type="checkbox" checked={q5First} onChange={toggleQ5First} />
-          <span><strong>Q5 first · 40 marks while fresh</strong><small>Open timed papers on the big writing task, then work back through Q1–Q4. Marking is unaffected.</small></span>
-        </label>
-        {error && (
-          <div className="error-banner" role="alert">
-            {error}
-            {saved.current && <button className="btn" onClick={resumeSaved}>Retry saved paper</button>}
-          </div>
-        )}
-      </section>
-
-      <AdhocSection onProgress={onProgress} diagnostic={params.get('diagnostic') === '1'} fixup={params.get('fixup') === '1'} memri={params.get('memri') === '1'} userId={userId} />
-    </div>
-  );
-}
-
-/* ---------------- ad-hoc quick fire ---------------- */
-
-function AdhocSection({ onProgress, diagnostic = false, fixup = false, memri = false, userId = null }) {
-  const diagnosticStarted = useRef(false);
-  const fixupStarted = useRef(false);
-  const [kinds, setKinds] = useState(['listing', 'truefalse', 'analysis']);
-  const [count, setCount] = useState(10);
-  const [running, setRunning] = useState(null);
-  const [fixupMeta, setFixupMeta] = useState(null);
-  const [busy, setBusy] = useState(false);
-
-  async function startAdhoc(countOverride, kindsOverride, skillIds) {
-    setBusy(true);
-    try {
-      const set = await api.adhoc(
-        typeof countOverride === 'number' ? countOverride : count,
-        Array.isArray(kindsOverride) ? kindsOverride : kinds,
-        skillIds,
-      );
-      setRunning(set);
-    } finally {
-      setBusy(false);
-    }
+  if (round) {
+    return (
+      <RoundRunner
+        key={round.set.sessionId}
+        round={round}
+        onExit={endRound}
+        onAgain={() => startRound({ ...round.options, mode: round.options.mode === 'diagnostic' ? 'mixed' : round.options.mode })}
+        onProgress={onProgress}
+        userId={userId}
+      />
+    );
   }
 
-  useEffect(() => {
-    if (!diagnostic || diagnosticStarted.current) return;
-    diagnosticStarted.current = true;
-    setCount(10);
-    startAdhoc(10);
-  }, [diagnostic]);
+  const paperCards = papersMeta || [
+    { id: 1, code: '8700/1', name: 'Paper 1', blurb: 'Explorations in Creative Reading and Writing' },
+    { id: 2, code: '8700/2', name: 'Paper 2', blurb: 'Writers’ Viewpoints and Perspectives' },
+  ];
+  let dueCount = 0;
+  try {
+    dueCount = dueMistakeRows(mistakes.filter((row) => !row.mastered)).length;
+  } catch {}
+  const openCount = mistakes.filter((row) => !row.mastered).length;
 
-  // Fix-Up 5 / memory-check entry: a stored payload names the weak skills.
-  useEffect(() => {
-    if ((!fixup && !memri) || fixupStarted.current) return;
-    fixupStarted.current = true;
-    let payload = null;
-    try {
-      payload = JSON.parse(localStorage.getItem('gcse-fixup:english') || 'null');
-    } catch {}
-    try { localStorage.removeItem('gcse-fixup:english'); } catch {}
-    setCount(5);
-    setFixupMeta(payload?.mode === 'memri' ? { touchIds: payload?.touchIds || [] } : null);
-    startAdhoc(5, payload?.kinds || kinds, payload?.skillIds || []);
-  }, [fixup, memri]);
-
-  function toggleKind(k) {
-    setKinds((s) => {
-      if (s.includes(k)) {
-        if (s.length === 1) return s;
-        return s.filter((x) => x !== k);
-      }
-      return [...s, k];
+  function toggleKind(kind) {
+    setKinds((list) => {
+      if (list.includes(kind)) return list.length === 1 ? list : list.filter((item) => item !== kind);
+      return [...list, kind];
     });
   }
 
-  if (running) {
-    return <AdhocRunner key={running.sessionId} set={running} onExit={() => setRunning(null)} onNew={startAdhoc} onProgress={onProgress} fixupMeta={fixupMeta} userId={userId} />;
-  }
-
-  const fixupActive = fixup || memri;
-
-  const labels = { listing: 'Four quick choices', truefalse: 'Choose four true', analysis: 'Language analysis' };
-
   return (
-    <section className="panel" id="adhoc">
-      <div className="quiz-head">
-        <div>
-          <h2>{fixupActive ? 'Questions to revisit' : 'Quick practice'}</h2>
-          <p className="sub">
-            {fixupActive
-              ? 'Try five questions based on your recent mistakes and lower-scoring skills.'
-              : 'Choose a short set of questions using any text in the bank. You’ll get feedback as you work.'}
+    <div className="page practice-page">
+      <AppHeader />
+      <header className="page-title-row">
+        <h1>Practice</h1>
+      </header>
+      <p className="sub page-intro">Quick questions with feedback as you go, and timed AQA papers.</p>
+      {error && (
+        <div className="error-banner" role="alert">
+          {error}
+          {saved.current && <button className="btn" onClick={resumeSaved}>Retry saved paper</button>}
+        </div>
+      )}
+
+      <div className="practice-grid">
+        <div className="practice-main">
+          <RetryCard dueCount={dueCount} />
+
+          <section className="practice-card mixed-card" id="adhoc" aria-labelledby="adhoc-title">
+            <div className="practice-card-head">
+              <span className="practice-card-icon" aria-hidden="true"><Icon name="practice" size={24} /></span>
+              <div>
+                <h2 id="adhoc-title">Quick practice</h2>
+                <p className="sub">Short questions on real extracts, one at a time, with feedback on each.</p>
+              </div>
+            </div>
+            <div className="field">
+              <span id="kind-label">Question types</span>
+              <div className="chip-row" role="group" aria-labelledby="kind-label">
+                {Object.entries(KIND_LABELS).map(([kind, label]) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    aria-pressed={kinds.includes(kind)}
+                    className={`choice-chip kind-chip${kinds.includes(kind) ? ' on' : ''}`}
+                    onClick={() => toggleKind(kind)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Segmented
+              label="How many questions?"
+              value={count}
+              onChange={setCount}
+              options={[5, 10, 15].map((value) => ({ value, label: `${value} questions` }))}
+            />
+            {roundError ? <div className="error-banner" role="alert">{roundError}</div> : null}
+            <button type="button" className="btn btn-go btn-block" onClick={() => startRound({ count, kinds, mode: 'mixed' })} disabled={roundBusy}>
+              {roundBusy ? 'Loading…' : 'Give me questions'} {roundBusy ? null : <Icon name="arrowRight" size={18} />}
+            </button>
+          </section>
+        </div>
+
+        <section className="papers-section" aria-labelledby="papers-title">
+          <div className="section-head">
+            <h2 id="papers-title" className="section-title">Timed papers</h2>
+            <Segmented
+              label="Paper length"
+              value={paperType}
+              onChange={setPaperType}
+              options={[{ value: 'full', label: 'Full · 1h 45m' }, { value: 'short', label: 'Quick · Q1 + Q5' }]}
+            />
+          </div>
+          <div className="papers-grid two">
+            {papersMeta ? (
+              paperCards.map((p) => (
+                <div key={p.id} className="paper-card pick">
+                  <div className="paper-top">
+                    <span className="paper-type">{p.code}</span>
+                    <span className="calc-badge yes">{p.id === 1 ? 'Fiction extract' : 'Two sources'}</span>
+                  </div>
+                  <div className="paper-desc">{p.blurb}</div>
+                  <div className="paper-actions">
+                    <button type="button" className="btn btn-primary" onClick={() => start(paperType, p.id)}>
+                      {paperType === 'full' ? 'Start full paper' : 'Start quick paper'} <Icon name="arrowRight" size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              [1, 2].map((p) => <div key={p} className="skeleton-block paper-skeleton" aria-hidden="true" />)
+            )}
+          </div>
+          <label className="pass-toggle">
+            <input type="checkbox" checked={q5First} onChange={toggleQ5First} />
+            <span><strong>Q5 first · 40 marks while fresh</strong><small>Open timed papers on the big writing task, then work back through Q1–Q4. Marking is unaffected.</small></span>
+          </label>
+          <p className="field-note">
+            Long answers are checked against an AQA-style mark scheme. {health?.aiMarking ? 'Automatic feedback is available.' : 'Use the model answers and rubrics to mark your own work.'}
           </p>
-        </div>
+        </section>
       </div>
-      <div className="adhoc-controls">
-        <div className="adhoc-row">
-          <span className="adhoc-label">Question types</span>
-          <div className="chip-row">
-            {Object.entries(labels).map(([k, label]) => (
-              <button key={k} className={`suggest-chip source kind-chip ${kinds.includes(k) ? 'on' : ''}`} onClick={() => toggleKind(k)}>
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="adhoc-row">
-          <span className="adhoc-label">How many?</span>
-          <div className="chip-row">
-            {[5, 10, 15].map((c) => (
-              <button key={c} className={`suggest-chip source ${count === c ? 'on' : ''}`} onClick={() => setCount(c)}>
-                {c} questions
-              </button>
-            ))}
-          </div>
-        </div>
-        <button className="btn btn-primary" onClick={startAdhoc} disabled={busy}>
-          {busy ? 'Loading…' : 'Give me questions →'}
-        </button>
-      </div>
-    </section>
+
+      <PracticeLinks notebookCount={openCount} />
+    </div>
   );
 }
 
@@ -480,17 +528,45 @@ export function useExtendedCheck(sessionId) {
   return { feedback, setFeedback, aiResults, checkText, checkAuto };
 }
 
-function AdhocRunner({ set, onExit, onNew, onProgress, fixupMeta = null, userId = null }) {
+/* ---------------- Quick practice: one question at a time ---------------- */
+
+function RoundRunner({ round, onExit, onAgain, onProgress, userId = null }) {
+  const { set, options, before } = round;
+  const mode = options.mode || 'mixed';
+  const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [whys, setWhys] = useState({});
   const [done, setDone] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [combo, setCombo] = useState(0);
+  const [confirmExit, setConfirmExit] = useState(false);
   const { feedback, aiResults, checkText, checkAuto } = useExtendedCheck(set.sessionId);
   const sessionId = set.sessionId;
+  const total = set.questions.length;
+  const q = set.questions[index] || null;
+  const fb = q ? feedback[q.id] : null;
+  const tone = verdict(fb);
+  const last = index === total - 1;
+  const title = ROUND_TITLES[mode] || ROUND_TITLES.mixed;
 
-  async function checkOne(q, value) {
-    if (['list', 'mcq4', 'choose4', 'truefalse'].includes(q.type)) return checkAuto(sessionId, q, value);
-    return checkText(q, value);
+  useEffect(() => {
+    if (done) return;
+    const card = document.querySelector('.quiz-flow .quiz-q');
+    if (card) {
+      card.setAttribute('tabindex', '-1');
+      card.focus({ preventScroll: true });
+    }
+  }, [index, done]);
+
+  async function checkOne(question, value) {
+    const res = ['list', 'mcq4', 'choose4', 'truefalse'].includes(question.type)
+      ? await checkAuto(sessionId, question, value)
+      : await checkText(question, value);
+    const result = verdict(res);
+    if (result === 'right') setCombo((streak) => streak + 1);
+    else if (result === 'wrong') setCombo(0);
+    return res;
   }
 
   async function finish() {
@@ -498,24 +574,31 @@ function AdhocRunner({ set, onExit, onNew, onProgress, fixupMeta = null, userId 
     setBusy(true);
     setError('');
     try {
-      const res = await api.adhocSubmit(sessionId, set.questions.map((q) => ({ qid: q.id, value: answers[q.id] ?? null })), aiResults);
+      const res = await api.adhocSubmit(sessionId, set.questions.map((item) => ({ qid: item.id, value: answers[item.id] ?? null })), aiResults);
       onProgress?.(res.progress);
       invalidateResources('attempts');
       invalidateResources('topics:');
       invalidateResources('personal:');
       if (set.targeted) {
-        api.track?.('fixup_complete', { correctMarks: res.correctMarks, totalMarks: res.totalMarks, memri: Boolean(fixupMeta?.touchIds?.length) });
+        api.track?.('fixup_complete', { correctMarks: res.correctMarks, totalMarks: res.totalMarks, memri: Boolean(options.fixupMeta?.touchIds?.length) });
       }
-      if (fixupMeta?.touchIds?.length) {
+      if (options.fixupMeta?.touchIds?.length) {
         try {
           const { hydratePersonal, touchMistakeRows } = await import('../../../shared/study-personal.js');
           const personal = await hydratePersonal(api, userId, 'english');
-          await api.saveMistakes(touchMistakeRows(personal.mistakes ?? [], fixupMeta.touchIds));
+          await api.saveMistakes(touchMistakeRows(personal.mistakes ?? [], options.fixupMeta.touchIds));
           invalidateResources('personal:');
-          api.track?.('memri_complete', { count: fixupMeta.touchIds.length });
+          api.track?.('memri_complete', { count: options.fixupMeta.touchIds.length });
         } catch {}
       }
-      setDone({ correct: res.correctMarks, total: res.totalMarks, reward: res.reward, progress: res.progress });
+      if (userId && mode !== 'fixup' && mode !== 'memri') {
+        try {
+          await recordRoundMistakes(api, 'english', sessionId, res, { questions: set.questions, answers, feedback, errorTypes: whys });
+        } catch (cause) {
+          console.error('[personal] round mistakes could not be saved', cause);
+        }
+      }
+      setDone({ correct: res.correctMarks, total: res.totalMarks, progress: res.progress });
     } catch (cause) {
       setError(cause.message || 'Could not score this round. Try again.');
     } finally {
@@ -523,49 +606,99 @@ function AdhocRunner({ set, onExit, onNew, onProgress, fixupMeta = null, userId 
     }
   }
 
-  const allDone = set.questions.every((q) => feedback[q.id]);
+  const answered = Object.keys(feedback).length;
+  const pipContext = q && !done
+    ? { kind: 'question', label: title, question: String(q.text || '').trim(), answer: fb ? (answers[q.id]?.text ?? answers[q.id]) : null, wrong: tone === 'wrong' }
+    : { kind: 'practice', label: title };
 
   return (
-    <section className="panel">
-      <div className="quiz-head">
-        <div>
-          <h2>Quick practice</h2>
-          <p className="sub">{set.questions.length} questions from the text bank</p>
-        </div>
-        <button className="btn" onClick={onExit} disabled={busy}>Back to setup</button>
-      </div>
-      <AdhocSourcePanel questions={set.questions} />
-      <div className="quiz">
-        {set.questions.map((q, i) => (
-          <QuestionCard
-            key={q.id}
-            q={q}
-            index={i}
-            value={answers[q.id]}
-            fb={feedback[q.id]}
-            onAnswer={(v) => setAnswers((a) => ({ ...a, [q.id]: v }))}
-            onCheck={(v) => checkOne(q, v)}
-          />
-        ))}
-        {done ? (
-          <div className="quiz-done">
-            <h3>You scored {done.correct}/{done.total}</h3>
-            <RewardSummary reward={done.reward} progress={done.progress} />
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button className="btn btn-primary" onClick={onNew}>Another round</button>
-              <button className="btn" onClick={onExit}>Back to setup</button>
-            </div>
+    <div className="page round-page english-round">
+      <RoundBar
+        title={title}
+        detail={done ? 'Finished' : `${Math.min(index + 1, total)} of ${total}`}
+        onClose={() => (answered > 0 && !done ? setConfirmExit(true) : onExit())}
+        pipContext={pipContext}
+      />
+
+      {done ? (
+        <QuizDone
+          correct={done.correct}
+          total={done.total}
+          before={before}
+          after={done.progress}
+          error={error}
+          againLabel={mode === 'diagnostic' ? 'Practise more' : 'Another round'}
+          onAgain={onAgain}
+          onNext={onExit}
+          nextLabel="Back to Practice"
+        />
+      ) : (
+        <>
+          <AdhocSourcePanel questions={set.questions} currentRef={q?.sourceRef || null} />
+          <div className="quiz-flow">
+            <QuizProgress
+              total={total}
+              index={index}
+              results={set.questions.map((item) => {
+                const result = verdict(feedback[item.id]);
+                return result === 'right' ? true : result === 'wrong' ? false : undefined;
+              })}
+              combo={combo}
+            />
+            <QuestionCard
+              key={q.id}
+              q={q}
+              index={index}
+              value={answers[q.id]}
+              fb={fb}
+              onAnswer={(value) => setAnswers((a) => ({ ...a, [q.id]: value }))}
+              onCheck={(value) => checkOne(q, value)}
+            />
+            {fb ? (
+              <div className={`quiz-feedback ${tone}`}>
+                <p className="quiz-feedback-title" role="status">
+                  <span className="quiz-feedback-mark" aria-hidden="true"><Icon name={tone === 'right' ? 'check' : tone === 'wrong' ? 'close' : 'pen'} size={18} strokeWidth={3} /></span>
+                  {tone === 'right' ? 'Full marks!' : tone === 'wrong' ? 'Check the feedback above, then move on.' : 'Compare your answer with the model above.'}
+                </p>
+                {tone === 'wrong' ? (
+                  <WhyChips
+                    value={whys[q.id] || null}
+                    onChange={(type) => setWhys((map) => ({ ...map, [q.id]: type }))}
+                    types={['knowledge', 'method', 'misread', 'incomplete']}
+                  />
+                ) : null}
+                {error ? <div className="error-banner" role="alert">{error}</div> : null}
+                <div className="quiz-feedback-actions">
+                  {tone === 'wrong' ? (
+                    <AskPipButton context={{ ...pipContext, wrong: true }} label="Ask Pip why" className="btn" />
+                  ) : null}
+                  <button
+                    type="button"
+                    className="btn btn-go"
+                    disabled={busy}
+                    onClick={() => (last ? finish() : setIndex((value) => value + 1))}
+                  >
+                    {busy ? 'Scoring…' : last ? 'Finish & score' : 'Next question'} {busy ? null : <Icon name="arrowRight" size={18} />}
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
-        ) : (
-          <>
-            {error && <div className="error-banner" role="alert">{error}</div>}
-            <button className="btn btn-finish" disabled={busy || !allDone} onClick={finish}>
-              {busy ? 'Scoring…' : 'Finish & score'}
-            </button>
-          </>
-        )}
-      </div>
-    </section>
+        </>
+      )}
+
+      {confirmExit ? (
+        <ConfirmSheet
+          title="End this round?"
+          confirmLabel="End round"
+          danger
+          onConfirm={() => { setConfirmExit(false); onExit(); }}
+          onClose={() => setConfirmExit(false)}
+        >
+          <p>Your answers so far won’t be scored. You can start a new round any time.</p>
+        </ConfirmSheet>
+      ) : null}
+    </div>
   );
 }
 
@@ -590,9 +723,18 @@ function sourceRefLabel(ref_, index) {
   return `${index + 1}. ${title}`;
 }
 
-function AdhocSourcePanel({ questions }) {
+// The round's extracts. The current question's extract opens by default;
+// on phones the panel folds to a short, scrollable strip above the question.
+function AdhocSourcePanel({ questions, currentRef = null }) {
   const sources = sourceRefsFor(questions);
+  const currentKey = currentRef ? sourceRefKey(currentRef) : null;
   const [active, setActive] = useState(0);
+  useEffect(() => {
+    if (!currentKey) return;
+    const found = sources.findIndex((ref_) => sourceRefKey(ref_) === currentKey);
+    if (found >= 0) setActive(found);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentKey]);
   if (!sources.length) return null;
   const current = sources[Math.min(active, sources.length - 1)];
 
@@ -948,6 +1090,7 @@ function TestScreen(props) {
   const quitDialogRef = useRef(null);
   const submitTitleId = useId();
   const quitTitleId = useId();
+  const [view, setView] = useState('question');
   const q = test.questions[current];
   const lowTime = secondsLeft < 600;
   const elapsedMins = elapsed / 60;
@@ -1016,6 +1159,9 @@ function TestScreen(props) {
   return (
     <div className="exam" aria-busy={busy}>
       <header className="exam-bar">
+        <button type="button" className="exam-quit" aria-label="Quit paper" disabled={busy} onClick={() => { setConfirmOpen(false); setQuitOpen(true); }}>
+          <Icon name="close" size={22} strokeWidth={2.4} />
+        </button>
         <div className="exam-title">
           <span className="exam-paper">{test.paperCode} · {test.paperName}</span>
           <span className="calc-badge yes">{test.paperTitle}</span>
@@ -1039,12 +1185,23 @@ function TestScreen(props) {
           </div>
         </div>
         <div className="exam-bar-actions">
-          <button className="btn btn-quit" disabled={busy} onClick={() => { setConfirmOpen(false); setQuitOpen(true); }}>Quit paper</button>
-          <button className="btn btn-submit" disabled={busy} onClick={() => onSubmit(false)}>{busy ? 'Submitting...' : 'Submit paper'}</button>
+          <button className="btn btn-submit" aria-label="Submit paper" disabled={busy} onClick={() => onSubmit(false)}>
+            {busy ? 'Submitting…' : <>Submit<span className="submit-more"> paper</span></>}
+          </button>
         </div>
       </header>
 
-      <div className="exam-with-source">
+      {/* Phones show one pane at a time: the question (default) or the source. */}
+      <div className="exam-view-toggle" role="tablist" aria-label="Show">
+        <button type="button" role="tab" aria-selected={view === 'question'} className={`segment${view === 'question' ? ' on' : ''}`} onClick={() => setView('question')}>
+          Question {current + 1}
+        </button>
+        <button type="button" role="tab" aria-selected={view === 'source'} className={`segment${view === 'source' ? ' on' : ''}`} onClick={() => setView('source')}>
+          {test.paperId === 1 ? 'Extract' : 'Sources'}
+        </button>
+      </div>
+
+      <div className={`exam-with-source view-${view}`}>
         <div className="exam-source-col">
           <div className="source-panel tall">
             <div className="source-meta">
@@ -1097,6 +1254,11 @@ function TestScreen(props) {
           </aside>
 
           <div className="q-card">
+            <button type="button" className="source-peek" onClick={() => setView('source')}>
+              <Icon name="texts" size={18} />
+              <span>{test.paperId === 1 ? 'Read the extract' : 'Read the sources'}</span>
+              <Icon name="chevronRight" size={18} />
+            </button>
             <div className="q-meta">
               <span className="q-tag">Q{current + 1}</span>
               <span className="q-tag marks">{q.marks} marks</span>

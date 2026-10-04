@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import Critter, { CritterBadge } from './circuit/Critter.jsx';
@@ -7,14 +7,9 @@ import Icon from './circuit/Icon.jsx';
 import {
   MAX_TIER,
   RANKS,
-  collectorRank,
-  critterCollection,
-  newEvolutions,
   progressLabel,
-  readSeen,
   remainingCopy,
   shareText,
-  writeSeen,
 } from './critters.js';
 
 // Milestones are a creature collection. Eight study creatures, each fed by
@@ -83,7 +78,7 @@ function useDialog(onClose) {
   return firstRef;
 }
 
-function Meter({ value, legend = false }) {
+export function Meter({ value, legend = false }) {
   return (
     <span className={`critter-meter${legend ? ' is-full' : ''}`} aria-hidden="true">
       <i style={{ width: `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%` }} />
@@ -91,7 +86,7 @@ function Meter({ value, legend = false }) {
   );
 }
 
-function nextCopy(state) {
+export function nextCopy(state) {
   const { critter, tier, next, value } = state;
   if (next == null) return 'Fully evolved. Legend rank';
   const verb = tier === 0 ? 'to hatch' : `to ${critter.forms[tier]}`;
@@ -114,7 +109,7 @@ function speechLines(state) {
   return lines;
 }
 
-function CritterCard({ state, isNew, onOpen }) {
+export function CritterCard({ state, isNew, onOpen, isPartner = false }) {
   const { critter, tier, rank, toNext } = state;
   return (
     <li>
@@ -125,6 +120,7 @@ function CritterCard({ state, isNew, onOpen }) {
         onClick={() => onOpen(state.id)}
       >
         {isNew ? <span className="critter-new">{tier === 1 ? 'Hatched!' : 'Evolved!'}</span> : null}
+        {isPartner && !isNew ? <span className="critter-partner-tag">Partner</span> : null}
         <CritterBadge id={critter.id} tier={tier} toNext={toNext} size={104} />
         <span className="critter-card-name">{state.form}</span>
         <span className="critter-card-rank">{tier > 0 ? `${rank.name} · ` : ''}{critter.track}</span>
@@ -151,7 +147,7 @@ function Hearts() {
   );
 }
 
-function CritterDialog({ state, links, onClose, onShare }) {
+export function CritterDialog({ state, links, onClose, onShare, isPartner = false, onMakePartner = null }) {
   const titleId = useId();
   const closeRef = useDialog(onClose);
   const { critter, tier } = state;
@@ -238,6 +234,11 @@ function CritterDialog({ state, links, onClose, onShare }) {
 
           <div className="modal-actions">
             {href ? <Link className="btn btn-go" to={href} onClick={onClose}>{critter.action.label} <Icon name="arrowRight" size={16} /></Link> : null}
+            {onMakePartner ? (
+              <button type="button" className={`btn partner-toggle${isPartner ? ' on' : ''}`} aria-pressed={isPartner} onClick={() => onMakePartner(state.id)}>
+                {isPartner ? 'Your partner ✓' : 'Make partner'}
+              </button>
+            ) : null}
             {tier > 0 ? <button type="button" className="btn" onClick={() => onShare(state)}>Share</button> : null}
           </div>
         </div>
@@ -246,7 +247,7 @@ function CritterDialog({ state, links, onClose, onShare }) {
   );
 }
 
-function EvolutionDialog({ event, state, count, onNext, onClose, onMeet }) {
+export function EvolutionDialog({ event, state, count, onNext, onClose, onMeet }) {
   const titleId = useId();
   const closeRef = useDialog(onClose);
   const [burst, setBurst] = useState(false);
@@ -285,7 +286,7 @@ function EvolutionDialog({ event, state, count, onNext, onClose, onMeet }) {
   );
 }
 
-function ShareCard({ state, subjectName, api, onClose }) {
+export function ShareCard({ state, subjectName, api, onClose }) {
   const titleId = useId();
   const closeRef = useDialog(onClose);
   const [copied, setCopied] = useState(false);
@@ -331,122 +332,3 @@ function ShareCard({ state, subjectName, api, onClose }) {
     </Overlay>
   );
 }
-
-export function MilestoneShelf({
-  progress = null,
-  mistakes = null,
-  topicCount = 0,
-  subject = 'maths',
-  userId = null,
-  subjectName = 'Study Desk',
-  learnBase = '/learn',
-  nextHref = null,
-  api = null,
-}) {
-  const [openId, setOpenId] = useState(null);
-  const [sharing, setSharing] = useState(null);
-  const [queue, setQueue] = useState([]);
-  const [fresh, setFresh] = useState([]);
-  const states = useMemo(
-    () => critterCollection({ progress, mistakes: mistakes || [], topicCount }),
-    [progress, mistakes, topicCount],
-  );
-  const byId = useMemo(() => Object.fromEntries(states.map((state) => [state.id, state])), [states]);
-  const rank = collectorRank(states);
-  const signature = states.map((state) => state.tier).join('');
-  // Only diff once every evidence source has loaded, so a notebook that is
-  // still fetching never looks like a brand-new evolution.
-  const ready = Boolean(progress && Array.isArray(mistakes) && topicCount > 0);
-
-  useEffect(() => {
-    if (!ready) return;
-    const seen = readSeen(subject, userId);
-    const events = seen ? newEvolutions(seen, states) : [];
-    writeSeen(subject, userId, states);
-    if (events.length) {
-      setQueue(events);
-      setFresh(events.map((event) => event.id));
-    }
-  }, [ready, signature, subject, userId]);
-
-  const closest = states
-    .filter((state) => state.next != null)
-    .sort((a, b) => b.toNext - a.toNext)[0] || null;
-  const links = { learnBase, nextHref };
-  const open = openId ? byId[openId] : null;
-  const event = queue[0] || null;
-
-  return (
-    <section className="panel critter-shelf" aria-labelledby="critters-title">
-      <div className="critter-shelf-head">
-        <div>
-          <p className="eyebrow">Milestones</p>
-          <h2 id="critters-title">Creature collection</h2>
-          <p className="sub">Each creature is fed by one kind of real work. Marked answers, papers and fixed mistakes hatch and evolve them. Opening a page never does.</p>
-        </div>
-        <div className="collector" aria-label={`${rank.name}: ${rank.total} of ${rank.max} evolutions`}>
-          <span className="collector-count"><b>{rank.total}</b>/{rank.max}</span>
-          <span className="collector-copy">
-            <strong>{rank.name}</strong>
-            <small>{rank.next ? `${Math.max(0, rank.next.at - rank.total)} more ${rank.next.at - rank.total === 1 ? 'evolution' : 'evolutions'} to ${rank.next.name}` : 'Every creature at Legend rank'}</small>
-          </span>
-          <Meter value={rank.total / rank.max} legend={rank.total === rank.max} />
-        </div>
-      </div>
-
-      {closest ? (
-        <button type="button" className="critter-closest" onClick={() => setOpenId(closest.id)}>
-          <Critter id={closest.id} tier={closest.tier} progress={closest.toNext} size={44} />
-          <span>
-            <strong>{closest.tier === 0 ? `${closest.critter.family} egg is closest to hatching` : `${closest.form} is closest to evolving`}</strong>
-            <small>{remainingCopy(closest)}</small>
-          </span>
-          <Icon name="arrowRight" size={18} />
-        </button>
-      ) : null}
-
-      <ul className="critter-grid">
-        {states.map((state) => (
-          <CritterCard
-            key={state.id}
-            state={state}
-            isNew={fresh.includes(state.id)}
-            onOpen={(id) => {
-              setOpenId(id);
-              setFresh((list) => list.filter((item) => item !== id));
-            }}
-          />
-        ))}
-      </ul>
-
-      {open && !event ? (
-        <CritterDialog
-          key={open.id}
-          state={open}
-          links={links}
-          onClose={() => setOpenId(null)}
-          onShare={(state) => {
-            setOpenId(null);
-            setSharing(state);
-          }}
-        />
-      ) : null}
-      {event ? (
-        <EvolutionDialog
-          event={event}
-          state={byId[event.id]}
-          count={queue.length}
-          onNext={() => setQueue((list) => list.slice(1))}
-          onClose={() => setQueue([])}
-          onMeet={(id) => {
-            setQueue([]);
-            setFresh((list) => list.filter((item) => item !== id));
-            setOpenId(id);
-          }}
-        />
-      ) : null}
-      {sharing ? <ShareCard state={sharing} subjectName={subjectName} api={api} onClose={() => setSharing(null)} /> : null}
-    </section>
-  );
-}
-

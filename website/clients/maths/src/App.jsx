@@ -20,8 +20,21 @@ const Learn = preloadablePage(() => import('./pages/Learn.jsx'));
 const Topic = preloadablePage(() => import('./pages/Topic.jsx'));
 const Chat = preloadablePage(() => import('./pages/Chat.jsx'));
 const GraphicsLab = preloadablePage(() => import('../../shared/GraphicsLab.jsx'));
+const Creatures = preloadablePage(() => import('../../shared/CreaturesPage.jsx'));
+const Me = preloadablePage(() => import('../../shared/MePage.jsx'));
 const Notebook = preloadablePage(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.Notebook })));
 const WeeklySummary = preloadablePage(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.WeeklySummary })));
+const MathsQuestion = preloadablePage(() => import('./components/MathsQuestion.jsx'));
+
+// Notebook retries re-mark the real question, so they draw it with the
+// same component as lessons and rounds.
+function renderRetryQuestion({ question, value, onChange, onSubmit, disabled, index }) {
+  return (
+    <Suspense fallback={<p className="sub">Loading the question…</p>}>
+      <MathsQuestion q={question} value={value} onChange={onChange} onSubmit={onSubmit} disabled={disabled} index={index} />
+    </Suspense>
+  );
+}
 
 const PREFETCH_PAGES = [Practice, Results, Learn];
 
@@ -35,6 +48,8 @@ const PAGE_ROUTES = [
   { path: '/notebook', page: Notebook },
   { path: '/summary', page: WeeklySummary },
   { path: '/chat', page: Chat },
+  { path: '/creatures', page: Creatures },
+  { path: '/me', page: Me },
   { path: '/lab', page: GraphicsLab },
 ];
 
@@ -52,16 +67,13 @@ function PageFallback() {
 }
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: '01' },
-  { to: '/practice', label: 'Practice', icon: '02' },
-  { to: '/learn', label: 'Learn', icon: '03' },
-  { to: '/notebook', label: 'Notebook', icon: '04' },
-  { to: '/summary', label: 'Summary', icon: '05' },
-  { to: '/chat', label: 'AI Tutor', icon: '06' },
+  { to: '/', label: 'Today' },
+  { to: '/learn', label: 'Learn', match: ['/learn', '/texts'] },
+  { to: '/practice', label: 'Practice', match: ['/practice', '/results', '/notebook'] },
+  { to: '/creatures', label: 'Creatures' },
+  { to: '/me', label: 'Me', match: ['/me', '/summary'] },
 ];
 
-// 2.1: the shell contract lives in shared/AppShell.jsx (one DOM for both
-// subjects; class names frozen for Playwright + responsive CSS).
 function initialTheme() {
   try {
     const stored = localStorage.getItem('gcse-theme');
@@ -89,6 +101,7 @@ export default function App() {
   const { data: topicCatalog } = useResource(ready ? `topics:${subject}:${userId}` : null, () => api.topics());
   // Same personal cache as the dashboard: feeds the Notebook due badge.
   const { data: personal } = useResource(ready ? `personal:${userId}:${subject}` : null, () => hydratePersonal(api, userId, subject));
+  const topicCount = useMemo(() => flattenTopics(topicCatalog, 'strands').length, [topicCatalog]);
   const notebookDue = (() => {
     try {
       return dueMistakeRows(personal?.mistakes ?? []).length;
@@ -99,14 +112,16 @@ export default function App() {
 
   const paletteItems = useMemo(() => {
     const routes = [
-      { href: '/', label: 'Dashboard', group: 'Go', hint: 'command centre' },
-      { href: '/practice', label: 'Practice papers', group: 'Go', hint: 'exam desk' },
-      { href: '/practice?diagnostic=1#adhoc', label: 'Diagnostic · 10 questions', group: 'Go', hint: 'start here' },
-      { href: '/learn', label: 'Learn topics', group: 'Go', hint: 'lessons' },
-      { href: '/notebook', label: 'Mistake notebook', group: 'Go', hint: 'retries' },
+      { href: '/', label: 'Today', group: 'Go', hint: 'what to do next' },
+      { href: '/practice', label: 'Practice', group: 'Go', hint: 'papers and mixed sets' },
+      { href: '/practice?diagnostic=1#adhoc', label: '10-question check', group: 'Go', hint: 'start here' },
+      { href: '/learn', label: 'Learn topics', group: 'Go', hint: 'your map' },
+      { href: '/notebook', label: 'Retry mistakes', group: 'Go', hint: 'due questions' },
+      { href: '/creatures', label: 'Creatures', group: 'Go', hint: 'your collection' },
+      { href: '/me', label: 'Me', group: 'Go', hint: 'exam date and settings' },
       { href: '/summary', label: 'Weekly summary', group: 'Go', hint: 'progress' },
       { href: '/results', label: 'Latest results', group: 'Go', hint: 'marking' },
-      { href: '/chat', label: 'AI tutor', group: 'Go', hint: 'help' },
+      { href: '/chat', label: 'Ask Pip', group: 'Go', hint: 'AI tutor' },
     ];
     const lessons = flattenTopics(topicCatalog, 'strands')
       .slice(0, 60)
@@ -241,8 +256,9 @@ export default function App() {
   if (!auth) {
     return (
       <LoginScreen
-        subjectName="MathsMate"
-        tag={`AQA GCSE Mathematics · ${higherTier ? 'Higher' : 'Foundation'}`}
+        subjectName="GCSE Study Desk"
+        tag={`Maths · ${higherTier ? 'Higher' : 'Foundation'}`}
+        subject={subject}
         letter="M"
         authApi={api.auth}
         onSignedIn={(user) => setAuth(user)}
@@ -253,27 +269,30 @@ export default function App() {
   return (
     <AppShell
       tierClass={higherTier ? 'higher-tier' : 'foundation-tier'}
-      brand={{ letter: higherTier ? 'H' : 'M', name: higherTier ? 'Higher Maths' : 'MathsMate', sub: `AQA ${higherTier ? 'Higher' : 'Foundation'}`, strand: higherTier ? 'algebra' : 'number' }}
+      subject={subject}
+      brand={{ name: 'Study Desk', sub: `Maths · ${higherTier ? 'Higher' : 'Foundation'}` }}
       nav={NAV}
-      auth={auth}
       progress={progress}
-      healthNote={health ? `${health.bankSize?.toLocaleString()}+ questions in the bank` : null}
-      theme={theme}
-      onToggleTheme={toggleTheme}
-      onSignOut={signOut}
+      personal={personal}
+      topicCount={topicCount}
+      health={health}
+      api={api}
+      userId={userId}
       paletteItems={paletteItems}
-      notebookDue={notebookDue}
+      practiceDue={notebookDue}
     >
       <Suspense fallback={<PageFallback />}>
         <Routes>
-          <Route path="/" element={<Dashboard health={health} progress={progress} higherTier={higherTier} userId={userId} />} />
-          <Route path="/practice" element={<Practice onProgress={setProgress} userId={userId} />} />
+          <Route path="/" element={<Dashboard progress={progress} higherTier={higherTier} userId={userId} />} />
+          <Route path="/practice" element={<Practice onProgress={setProgress} progress={progress} userId={userId} />} />
           <Route path="/results" element={<Results userId={userId} />} />
           <Route path="/learn" element={<Learn userId={userId} />} />
-          <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} userId={userId} />} />
-          <Route path="/notebook" element={<Notebook userId={userId} subject={higherTier ? 'maths-higher' : 'maths'} api={api} />} />
+          <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} progress={progress} userId={userId} />} />
+          <Route path="/notebook" element={<Notebook userId={userId} subject={higherTier ? 'maths-higher' : 'maths'} api={api} renderQuestion={renderRetryQuestion} />} />
           <Route path="/summary" element={<WeeklySummary userId={userId} subject={higherTier ? 'maths-higher' : 'maths'} progress={progress} api={api} username={auth.username} />} />
           <Route path="/chat" element={<Chat health={health} userId={userId} />} />
+          <Route path="/creatures" element={<Creatures subjectName={higherTier ? 'Higher Maths' : 'Maths'} api={api} />} />
+          <Route path="/me" element={<Me userId={userId} username={auth.username} subject={subject} api={api} progress={progress} topics={flattenTopics(topicCatalog, 'strands')} theme={theme} onToggleTheme={toggleTheme} onSignOut={signOut} />} />
           <Route path="/lab" element={<GraphicsLab subject={subject} />} />
         </Routes>
       </Suspense>

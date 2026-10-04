@@ -1,179 +1,202 @@
-import { NavLink } from 'react-router-dom';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import CommandPalette from './CommandPalette.jsx';
 import Icon from './circuit/Icon.jsx';
-import Emblem from './circuit/Emblem.jsx';
-import { HudChip } from './circuit/bits.jsx';
+import Critter from './circuit/Critter.jsx';
+import SubjectSheet, { SubjectEmblem, subjectInfo } from './SubjectSheet.jsx';
+import { CreatureProvider, PartnerAvatar, formName, useCreatures } from './creatures.jsx';
+import { PipProvider } from './PipChat.jsx';
+import { readiness } from './study.js';
 
-// Circuit shell — shared by MathsMate (Foundation + Higher) and EnglishMate.
+// Study Desk app shell, shared by Maths (Foundation + Higher) and English.
 //
-// Desktop: a night "control rail" (brand, HUD counters, nav, account).
-// Tablet: the same rail collapses to icons and scrolls on its own.
-// Mobile: the rail becomes a slim top bar and the nav docks as a bottom
-// tab bar (Brilliant/Mimo pattern) — all inside the same DOM.
+// Five destinations: Today, Learn, Practice, Creatures and Me.
+// Phone: a floating bottom tab bar; each screen draws its own header (subject
+// pill, streak, partner). Desktop and tablet: a night rail with the subject
+// switcher, the tabs and your partner creature.
+// Focus mode hides both while a lesson, paper or retry is on screen.
 //
 // Class contract (asserted by website/ui-tests/app.spec.js): .sidebar,
-// .subject-switch, .sign-out, .nav-item (order + aria-labels), .theme-toggle,
-// .logo-icon, #main-content. Keep them when restyling.
+// .subject-switch, .nav-item (order + aria-labels), .logo-icon, #main-content.
 
-const NAV_ICONS = {
-  Dashboard: 'home',
-  Practice: 'practice',
-  Papers: 'practice',
-  Learn: 'learn',
-  Texts: 'texts',
-  Notebook: 'notebook',
-  Summary: 'summary',
-  'AI Tutor': 'tutor',
-};
+const NAV_ICONS = { Today: 'home', Learn: 'learn', Practice: 'practice', Creatures: 'egg', Me: 'user' };
 
-const GROUPS = [
-  { id: 'journey', label: 'Home', match: ['/'] },
-  { id: 'practise', label: 'Study', match: ['/practice', '/results', '/learn', '/texts'] },
-  { id: 'review', label: 'Review', match: ['/notebook', '/summary', '/chat'] },
-];
+const ShellContext = createContext({
+  subject: 'maths',
+  streak: 0,
+  focus: false,
+  setFocus: () => {},
+  openSubjects: () => {},
+});
 
-const SHORT_LABELS = { Dashboard: 'Home', 'AI Tutor': 'Tutor', Notebook: 'Retry' };
+export function useShell() {
+  return useContext(ShellContext);
+}
+
+// Hides the tab bar and rail while the calling screen is mounted and active.
+export function useFocusMode(active = true) {
+  const { setFocus } = useShell();
+  useEffect(() => {
+    if (!active) return undefined;
+    setFocus((count) => count + 1);
+    return () => setFocus((count) => Math.max(0, count - 1));
+  }, [active, setFocus]);
+}
+
+function isActive(item, pathname) {
+  return (item.match || [item.to]).some((path) => (path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(`${path}/`)));
+}
+
+// Header for the tab screens: subject pill (opens the switcher), optional
+// page actions, the streak and your partner creature.
+export function AppHeader({ children = null, showStreak = true }) {
+  const { subject, streak, openSubjects } = useShell();
+  const info = subjectInfo(subject);
+  return (
+    <header className="app-header">
+      <button type="button" className="subject-pill" onClick={openSubjects} aria-label={`Switch subject. Now: ${info.name}`}>
+        <SubjectEmblem subject={subject} size={30} />
+        <span className="subject-pill-name">{info.short}</span>
+        <span className="subject-pill-tier">{info.tier}</span>
+        <Icon name="chevronDown" size={18} strokeWidth={2.4} />
+      </button>
+      <span className="app-header-space" />
+      {children}
+      {showStreak ? (
+        <Link to="/creatures" className="streak-chip" aria-label={streak > 0 ? `${streak} day streak` : 'No streak yet'}>
+          <Icon name="flame" size={20} />
+          <b>{streak}</b>
+        </Link>
+      ) : null}
+      <PartnerAvatar size={44} className="header-partner" />
+    </header>
+  );
+}
+
+function RailPartner() {
+  const { partner, rank } = useCreatures();
+  if (!partner) return null;
+  return (
+    <Link to="/creatures" className="rail-partner" aria-label={`Creatures. Your partner ${formName(partner)}, ${rank.name}`}>
+      <span className="rail-partner-art" aria-hidden="true">
+        <Critter id={partner.id} tier={partner.tier} progress={partner.toNext} size={58} />
+      </span>
+      <span className="rail-partner-copy">
+        <strong>{formName(partner)}</strong>
+        <small>{rank.name} · {rank.total}/{rank.max}</small>
+        <span className="growth-meter-track" aria-hidden="true"><i style={{ width: `${Math.round((partner.next == null ? 1 : partner.toNext) * 100)}%` }} /></span>
+      </span>
+    </Link>
+  );
+}
 
 export default function AppShell({
   tierClass = '',
-  brand = { letter: 'S', name: 'Study Desk', sub: '' },
+  subject = 'maths',
+  brand = { name: 'Study Desk', sub: '' },
   nav = [],
-  auth = null,
   progress = null,
-  healthNote = null,
-  theme = 'light',
-  onToggleTheme = () => {},
-  onSignOut = () => {},
+  personal = null,
+  topicCount = 0,
+  health = null,
+  api = null,
+  userId = null,
   paletteItems = [],
-  notebookDue = null,
+  practiceDue = 0,
   children = null,
 }) {
-  const dark = theme === 'dark';
-  const groupOf = (to) => (GROUPS.find((g) => g.match.includes(to)) || GROUPS[0]).id;
-  const groupLabel = (id) => (GROUPS.find((g) => g.id === id) || {}).label || id;
+  const location = useLocation();
+  const [focusCount, setFocus] = useState(0);
+  const [subjectsOpen, setSubjectsOpen] = useState(false);
+  const openSubjects = useCallback(() => setSubjectsOpen(true), []);
+  const focus = focusCount > 0;
   const streak = progress?.streak ?? 0;
-  const xpPct = progress?.xpNeeded ? Math.min(100, (progress.xpInto / progress.xpNeeded) * 100) : 0;
-  let lastGroup = null;
+  const info = subjectInfo(subject);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('in-focus-mode', focus);
+    return () => document.documentElement.classList.remove('in-focus-mode');
+  }, [focus]);
+
+  const shellValue = useMemo(() => ({ subject, streak, focus, setFocus, openSubjects }), [subject, streak, focus, openSubjects]);
+
+  const examDate = personal?.preferences?.examDate || '';
+  const evidence = readiness(progress);
+  const status = [
+    evidence.ready ? `Readiness ${evidence.score}%` : null,
+    examDate ? `exams ${new Date(`${examDate}T12:00:00`).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}` : null,
+  ].filter(Boolean).join(' · ').replace(/^./, (letter) => letter.toUpperCase());
 
   return (
-    <div className={`app ${tierClass}`.trim()}>
-      <a className="skip-link" href="#main-content">Skip to content</a>
-      <aside className="sidebar" aria-label="Study section">
-        <div className="logo">
-          <span className="logo-icon" aria-hidden="true">
-            <Emblem topicId={`subject:${brand.name}`} strand={brand.strand || 'number'} layers={3} ring={false} size={30} />
-          </span>
-          <div className="logo-text">
-            <div className="logo-name">{brand.name}</div>
-            {brand.sub ? <div className="logo-sub">{brand.sub}</div> : null}
-          </div>
-          {paletteItems.length > 0 ? (
-            <button
-              type="button"
-              className="mobile-palette-btn"
-              aria-label="Quick jump to any page or topic (Control K)"
-              onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}
-            >
-              <Icon name="search" size={20} />
-            </button>
-          ) : null}
-        </div>
-
-        {progress ? (
-          <div className="rail-hud" aria-label="Your study counters">
-            <HudChip icon="flame" tone="flame" value={streak} label={streak === 1 ? 'day' : 'days'} title={streak > 0 ? `${streak} day streak` : 'Streak paused — rest is part of the plan'} />
-            <HudChip icon="gem" tone="gem" value={progress.xp ?? progress.xpInto ?? 0} label="XP" title={`${progress.xp ?? progress.xpInto ?? 0} XP earned`} />
-            <HudChip icon="bolt" tone="bolt" value={progress.level ?? 1} label="lvl" title={`Level ${progress.level ?? 1}`} />
-          </div>
-        ) : null}
-
-        <a className="subject-switch" href="/" aria-label="Return to all subjects">
-          <Icon name="arrowLeft" size={18} />
-          <span className="subject-switch-label">All subjects</span>
-        </a>
-
-        <nav aria-label="Study sections">
-          {nav.map((item) => {
-            const g = groupOf(item.to);
-            const showLabel = g !== lastGroup;
-            lastGroup = g;
-            return (
-              <div key={item.to} className="nav-group" role="group" aria-label={groupLabel(g)} style={{ display: 'contents' }}>
-                {showLabel ? <div className="nav-group-label" aria-hidden="true">{groupLabel(g)}</div> : null}
-                <NavLink
-                  to={item.to}
-                  end={item.to === '/'}
-                  aria-label={item.label}
-                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                >
-                  <span className="nav-icon" aria-hidden="true">
-                    <Icon name={NAV_ICONS[item.label] || 'sparkle'} size={22} />
-                  </span>
-                  <span className="nav-label">{item.label}</span>
-                  <span className="nav-short" aria-hidden="true">{SHORT_LABELS[item.label] || item.label}</span>
-                  {item.to === '/notebook' && notebookDue > 0 ? (
-                    <span className="nav-badge" aria-label={`${notebookDue} mistakes due`}>{notebookDue > 9 ? '9+' : notebookDue}</span>
-                  ) : null}
-                </NavLink>
-              </div>
-            );
-          })}
-        </nav>
-
-        <div className="sidebar-foot">
-          {paletteItems.length > 0 ? (
-            <div className="palette-slot">
-              <CommandPalette items={paletteItems} />
-            </div>
-          ) : null}
-          {progress ? (
-            <div
-              className="level-card"
-              aria-label={`Level ${progress.level}, ${progress.streak > 0 ? `${progress.streak} day streak` : 'streak paused, rest is part of the plan'}${progress.streakFreezes ? `, ${progress.streakFreezes} streak freezes banked` : ''}`}
-            >
-              <div className="level-row">
-                <span className="level-name">Level {progress.level}</span>
-                <span className="streak-mark">
-                  <span className="streak-dot" aria-hidden="true" />
-                  {progress.streak > 0 ? `${progress.streak} day${progress.streak === 1 ? '' : 's'}` : 'Paused'}
+    <ShellContext.Provider value={shellValue}>
+      <CreatureProvider subject={subject} userId={userId} progress={progress} mistakes={personal?.mistakes ?? null} topicCount={topicCount}>
+        <PipProvider api={api} subject={subject} userId={userId} health={health}>
+          <div className={`app ${tierClass}${focus ? ' focus-mode' : ''}`.trim()}>
+            <a className="skip-link" href="#main-content">Skip to content</a>
+            <aside className="sidebar" aria-label="Study Desk">
+              <div className="logo">
+                <span className="logo-icon" aria-hidden="true">
+                  <SubjectEmblem subject={subject} size={30} />
                 </span>
+                <div className="logo-text">
+                  <div className="logo-name">Study Desk</div>
+                  <div className="logo-sub">{brand.sub || info.detail}</div>
+                </div>
               </div>
-              <div className="xp-bar" role="img" aria-label={`${progress.xpInto} of ${progress.xpNeeded} XP to next level`}>
-                <div className="xp-fill" style={{ width: `${xpPct}%` }} />
+
+              <button type="button" className="subject-switch" onClick={openSubjects} aria-label={`Switch subject. Now: ${info.name}`}>
+                <span className="subject-switch-copy">
+                  <span className="subject-switch-name">{info.name}</span>
+                  <span className="subject-switch-label">Switch subject</span>
+                </span>
+                <Icon name="chevronDown" size={18} />
+              </button>
+
+              <nav aria-label="Main">
+                {nav.map((item) => {
+                  const active = isActive(item, location.pathname);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      aria-label={item.label}
+                      aria-current={active ? 'page' : undefined}
+                      className={`nav-item${active ? ' active' : ''}`}
+                    >
+                      <span className="nav-icon" aria-hidden="true">
+                        <Icon name={NAV_ICONS[item.label] || 'sparkle'} size={22} />
+                      </span>
+                      <span className="nav-label">{item.label}</span>
+                      {item.to === '/practice' && practiceDue > 0 ? (
+                        <span className="nav-badge" aria-label={`${practiceDue} ${practiceDue === 1 ? 'retry' : 'retries'} due`}>{practiceDue > 9 ? '9+' : practiceDue}</span>
+                      ) : null}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              <div className="sidebar-foot">
+                {paletteItems.length > 0 ? (
+                  <div className="palette-slot">
+                    <CommandPalette items={paletteItems} />
+                  </div>
+                ) : null}
+                <RailPartner />
+                <div className="shell-foot-links" aria-label="Support">
+                  <a href="/support.html">Support</a>
+                  <a href="/feedback.html">Feedback</a>
+                </div>
               </div>
-              <div className="xp-note">
-                {progress.xpInto}/{progress.xpNeeded} XP to next level
-                {progress.streakFreezes > 0 ? ` · ${progress.streakFreezes} freeze${progress.streakFreezes === 1 ? '' : 's'} banked` : ''}
-              </div>
-            </div>
+            </aside>
+            <main className="content" id="main-content" tabIndex={-1}>
+              {children}
+            </main>
+          </div>
+          {subjectsOpen ? (
+            <SubjectSheet current={subject} status={status} pathname={location.pathname} onClose={() => setSubjectsOpen(false)} />
           ) : null}
-          <div className="rail-actions">
-            <button
-              type="button"
-              className="theme-toggle"
-              onClick={onToggleTheme}
-              aria-pressed={dark}
-              aria-label={`Switch to ${dark ? 'light' : 'dark'} mode`}
-            >
-              <Icon name={dark ? 'sun' : 'moon'} size={20} />
-              <span className="theme-toggle-label">{dark ? 'Light mode' : 'Dark mode'}</span>
-            </button>
-            <button type="button" className="sign-out" onClick={onSignOut} aria-label={`Sign out${auth?.username ? ` (${auth.username})` : ''}`}>
-              <Icon name="signOut" size={20} />
-              <span className="sign-out-label">Sign out</span>
-              {auth?.username ? <span className="sign-out-user">&middot; {auth.username}</span> : null}
-            </button>
-          </div>
-          {healthNote ? <div className="bank-note">{healthNote}</div> : null}
-          <div className="shell-foot-links" aria-label="Support">
-            <a href="/support.html">Support</a>
-            <a href="/feedback.html">Feedback</a>
-          </div>
-        </div>
-      </aside>
-      <main className="content" id="main-content" tabIndex={-1}>
-        {children}
-      </main>
-    </div>
+        </PipProvider>
+      </CreatureProvider>
+    </ShellContext.Provider>
   );
 }

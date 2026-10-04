@@ -5,7 +5,7 @@ import { MilestoneShelf } from './Milestones.jsx';
 import { NextStepCard } from './NextStep.jsx';
 import { masteryStage } from './next-step.js';
 import { dateKey } from './study.js';
-import Emblem, { StrandBadge } from './circuit/Emblem.jsx';
+import { StrandBadge } from './circuit/Emblem.jsx';
 import IsoTile from './circuit/IsoTile.jsx';
 import Icon from './circuit/Icon.jsx';
 import Pip from './circuit/Pip.jsx';
@@ -19,7 +19,6 @@ import { hueVar, starsFor, strandInfo } from './circuit/palette.js';
 //   strip     four honest numbers with custom glyphs
 //   map       the next five level tiles on your path → the full map
 //   week      mission + readiness + 7-day plan (StudyDashboard)
-//   shapes    the emblem collection: every topic, built from marks
 //   boss      timed papers as boss levels
 //   creatures milestones: evidence-fed creatures that hatch and evolve
 //   proof     level/badges, memory checks
@@ -120,29 +119,6 @@ function PathPreview({ topics, learnBase }) {
         );
       })}
     </ol>
-  );
-}
-
-function ShapeCollection({ topics, learnBase }) {
-  const built = topics.filter((topic) => masteryStage(topic.accuracy, topic.answered).id !== 'new').length;
-  return (
-    <div className="shape-collection">
-      <p className="sub">{built} of {topics.length} emblems started. Each one gains a layer as your marked answers improve — replay a lesson to upgrade it.</p>
-      <ul className="shape-grid">
-        {topics.map((topic) => {
-          const stage = masteryStage(topic.accuracy, topic.answered);
-          const strand = topic.strand || topic.section;
-          return (
-            <li key={topic.id}>
-              <Link to={`${learnBase}/${topic.id}`} className={`shape-cell stage-${stage.id}`} style={{ '--strand': hueVar(strandInfo(strand).hue) }} aria-label={`${topic.name}: ${stage.text}`}>
-                <Emblem topicId={topic.id} strand={strand} stage={stage.id} size={54} />
-                <span className="shape-name">{topic.name}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
   );
 }
 
@@ -309,7 +285,6 @@ export default function DashboardHome({
             })}
           </div>
         )}
-        {topics.length ? <ShapeCollection topics={topics} learnBase={learnBase} /> : null}
       </section>
 
       <SectionTitle num="03">Boss levels</SectionTitle>

@@ -269,7 +269,7 @@
 .onboarding-card { border: 2px solid var(--emblem-line) !important; background: var(--c-surface) !important; box-shadow: 0 5px 0 var(--emblem-line) !important; }
 .onboarding-card h2 { margin: 6px 0 8px; font-family: var(--font-display); font-weight: 700; }
 
-/* Shape collection */
+/* Mastery by strand */
 .mastery-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .strand-bars { display: grid; gap: 8px; margin-top: 12px; }
 .strand-bar {
@@ -307,13 +307,6 @@
 .v3-stage.secure { background: color-mix(in srgb, var(--hue-green) 18%, var(--c-surface)); color: var(--c-good); }
 .v3-stage.mastered { background: var(--hue-volt); color: var(--volt-ink); }
 
-.shape-collection { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--c-line-strong); }
-.shape-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
-.shape-cell { display: grid; justify-items: center; gap: 6px; height: 100%; padding: 12px 6px 10px; border: 1px solid var(--c-line); border-radius: var(--r-md); background: var(--c-surface); color: var(--c-ink); text-align: center; text-decoration: none; transition: transform var(--d-1), border-color var(--d-1); }
-.shape-cell:hover { border-color: var(--strand); transform: translateY(-2px); }
-.shape-cell.stage-new { background: var(--c-surface-2); }
-.shape-cell.stage-mastered { border-color: var(--hue-volt); box-shadow: 0 0 0 3px color-mix(in srgb, var(--hue-volt) 30%, transparent); }
-.shape-name { font-size: 0.72rem; font-weight: 700; line-height: 1.2; }
 
 /* Boss levels (papers) */
 .boss-panel h2 { font-family: var(--font-display); font-weight: 700; }

@@ -432,22 +432,6 @@ export default function Practice({ health, onProgress, progress = null, userId }
                 <p className="sub">Short questions on real extracts, one at a time, with feedback on each.</p>
               </div>
             </div>
-            <div className="field">
-              <span id="kind-label">Question types</span>
-              <div className="chip-row" role="group" aria-labelledby="kind-label">
-                {Object.entries(KIND_LABELS).map(([kind, label]) => (
-                  <button
-                    key={kind}
-                    type="button"
-                    aria-pressed={kinds.includes(kind)}
-                    className={`choice-chip kind-chip${kinds.includes(kind) ? ' on' : ''}`}
-                    onClick={() => toggleKind(kind)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
             <span className="segmented-label" id="count-label">How many questions?</span>
             <Segmented
               label="How many questions?"
@@ -455,9 +439,28 @@ export default function Practice({ health, onProgress, progress = null, userId }
               onChange={setCount}
               options={[5, 10, 15].map((value) => ({ value, label: String(value) }))}
             />
+            <details className="practice-options">
+              <summary>Options</summary>
+              <div className="field">
+                <span id="kind-label">Question types</span>
+                <div className="chip-row" role="group" aria-labelledby="kind-label">
+                  {Object.entries(KIND_LABELS).map(([kind, label]) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      aria-pressed={kinds.includes(kind)}
+                      className={`choice-chip kind-chip${kinds.includes(kind) ? ' on' : ''}`}
+                      onClick={() => toggleKind(kind)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </details>
             {roundError ? <div className="error-banner" role="alert">{roundError}</div> : null}
             <button type="button" className="btn btn-go btn-block" onClick={() => startRound({ count, kinds, mode: 'mixed' })} disabled={roundBusy}>
-              {roundBusy ? 'Loading…' : 'Give me questions'} {roundBusy ? null : <Icon name="arrowRight" size={18} />}
+              {roundBusy ? 'Loading…' : `Start ${count} questions`}
             </button>
           </section>
         </div>
@@ -736,12 +739,21 @@ function AdhocSourcePanel({ questions, currentRef = null }) {
   const sources = sourceRefsFor(questions);
   const currentKey = currentRef ? sourceRefKey(currentRef) : null;
   const [active, setActive] = useState(0);
+  const tabsRef = useRef(null);
   useEffect(() => {
     if (!currentKey) return;
     const found = sources.findIndex((ref_) => sourceRefKey(ref_) === currentKey);
     if (found >= 0) setActive(found);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey]);
+  // The tabs scroll sideways on a phone; keep the open extract's tab in view
+  // without moving the page.
+  useEffect(() => {
+    const strip = tabsRef.current;
+    const tab = strip?.querySelector('[aria-selected="true"]');
+    if (!strip || !tab) return;
+    strip.scrollLeft = Math.max(0, tab.offsetLeft - (strip.clientWidth - tab.offsetWidth) / 2);
+  }, [active]);
   if (!sources.length) return null;
   const current = sources[Math.min(active, sources.length - 1)];
 
@@ -755,7 +767,7 @@ function AdhocSourcePanel({ questions, currentRef = null }) {
         <span className="adhoc-source-count">{sources.length} {sources.length === 1 ? 'extract' : 'extracts'}</span>
       </div>
       {sources.length > 1 && (
-        <div className="source-tabs adhoc-source-tabs" role="tablist" aria-label="Round extracts">
+        <div className="source-tabs adhoc-source-tabs" role="tablist" aria-label="Round extracts" ref={tabsRef}>
           {sources.map((ref_, index) => (
             <button
               key={sourceRefKey(ref_)}
@@ -763,6 +775,7 @@ function AdhocSourcePanel({ questions, currentRef = null }) {
               aria-selected={active === index}
               className={`source-tab ${active === index ? 'on' : ''}`}
               onClick={() => setActive(index)}
+              title={sourceRefLabel(ref_, index)}
             >
               {sourceRefLabel(ref_, index)}
             </button>
@@ -999,7 +1012,7 @@ export function QuestionCard({ q, index, value, fb, onAnswer, onCheck, showSourc
         <span>Q{index + 1}</span>
         <span>{q.marks} marks</span>
         {q.targetMins && <span>~{q.targetMins} min</span>}
-        <span>{q.title?.replace('Practice · ', '') || ''}</span>
+        <span className="quiz-q-kind">{q.title?.replace('Practice · ', '') || ''}</span>
         {q.markType === 'ai' && <span className="mark-chip ai">AI-marked</span>}
         {q.markType === 'auto' && <span className="mark-chip auto">auto-marked</span>}
         {q.markType === 'self' && <span className="mark-chip off">self-check</span>}

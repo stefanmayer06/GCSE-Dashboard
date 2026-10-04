@@ -936,9 +936,11 @@ test('English quick-fire shows extracts and marks four selected statements', asy
   await signIn(page);
   await page.goto(`${BASE}/english/practice`, { waitUntil: 'networkidle' });
 
+  // Question types sit under Options; the defaults need no choosing.
+  await page.locator('#adhoc .practice-options summary').click();
   await page.getByRole('button', { name: 'Four quick choices' }).click();
   await page.getByRole('button', { name: 'Language analysis' }).click();
-  await page.getByRole('button', { name: /Give me questions/ }).click();
+  await page.getByRole('button', { name: /^Start \d+ questions$/ }).click();
 
   const sourcePanel = page.locator('.adhoc-source-panel');
   await expect(sourcePanel).toBeVisible();
@@ -1114,7 +1116,7 @@ test('mixed practice asks one question at a time and saves misses for a retry', 
     await question.getByRole('button', { name: 'Check answer' }).click();
     await page.getByRole('button', { name: index === 9 ? 'Finish & score' : 'Next question' }).click();
   }
-  await expect(page.locator('.quiz-done')).toContainText('You scored');
+  await expect(page.locator('.quiz-done')).toContainText('of 10 right');
   await expect.poll(async () => {
     const personal = await (await page.request.get(`${BASE}/api/maths/personal`)).json();
     return personal.mistakes.length;

@@ -611,6 +611,8 @@ function RoundRunner({ round, subject, onExit, onAgain, onProgress, userId }) {
         <QuizDone
           correct={done.correct}
           total={done.total}
+          right={set.questions.filter((item) => feedback[item.id]?.correct).length}
+          questions={set.questions.length}
           before={before}
           after={done.progress}
           error={error}
@@ -624,7 +626,7 @@ function RoundRunner({ round, subject, onExit, onAgain, onProgress, userId }) {
           <QuizProgress total={total} index={index} results={set.questions.map((item) => feedback[item.id]?.correct)} combo={combo} />
           <div key={q.id} className={`quiz-q ${fb ? (fb.correct ? 'right' : 'wrong') : ''}`} tabIndex={-1} role="group" aria-label={`Question ${index + 1} of ${total}`}>
             <div className="quiz-q-meta">
-              <span>Q{index + 1} · {q.topic}</span>
+              <span className="quiz-q-kind">Q{index + 1} · {q.topic}</span>
               <span>{q.marks} mark{q.marks > 1 ? 's' : ''}</span>
               {q.stretch && !q.exceptional ? <span className="q-tag stretch">Stretch</span> : null}
               {q.exceptional ? <span className="q-tag stretch">Synoptic challenge</span> : null}

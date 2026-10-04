@@ -138,7 +138,7 @@
 .quiz-start-feeds { margin: 0; color: var(--subject-strong); font-size: var(--t-small); font-weight: 800; }
 .quiz-start .btn-block { max-width: 420px; }
 
-.quiz-flow { display: grid; gap: 14px; }
+.quiz-flow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .quiz-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .quiz-progress-count { color: var(--c-muted); font-family: var(--font-mono); font-size: var(--t-micro); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
 .quiz-dots { display: flex; flex: 1; gap: 6px; min-width: 120px; margin: 0; padding: 0; list-style: none; }
@@ -214,13 +214,15 @@
 .quiz-done { justify-items: stretch; }
 .quiz-done .eyebrow { color: var(--hue-volt); }
 .quiz-done .creature-gains { margin: 0; }
+.quiz-done-marks { margin: -8px 0 0; color: var(--c-night-muted); font-family: var(--font-mono); font-weight: 700; }
 .quiz-done-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .quiz-done .btn:not(.btn-go) { border-color: var(--c-night-3); background: transparent; color: var(--c-night-ink); }
 .quiz-done .btn:not(.btn-go):hover { border-color: var(--c-night-muted); }
 .quiz-done :focus-visible { outline-color: var(--hue-volt); }
 
 /* Lesson complete (creature version of the reward card). */
-.lesson-complete { padding-top: 26px; }
+/* The margin leaves room for the creature that sits over the card's top edge. */
+.lesson-complete { margin-top: 84px; padding-top: 26px; }
 .reward-creature {
   display: grid;
   place-items: center;
@@ -234,6 +236,8 @@
   animation: c-pop var(--d-4) var(--ease-spring) both 120ms;
 }
 .lesson-complete .creature-gains { margin: 14px 0 18px; }
+/* A tall celebration card scrolls inside its backdrop on short screens. */
+.reward-backdrop { overflow-y: auto; overscroll-behavior: contain; }
 
 /* ---------- Practice hub ---------- */
 .practice-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 18px; margin-bottom: 18px; }
@@ -310,6 +314,9 @@
   border-radius: var(--r-pill);
   background: var(--c-surface-3);
 }
+/* Learn's Skills | Texts tabs fill their row on both pages. */
+.segmented.learn-tabs { display: flex; }
+.learn-tabs .segment { flex: 1; }
 
 .segment {
   flex: 1 1 auto;
@@ -339,9 +346,18 @@
 .hint-button { display: inline-flex; align-items: center; justify-self: start; gap: 6px; min-height: 40px; color: var(--c-warn); text-decoration: none; }
 .review-answer { margin-top: 6px; font-weight: 800; }
 .english-round .adhoc-source-panel { margin-bottom: 14px; }
+/* Round extracts: one sideways-scrolling row of tabs, never a wrapped blob.
+   Positioned so each tab's offsetLeft is measured from the strip. */
+.adhoc-source-tabs { position: relative; flex-wrap: nowrap; margin-bottom: 8px; overflow-x: auto; border-radius: var(--r-md); scrollbar-width: thin; }
+.adhoc-source-tabs .source-tab { flex: none; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .retry-card .quiz-q-text { margin-bottom: 10px; }
-.retry-card .quiz-q-meta span:last-child { flex: none; white-space: nowrap; }
+/* Question meta wraps whole items rather than splitting "8 marks" over two
+   lines; the last item (marks or marking chip) keeps to the right. */
+.quiz-q-meta { flex-wrap: wrap; justify-content: flex-start; gap: 4px 14px; }
+.quiz-q-meta > span { white-space: nowrap; }
+.quiz-q-meta > .quiz-q-kind { min-width: 0; white-space: normal; }
+.quiz-q-meta > span:last-child { margin-left: auto; }
 .retry-recall { margin-top: 6px; }
 .retry-recall textarea { width: 100%; min-height: 84px; padding: 10px 12px; }
 .retry-correction { display: grid; gap: 2px; margin: 0; padding: 10px 12px; border-radius: var(--r-sm); background: var(--c-surface); font-size: var(--t-small); }
@@ -382,6 +398,92 @@ button.btn-danger { border-color: var(--c-bad); background: var(--c-bad); color:
 .confirm-sheet .sheet-body p { margin: 0; color: var(--c-muted); }
 .results-gains .creature-gains { margin: 0; }
 .notebook-page .page-head { align-items: center; }
+/* Notebook rows preview two lines of the question until opened. */
+.notebook-row:not(.open) .notebook-title p { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.notebook-row { padding: 0; }
+.notebook-body { padding: 0 16px 16px; border-bottom: 0; }
+.notebook-more { margin-top: 4px; }
+
+@media (max-width: 640px) {
+  .notebook-page .stat-row,
+  .weekly-summary .stat-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 18px; }
+  .weekly-summary .stat-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .notebook-page .stat-card,
+  .weekly-summary .stat-card { gap: 4px; min-height: 0; padding: 10px 8px; border-radius: var(--r-md); }
+  .notebook-page .stat-card .stat-num,
+  .weekly-summary .stat-card .stat-num { font-size: 1.3rem; }
+  .notebook-page .stat-card .stat-label,
+  .weekly-summary .stat-card .stat-label { font-size: 0.56rem; letter-spacing: 0.04em; line-height: 1.25; }
+  .notebook-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; }
+  .notebook-main .due-chip { grid-column: 1; justify-self: start; }
+  .notebook-main .notebook-title { grid-column: 1; }
+  .notebook-main .chev { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+}
+
+/* Fold panels: detail folds away (paper results, notebook lists) so the
+   score and the next step come first. */
+.fold-panel.panel { padding: 0; }
+.fold-panel > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  padding: 14px clamp(18px, 2.2vw, 28px);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  list-style: none;
+}
+
+.fold-panel > summary::-webkit-details-marker { display: none; }
+.fold-panel > summary h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 1.1rem; }
+.fold-panel-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 2px 10px;
+  border-radius: var(--r-pill);
+  background: var(--c-surface-3);
+  color: var(--c-ink);
+  font-family: var(--font-num);
+  font-size: 0.85rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.fold-panel-chevron { display: grid; place-items: center; flex: none; color: var(--c-muted); transition: transform 0.2s ease; }
+.fold-panel[open] > summary .fold-panel-chevron { transform: rotate(180deg); }
+.fold-panel[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.fold-panel-body { padding: 0 clamp(18px, 2.2vw, 28px) clamp(18px, 2.2vw, 28px); }
+.fold-panel-body > .sub:first-child { margin-top: 0; }
+.table-scroll { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll .bound-table { min-width: 100%; }
+
+@media (hover: hover) {
+  .fold-panel > summary:hover h2 { color: var(--subject-strong); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fold-panel-chevron { transition: none; }
+}
+
+.result-hero { grid-template-columns: auto minmax(0, 1fr) auto; }
+.results .bar-row { display: block; margin-bottom: 14px; }
+.results .bar-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+
+@media (max-width: 640px) {
+  .result-hero { grid-template-columns: auto minmax(0, 1fr); gap: 14px; padding: 18px; }
+  .result-hero .grade-badge { width: 92px; height: 92px; min-width: 0; padding: 8px; border-radius: 18px; }
+  .result-hero .grade-num { font-size: 2rem; }
+  .result-hero .grade-label { font-size: 0.6rem; text-align: center; }
+  .result-hero .score-block { justify-items: start; min-width: 0; padding: 12px 14px; }
+  .result-hero .score-num { font-size: 2.2rem; }
+  .result-hero .score-note { font-size: 0.85rem; }
+  .result-hero .actions-col { grid-column: 1 / -1; }
+  .results .col-time { display: none; }
+  .results .attempts-table th,
+  .results .attempts-table td { padding: 8px 6px; white-space: nowrap; }
+}
 
 /* ---------- Exam runner ---------- */
 .exam-quit {
@@ -507,6 +609,8 @@ button.btn-danger { border-color: var(--c-bad); background: var(--c-bad); color:
   .exam-with-source { gap: 10px; }
   .exam-view-toggle { margin: 0; }
   .english-round .adhoc-source-panel > .source-panel { max-height: 38vh; }
+  .english-round .adhoc-source-heading { align-items: center; margin-bottom: 6px; }
+  .english-round .adhoc-source-heading h3 { display: none; }
 
   .lesson-bar,
   .round-bar { top: 0; margin: calc(-1 * (10px + env(safe-area-inset-top, 0px))) -16px 14px; padding: calc(8px + env(safe-area-inset-top, 0px)) 16px 8px; border-bottom: 1px solid var(--c-line); }
@@ -537,7 +641,9 @@ button.btn-danger { border-color: var(--c-bad); background: var(--c-bad); color:
   .quiz-check,
   .quiz-start .btn-block { max-width: none; }
   .quiz-done-actions .btn { flex: 1 1 auto; }
-  .reward-creature { width: 128px; height: 128px; margin-top: -84px; }
+  .lesson-complete { margin-top: 0; padding-top: 22px; }
+  .reward-creature { width: 112px; height: 112px; margin: 0 auto 6px; box-shadow: 0 5px 0 var(--emblem-line); }
+  .reward-creature .critter { width: 96px; height: 96px; }
 }
 
 .segmented-label { margin-bottom: -6px; font-size: var(--t-small); font-weight: 800; }

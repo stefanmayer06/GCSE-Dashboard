@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { invalidateResources, preloadResource, useResource } from '../../../shared/resource-cache.js';
 import { QuestionCard } from './Practice.jsx';
 import { LessonComplete } from '../../../shared/rewards.jsx';
+import { useHoldEvolutions } from '../../../shared/creatures.jsx';
 import { recordLessonResult } from '../../../shared/study-personal.js';
 import { flattenTopics } from '../../../shared/study.js';
 import {
@@ -66,6 +67,9 @@ export default function Topic({ onProgress, userId, progress = null }) {
   const [stagesDone, markStage] = useStages(topicId);
   const { data: catalog } = useResource(userId ? `topics:english:${userId}` : null, () => api.topics());
   const topic = topicOverride && topicOverride.topicId === topicId ? topicOverride.value : fetchedTopic;
+  // An evolution earned by this round waits while it is scored and while
+  // the lesson-complete card is open, then plays.
+  useHoldEvolutions(busy || (celebration && Boolean(done)));
 
   useEffect(() => {
     setTopicOverride(null);
@@ -191,7 +195,7 @@ export default function Topic({ onProgress, userId, progress = null }) {
     ? { kind: 'question', label: topic.name, question: String(q.text || '').trim(), answer: fb ? (answers[q.id]?.text ?? answers[q.id]) : null, wrong: tone === 'wrong' }
     : { kind: 'lesson', label: topic.name };
 
-  function practiseContent({ go }) {
+  function practiseContent() {
     if (!session) {
       return (
         <QuizStart
@@ -213,8 +217,8 @@ export default function Topic({ onProgress, userId, progress = null }) {
           after={done.progress}
           error={quizError}
           againLabel={`Another ${QUIZ_SIZE}`}
+          againQuiet
           onAgain={startQuiz}
-          onNext={() => go('master')}
         />
       );
     }

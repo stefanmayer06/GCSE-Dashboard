@@ -5,6 +5,7 @@ import { invalidateResources, preloadResource, useResource } from '../../../shar
 import { RubricBands } from './Practice.jsx';
 import { CreatureGains } from '../../../shared/creatures.jsx';
 import { TriagePanel } from '../../../shared/StudyTools.jsx';
+import { FoldPanel, wideScreen } from '../../../shared/PracticeKit.jsx';
 import { mergeMistakeRows, mistakeRowsFromResult, personalKey } from '../../../shared/study-personal.js';
 import Mark from '../../../shared/circuit/Mark.jsx';
 import Icon from '../../../shared/circuit/Icon.jsx';
@@ -52,6 +53,10 @@ export default function Results({ userId }) {
     return () => { active = false; };
   }, [userId]);
 
+  useEffect(() => {
+    setOpen({});
+  }, [result?.id]);
+
   const openSession = (sessionId) => {
     const found = attempts?.find((attempt) => attempt.sessionId === sessionId);
     if (found?.result) {
@@ -76,6 +81,7 @@ export default function Results({ userId }) {
   const mins = result.durationSec ? `${Math.floor(result.durationSec / 60)}m ${result.durationSec % 60}s` : null;
   return (
     <div className="page results">
+      <Link to="/practice" className="back-link"><span aria-hidden="true">←</span> Practice</Link>
       <header className="page-head">
         <h1>Paper results</h1>
         <p className="sub">
@@ -100,9 +106,7 @@ export default function Results({ userId }) {
           </div>
         </div>
         <div className="actions-col">
-          <button className="btn btn-primary" onClick={() => navigate('/practice')}>Try another paper</button>
-          <Link className="btn" to="/learn">Study my weak skills</Link>
-          <Link className="btn" to="/practice#adhoc">Quick practice</Link>
+          <button type="button" className="btn" onClick={() => navigate('/practice')}>Try another paper</button>
         </div>
       </div>
 
@@ -119,89 +123,18 @@ export default function Results({ userId }) {
           : null}
       />
 
-      {attempts?.length > 0 && (
-        <section className="panel attempts-panel">
-          <h2>Your paper attempts</h2>
-          <p className="sub">Your completed practice sets are saved here. Open one to review your answers.</p>
-          <table className="bound-table attempts-table">
-            <thead><tr><th>Date</th><th>Paper</th><th>Score</th><th></th></tr></thead>
-            <tbody>
-              {attempts.map((attempt) => (
-                <tr key={attempt.sessionId} className={attempt.sessionId === result.id ? 'me' : ''}>
-                  <td>{new Date(attempt.completedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</td>
-                  <td>{attempt.paperCode || attempt.paperName || 'Paper'}</td>
-                  <td>{attempt.correctMarks}/{attempt.totalMarks} ({attempt.percent ?? '—'}%)</td>
-                  <td>{attempt.sessionId === result.id
-                    ? <span className="sub small">viewing</span>
-                    : <button type="button" className="link link-button" onClick={() => openSession(attempt.sessionId)}>Review</button>}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      )}
-
-      <section className="two-col">
-        <div className="panel">
-          <h2>How to use this score</h2>
-          <p className="sub">Your marks show how you did on this practice set. The texts are adaptations and extended answers may use AI feedback, so this score is not an exam grade prediction.</p>
-          <p className="sub">Review the question feedback and retry your lowest-scoring skills. For exam rehearsal, use an official AQA sample paper alongside this practice.</p>
-        </div>
-
-        <div className="panel">
-          <h2>Skills breakdown</h2>
-          {result.skills.map((s) => (
-            <div key={s.id} className="bar-row">
-              <div className="bar-head">
-                <span>{s.name}</span>
-                <span>{s.got}/{s.max} · {s.percent}%</span>
-              </div>
-              <div className="bar">
-                <div className="bar-fill" style={{ width: `${s.percent}%`, background: s.percent >= 60 ? 'var(--green)' : 'var(--amber)' }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {result.weakTopics.length > 0 && (
-        <section className="panel">
-          <h2>Skills to revisit</h2>
-          <p className="sub">These were your lowest-scoring skills on this paper.</p>
-          <div className="weak-grid">
-            {result.weakTopics.map((t) => (
-              <div key={t.id} className="weak-card">
-                <div className="weak-head">
-                  <span className="weak-name">{t.name}</span>
-                  <span className="weak-pct">{t.percent}%</span>
-                </div>
-                <div className="weak-links">
-                  <Link to={t.internal} className="weak-link internal">Lesson & practice (in app)</Link>
-                  {t.resources.map((res) => (
-                    <a key={res.label} href={res.url} target="_blank" rel="noreferrer" className="weak-link">
-                      {res.label} — {res.why}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="panel">
-        <h2>Review every question</h2>
+      <FoldPanel title="Review every question" count={result.perQuestion.length} defaultOpen={wideScreen() || Boolean(result.incomplete)}>
         {result.perQuestion.map((q) => {
           const fb = q.marking || {};
           const got = q.got;
           const correctish = got != null && got >= q.marks * 0.6;
           return (
             <div key={q.qid} className={`review ${got != null ? (correctish ? 'right' : 'wrong') : 'pending'}`}>
-              <button className="review-head" onClick={() => setOpen((o) => ({ ...o, [q.qid]: !o[q.qid] }))}>
+              <button className="review-head" onClick={() => setOpen((o) => ({ ...o, [q.qid]: !o[q.qid] }))} aria-expanded={Boolean(open[q.qid])}>
                 <span className="review-status">{got == null ? '•' : correctish ? '✓' : '✗'}</span>
                 <span className="review-title">Q{q.qn} · {q.title}</span>
                 <span className="review-result">{got != null ? `${got}/${q.marks}` : '—'}</span>
-                <span className="chev">{open[q.qid] ? '▾' : '▸'}</span>
+                <span className="chev" aria-hidden="true">{open[q.qid] ? '▾' : '▸'}</span>
               </button>
               {open[q.qid] && (
                 <div className="review-body">
@@ -288,7 +221,73 @@ export default function Results({ userId }) {
             </div>
           );
         })}
-      </section>
+      </FoldPanel>
+
+      {result.weakTopics.length > 0 && (
+        <FoldPanel title="Skills to revisit" count={result.weakTopics.length}>
+          <p className="sub">Your lowest-scoring skills on this paper, with the lesson and free extra help.</p>
+          <div className="weak-grid">
+            {result.weakTopics.map((t) => (
+              <div key={t.id} className="weak-card">
+                <div className="weak-head">
+                  <span className="weak-name">{t.name}</span>
+                  <span className="weak-pct">{t.percent}%</span>
+                </div>
+                <div className="weak-links">
+                  <Link to={t.internal} className="weak-link internal">Lesson & practice (in app)</Link>
+                  {t.resources.map((res) => (
+                    <a key={res.label} href={res.url} target="_blank" rel="noreferrer" className="weak-link">
+                      {res.label} — {res.why}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </FoldPanel>
+      )}
+
+      <FoldPanel title="Skills breakdown">
+        {result.skills.map((s) => (
+          <div key={s.id} className="bar-row">
+            <div className="bar-head">
+              <span>{s.name}</span>
+              <span>{s.got}/{s.max} · {s.percent}%</span>
+            </div>
+            <div className="bar">
+              <div className="bar-fill" style={{ width: `${s.percent}%`, background: s.percent >= 60 ? 'var(--green)' : 'var(--amber)' }} />
+            </div>
+          </div>
+        ))}
+      </FoldPanel>
+
+      <FoldPanel title="How to use this score">
+        <p className="sub">Your marks show how you did on this practice set. The texts are adaptations and extended answers may use AI feedback, so this score is not an exam grade prediction.</p>
+        <p className="sub">Review the question feedback and retry your lowest-scoring skills. For exam rehearsal, use an official AQA sample paper alongside this practice.</p>
+      </FoldPanel>
+
+      {attempts?.length > 0 && (
+        <FoldPanel title="Your past papers" count={attempts.length} className="attempts-panel">
+          <p className="sub">Open one to review your answers.</p>
+          <div className="table-scroll">
+            <table className="bound-table attempts-table">
+              <thead><tr><th>Date</th><th>Paper</th><th>Score</th><th></th></tr></thead>
+              <tbody>
+                {attempts.map((attempt) => (
+                  <tr key={attempt.sessionId} className={attempt.sessionId === result.id ? 'me' : ''}>
+                    <td>{new Date(attempt.completedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</td>
+                    <td>{attempt.paperCode || attempt.paperName || 'Paper'}</td>
+                    <td>{attempt.correctMarks}/{attempt.totalMarks} ({attempt.percent ?? '—'}%)</td>
+                    <td>{attempt.sessionId === result.id
+                      ? <span className="sub small">viewing</span>
+                      : <button type="button" className="link link-button" onClick={() => openSession(attempt.sessionId)}>Review</button>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </FoldPanel>
+      )}
     </div>
   );
 }

@@ -175,8 +175,13 @@ shell.
   `LessonExplainer`, `MasteryPanel` (stars, and Prismo for three-star
   topics), `PipPromo`, `EditorialNote`.
 - **Practice kit** (`PracticeKit.jsx`): `RoundBar`, `RetryCard`,
-  `Segmented`, `ConfirmSheet`, `PracticeLinks` and `RetryFlow` (notebook
-  retries one at a time; Maths re-marks the real question).
+  `Segmented`, `ConfirmSheet`, `PracticeLinks`, `RetryFlow` (notebook
+  retries one at a time; Maths re-marks the real question) and `FoldPanel`
+  (a panel that folds away: paper results show the score, what it fed and
+  "What to work on next" first, with the question review, topics, strands
+  and past papers folded; the notebook folds "Coming up" and "Mastered" and
+  previews five due rows). On phones fold panels start closed; from 761px
+  the main one opens.
 - **Course map** (`CourseMap.jsx`): units that fold (the suggested unit
   opens), topic search, an "up next" card, the zigzag tile path and
   `recommendTile(groups)`. English shows Skills | Texts tabs.

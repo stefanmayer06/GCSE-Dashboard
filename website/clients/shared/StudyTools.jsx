@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { invalidateResources, useResource } from './resource-cache.js';
-import { RetryFlow } from './PracticeKit.jsx';
+import { FoldPanel, RetryFlow, wideScreen } from './PracticeKit.jsx';
 import { AskPipButton } from './PipChat.jsx';
 import { AppHeader } from './AppShell.jsx';
 import {
@@ -338,6 +338,9 @@ function ClassificationChips({ row, onClassify }) {
   );
 }
 
+// A long due list shows its first few rows; the Retry button takes them all.
+const DUE_PREVIEW = 5;
+
 export function Notebook({ userId, subject, api, renderQuestion = null }) {
   const { fetched, personal, loadError, setOverride } = usePersonal(userId, subject, api);
   const [saveError, setSaveError] = useState('');
@@ -346,6 +349,7 @@ export function Notebook({ userId, subject, api, renderQuestion = null }) {
   // A snapshot of the due rows, taken when retries start, so grading one
   // does not reshuffle the queue mid-flow.
   const [retrying, setRetrying] = useState(null);
+  const [showAllDue, setShowAllDue] = useState(false);
   const now = Date.now();
   const error = [loadError && `Could not load the notebook: ${loadError}`, saveError].filter(Boolean).join(' ');
 
@@ -355,6 +359,7 @@ export function Notebook({ userId, subject, api, renderQuestion = null }) {
   const dueIds = new Set(dueMistakeRows(active, now).map((row) => row.id));
   const dueRows = active.filter((row) => dueIds.has(row.id));
   const upcoming = active.filter((row) => !dueIds.has(row.id));
+  const mastered = rows.filter((row) => row.mastered);
   const masteredWeek = masteredSince(rows, 7 * DAY, now);
   const mix = errorTypeCounts(rows);
   const topReason = Object.entries(mix).sort((a, b) => b[1] - a[1])[0];
@@ -477,7 +482,7 @@ export function Notebook({ userId, subject, api, renderQuestion = null }) {
         <div className={`stat-card${dueRows.length ? ' warn' : ''}`}><div className="stat-num">{dueRows.length}</div><div className="stat-label">Due for retry</div></div>
         <div className="stat-card"><div className="stat-num">{upcoming.length}</div><div className="stat-label">Scheduled</div></div>
         <div className={`stat-card${masteredWeek.length ? ' good' : ''}`}><div className="stat-num">{masteredWeek.length}</div><div className="stat-label">Mastered this week</div></div>
-        <div className="stat-card"><div className="stat-num">{rows.filter((row) => row.mastered).length}</div><div className="stat-label">Mastered all-time</div></div>
+        <div className="stat-card"><div className="stat-num">{mastered.length}</div><div className="stat-label">Mastered all-time</div></div>
       </section>
       {topReasonLabel && (
         <p className="sub notebook-insight">The reason you choose most often is <b>{topReasonLabel}</b>. {ERROR_TYPES.find((type) => type.id === topReason[0])?.hint}</p>
@@ -490,7 +495,12 @@ export function Notebook({ userId, subject, api, renderQuestion = null }) {
               <div className="study-actions fixup-row">
                 <FixUpButton subject={subject} api={api} topics={[]} progress={null} personal={{ mistakes: rows }} />
               </div>
-              {dueRows.map((row) => renderRow(row, true))}
+              {(showAllDue ? dueRows : dueRows.slice(0, DUE_PREVIEW)).map((row) => renderRow(row, true))}
+              {!showAllDue && dueRows.length > DUE_PREVIEW ? (
+                <button type="button" className="btn btn-block notebook-more" onClick={() => setShowAllDue(true)}>
+                  Show all {dueRows.length} due
+                </button>
+              ) : null}
             </>
           )
             : (
@@ -503,15 +513,13 @@ export function Notebook({ userId, subject, api, renderQuestion = null }) {
       </section>
       <MemRiCard userId={userId} subject={subject} api={api} />
       {upcoming.length > 0 && (
-        <section className="panel notebook-list">
-          <h2>Coming up</h2>
+        <FoldPanel title="Coming up" count={upcoming.length} defaultOpen={wideScreen()} className="notebook-list">
           {upcoming.map((row) => renderRow(row, false))}
-        </section>
+        </FoldPanel>
       )}
-      {rows.some((row) => row.mastered) && (
-        <section className="panel notebook-list">
-          <h2>Mastered</h2>
-          {rows.filter((row) => row.mastered).slice(0, 12).map((row) => (
+      {mastered.length > 0 && (
+        <FoldPanel title="Mastered" count={mastered.length} className="notebook-list">
+          {mastered.slice(0, 12).map((row) => (
             <article key={row.id} className="notebook-row mastered">
               <div className="notebook-main">
                 <span className="due-chip done">✓ Mastered</span>
@@ -523,7 +531,7 @@ export function Notebook({ userId, subject, api, renderQuestion = null }) {
               </div>
             </article>
           ))}
-        </section>
+        </FoldPanel>
       )}
     </div>
   );

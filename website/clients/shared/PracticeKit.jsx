@@ -104,6 +104,28 @@ export function PracticeLinks({ notebookCount = null }) {
   );
 }
 
+// A panel that folds away, so a phone shows the score or the next step
+// first and the detail on request (paper results, notebook lists).
+export function FoldPanel({ title, count = null, defaultOpen = false, className = '', children }) {
+  return (
+    <details className={`panel fold-panel ${className}`.trim()} open={defaultOpen || undefined}>
+      <summary>
+        <h2>
+          {title}
+          {count != null ? <span className="fold-panel-count">{count}</span> : null}
+        </h2>
+        <span className="fold-panel-chevron" aria-hidden="true"><Icon name="chevronDown" size={20} strokeWidth={2.4} /></span>
+      </summary>
+      <div className="fold-panel-body">{children}</div>
+    </details>
+  );
+}
+
+// From 761px wide the main fold (the question review, "Coming up") starts open.
+export function wideScreen() {
+  return typeof window !== 'undefined' && Boolean(window.matchMedia?.('(min-width: 761px)').matches);
+}
+
 // ---------- Notebook retries, one at a time ----------
 
 const RIGHT_GRADES = GRADES.filter((grade) => grade.id !== 'again');
@@ -224,7 +246,7 @@ export function RetryFlow({ rows, api, renderQuestion = null, onGrade, onExit })
         />
         <div className="quiz-q retry-card" ref={cardRef} tabIndex={-1} role="group" aria-label={`Retry ${index + 1} of ${rows.length}`}>
           <div className="quiz-q-meta">
-            <span>{row.topicName}</span>
+            <span className="quiz-q-kind">{row.topicName}</span>
             <span>Retry {Math.min(4, (row.reviewIndex ?? 0) + 1)} of 4</span>
           </div>
           {showQuestion ? (

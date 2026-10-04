@@ -348,15 +348,21 @@ export function QuizFeedback({ tone = 'right', title, children, nextLabel, onNex
 }
 
 // After the round: the score and what it fed.
-export function QuizDone({ correct, total, before = null, after = null, error = '', againLabel = 'Another 5', onAgain, onNext = null, nextLabel = 'Next: Master it' }) {
+// With `right` and `questions` the headline counts questions ("3 of 5 right")
+// and the marks sit underneath, so a 5-question round never reads as "3/9".
+// Inside a lesson the step bar already carries the way on, so the card offers
+// another round as a quiet button and leaves the go colour to "Next".
+export function QuizDone({ correct, total, right = null, questions = null, before = null, after = null, error = '', againLabel = 'Another 5', againQuiet = false, onAgain, onNext = null, nextLabel = 'Next: Master it' }) {
+  const counted = right != null && questions != null;
   return (
     <div className="quiz-done">
       <p className="eyebrow">Round complete</p>
-      <h3>You scored {correct}/{total}</h3>
+      <h3>{counted ? `${right} of ${questions} right` : `You scored ${correct}/${total} marks`}</h3>
+      {counted && total !== questions ? <p className="quiz-done-marks">{correct}/{total} marks</p> : null}
       <CreatureGains before={before} after={after} title="What this round fed" dark />
       {error ? <div className="error-banner" role="alert">{error}</div> : null}
       <div className="quiz-done-actions">
-        <button type="button" className="btn btn-go" onClick={onAgain}>{againLabel}</button>
+        <button type="button" className={againQuiet ? 'btn' : 'btn btn-go'} onClick={onAgain}>{againLabel}</button>
         {onNext ? <button type="button" className="btn" onClick={onNext}>{nextLabel}</button> : null}
       </div>
     </div>

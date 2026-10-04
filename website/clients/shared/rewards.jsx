@@ -42,6 +42,8 @@ function useDialogFocus(onClose, fallbackSelector) {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previousOverflow;
       window.setTimeout(() => {
+        // An evolution that was waiting may already have opened; leave focus with it.
+        if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
         if (previousFocus?.isConnected && previousFocus !== document.body) previousFocus.focus();
         else if (fallbackSelector) document.querySelector(fallbackSelector)?.focus();
       }, 0);

@@ -277,7 +277,6 @@ export default function DashboardHome({
         api={api}
       />
 
-      <SectionTitle num="03">Shape collection</SectionTitle>
       <section className="panel mastery-panel" aria-labelledby="mastery-title">
         <div className="mastery-panel-head">
           <div>
@@ -313,7 +312,7 @@ export default function DashboardHome({
         {topics.length ? <ShapeCollection topics={topics} learnBase={learnBase} /> : null}
       </section>
 
-      <SectionTitle num="04">Boss levels</SectionTitle>
+      <SectionTitle num="03">Boss levels</SectionTitle>
       <section className="panel start-panel boss-panel" aria-labelledby="papers-title">
         <h2 id="papers-title">Sit a timed paper</h2>
         <p className="sub">{papers.blurb}</p>
@@ -349,7 +348,7 @@ export default function DashboardHome({
         ) : null}
       </section>
 
-      <SectionTitle num="05">Milestones</SectionTitle>
+      <SectionTitle num="04">Milestones</SectionTitle>
       <MilestoneShelf
         progress={progress}
         mistakes={Array.isArray(personal?.mistakes) ? personal.mistakes : null}
@@ -362,7 +361,7 @@ export default function DashboardHome({
         api={api}
       />
 
-      <SectionTitle num="06">Proof it&rsquo;s sticking</SectionTitle>
+      <SectionTitle num="05">Proof it&rsquo;s sticking</SectionTitle>
       <div className="proof-grid">
         <ExpertisePath progress={progress} onChooseLesson={() => navigate(learnBase)} />
         <MemRiCard userId={userId} subject={subjectKey} api={api} />

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
-import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
+import { invalidateResources, preloadResource, useResource } from '../../../shared/resource-cache.js';
 import { RubricBands } from './Practice.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 import { TriagePanel } from '../../../shared/StudyTools.jsx';
@@ -9,10 +9,17 @@ import { mergeMistakeRows, mistakeRowsFromResult, personalKey } from '../../../s
 import Mark from '../../../shared/circuit/Mark.jsx';
 import Icon from '../../../shared/circuit/Icon.jsx';
 
+const attemptsKey = (userId) => `attempts:english:${userId}`;
+
+// Loads recent attempts behind the sign-in splash when Results is the landing page.
+export function preload({ userId }) {
+  return preloadResource(attemptsKey(userId), () => api.attempts());
+}
+
 export default function Results({ userId }) {
   const navigate = useNavigate();
   const [result, setResult] = useState(null);
-  const { data: attemptsData } = useResource(userId ? `attempts:english:${userId}` : null, () => api.attempts());
+  const { data: attemptsData } = useResource(userId ? attemptsKey(userId) : null, () => api.attempts());
   const attempts = attemptsData?.attempts ?? null;
   const [open, setOpen] = useState({});
   const [savedCount, setSavedCount] = useState(null);

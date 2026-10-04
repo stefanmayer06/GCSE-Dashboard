@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
-import { setResourceValue, useResource } from '../../../shared/resource-cache.js';
+import { preloadResource, setResourceValue, useResource } from '../../../shared/resource-cache.js';
 import MarkdownMessage from '../../../shared/MarkdownMessage.jsx';
 import Pip from '../../../shared/circuit/Pip.jsx';
 import Icon from '../../../shared/circuit/Icon.jsx';
@@ -32,9 +32,17 @@ function toMessages(r) {
   return history.length ? history : [{ role: 'assistant', content: 'Hi. What would you like help with in English Language?' }];
 }
 
+const historyKey = (userId) => `chat:english:${userId}`;
+const loadHistory = () => api.chatHistory().then(toMessages);
+
+// Loads the conversation behind the sign-in splash when the tutor is the landing page.
+export function preload({ userId }) {
+  return preloadResource(historyKey(userId), loadHistory);
+}
+
 export default function Chat({ health, userId }) {
-  const chatKey = userId ? `chat:english:${userId}` : null;
-  const { data: history, error } = useResource(chatKey, () => api.chatHistory().then(toMessages));
+  const chatKey = userId ? historyKey(userId) : null;
+  const { data: history, error } = useResource(chatKey, loadHistory);
   const [messages, setMessagesState] = useState(null);
   const [applied, setApplied] = useState(false);
   const [input, setInput] = useState('');

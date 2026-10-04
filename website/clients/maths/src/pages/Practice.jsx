@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { api } from '../api.js';
+import { api, SUBJECT } from '../api.js';
 import { STRAND_COLORS } from '../colors.js';
-import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
+import { invalidateResources, preloadResource, useResource } from '../../../shared/resource-cache.js';
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 import { personalKey } from '../../../shared/study-personal.js';
@@ -38,13 +38,20 @@ function loadSaved(key) {
   }
 }
 
+const papersKey = (userId) => `papers:${SUBJECT}:${userId}`;
+
+// Loads the paper list behind the sign-in splash when Practice is the landing page.
+export function preload({ userId }) {
+  return preloadResource(papersKey(userId), () => api.papers());
+}
+
 export default function Practice({ onProgress, userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const storageKey = activeTestKey(userId, higherTier);
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const saved = useRef(loadSaved(storageKey));
-  const { data: papersData } = useResource(userId ? `papers:${higherTier ? 'maths-higher' : 'maths'}:${userId}` : null, () => api.papers());
+  const { data: papersData } = useResource(userId ? papersKey(userId) : null, () => api.papers());
   const papers = papersData?.papers ?? null;
   const [phase, setPhase] = useState(saved.current ? 'restoring' : 'setup'); // setup | restoring | running | submitting
   const [test, setTest] = useState(null);

@@ -1,10 +1,17 @@
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
-import { useResource } from '../../../shared/resource-cache.js';
+import { preloadResource, useResource } from '../../../shared/resource-cache.js';
+
+const TEXTS_KEY = 'texts:english';
+
+// Loads the library behind the sign-in splash when Texts is the landing page.
+export function preload() {
+  return preloadResource(TEXTS_KEY, () => api.texts());
+}
 
 export default function Texts() {
   // Static course content: cached for the whole session, no user scope needed.
-  const { data, error } = useResource('texts:english', () => api.texts());
+  const { data, error } = useResource(TEXTS_KEY, () => api.texts());
   const texts = data?.texts ?? null;
 
   return (

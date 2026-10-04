@@ -22,7 +22,7 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { min-width: 320px; scroll-behavior: smooth; }
+html { min-width: 320px; scroll-behavior: smooth; overflow-x: clip; }
 
 body {
   margin: 0;
@@ -148,10 +148,13 @@ a { color: inherit; }
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   align-items: center;
   gap: clamp(16px, 3vw, 40px);
-  margin: 0 calc(-1 * clamp(16px, 4vw, 40px));
-  padding: clamp(36px, 6vw, 84px) clamp(16px, 4vw, 40px) clamp(40px, 6vw, 90px);
+  /* Full-bleed: break out of .desk to the viewport edges, keep content aligned to the 1240px column. */
+  --hero-pad: clamp(16px, 4vw, 40px);
+  --hero-side: max(var(--hero-pad), calc(50vw - 620px + var(--hero-pad)));
+  margin: 0 calc(50% - 50vw);
+  padding: clamp(36px, 6vw, 84px) var(--hero-side) clamp(40px, 6vw, 90px);
   overflow: hidden;
-  border-radius: 0 0 var(--r-xl) var(--r-xl);
+  border-radius: 0;
   background:
     radial-gradient(60% 70% at 80% 40%, color-mix(in srgb, var(--hue-purple) 38%, transparent), transparent 70%),
     radial-gradient(50% 60% at 10% 110%, color-mix(in srgb, var(--hue-volt) 16%, transparent), transparent 70%),

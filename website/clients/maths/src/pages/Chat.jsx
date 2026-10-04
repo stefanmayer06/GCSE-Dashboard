@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { api } from '../api.js';
-import { setResourceValue, useResource } from '../../../shared/resource-cache.js';
+import { api, SUBJECT } from '../api.js';
+import { preloadResource, setResourceValue, useResource } from '../../../shared/resource-cache.js';
 import MarkdownMessage from '../../../shared/MarkdownMessage.jsx';
 import Pip from '../../../shared/circuit/Pip.jsx';
 import Icon from '../../../shared/circuit/Icon.jsx';
@@ -31,12 +31,17 @@ function toMessages(r, higherTier) {
     : base;
 }
 
+const historyKey = (userId) => `chat:${SUBJECT}:${userId}`;
+const loadHistory = () => api.chatHistory().then((r) => toMessages(r, SUBJECT === 'maths-higher'));
+
+// Loads the conversation behind the sign-in splash when the tutor is the landing page.
+export function preload({ userId }) {
+  return preloadResource(historyKey(userId), loadHistory);
+}
+
 export default function Chat({ health, userId }) {
-  const higherTier = window.location.pathname.startsWith('/maths-higher');
-  const chatKey = userId ? `chat:${higherTier ? 'maths-higher' : 'maths'}:${userId}` : null;
-  const { data: history, error } = useResource(chatKey, () =>
-    api.chatHistory().then((r) => toMessages(r, higherTier)),
-  );
+  const chatKey = userId ? historyKey(userId) : null;
+  const { data: history, error } = useResource(chatKey, loadHistory);
   const [messages, setMessagesState] = useState(null);
   const [applied, setApplied] = useState(false);
   const [input, setInput] = useState('');

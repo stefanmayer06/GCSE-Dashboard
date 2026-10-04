@@ -8,6 +8,10 @@ const store = new Map();
 const inflight = new Map();
 const generations = new Map();
 const listeners = new Map();
+// Keys stored by preloadResource, with the time they landed. A reader that
+// mounts while a preloaded value is this fresh uses it without revalidating.
+const primed = new Map();
+const PRIMED_FRESH_MS = 10000;
 
 function emit(key) {
   const set = listeners.get(key);
@@ -31,6 +35,7 @@ export function invalidateResources(prefix) {
   for (const key of [...store.keys()]) {
     if (key.startsWith(prefix)) {
       store.delete(key);
+      primed.delete(key);
       generations.set(key, (generations.get(key) ?? 0) + 1);
       emit(key);
     }
@@ -44,13 +49,14 @@ export function clearResourceCache() {
   for (const key of keys) generations.set(key, (generations.get(key) ?? 0) + 1);
   store.clear();
   inflight.clear();
+  primed.clear();
   for (const key of [...listeners.keys()]) emit(key);
 }
 
 // Shared, de-duplicated fetch for one key. A request started before an
 // invalidation is stale: it may still resolve but its result is discarded,
 // and a newer request is started for the bumped generation.
-function loadResource(key, fetcher) {
+function loadResource(key, fetcher, { prime = false } = {}) {
   const generation = generations.get(key) ?? 0;
   const pending = inflight.get(key);
   if (pending && pending.generation === generation) return pending.promise;
@@ -59,6 +65,8 @@ function loadResource(key, fetcher) {
     .then((value) => {
       if ((generations.get(key) ?? 0) === generation) {
         store.set(key, value);
+        if (prime) primed.set(key, Date.now());
+        else primed.delete(key);
         emit(key);
       }
       if (inflight.get(key)?.promise === promise) inflight.delete(key);
@@ -72,11 +80,24 @@ function loadResource(key, fetcher) {
   return promise;
 }
 
+// Fetches `key` before any page reads it, so a screen can wait for all of
+// its data and then render complete. The readers that mount straight after
+// reuse the value instead of fetching it a second time.
+export function preloadResource(key, fetcher) {
+  if (key == null) return Promise.resolve(undefined);
+  return loadResource(key, fetcher, { prime: true });
+}
+
+function isPrimed(key) {
+  const at = primed.get(key);
+  return store.has(key) && at != null && Date.now() - at < PRIMED_FRESH_MS;
+}
+
 // useResource(key, fetcher) gives pages stale-while-revalidate semantics:
-// the first visit renders the page template immediately and streams data in;
-// every later visit renders the cached response instantly while a quiet
-// background request refreshes it. Pages therefore never flash a loading
-// state when returning to a page they have already seen.
+// a page whose data was not preloaded renders its template immediately and
+// streams data in; every later visit renders the cached response instantly
+// while a quiet background request refreshes it. Pages therefore never flash
+// a loading state when returning to a page they have already seen.
 export function useResource(key, fetcher) {
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
@@ -109,7 +130,7 @@ export function useResource(key, fetcher) {
         });
     };
 
-    run();
+    if (!isPrimed(key)) run();
 
     let set = listeners.get(key);
     if (!set) {
@@ -135,6 +156,7 @@ export function useResource(key, fetcher) {
   const refresh = useCallback(() => {
     if (key == null) return;
     store.delete(key);
+    primed.delete(key);
     generations.set(key, (generations.get(key) ?? 0) + 1);
     emit(key);
   }, [key]);

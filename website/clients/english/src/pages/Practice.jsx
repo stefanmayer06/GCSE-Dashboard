@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
-import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
+import { invalidateResources, preloadResource, useResource } from '../../../shared/resource-cache.js';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 import { personalKey } from '../../../shared/study-personal.js';
 import Mark from '../../../shared/circuit/Mark.jsx';
@@ -38,6 +38,13 @@ function loadSaved(key) {
   }
 }
 
+const papersKey = (userId) => `papers:english:${userId}`;
+
+// Loads the paper list behind the sign-in splash when Papers is the landing page.
+export function preload({ userId }) {
+  return preloadResource(papersKey(userId), () => api.papers());
+}
+
 export default function Practice({ health, onProgress, userId }) {
   const storageKey = activeTestKey(userId);
   const navigate = useNavigate();
@@ -53,7 +60,7 @@ export default function Practice({ health, onProgress, userId }) {
   const [quitOpen, setQuitOpen] = useState(false);
   const [quitting, setQuitting] = useState(false);
   const [error, setError] = useState('');
-  const { data: papersData } = useResource(userId ? `papers:english:${userId}` : null, () => api.papers());
+  const { data: papersData } = useResource(userId ? papersKey(userId) : null, () => api.papers());
   const papersMeta = papersData?.papers ?? null;
   const submitting = useRef(false);
   const answersRef = useRef({});

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
-import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
+import { invalidateResources, preloadResource, useResource } from '../../../shared/resource-cache.js';
 import { QuestionCard } from './Practice.jsx';
 import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
 import { recordLessonResult } from '../../../shared/study-personal.js';
@@ -9,11 +9,18 @@ import { flattenTopics } from '../../../shared/study.js';
 import { ComboMeter, LessonExplainer, LessonHeader, MasteryPanel, NotesDeck, ResourceGrid, StageSection, TutorPromo, useStages } from '../../../shared/LessonKit.jsx';
 import { explainerForTopic } from '../../../shared/explainer/library/english/index.js';
 
+const topicKey = (userId, topicId) => `topic:${userId}:${topicId}`;
+
+// Loads the lesson behind the sign-in splash when it is the landing page.
+export function preload({ userId, params }) {
+  return preloadResource(topicKey(userId, params.topicId), () => api.topic(params.topicId));
+}
+
 export default function Topic({ onProgress, userId }) {
   const { topicId } = useParams();
   const navigate = useNavigate();
   const { data: fetchedTopic } = useResource(
-    userId && topicId ? `topic:${userId}:${topicId}` : null,
+    userId && topicId ? topicKey(userId, topicId) : null,
     () => api.topic(topicId),
   );
   const [topicOverride, setTopicOverride] = useState(null);

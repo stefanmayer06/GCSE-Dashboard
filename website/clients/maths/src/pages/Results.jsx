@@ -1,18 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../api.js';
-import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
+import { api, SUBJECT } from '../api.js';
+import { invalidateResources, preloadResource, useResource } from '../../../shared/resource-cache.js';
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardSummary } from '../../../shared/rewards.jsx';
 import { TriagePanel } from '../../../shared/StudyTools.jsx';
 import { mergeMistakeRows, mistakeRowsFromResult, personalKey } from '../../../shared/study-personal.js';
+
+const attemptsKey = (userId) => `attempts:${SUBJECT}:${userId}`;
+
+// Loads recent attempts behind the sign-in splash when Results is the landing page.
+export function preload({ userId }) {
+  return preloadResource(attemptsKey(userId), () => api.attempts());
+}
 
 export default function Results({ userId }) {
   const navigate = useNavigate();
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const subject = higherTier ? 'maths-higher' : 'maths';
   const [result, setResult] = useState(null);
-  const { data: attemptsData } = useResource(userId ? `attempts:${subject}:${userId}` : null, () => api.attempts());
+  const { data: attemptsData } = useResource(userId ? attemptsKey(userId) : null, () => api.attempts());
   const attempts = attemptsData?.attempts ?? null;
   const [open, setOpen] = useState({});
   const [savedCount, setSavedCount] = useState(null);

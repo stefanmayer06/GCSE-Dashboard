@@ -1,34 +1,50 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api.js';
 import { clearSupabaseSession } from '../../shared/supabase.js';
-import { clearResourceCache, useResource } from '../../shared/resource-cache.js';
+import { clearResourceCache, preloadResource, useResource } from '../../shared/resource-cache.js';
+import { preloadablePage, preloadRoute } from '../../shared/page-preload.js';
 import { flattenTopics } from '../../shared/study.js';
 import { dueMistakeRows, hydratePersonal } from '../../shared/study-personal.js';
 import AppShell from '../../shared/AppShell.jsx';
 import LoginScreen from '../../shared/login.jsx';
 import Pip from '../../shared/circuit/Pip.jsx';
 
-// Route pages are code-split: the app shell renders first and each page
-// chunk streams in on demand. The core revision loop is prefetched during
+// Route pages are code-split. The page a learner lands on is loaded while
+// the sign-in splash is up; the core revision loop is prefetched during
 // idle time on capable connections; save-data and 2G users stay on demand.
-const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
-const Practice = lazy(() => import('./pages/Practice.jsx'));
-const Results = lazy(() => import('./pages/Results.jsx'));
-const Learn = lazy(() => import('./pages/Learn.jsx'));
-const Topic = lazy(() => import('./pages/Topic.jsx'));
-const Texts = lazy(() => import('./pages/Texts.jsx'));
-const TextDetail = lazy(() => import('./pages/TextDetail.jsx'));
-const Chat = lazy(() => import('./pages/Chat.jsx'));
-const GraphicsLab = lazy(() => import('../../shared/GraphicsLab.jsx'));
-const Notebook = lazy(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.Notebook })));
-const WeeklySummary = lazy(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.WeeklySummary })));
+const Dashboard = preloadablePage(() => import('./pages/Dashboard.jsx'));
+const Practice = preloadablePage(() => import('./pages/Practice.jsx'));
+const Results = preloadablePage(() => import('./pages/Results.jsx'));
+const Learn = preloadablePage(() => import('./pages/Learn.jsx'));
+const Topic = preloadablePage(() => import('./pages/Topic.jsx'));
+const Texts = preloadablePage(() => import('./pages/Texts.jsx'));
+const TextDetail = preloadablePage(() => import('./pages/TextDetail.jsx'));
+const Chat = preloadablePage(() => import('./pages/Chat.jsx'));
+const GraphicsLab = preloadablePage(() => import('../../shared/GraphicsLab.jsx'));
+const Notebook = preloadablePage(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.Notebook })));
+const WeeklySummary = preloadablePage(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.WeeklySummary })));
 
-const PAGE_LOADERS = [
-  () => import('./pages/Practice.jsx'),
-  () => import('./pages/Results.jsx'),
-  () => import('./pages/Learn.jsx'),
+const PREFETCH_PAGES = [Practice, Results, Learn];
+
+// Mirrors <Routes> below so the landing page can be preloaded.
+const PAGE_ROUTES = [
+  { path: '/', page: Dashboard },
+  { path: '/practice', page: Practice },
+  { path: '/results', page: Results },
+  { path: '/learn', page: Learn },
+  { path: '/learn/:topicId', page: Topic },
+  { path: '/texts', page: Texts },
+  { path: '/texts/:textId', page: TextDetail },
+  { path: '/notebook', page: Notebook },
+  { path: '/summary', page: WeeklySummary },
+  { path: '/chat', page: Chat },
+  { path: '/lab', page: GraphicsLab },
 ];
+
+// A request that never answers must not trap the learner on the splash;
+// after this long the page renders and finishes loading in place.
+const BOOT_TIMEOUT_MS = 10000;
 
 function shouldPrefetchRoutes() {
   const connection = navigator.connection;
@@ -63,13 +79,17 @@ export default function App() {
   const [health, setHealth] = useState(null);
   const [theme, setTheme] = useState(initialTheme);
   const [auth, setAuth] = useState(null);
+  // The account whose first screen has finished loading.
+  const [readyFor, setReadyFor] = useState(null);
+  const bootedFor = useRef(null);
   const location = useLocation();
   const userId = auth?.id || auth?.username;
+  const ready = Boolean(userId) && readyFor === userId;
 
   // Shared with Dashboard via resource-cache: no extra network request.
-  const { data: topicCatalog } = useResource(userId ? `topics:english:${userId}` : null, () => api.topics());
+  const { data: topicCatalog } = useResource(ready ? `topics:english:${userId}` : null, () => api.topics());
   // Same personal cache as the dashboard: feeds the Notebook due badge.
-  const { data: personal } = useResource(userId ? `personal:${userId}:english` : null, () => hydratePersonal(api, userId, 'english'));
+  const { data: personal } = useResource(ready ? `personal:${userId}:english` : null, () => hydratePersonal(api, userId, 'english'));
   const notebookDue = (() => {
     try {
       return dueMistakeRows(personal?.mistakes ?? []).length;
@@ -123,35 +143,60 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!userId) return undefined;
+    if (!userId) {
+      bootedFor.current = null;
+      setReadyFor(null);
+      return undefined;
+    }
     let active = true;
-    Promise.allSettled([api.progress(), api.health()]).then(([p, h]) => {
+    let timer;
+    const booting = bootedFor.current !== userId;
+    if (booting) {
+      // A fresh identity must never inherit another session's cached
+      // resources or shell counters.
+      clearResourceCache();
+      setProgress(null);
+      setHealth(null);
+    }
+    const shell = Promise.allSettled([api.progress(), api.health()]).then(([p, h]) => {
       if (!active) return;
       if (p.status === 'fulfilled') setProgress(p.value);
       if (h.status === 'fulfilled') setHealth(h.value);
     });
-    return () => { active = false; };
+    if (booting) {
+      // Sign-in and page load fetch everything the first screen shows in
+      // parallel and keep the splash up until it has all arrived, so the
+      // page appears complete rather than filling in section by section.
+      const firstScreen = Promise.allSettled([
+        shell,
+        preloadResource(`topics:english:${userId}`, () => api.topics()),
+        preloadResource(`personal:${userId}:english`, () => hydratePersonal(api, userId, 'english')),
+        preloadRoute(PAGE_ROUTES, location.pathname, { userId }),
+      ]);
+      const timeout = new Promise((resolve) => { timer = window.setTimeout(resolve, BOOT_TIMEOUT_MS); });
+      Promise.race([firstScreen, timeout]).then(() => {
+        window.clearTimeout(timer);
+        if (!active) return;
+        bootedFor.current = userId;
+        setReadyFor(userId);
+      });
+    }
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
   }, [location.pathname, userId]);
 
   useEffect(() => {
-    // Do not let the previous account's shell data remain visible during a
-    // sign-in transition while its replacement is loading.
-    setProgress(null);
-    setHealth(null);
-  }, [userId]);
-
-  useEffect(() => {
-    if (!userId) return undefined;
-    // A fresh identity must never inherit another session's cached resources.
-    clearResourceCache();
+    if (!ready) return undefined;
     const schedule = window.requestIdleCallback ?? ((cb) => window.setTimeout(cb, 250));
     const cancel = window.cancelIdleCallback ?? ((id) => window.clearTimeout(id));
     const handle = schedule(() => {
       if (!shouldPrefetchRoutes()) return;
-      for (const load of PAGE_LOADERS) load().catch(() => {});
+      for (const page of PREFETCH_PAGES) page.preload().catch(() => {});
     });
     return () => cancel(handle);
-  }, [userId]);
+  }, [ready]);
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
@@ -182,10 +227,11 @@ export default function App() {
     }
     setProgress(null);
     setHealth(null);
+    setReadyFor(null);
     setAuth(false);
   };
 
-  if (auth === null) {
+  if (auth === null || (auth && !ready)) {
     return (
       <div className="login-loading">
         <Pip mood="calm" size={72} bob />

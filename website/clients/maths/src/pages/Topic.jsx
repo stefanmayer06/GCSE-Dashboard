@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../api.js';
-import { invalidateResources, useResource } from '../../../shared/resource-cache.js';
+import { api, SUBJECT } from '../api.js';
+import { invalidateResources, preloadResource, useResource } from '../../../shared/resource-cache.js';
 import LessonVisual from '../components/LessonVisual.jsx';
 import MathsVisual from '../components/MathsVisual.jsx';
 import { RewardCelebration, RewardSummary } from '../../../shared/rewards.jsx';
@@ -12,13 +12,20 @@ import { explainerForTopic } from '../../../shared/explainer/library/maths/index
 import Mark from '../../../shared/circuit/Mark.jsx';
 import Icon from '../../../shared/circuit/Icon.jsx';
 
+const topicKey = (userId, topicId) => `topic:${SUBJECT}:${userId}:${topicId}`;
+
+// Loads the lesson behind the sign-in splash when it is the landing page.
+export function preload({ userId, params }) {
+  return preloadResource(topicKey(userId, params.topicId), () => api.topic(params.topicId));
+}
+
 export default function Topic({ onProgress, userId }) {
   const higherTier = window.location.pathname.startsWith('/maths-higher');
   const subject = higherTier ? 'maths-higher' : 'maths';
   const { topicId } = useParams();
   const navigate = useNavigate();
   const { data: fetchedTopic } = useResource(
-     userId && topicId ? `topic:${subject}:${userId}:${topicId}` : null,
+    userId && topicId ? topicKey(userId, topicId) : null,
     () => api.topic(topicId),
   );
   const [topicOverride, setTopicOverride] = useState(null);

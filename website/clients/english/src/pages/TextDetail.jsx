@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api.js';
-import { useResource } from '../../../shared/resource-cache.js';
+import { preloadResource, useResource } from '../../../shared/resource-cache.js';
 import { ReadAloud } from '../../../shared/ReadAloud.jsx';
+
+const textKey = (textId) => `text:english:${textId}`;
+
+// Loads the text behind the sign-in splash when it is the landing page.
+export function preload({ params }) {
+  return preloadResource(textKey(params.textId), () => api.text(params.textId));
+}
 
 export default function TextDetail() {
   const { textId } = useParams();
-  const { data: text } = useResource(textId ? `text:english:${textId}` : null, () => api.text(textId));
+  const { data: text } = useResource(textId ? textKey(textId) : null, () => api.text(textId));
   const [tab, setTab] = useState('A');
 
   useEffect(() => {

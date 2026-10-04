@@ -177,6 +177,12 @@ export function formName(state) {
   return state.tier > 0 ? state.critter.forms[state.tier - 1] : `${state.critter.family} egg`;
 }
 
+// The creature's name for sentences ("feeds Quillby"): eggs use the family.
+export function nameOf(state) {
+  if (!state) return '';
+  return state.tier > 0 ? state.critter.forms[state.tier - 1] : state.critter.family;
+}
+
 // "Grows from marked answers": the evidence track in a learner's words.
 export function trackCopy(state) {
   return state ? state.critter.track.toLowerCase() : '';

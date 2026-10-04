@@ -417,11 +417,12 @@ export default function Practice({ onProgress, progress = null, userId }) {
                 <p className="sub">One at a time, marked as you go, with the method when you need it.</p>
               </div>
             </div>
+            <span className="segmented-label" id="count-label">How many questions?</span>
             <Segmented
               label="How many questions?"
               value={count}
               onChange={setCount}
-              options={[10, 15, 20].map((value) => ({ value, label: `${value} questions` }))}
+              options={[10, 15, 20].map((value) => ({ value, label: String(value) }))}
             />
             <details className="practice-options">
               <summary>Options</summary>
@@ -516,8 +517,14 @@ function RoundRunner({ round, subject, onExit, onAgain, onProgress, userId }) {
   const last = index === total - 1;
   const title = ROUND_TITLES[mode] || ROUND_TITLES.mixed;
 
+  // Focus follows each new question (not the first: the round just opened).
+  const arrived = useRef(false);
   useEffect(() => {
     if (done) return;
+    if (!arrived.current) {
+      arrived.current = true;
+      return;
+    }
     const card = document.querySelector('.quiz-flow .quiz-q');
     card?.focus({ preventScroll: true });
   }, [index, done]);

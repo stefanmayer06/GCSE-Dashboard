@@ -64,6 +64,10 @@ const CONTEXT_REQUESTS = [
   { id: 'wrong', label: 'Why was I wrong?', text: 'Why is my answer wrong? Help me spot the mistake without just giving me the right answer.' },
 ];
 
+// Shared with the /chat page preload so the sheet and the page read one cache.
+export const chatKey = (subject, userId) => (userId ? `chat:${subject}:${userId}` : null);
+export const loadChatHistory = (api, subject) => api.chatHistory().then((response) => toMessages(response, subject));
+
 export function contextMessage(context, request) {
   const lines = [`I'm working on this ${context.kind || 'question'}${context.label ? ` (${context.label})` : ''}:`];
   if (context.question) lines.push(`"${String(context.question).trim()}"`);
@@ -74,17 +78,17 @@ export function contextMessage(context, request) {
 
 export function PipChat({ api, subject, userId, health = null, context = null, variant = 'page', onBack = null }) {
   const copy = copyFor(subject);
-  const chatKey = userId ? `chat:${subject}:${userId}` : null;
-  const { data: history, error } = useResource(chatKey, () => api.chatHistory().then((response) => toMessages(response, subject)));
+  const key = chatKey(subject, userId);
+  const { data: history, error } = useResource(key, () => loadChatHistory(api, subject));
   const [messages, setMessagesState] = useState(null);
   const [applied, setApplied] = useState(false);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [contextUsed, setContextUsed] = useState(false);
   const endRef = useRef(null);
-  const chatKeyRef = useRef(chatKey);
+  const chatKeyRef = useRef(key);
   const requestRef = useRef(0);
-  chatKeyRef.current = chatKey;
+  chatKeyRef.current = key;
 
   useEffect(() => {
     requestRef.current += 1;
@@ -92,7 +96,7 @@ export function PipChat({ api, subject, userId, health = null, context = null, v
     setApplied(false);
     setInput('');
     setBusy(false);
-  }, [chatKey]);
+  }, [key]);
 
   useEffect(() => {
     if (applied || messages != null) return;
@@ -115,14 +119,14 @@ export function PipChat({ api, subject, userId, health = null, context = null, v
   // page and the sheet always show the same conversation.
   function setMessages(next) {
     setMessagesState(next);
-    setResourceValue(chatKey, next);
+    setResourceValue(key, next);
   }
 
   async function send(text) {
     const content = (text ?? input).trim();
     if (!content || busy || !loaded) return;
     const requestId = ++requestRef.current;
-    const requestKey = chatKey;
+    const requestKey = key;
     setInput('');
     const next = [...messages, { role: 'user', content }];
     setMessages(next);
@@ -141,7 +145,7 @@ export function PipChat({ api, subject, userId, health = null, context = null, v
 
   async function reset() {
     const requestId = ++requestRef.current;
-    const requestKey = chatKey;
+    const requestKey = key;
     await api.clearChat();
     if (requestRef.current !== requestId || chatKeyRef.current !== requestKey) return;
     setMessages([{ role: 'assistant', content: 'Fresh start! What shall we work on?' }]);

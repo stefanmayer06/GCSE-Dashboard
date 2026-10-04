@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { preloadResource, useResource } from '../../../shared/resource-cache.js';
+import { AppHeader } from '../../../shared/AppShell.jsx';
+import { LearnTabs } from '../../../shared/CourseMap.jsx';
 
 const TEXTS_KEY = 'texts:english';
 
@@ -15,18 +17,17 @@ export default function Texts() {
   const texts = data?.texts ?? null;
 
   return (
-    <div className="page">
-      <header className="page-head">
-        <div>
-          <h1>The Texts</h1>
-          <p className="sub">
-            Current practice sources: six original contemporary fiction passages for Paper 1,
-            and Paper 2 pairs of 19th-century non-fiction and modern original non-fiction in either order.
-            Read them before or after a practice set. These are independent practice materials;
-            use official AQA samples as well for published exam passages.
-          </p>
-        </div>
+    <div className="page texts-page">
+      <AppHeader />
+      <header className="page-title-row">
+        <h1>Learn</h1>
       </header>
+      <LearnTabs current="texts" />
+      <p className="sub page-intro">
+        Practice sources: six original contemporary fiction passages for Paper 1, and Paper 2 pairs of
+        19th-century and modern non-fiction in either order. Read them before or after a practice set,
+        and use official AQA samples as well for published exam passages.
+      </p>
       {!texts && !error && <div className="loading">Loading texts…</div>}
       {error && !texts && <div className="loading">Could not load the text library. Check your connection and try again.</div>}
       {texts && (

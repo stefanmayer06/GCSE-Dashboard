@@ -8,7 +8,7 @@ import { hueVar, starsFor, strandInfo } from './circuit/palette.js';
 import { masteryStage } from './next-step.js';
 import { ERROR_TYPES } from './study-personal.js';
 import { useFocusMode } from './AppShell.jsx';
-import { CreatureGains, formName, useCreatures } from './creatures.jsx';
+import { CreatureGains, nameOf, useCreatures } from './creatures.jsx';
 import { AskPipButton } from './PipChat.jsx';
 import ExplainerPlayer from './explainer/Player.jsx';
 import { autoScript } from './explainer/autoscript.js';
@@ -273,7 +273,7 @@ export function QuizStart({ count, title, detail, busy = false, error = '', onSt
       <div className="quiz-start-copy">
         <h3>{title}</h3>
         <p className="sub">{detail}</p>
-        {quill ? <p className="quiz-start-feeds">Every marked answer feeds {formName(quill)}.</p> : null}
+        {quill ? <p className="quiz-start-feeds">Every marked answer feeds {nameOf(quill)}.</p> : null}
       </div>
       {error ? <div className="error-banner" role="alert">{error}</div> : null}
       <button type="button" className="btn btn-go btn-block" onClick={onStart} disabled={busy}>
@@ -402,7 +402,7 @@ export function MasteryPanel({ topic, nextTopic = null, learnBase = '/learn', re
         {prismo ? (
           <Link className="mastery-prismo" to="/creatures?open=prismo">
             <Critter id="prismo" tier={prismo.tier} progress={prismo.toNext} size={44} />
-            <span>Three-star topics grow <b>{formName(prismo)}</b> · {prismo.value} so far</span>
+            <span>Three-star topics grow <b>{nameOf(prismo)}</b> · {prismo.value} so far</span>
           </Link>
         ) : null}
       </div>

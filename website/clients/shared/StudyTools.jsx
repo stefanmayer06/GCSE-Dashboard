@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { invalidateResources, useResource } from './resource-cache.js';
 import { RetryFlow } from './PracticeKit.jsx';
+import { AskPipButton } from './PipChat.jsx';
 import { AppHeader } from './AppShell.jsx';
 import {
   classifyMistake,
@@ -450,6 +451,11 @@ export function Notebook({ userId, subject, api, renderQuestion = null }) {
             <div className="study-actions">
               {row.topicId && <Link className="btn btn-primary" to={`/learn/${row.topicId}`}>{row.warmupCount ? 'Micro-practice again' : 'Warm-up micro-practice'}</Link>}
               {row.topicId && <button type="button" className="btn" onClick={() => warmupDone(row)}>Warm-up done</button>}
+              <AskPipButton
+                context={{ kind: 'mistake', label: row.topicName, question: row.prompt, answer: row.answer == null ? null : String(row.answer), wrong: true }}
+                label="Ask Pip about this"
+                className="btn"
+              />
             </div>
             <p className="sub small">
               {row.warmupCount
@@ -597,6 +603,7 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
 
   return (
     <div className="page weekly-summary">
+      <Link to="/me" className="back-link no-print"><span aria-hidden="true">←</span> Me</Link>
       <header className="page-head">
         <div>
           <div className="eyebrow">Your week in review</div>
@@ -618,7 +625,7 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
       </section>
       <section className="panel">
         <h2>This week&apos;s exam plan</h2>
-        {plan?.days.length ? <div className="week-plan">{plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < dateKey(); return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done"><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : <span key={day.date} className={past ? 'past' : 'locked'}><b>{day.label}</b><span>{day.task}</span></span>); })}</div> : <p className="empty">Open the dashboard to build your 7-day plan.</p>}
+        {plan?.days.length ? <div className="week-plan">{plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < dateKey(); return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done"><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%</small> : null}</Link> : <span key={day.date} className={past ? 'past' : 'locked'}><b>{day.label}</b><span>{day.task}</span></span>); })}</div> : <p className="empty">Open Today to build your 7-day plan.</p>}
           <p className="sub">You completed {donePlan.length} of 7 planned days this week.</p>
       </section>
       <section className="panel">
@@ -657,7 +664,7 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
       </section>
       <section className="panel">
         <h2>What to do next</h2>
-        <p>Check today’s plan on the dashboard and retry any questions that are due.</p>
+        <p>Check today’s task on Today and retry any questions that are due.</p>
         <p className="sub">This summary is based on your marked work.</p>
         <div className="evidence-signature no-print" aria-hidden="true">
           <span>Print or save this page as a PDF to share it with a teacher or parent.</span>

@@ -448,11 +448,12 @@ export default function Practice({ health, onProgress, progress = null, userId }
                 ))}
               </div>
             </div>
+            <span className="segmented-label" id="count-label">How many questions?</span>
             <Segmented
               label="How many questions?"
               value={count}
               onChange={setCount}
-              options={[5, 10, 15].map((value) => ({ value, label: `${value} questions` }))}
+              options={[5, 10, 15].map((value) => ({ value, label: String(value) }))}
             />
             {roundError ? <div className="error-banner" role="alert">{roundError}</div> : null}
             <button type="button" className="btn btn-go btn-block" onClick={() => startRound({ count, kinds, mode: 'mixed' })} disabled={roundBusy}>
@@ -550,8 +551,14 @@ function RoundRunner({ round, onExit, onAgain, onProgress, userId = null }) {
   const last = index === total - 1;
   const title = ROUND_TITLES[mode] || ROUND_TITLES.mixed;
 
+  // Focus follows each new question (not the first: the round just opened).
+  const arrived = useRef(false);
   useEffect(() => {
     if (done) return;
+    if (!arrived.current) {
+      arrived.current = true;
+      return;
+    }
     const card = document.querySelector('.quiz-flow .quiz-q');
     if (card) {
       card.setAttribute('tabindex', '-1');

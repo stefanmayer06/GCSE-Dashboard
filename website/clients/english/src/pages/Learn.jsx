@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { useResource } from '../../../shared/resource-cache.js';
-import CourseMap, { recommendTile } from '../../../shared/CourseMap.jsx';
+import CourseMap, { LearnTabs, recommendTile } from '../../../shared/CourseMap.jsx';
 
 export default function Learn({ userId }) {
   const { data, error } = useResource(userId ? `topics:english:${userId}` : null, () => api.topics());
@@ -13,10 +13,12 @@ export default function Learn({ userId }) {
       {data ? (
         <CourseMap
           groups={groups}
-          title="English Language map"
-          sub="Every skill behind the 8700 papers as a level: watch the explainer, learn the moves, practise, then replay to earn all three stars."
+          title="Learn"
+          sub="Every skill behind the AQA 8700 papers, section by section. Each lesson is watch, learn, practise, and replays earn all three stars."
           recommendedId={recommendTile(groups)}
           bossLabel="Sit a full paper"
+          tabs={<LearnTabs current="skills" />}
+          searchLabel="Find a skill"
         />
       ) : null}
     </div>

@@ -4,7 +4,7 @@ import Sheet from './Sheet.jsx';
 import Icon from './circuit/Icon.jsx';
 import Critter from './circuit/Critter.jsx';
 import { useFocusMode } from './AppShell.jsx';
-import { formName, useCreatures } from './creatures.jsx';
+import { nameOf, useCreatures } from './creatures.jsx';
 import { AskPipButton } from './PipChat.jsx';
 import { QuizProgress } from './LessonKit.jsx';
 import { GRADES } from './study-personal.js';
@@ -82,7 +82,7 @@ export function RetryCard({ dueCount = 0 }) {
       <span className="practice-retry-copy">
         <span className="practice-retry-eyebrow">{dueCount === 1 ? '1 retry due' : `${dueCount} retries due`}</span>
         <b>Fix your mistakes</b>
-        <span>A few minutes. Each fix grows {redo ? formName(redo) : 'Redo'}.</span>
+        <span>A few minutes. Each fix grows {redo ? nameOf(redo) : 'Redo'}.</span>
       </span>
       <span className="btn btn-go small" aria-hidden="true">Start</span>
     </Link>
@@ -159,7 +159,13 @@ export function RetryFlow({ rows, api, renderQuestion = null, onGrade, onExit })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [row?.id]);
 
+  // Move focus to each new retry, but not on arrival (the page already has it).
+  const arrived = useRef(false);
   useEffect(() => {
+    if (!arrived.current) {
+      arrived.current = true;
+      return;
+    }
     cardRef.current?.focus({ preventScroll: true });
   }, [index]);
 
@@ -191,7 +197,7 @@ export function RetryFlow({ rows, api, renderQuestion = null, onGrade, onExit })
           {redo ? (
             <div className="retry-redo">
               <Critter id="redo" tier={redo.tier} progress={redo.toNext} size={72} />
-              <p>Each mistake you get right four times is fixed for good, and every fix grows <b>{formName(redo)}</b>. Misses come back tomorrow.</p>
+              <p>Each mistake you get right four times is fixed for good, and every fix grows <b>{nameOf(redo)}</b>. Misses come back tomorrow.</p>
             </div>
           ) : null}
           <div className="quiz-done-actions">

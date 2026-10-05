@@ -578,33 +578,6 @@ export function createJsonStorage({ dataDir } = {}) {
     });
   }
 
-  async function upsertMigrationUser(input) {
-    await init();
-    return withLock(usersFile, async () => {
-      const users = await readObject(usersFile);
-      const requestedUsername = requiredString(input?.username, 'username');
-      const usernameMatch = users[requestedUsername] ? requestedUsername : null;
-      const idMatch = input?.id == null
-        ? null
-        : Object.entries(users).find(
-            ([name, record]) => readableUser(record, name).id === String(input.id),
-          )?.[0] || null;
-      if (usernameMatch && idMatch && usernameMatch !== idMatch) {
-        throw storageError('STORAGE_CONFLICT', 'Migration user matches different existing users', {
-          field: 'id',
-        });
-      }
-      const existingUsername = usernameMatch || idMatch;
-      const existing = existingUsername ? readableUser(users[existingUsername], existingUsername) : null;
-      const user = persistedUser(input, existing);
-      assertUniqueOAuth(users, user.record, existingUsername);
-      if (existingUsername && existingUsername !== user.username) delete users[existingUsername];
-      users[user.username] = user.record;
-      await atomicWrite(usersFile, users);
-      return readableUser(user.record, user.username);
-    });
-  }
-
   async function putAuthSession(input) {
     await init();
     if (!input || typeof input !== 'object') {
@@ -1024,7 +997,6 @@ export function createJsonStorage({ dataDir } = {}) {
     getUserByUsername,
     getUserByOAuthIdentity,
     createUser,
-    upsertMigrationUser,
     putAuthSession,
     getAuthSession,
     deleteAuthSession,

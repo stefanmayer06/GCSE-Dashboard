@@ -16,7 +16,7 @@ Supabase secret/service-role key through an `EXPO_PUBLIC_*` variable.
 
 - `app/_layout.tsx`: root providers, session-aware redirects, stack navigation and the top-level error boundary.
 - `app/(tabs)/`: Today, Learn, Practice and Tutor tab routes.
-- `app/auth/`: sign-in, signup, email confirmation, password recovery and legacy-account claim routes.
+- `app/auth/`: sign-in, signup, email confirmation and password recovery routes.
 - `app/practice/[id].tsx`, `app/lesson/[id].tsx`, `app/text/[id].tsx`: active learning and marking flows.
 - `app/results/[id].tsx`: recent-result presentation and retry actions.
 - `app/notebook.tsx`, `app/weekly-summary.tsx`, `app/settings.tsx`: account-level study tools and settings.

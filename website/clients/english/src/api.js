@@ -130,21 +130,6 @@ export const api = {
       }
       return result;
     },
-    claim: async ({ username, email, currentPassword, newPassword }) => {
-      const result = await authReq('/claim', {
-        method: 'POST',
-        body: { username, email, currentPassword, newPassword },
-      });
-      if (result.session && supabase) {
-        await supabase.auth.setSession({
-          access_token: result.session.access_token,
-          refresh_token: result.session.refresh_token,
-        });
-      } else {
-        storeSupabaseSession(result.session);
-      }
-      return result.session ? authReq('/me') : result;
-    },
     logout: async () => {
       clearSupabaseSession();
       if (!supabase) await authReq('/logout', { method: 'POST' }).catch(() => undefined);

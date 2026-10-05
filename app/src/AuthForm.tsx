@@ -8,7 +8,7 @@ import { accountLinks } from "./settings";
 import { supabase } from "./supabase";
 import { useTheme } from "./theme";
 
-type Mode = "signin" | "signup" | "forgot" | "recover" | "claim";
+type Mode = "signin" | "signup" | "forgot" | "recover";
 export type RecoveryParams = {
   accessToken?: string;
   refreshToken?: string;
@@ -44,7 +44,6 @@ export function AuthForm({
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [oldPassword, setOldPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -69,7 +68,6 @@ export function AuthForm({
     signup: "Create account",
     forgot: "Reset password",
     recover: "Choose a password",
-    claim: "Move an account",
   };
 
   useEffect(() => {
@@ -143,16 +141,14 @@ export function AuthForm({
       setError("Confirm you are 13 or over to create an account. GCSE Study Desk is for learners aged 13+.");
       return false;
     }
-    if (mode === "signin" || mode === "signup" || mode === "forgot" || mode === "claim") {
+    if (mode === "signin" || mode === "signup" || mode === "forgot") {
       if (!email.trim()) problems.email = "Enter your email address.";
       else if (!emailValid(email)) problems.email = "That email does not look complete — check for a typo.";
     }
-    if (mode === "signup" || mode === "claim") {
+    if (mode === "signup") {
       if (username.trim().length < 3 || username.trim().length > 32)
         problems.username = "Usernames need 3–32 characters.";
     }
-    if (mode === "claim" && !oldPassword)
-      problems.oldPassword = "Enter your current account password.";
     if (mode !== "forgot") {
       const min = mode === "signin" ? 1 : 8;
       if (!password) problems.password = "Enter your password.";
@@ -201,17 +197,11 @@ export function AuthForm({
         if (updateError) throw updateError;
         router.replace("/");
       } else {
-        const result = await authRequest<ApiAuthResponse>(
-          mode === "signup" ? "/signup" : "/claim",
-          mode === "signup"
-            ? { username, email, password }
-            : {
-                username,
-                email,
-                currentPassword: oldPassword,
-                newPassword: password,
-              },
-        );
+        const result = await authRequest<ApiAuthResponse>("/signup", {
+          username,
+          email,
+          password,
+        });
         const state = await applyApiAuthResponse(supabase, result);
         router.replace(state === "confirmation-required" ? "/auth/confirm" : "/");
       }
@@ -228,11 +218,9 @@ export function AuthForm({
     <ScrollScreen>
       <DeskHeader title={titles[mode]} eyebrow="SECURE STUDY ACCOUNT" />
       <Text style={{ color: colors.quiet, lineHeight: 21 }}>
-        {mode === "claim"
-          ? "Verify your old account, then move its compact progress to a secure email account."
-          : mode === "signup"
-            ? "One account keeps progress separate across all three subjects."
-            : "Your secure session is stored in the device keychain, not ordinary app storage."}
+        {mode === "signup"
+          ? "One account keeps progress separate across all three subjects."
+          : "Your secure session is stored in the device keychain, not ordinary app storage."}
       </Text>
       {mode === "recover" && !recoveryReady && !error && (
         <Notice kind="loading" title="VERIFYING RECOVERY LINK">
@@ -255,7 +243,7 @@ export function AuthForm({
           {fieldError("email")}
         </>
       )}
-      {(mode === "signup" || mode === "claim") && (
+      {mode === "signup" && (
         <>
           <Field
             label="Username"
@@ -269,24 +257,7 @@ export function AuthForm({
           {fieldError("username")}
         </>
       )}
-      {mode === "claim" && (
-        <>
-          <Field
-            label="Current password"
-            secureTextEntry
-            value={oldPassword}
-            onChangeText={(value) => {
-              setOldPassword(value);
-              clearField("oldPassword");
-            }}
-          />
-          {fieldError("oldPassword")}
-        </>
-      )}
-      {(mode === "signin" ||
-        mode === "signup" ||
-        mode === "recover" ||
-        mode === "claim") && (
+      {(mode === "signin" || mode === "signup" || mode === "recover") && (
         <>
           <Field
             label={mode === "recover" ? "New password" : "Password"}
@@ -355,14 +326,6 @@ export function AuthForm({
           style={{ color: colors.info, fontWeight: "700" }}
         >
           Forgot password?
-        </Link>
-      )}
-      {mode === "signin" && (
-        <Link
-          href="/auth/claim"
-          style={{ color: colors.info, fontWeight: "700" }}
-        >
-          Move an old username account to email sign-in
         </Link>
       )}
     </ScrollScreen>

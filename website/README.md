@@ -56,7 +56,7 @@ Docker development.
 - The server requires `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY`. The publishable key is used only for user Auth operations; the secret key is used for privileged storage/admin operations and must never be exposed through `VITE_*` or `EXPO_PUBLIC_*` variables.
 - The public schema contains `profiles`, compact `subject_progress` aggregates, temporary `study_sessions`, plus account personal data: `subject_preferences`, `study_plans`, `study_plan_days` and `mistake_notebook`. All user-owned tables are protected by RLS (`user_id = auth.uid()`).
 - Browser/device preferences, plans and notebook mistakes load through the per-subject `/personal` API and follow the account across devices. Legacy localStorage/AsyncStorage data is uploaded once into empty domains and then cleared.
-- Legacy users and migration-only data live in the private `migration_private` schema. Password hashes are never copied to public tables or logs.
+- New accounts are created directly through Supabase Auth sign-up. The old one-time account move (and its private `migration_private` staging schema) has been retired.
 - Tutor chat is not persisted by the Supabase driver. Finalized paper attempts are durable (`paper_attempts`, most recent 50 per user and subject) and replayable from the results page; the dashboards use retained topic aggregates for current focus.
 - Mobile `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` values must identify this same project. Disable **Confirm email** for immediate post-signup API access; if it is enabled, users must confirm their address before Supabase returns a session.
 

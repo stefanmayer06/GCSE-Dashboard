@@ -22,6 +22,8 @@ const Texts = preloadablePage(() => import('./pages/Texts.jsx'));
 const TextDetail = preloadablePage(() => import('./pages/TextDetail.jsx'));
 const Chat = preloadablePage(() => import('./pages/Chat.jsx'));
 const GraphicsLab = preloadablePage(() => import('../../shared/GraphicsLab.jsx'));
+const Creatures = preloadablePage(() => import('../../shared/CreaturesPage.jsx'));
+const Me = preloadablePage(() => import('../../shared/MePage.jsx'));
 const Notebook = preloadablePage(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.Notebook })));
 const WeeklySummary = preloadablePage(() => import('../../shared/StudyTools.jsx').then((m) => ({ default: m.WeeklySummary })));
 
@@ -39,6 +41,8 @@ const PAGE_ROUTES = [
   { path: '/notebook', page: Notebook },
   { path: '/summary', page: WeeklySummary },
   { path: '/chat', page: Chat },
+  { path: '/creatures', page: Creatures },
+  { path: '/me', page: Me },
   { path: '/lab', page: GraphicsLab },
 ];
 
@@ -56,13 +60,11 @@ function PageFallback() {
 }
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: '01' },
-  { to: '/practice', label: 'Papers', icon: '02' },
-  { to: '/learn', label: 'Learn', icon: '03' },
-  { to: '/texts', label: 'Texts', icon: '04' },
-  { to: '/notebook', label: 'Notebook', icon: '05' },
-  { to: '/summary', label: 'Summary', icon: '06' },
-  { to: '/chat', label: 'AI Tutor', icon: '07' },
+  { to: '/', label: 'Today' },
+  { to: '/learn', label: 'Learn', match: ['/learn', '/texts'] },
+  { to: '/practice', label: 'Practice', match: ['/practice', '/results', '/notebook'] },
+  { to: '/creatures', label: 'Creatures' },
+  { to: '/me', label: 'Me', match: ['/me', '/summary'] },
 ];
 
 function initialTheme() {
@@ -90,6 +92,7 @@ export default function App() {
   const { data: topicCatalog } = useResource(ready ? `topics:english:${userId}` : null, () => api.topics());
   // Same personal cache as the dashboard: feeds the Notebook due badge.
   const { data: personal } = useResource(ready ? `personal:${userId}:english` : null, () => hydratePersonal(api, userId, 'english'));
+  const topicCount = useMemo(() => flattenTopics(topicCatalog, 'sections').length, [topicCatalog]);
   const notebookDue = (() => {
     try {
       return dueMistakeRows(personal?.mistakes ?? []).length;
@@ -100,15 +103,17 @@ export default function App() {
 
   const paletteItems = useMemo(() => {
     const routes = [
-      { href: '/', label: 'Dashboard', group: 'Go', hint: 'command centre' },
-      { href: '/practice', label: 'Exam papers', group: 'Go', hint: 'exam desk' },
-      { href: '/practice?diagnostic=1#adhoc', label: 'Diagnostic · 10 questions', group: 'Go', hint: 'start here' },
-      { href: '/learn', label: 'Learn skills', group: 'Go', hint: 'lessons' },
+      { href: '/', label: 'Today', group: 'Go', hint: 'what to do next' },
+      { href: '/practice', label: 'Practice', group: 'Go', hint: 'papers and quick-fire' },
+      { href: '/practice?diagnostic=1#adhoc', label: '10-question check', group: 'Go', hint: 'start here' },
+      { href: '/learn', label: 'Learn skills', group: 'Go', hint: 'your map' },
       { href: '/texts', label: 'Source texts', group: 'Go', hint: 'library' },
-      { href: '/notebook', label: 'Mistake notebook', group: 'Go', hint: 'retries' },
+      { href: '/notebook', label: 'Retry mistakes', group: 'Go', hint: 'due questions' },
+      { href: '/creatures', label: 'Creatures', group: 'Go', hint: 'your collection' },
+      { href: '/me', label: 'Me', group: 'Go', hint: 'exam date and settings' },
       { href: '/summary', label: 'Weekly summary', group: 'Go', hint: 'progress' },
       { href: '/results', label: 'Latest results', group: 'Go', hint: 'marking' },
-      { href: '/chat', label: 'AI tutor', group: 'Go', hint: 'help' },
+      { href: '/chat', label: 'Ask Pip', group: 'Go', hint: 'AI tutor' },
     ];
     const lessons = flattenTopics(topicCatalog, 'sections')
       .slice(0, 60)
@@ -243,8 +248,9 @@ export default function App() {
   if (!auth) {
     return (
       <LoginScreen
-        subjectName="EnglishMate"
-        tag="AQA GCSE English Language"
+        subjectName="GCSE Study Desk"
+        tag="English Language"
+        subject="english"
         letter="E"
         authApi={api.auth}
         onSignedIn={(user) => setAuth(user)}
@@ -255,29 +261,32 @@ export default function App() {
   return (
     <AppShell
       tierClass="english-tier"
-      brand={{ letter: 'E', name: 'EnglishMate', sub: 'AQA English Language', strand: 'reading' }}
+      subject="english"
+      brand={{ name: 'Study Desk', sub: 'English Language' }}
       nav={NAV}
-      auth={auth}
       progress={progress}
-      healthNote={health ? `${health.texts} source texts · ${health.aiMarking ? 'AI marking on' : 'AI marking off (no key)'}` : null}
-      theme={theme}
-      onToggleTheme={toggleTheme}
-      onSignOut={signOut}
+      personal={personal}
+      topicCount={topicCount}
+      health={health}
+      api={api}
+      userId={userId}
       paletteItems={paletteItems}
-      notebookDue={notebookDue}
+      practiceDue={notebookDue}
     >
       <Suspense fallback={<PageFallback />}>
         <Routes>
-          <Route path="/" element={<Dashboard health={health} progress={progress} userId={userId} />} />
-          <Route path="/practice" element={<Practice health={health} onProgress={setProgress} userId={userId} />} />
+          <Route path="/" element={<Dashboard progress={progress} userId={userId} />} />
+          <Route path="/practice" element={<Practice health={health} onProgress={setProgress} progress={progress} userId={userId} />} />
           <Route path="/results" element={<Results userId={userId} />} />
           <Route path="/learn" element={<Learn userId={userId} />} />
-          <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} userId={userId} />} />
+          <Route path="/learn/:topicId" element={<Topic onProgress={setProgress} progress={progress} userId={userId} />} />
           <Route path="/texts" element={<Texts />} />
           <Route path="/texts/:textId" element={<TextDetail />} />
           <Route path="/notebook" element={<Notebook userId={userId} subject="english" api={api} />} />
           <Route path="/summary" element={<WeeklySummary userId={userId} subject="english" progress={progress} api={api} username={auth.username} />} />
           <Route path="/chat" element={<Chat health={health} userId={userId} />} />
+          <Route path="/creatures" element={<Creatures subjectName="English" api={api} />} />
+          <Route path="/me" element={<Me userId={userId} username={auth.username} subject="english" api={api} progress={progress} topics={flattenTopics(topicCatalog, 'sections')} theme={theme} onToggleTheme={toggleTheme} onSignOut={signOut} />} />
           <Route path="/lab" element={<GraphicsLab subject="english" />} />
         </Routes>
       </Suspense>

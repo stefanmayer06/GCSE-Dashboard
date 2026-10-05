@@ -2,10 +2,25 @@
 <html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Know what to revise next with free AQA-style GCSE Maths and English practice, worked solutions and scheduled mistake reviews." />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="theme-color" content="#191b30" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <script>
+      // Opened from the home-screen app: go straight back to the last subject.
+      try {
+        if (new URLSearchParams(location.search).get('source') === 'app') {
+          var last = localStorage.getItem('gcse-last-subject');
+          if (['/maths/', '/maths-higher/', '/english/'].indexOf(last) !== -1) location.replace(last);
+        }
+      } catch (e) {}
+    </script>
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Study Desk" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="canonical" href="https://gcse-dashboard-server.vercel.app/" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_GB" />

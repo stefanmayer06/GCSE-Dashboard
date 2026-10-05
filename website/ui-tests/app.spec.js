@@ -6,7 +6,18 @@ function scopedKey(subject, name) {
   return `gcse-admin-${subject}-${name}`;
 }
 
+// The first visit to Today shows a short welcome (exam date, first egg).
+// Tests that are not about the welcome mark it as seen for the admin.
+async function skipWelcome(page, user = 'admin') {
+  await page.addInitScript((name) => {
+    for (const subject of ['maths', 'maths-higher', 'english']) {
+      localStorage.setItem(`gcse-welcome:${subject}:${encodeURIComponent(name)}`, '1');
+    }
+  }, user);
+}
+
 async function signIn(page) {
+  await skipWelcome(page);
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
   const username = page.locator('input[name="username"]');
   if (await username.count()) {
@@ -17,18 +28,22 @@ async function signIn(page) {
   }
 }
 
-async function completeMathsLessonQuiz(page) {
-  await page.getByRole('button', { name: 'Start 5 questions' }).click();
-  const questions = page.locator('.quiz-q');
-  await expect(questions).toHaveCount(5);
-  for (let index = 0; index < 5; index += 1) {
-    const question = questions.nth(index);
+// Lessons ask one question at a time: answer, check, then move on.
+async function answerMathsQuiz(page, count = 5) {
+  for (let index = 0; index < count; index += 1) {
+    await expect(page.locator('.quiz-progress-count')).toHaveText(`Question ${index + 1} of ${count}`);
+    const question = page.locator('.quiz-flow .quiz-q');
     const choices = question.locator('.choice');
     if (await choices.count()) await choices.first().click();
     else await question.locator('.answer-input').fill('1');
     await question.getByRole('button', { name: 'Check answer' }).click();
+    await page.getByRole('button', { name: index === count - 1 ? 'Finish & score' : 'Next question' }).click();
   }
-  await page.getByRole('button', { name: 'Finish & score' }).click();
+}
+
+async function completeMathsLessonQuiz(page) {
+  await page.getByRole('button', { name: 'Start 5 questions' }).click();
+  await answerMathsQuiz(page, 5);
 }
 
 const pages = [
@@ -44,17 +59,17 @@ const pages = [
   ['maths-higher-dashboard', '/maths-higher/', ['h1', '.subject-switch']],
   ['maths-higher-practice', '/maths-higher/practice', ['h1']],
   ['maths-higher-exam', '/maths-higher/practice?paper=1&type=short', ['.exam-bar', '.q-card']],
-  ['maths-higher-learn', '/maths-higher/learn/surds', ['.notes']],
+  ['maths-higher-learn', '/maths-higher/learn/surds#learn', ['.notes']],
   ['maths-learn', '/maths/learn', ['.strand-panel']],
-  ['maths-topic', '/maths/learn/fractions', ['.notes']],
-  ['maths-factors-topic', '/maths/learn/factors-multiples', ['.notes']],
+  ['maths-topic', '/maths/learn/fractions#learn', ['.notes']],
+  ['maths-factors-topic', '/maths/learn/factors-multiples#learn', ['.notes']],
   ['maths-chat', '/maths/chat', ['.chat-box']],
   ['english-dashboard', '/english/', ['h1', '.subject-switch']],
   ['english-practice', '/english/practice', ['h1']],
   ['english-exam-paper-1', '/english/practice?paper=1&type=short', ['.exam-bar', '.q-card', '.source-panel']],
   ['english-exam-paper-2', '/english/practice?paper=2&type=short', ['.exam-bar', '.source-tabs']],
   ['english-learn', '/english/learn', ['.strand-panel']],
-  ['english-topic', '/english/learn/language', ['.notes']],
+  ['english-topic', '/english/learn/language#learn', ['.notes']],
   ['english-texts', '/english/texts', ['.text-card']],
   ['english-text-detail', '/english/texts/p1-great-expectations', ['.text-detail-source']],
   ['english-chat', '/english/chat', ['.chat-box']],
@@ -111,6 +126,7 @@ test('English current fiction library preserves an archived classic deep link', 
 });
 
 test('login gate accepts the admin account and rejects a bad password', async ({ page }) => {
+  await skipWelcome(page);
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
   await expect(page.locator('.login-card')).toBeVisible();
   await page.locator('input[name="username"]').fill('admin');
@@ -120,6 +136,7 @@ test('login gate accepts the admin account and rejects a bad password', async ({
   await page.locator('input[name="password"]').fill('admin');
   await page.locator('button[type="submit"]').click();
   await expect(page.locator('.sidebar')).toBeVisible();
+  await page.getByRole('link', { name: 'Me', exact: true }).click();
   await expect(page.locator('.sign-out')).toContainText('admin');
 });
 
@@ -141,6 +158,7 @@ test('signing out returns to the login gate', async ({ page }) => {
     localStorage.setItem('gcse-admin-maths-last-result', 'private scoped result');
     localStorage.setItem('gcse-admin-english-last-result', 'other scoped result');
   });
+  await page.goto(`${BASE}/maths/me`, { waitUntil: 'networkidle' });
   await page.locator('.sign-out').click();
   await expect(page.locator('.login-card')).toBeVisible();
   await expect.poll(() => page.evaluate((keys) => keys.map((key) => localStorage.getItem(key)), storageKeys)).toEqual(storageKeys.map(() => null));
@@ -192,7 +210,9 @@ test('homepage check continues through signup into ten diagnostic questions', as
   await page.locator('input[name="password"]').fill('revision-pass-1');
   await page.locator('input[name="confirm"]').fill('revision-pass-1');
   await page.getByRole('button', { name: 'Create account' }).click();
-  await expect(page.locator('.quiz-q')).toHaveCount(10);
+  await expect(page.locator('.round-title b')).toHaveText('10-question check');
+  await expect(page.locator('.quiz-progress-count')).toHaveText('Question 1 of 10');
+  await expect(page.locator('.quiz-flow .quiz-q')).toHaveCount(1);
   await expect.poll(async () => {
     const response = await page.request.get(`${BASE}/api/events/summary`);
     return response.ok() ? (await response.json()).counts.diagnostic_start : undefined;
@@ -314,6 +334,8 @@ test('topics without an authored explainer get a narrated talk-through', async (
   await signIn(page);
   await page.goto(`${BASE}/maths/learn/decimals`, { waitUntil: 'networkidle' });
   await expect(page.locator('.xp-poster h3')).toContainText('talk-through');
+  await page.getByRole('button', { name: /^Step 2: Learn/ }).click();
+  await expect(page).toHaveURL(/#learn$/);
   await expect(page.locator('#stage-learn .notes')).toBeVisible();
   await page.goto(`${BASE}/english/learn/language`, { waitUntil: 'networkidle' });
   await expect(page.locator('.xp-poster h3')).toHaveText('Zoom into a word');
@@ -331,11 +353,13 @@ test('lesson headers avoid treating study-priority scores as exam weight claims'
 
 test('standard form lesson opens a five-question practice', async ({ page }) => {
   await signIn(page);
-  await page.goto(`${BASE}/maths/learn/standard-form`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/maths/learn/standard-form#learn`, { waitUntil: 'networkidle' });
   await expect(page.locator('h1')).toHaveText('Standard Form');
   await expect(page.locator('.example-card')).toContainText('0.00042');
+  await page.getByRole('button', { name: /^Next: Practise/ }).click();
   await page.getByRole('button', { name: 'Start 5 questions' }).click();
-  await expect(page.locator('.quiz-q')).toHaveCount(5);
+  await expect(page.locator('.quiz-progress-count')).toHaveText('Question 1 of 5');
+  await expect(page.locator('.quiz-flow .quiz-q')).toHaveCount(1);
 });
 
 test('English tutor renders Markdown response structure', async ({ page }) => {
@@ -477,7 +501,7 @@ test('Maths recovers if a paper expires while it is open', async ({ page }) => {
   await page.getByRole('button', { name: 'Submit paper' }).click();
   await page.getByRole('button', { name: 'Submit', exact: true }).click();
   await expect(page.locator('.error-banner')).toContainText('no longer active');
-  await expect(page.locator('h1')).toContainText('Practice exam');
+  await expect(page.locator('h1')).toContainText('Practice');
   await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), scopedKey('maths', 'active-test'))).toBeNull();
 });
 
@@ -518,7 +542,7 @@ test('Foundation Maths renders an accessible visual question in the exam runner'
 
 test('Foundation lesson graph supports keyboard inspection and resizing', async ({ page }) => {
   await signIn(page);
-  await page.goto(`${BASE}/maths/learn/graphs`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/maths/learn/graphs#learn`, { waitUntil: 'networkidle' });
   const visual = page.locator('.lesson-visual .maths-visual');
   await expect(visual).toBeVisible();
   await visual.locator('.visual-point').first().focus();
@@ -531,7 +555,7 @@ test('Foundation lesson graph supports keyboard inspection and resizing', async 
 test('Foundation lesson visual stays interactive at mobile width', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page);
-  await page.goto(`${BASE}/maths/learn/charts`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/maths/learn/charts#learn`, { waitUntil: 'networkidle' });
   const visual = page.locator('.lesson-visual .maths-visual');
   await expect(visual).toBeVisible();
   await visual.locator('.data-bar-column').first().click();
@@ -542,9 +566,10 @@ test('Foundation lesson visual stays interactive at mobile width', async ({ page
 
 test('dark mode toggles, persists and reaches every surface', async ({ page }) => {
   await signIn(page);
-  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/maths/me`, { waitUntil: 'networkidle' });
   const lightBackground = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
   await page.locator('.theme-toggle').click();
+  await expect(page.locator('.theme-toggle')).toHaveAttribute('aria-checked', 'true');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   const darkBackground = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
   expect(darkBackground).not.toEqual(lightBackground);
@@ -560,12 +585,13 @@ test('tablet navigation keeps account controls and accessible names', async ({ p
   await page.setViewportSize({ width: 800, height: 900 });
   await signIn(page);
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.sidebar nav a')).toHaveCount(5);
+  await expect.poll(() => page.locator('.sidebar nav a').evaluateAll((links) => links.map((link) => link.getAttribute('aria-label')))).toEqual([
+    'Today', 'Learn', 'Practice', 'Creatures', 'Me',
+  ]);
+  await page.getByRole('link', { name: 'Me', exact: true }).click();
   await expect(page.locator('.theme-toggle')).toBeVisible();
   await expect(page.locator('.sign-out')).toBeVisible();
-  await expect(page.locator('.sidebar nav a')).toHaveCount(6);
-  await expect.poll(() => page.locator('.sidebar nav a').evaluateAll((links) => links.map((link) => link.getAttribute('aria-label')))).toEqual([
-    'Dashboard', 'Practice', 'Learn', 'Notebook', 'Summary', 'AI Tutor',
-  ]);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
@@ -574,11 +600,15 @@ test('mobile header controls meet the touch target', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 });
   await signIn(page);
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
-  const sizes = await page.locator('.subject-switch, .theme-toggle, .sign-out').evaluateAll((controls) => controls.map((control) => {
+  const controls = page.locator('.app-header .subject-pill, .app-header .streak-chip, .app-header .header-partner, .sidebar .nav-item');
+  await expect(controls).toHaveCount(8);
+  const sizes = await controls.evaluateAll((items) => items.map((control) => {
     const rect = control.getBoundingClientRect();
     return { width: rect.width, height: rect.height };
   }));
   expect(sizes.every(({ width, height }) => width >= 44 && height >= 44)).toBeTruthy();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
 });
 
 test('save-data connections skip non-critical route prefetches', async ({ page }) => {
@@ -613,7 +643,7 @@ test('landscape tablet keeps collapsed sidebar controls reachable', async ({ pag
   expect(metrics.sidebarScrollHeight).toBeGreaterThan(metrics.sidebarHeight);
 
   await page.locator('.sidebar').evaluate((sidebar) => { sidebar.scrollTop = sidebar.scrollHeight; });
-  const controlsInViewport = await page.evaluate(() => ['.theme-toggle', '.sign-out'].every((selector) => {
+  const controlsInViewport = await page.evaluate(() => ['.sidebar nav a[aria-label="Me"]', '.sidebar .palette-trigger'].every((selector) => {
     const rect = document.querySelector(selector).getBoundingClientRect();
     return rect.top >= 0 && rect.bottom <= window.innerHeight;
   }));
@@ -631,7 +661,16 @@ test('a new visitor can create an account and sign in with it', async ({ page })
   await page.locator('input[name="password"]').fill(password);
   await page.locator('input[name="confirm"]').fill(password);
   await page.locator('button[type="submit"]').click();
+  await expect(page.locator('.welcome-page h1')).toHaveText('When are your exams?');
+  await page.getByRole('radio', { name: /Summer/ }).first().click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.locator('.welcome-page h1')).toHaveText('Pick your first egg');
+  await page.getByRole('radio', { name: /Tock/ }).click();
+  await page.getByRole('button', { name: 'Choose Tock' }).click();
   await expect(page.locator('.sidebar')).toBeVisible();
+  await expect(page.locator('.upnext-card h2')).toHaveText('Take the 10-question check');
+  await expect(page.locator('.rail-partner')).toContainText('Tock egg');
+  await page.getByRole('link', { name: 'Me', exact: true }).click();
   await expect(page.locator('.sign-out')).toContainText(username);
 });
 
@@ -661,8 +700,10 @@ test('login lowercases the username so capitals work', async ({ page }) => {
   await page.locator('input[name="password"]').fill(password);
   await page.locator('input[name="confirm"]').fill(password);
   await page.locator('button[type="submit"]').click();
+  await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page.locator('.sidebar')).toBeVisible();
 
+  await page.goto(`${BASE}/maths/me`, { waitUntil: 'networkidle' });
   await page.locator('.sign-out').click();
   await expect(page.locator('.login-card')).toBeVisible();
   await page.locator('input[name="username"]').fill(username.toUpperCase());
@@ -717,12 +758,15 @@ test('lesson rewards persist, update levels live and cannot be claimed twice', a
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${BASE}/maths/learn/fractions`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/maths/learn/fractions#practise`, { waitUntil: 'networkidle' });
   await completeMathsLessonQuiz(page);
 
   await expect(page.locator('.reward-dialog')).toBeVisible();
   await expect(page.locator('.reward-dialog')).toContainText('Lesson complete');
-  await expect(page.locator('.reward-dialog')).toContainText('XP for finishing the lesson');
+  // Rewards are creatures now: the dialog shows what the lesson fed.
+  await expect(page.locator('.reward-dialog .creature-gains')).toContainText('What this lesson fed');
+  await expect(page.locator('.reward-dialog .creature-gains')).toContainText(/marked answers?/);
+  await expect(page.locator('.reward-dialog')).not.toContainText('XP');
   await expect(page.locator('.reward-close')).toBeFocused();
   await page.keyboard.press('Shift+Tab');
   await expect(page.getByRole('button', { name: 'Choose another lesson' })).toBeFocused();
@@ -739,26 +783,19 @@ test('lesson rewards persist, update levels live and cannot be claimed twice', a
   expect(firstProgress.xp).toBeGreaterThanOrEqual(20);
 
   await page.getByRole('button', { name: 'Another 5' }).click();
-  const questions = page.locator('.quiz-q');
-  await expect(questions.first().getByRole('button', { name: 'Check answer' })).toBeVisible();
-  for (let index = 0; index < 5; index += 1) {
-    const question = questions.nth(index);
-    const choices = question.locator('.choice');
-    if (await choices.count()) await choices.first().click();
-    else await question.locator('.answer-input').fill('1');
-    await question.getByRole('button', { name: 'Check answer' }).click();
-  }
   const repeatResponse = page.waitForResponse((response) => response.url().endsWith('/api/maths/practice/submit'));
-  await page.getByRole('button', { name: 'Finish & score' }).click();
+  await answerMathsQuiz(page, 5);
   const repeat = await (await repeatResponse).json();
   expect(repeat.reward.firstCompletion).toBeFalsy();
   expect(repeat.reward.completionXp).toBe(0);
   await expect(page.locator('.reward-dialog')).toHaveCount(0);
+  await expect(page.locator('.quiz-done')).toContainText('What this round fed');
 
-  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
-  await expect(page.locator('.expertise-path')).toContainText('1 lesson completed');
-  await page.getByRole('button', { name: 'View badge collection' }).click();
-  await expect(page.locator('.badge-collection')).toBeVisible();
+  // Marked answers grow Quillby; the Creatures tab shows the same count.
+  const latest = await (await page.request.get(`${BASE}/api/maths/progress`)).json();
+  await page.goto(`${BASE}/maths/creatures`, { waitUntil: 'networkidle' });
+  await expect(page.locator('.critter-card', { hasText: 'Quillby egg' })).toContainText(`${latest.practiceAnswered} / 25`);
+  await expect(page.locator('body')).not.toContainText(/\bXP\b|Level \d|badge collection/i);
 });
 
 test('milestone creatures hatch from marked work and open as interactive badges', async ({ page }) => {
@@ -768,7 +805,7 @@ test('milestone creatures hatch from marked work and open as interactive badges'
   });
   expect(signup.ok()).toBeTruthy();
 
-  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/maths/creatures`, { waitUntil: 'networkidle' });
   const cards = page.locator('.critter-card');
   await expect(cards).toHaveCount(8);
   await expect(page.locator('.critter-card.rank-egg')).toHaveCount(8);
@@ -832,19 +869,19 @@ test('Maths lesson quick practice completes today in the exam plan', async ({ pa
   });
   expect(savePlan.ok()).toBeTruthy();
 
-  await page.goto(`${BASE}/maths/learn/fractions`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/maths/learn/fractions#practise`, { waitUntil: 'networkidle' });
   await completeMathsLessonQuiz(page);
   await expect(page.locator('.quiz-done')).toBeVisible();
   await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
-  await expect(page.locator('.week-plan .done')).toContainText('Fractions');
-  await expect(page.locator('.mission-card')).toContainText('Fractions done');
-  await expect(page.locator('.plan-note').last()).toContainText('completed 1 of 7 days this week');
+  await expect(page.locator('.week-day.done')).toHaveAttribute('aria-label', /Fractions done/);
+  await expect(page.locator('.today-task.done')).toContainText('Fractions done');
+  await expect(page.locator('.week-card .section-meta')).toContainText('1 of 1 days done');
 });
 
 test('saving exam preferences refreshes personal data without an error', async ({ page }) => {
   await signIn(page);
-  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
-  const input = page.locator('.plan-card input[aria-label="Exam date"]');
+  await page.goto(`${BASE}/maths/me`, { waitUntil: 'networkidle' });
+  const input = page.locator('.exam-settings input[aria-label="Exam date"]');
   await expect(input).toBeVisible();
 
   // State-independent: pick a date different from the saved one so the
@@ -899,9 +936,11 @@ test('English quick-fire shows extracts and marks four selected statements', asy
   await signIn(page);
   await page.goto(`${BASE}/english/practice`, { waitUntil: 'networkidle' });
 
+  // Question types sit under Options; the defaults need no choosing.
+  await page.locator('#adhoc .practice-options summary').click();
   await page.getByRole('button', { name: 'Four quick choices' }).click();
   await page.getByRole('button', { name: 'Language analysis' }).click();
-  await page.getByRole('button', { name: /Give me questions/ }).click();
+  await page.getByRole('button', { name: /^Start \d+ questions$/ }).click();
 
   const sourcePanel = page.locator('.adhoc-source-panel');
   await expect(sourcePanel).toBeVisible();
@@ -942,6 +981,146 @@ test('English Paper 2 Q1 allows four of eight statements', async ({ page }) => {
   for (let index = 0; index < 4; index += 1) await rows.nth(index).click();
   await expect(rows.nth(4)).toBeDisabled();
   await expect(page.locator('.q-pos')).toContainText('1 answered');
+});
+
+test('the app can be installed: manifest, icons and service worker are served', async ({ page }) => {
+  const manifest = await (await page.request.get(`${BASE}/manifest.webmanifest`)).json();
+  expect(manifest.display).toBe('standalone');
+  expect(manifest.start_url).toBe('/?source=app');
+  expect(manifest.icons.some((icon) => icon.purpose === 'maskable')).toBeTruthy();
+  for (const icon of manifest.icons) {
+    expect((await page.request.get(`${BASE}${icon.src}`)).ok(), icon.src).toBeTruthy();
+  }
+  const worker = await page.request.get(`${BASE}/sw.js`);
+  expect(worker.ok()).toBeTruthy();
+  expect(await worker.text()).toContain("url.pathname.startsWith('/api/')");
+  await signIn(page);
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/manifest.webmanifest');
+});
+
+test('the subject switcher keeps you signed in and on the same tab', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.goto(`${BASE}/maths/practice`, { waitUntil: 'networkidle' });
+  await page.locator('.app-header .subject-pill').click();
+  const sheet = page.getByRole('dialog', { name: 'Your subjects' });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator('.subject-option')).toHaveCount(3);
+  await expect(sheet.locator('.subject-option.current')).toContainText('Maths Foundation');
+  await expect(sheet.getByRole('link', { name: /English Language/ })).toHaveAttribute('href', '/english/practice');
+  await page.keyboard.press('Escape');
+  await expect(sheet).toHaveCount(0);
+  await expect(page.locator('.app-header .subject-pill')).toBeFocused();
+});
+
+test('Ask Pip opens over Today and keeps the tab bar hidden behind it', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.goto(`${BASE}/maths/`, { waitUntil: 'networkidle' });
+  await page.locator('.pip-row').click();
+  const sheet = page.getByRole('dialog', { name: 'Ask Pip' });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator('.chat-box')).toBeVisible();
+  await expect(sheet.getByRole('textbox', { name: 'Message Pip' })).toBeVisible();
+  await expect(sheet.locator('.suggest-chip').first()).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(sheet).toHaveCount(0);
+});
+
+test('lessons run one step at a time with Ask Pip on the question', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.goto(`${BASE}/maths/learn/fractions`, { waitUntil: 'networkidle' });
+  // Focus mode: no tab bar while a lesson is open.
+  await expect(page.locator('.sidebar')).toBeHidden();
+  await expect(page.locator('.lesson-step.current')).toHaveAttribute('aria-label', /Step 1: Watch/);
+  await page.getByRole('button', { name: /^Next: Learn the notes/ }).click();
+  await expect(page.locator('#stage-learn .notes')).toBeVisible();
+  await page.getByRole('button', { name: /^Next: Practise/ }).click();
+  await page.getByRole('button', { name: 'Start 5 questions' }).click();
+  await expect(page.locator('.quiz-progress-count')).toHaveText('Question 1 of 5');
+  await page.locator('.lesson-bar .ask-pip').click();
+  const sheet = page.getByRole('dialog', { name: 'Ask Pip' });
+  await expect(sheet.locator('.pip-context')).toContainText('Fractions');
+  await expect(sheet.getByRole('button', { name: 'Give me a hint' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByRole('link', { name: /Close lesson/ }).click();
+  await expect(page).toHaveURL(/\/maths\/learn$/);
+  await expect(page.locator('.sidebar')).toBeVisible();
+});
+
+test('due mistakes can be retried one at a time from the notebook', async ({ page }) => {
+  const username = `retry${Date.now()}`;
+  const signup = await page.request.post(`${BASE}/api/auth/signup`, {
+    data: { username, password: 'revision-pass-1' },
+  });
+  expect(signup.ok()).toBeTruthy();
+  const issued = await (await page.request.post(`${BASE}/api/maths/practice`, { data: { topicId: 'fractions', count: 1 } })).json();
+  const question = issued.questions[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString();
+  const later = [3, 7, 21].map((days) => new Date(Date.now() + days * 86400000).toISOString());
+  const saved = await page.request.put(`${BASE}/api/maths/personal/mistakes`, {
+    data: {
+      rows: [{
+        id: `maths:test:${question.id}`,
+        qid: question.id,
+        topicId: 'fractions',
+        topicName: 'Fractions',
+        prompt: question.text,
+        capturedAt: yesterday,
+        dueDates: [yesterday, ...later],
+        reviewIndex: 0,
+        mastered: false,
+      }],
+    },
+  });
+  expect(saved.ok()).toBeTruthy();
+
+  await skipWelcome(page, username);
+  await page.goto(`${BASE}/maths/notebook?retry=1`, { waitUntil: 'networkidle' });
+  const card = page.locator('.retry-card');
+  await expect(card).toContainText(question.text.split('\n')[0]);
+  await expect(page.locator('.sidebar')).toBeHidden();
+  const choices = card.locator('.choice');
+  if (await choices.count()) await choices.first().click();
+  else await card.locator('.answer-input').fill('1');
+  await card.getByRole('button', { name: 'Check answer' }).click();
+  const feedback = page.locator('.quiz-feedback');
+  await expect(feedback).toBeVisible();
+  if (await feedback.getByRole('button', { name: /Good/ }).count()) await feedback.getByRole('button', { name: /Good/ }).click();
+  else await feedback.getByRole('button', { name: /^Next/ }).click();
+  await expect(page.locator('.quiz-done')).toContainText('Retries done');
+  await expect.poll(async () => {
+    const personal = await (await page.request.get(`${BASE}/api/maths/personal`)).json();
+    return personal.mistakes[0].lastReviewedAt ? 'graded' : 'not yet';
+  }).toBe('graded');
+});
+
+test('mixed practice asks one question at a time and saves misses for a retry', async ({ page }) => {
+  const username = `round${Date.now()}`;
+  const signup = await page.request.post(`${BASE}/api/auth/signup`, {
+    data: { username, password: 'revision-pass-1' },
+  });
+  expect(signup.ok()).toBeTruthy();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await skipWelcome(page, username);
+  await page.goto(`${BASE}/maths/practice`, { waitUntil: 'networkidle' });
+  await page.getByRole('radio', { name: '10' }).click();
+  await page.getByRole('button', { name: 'Start 10 questions' }).click();
+  for (let index = 0; index < 10; index += 1) {
+    await expect(page.locator('.quiz-progress-count')).toHaveText(`Question ${index + 1} of 10`);
+    const question = page.locator('.quiz-flow .quiz-q');
+    const choices = question.locator('.choice');
+    if (await choices.count()) await choices.last().click();
+    else await question.locator('.answer-input').fill('999999');
+    await question.getByRole('button', { name: 'Check answer' }).click();
+    await page.getByRole('button', { name: index === 9 ? 'Finish & score' : 'Next question' }).click();
+  }
+  await expect(page.locator('.quiz-done')).toContainText('of 10 right');
+  await expect.poll(async () => {
+    const personal = await (await page.request.get(`${BASE}/api/maths/personal`)).json();
+    return personal.mistakes.length;
+  }).toBeGreaterThan(0);
 });
 
 for (const [name, url] of [

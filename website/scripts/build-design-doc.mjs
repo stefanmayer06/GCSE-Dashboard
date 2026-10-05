@@ -400,17 +400,21 @@ footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--c-line
       <div class="shots">
         ${shot('landing', '<b>Landing.</b> Night hero with the circuit island, scene-led subject cards, “how it plays” and the live worked example.')}
         ${shot('login', '<b>Sign in.</b> Illustrated stage on the left, a calm form card on the right; the stage becomes a header on phones.')}
-        ${shot('home-light', '<b>Home (light).</b> A bento board: the up-next hero with the lesson’s own tile, streak week and level ring beside it.')}
-        ${shot('home-dark', '<b>Home (dark).</b> Same grid and type; dark is its own palette, not an inversion.')}
-        ${shot('map', '<b>Course map.</b> Units as worlds with a scene banner and star meter; tiles show emblem layers, ticks and stars.')}
-        ${shot('lesson', '<b>Lesson.</b> Sticky lesson HUD, emblem, and the four stage chips: Watch, Learn, Practise, Master.')}
+        ${shot('home-light', '<b>Today (light).</b> One “up next” card with the creature it feeds, the week strip with today’s task, and the partner and exam cards beside them.')}
+        ${shot('home-dark', '<b>Today (dark).</b> Same grid and type; dark is its own palette, not an inversion.')}
+        ${shot('map', '<b>Learn.</b> Search, an “up next” card, then units that fold; the suggested unit opens on its zigzag tile path.')}
+        ${shot('lesson', '<b>Lesson.</b> Focus mode: no tab bar, a step bar for Watch, Learn, Practise, Master, and Ask Pip in the corner.')}
         ${shot('explainer', '<b>Explainer checkpoint.</b> The story stops; Pip asks. Captions sit in a strip under the board, never over it.')}
         ${shot('english-explainer', '<b>Tap checkpoint.</b> Words on the board become targets; the prompt sits below so it never hides one.')}
         ${shot('notes', '<b>Notes deck.</b> Numbered idea cards, quadrant bullets, night formula cards and predict-then-reveal examples.')}
-        ${shot('exam', '<b>Exam hall.</b> A night timer bar, question grid navigator and a calm question card.')}
-        ${shot('english-exam', '<b>English paper (dark).</b> Literata source panel beside game-style choice tiles.', 'wide')}
-        ${shot('mobile-home', '<b>Phone.</b> Slim top bar and a bottom tab dock; the hero stacks with its art on top.', 'phone')}
-        ${shot('mobile-map', '<b>Phone map.</b> The path narrows its zigzag so labels never overflow.', 'phone')}
+        ${shot('exam', '<b>Exam hall.</b> A night timer bar, question grid navigator and a calm question card. No Ask Pip in timed papers.')}
+        ${shot('english-exam', '<b>English paper (dark).</b> Literata source panel beside game-style choice tiles; on phones a Question | Extract toggle.', 'wide')}
+        ${shot('mobile-home', '<b>Phone Today, day one.</b> One job: the 10-question check, with the egg it hatches. The five-tab bar floats at the bottom.', 'phone')}
+        ${shot('mobile-map', '<b>Phone Learn.</b> English shows Skills | Texts tabs; units fold so the page stays short.', 'phone')}
+        ${shot('mobile-question', '<b>One question at a time.</b> Progress dots, a hint on request, then marked feedback and “What went wrong?”.', 'phone')}
+        ${shot('mobile-practice', '<b>Phone Practice.</b> A mixed round with one choice (how many) and the rest under Options, then timed papers. Due retries sit on top when there are any.', 'phone')}
+        ${shot('mobile-creatures', '<b>Creatures.</b> The only progression: collector rank, the creature closest to evolving, then the collection.', 'phone')}
+        ${shot('mobile-pip', '<b>Ask Pip.</b> A full-screen tutor chat with starter questions. Pip helps with method, not answers.', 'phone')}
       </div>
     </section>
 
@@ -464,7 +468,7 @@ export default {
         <div class="card"><h3>Where things live</h3><ul>
           <li><code>clients/shared/circuit/</code> — tokens, CSS, palette + shape grammar, Emblem, IsoTile, Icon, Pip, Scenes, Critter.</li>
           <li><code>clients/shared/explainer/</code> — engine, primitives, player, narration, autoscript, library.</li>
-          <li><code>clients/shared/CourseMap.jsx</code>, <code>LessonKit.jsx</code>, <code>DashboardHome.jsx</code>, <code>AppShell.jsx</code>.</li>
+          <li><code>clients/shared/AppShell.jsx</code>, <code>TodayHome.jsx</code>, <code>CourseMap.jsx</code>, <code>LessonKit.jsx</code>, <code>PracticeKit.jsx</code>, <code>CreaturesPage.jsx</code>, <code>MePage.jsx</code>, <code>PipChat.jsx</code>.</li>
           <li><code>selector/</code> — public pages; <code>art.js</code> and <code>circuit-public.css</code> are generated.</li>
           <li><code>/&lt;subject&gt;/lab</code> — the live graphics lab.</li>
         </ul></div>

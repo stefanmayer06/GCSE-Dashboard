@@ -76,6 +76,7 @@ export const api = {
   practice: (topicId, count = 8) =>
     req('/practice', { method: 'POST', body: { topicId, count } }),
   check: (qid, value) => req('/check', { method: 'POST', body: { qid, value } }),
+  question: (qid) => req(`/question/${encodeURIComponent(qid)}`),
   practiceSubmit: (sessionId, topicId, answers) =>
     req('/practice/submit', { method: 'POST', body: { sessionId, topicId, answers } }),
   adhoc: (count, papers, topicIds) => req('/adhoc', { method: 'POST', body: { count, papers, ...(Array.isArray(topicIds) && topicIds.length ? { topicIds } : {}) } }),

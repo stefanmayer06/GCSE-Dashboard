@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import Icon from './circuit/Icon.jsx';
 
@@ -106,7 +107,8 @@ export default function CommandPalette({ items = [] }) {
     if (href) navigate(href);
   };
 
-  return (
+  // Portalled: the trigger lives in the rail, which phones hide.
+  return createPortal(
     <div className="palette-backdrop" onClick={() => setOpen(false)}>
       <div
         className="palette"
@@ -174,6 +176,7 @@ export default function CommandPalette({ items = [] }) {
           <span><kbd>esc</kbd> close</span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

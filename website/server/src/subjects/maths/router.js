@@ -12,6 +12,7 @@ import {
   checkAnswer,
   getQuestionById,
   paperList,
+  sanitize,
 } from './bank/index.js';
 import { TOPICS, STRANDS } from './bank/topics.js';
 import { predictGrade, gradeLabel, nextBoundaryGap, BOUNDARIES } from './grades.js';
@@ -27,6 +28,7 @@ import {
   higherCheckAnswer,
   higherQuestionById,
   higherTopics,
+  sanitizeHigher,
 } from './bank/higher.js';
 import { createDb } from '../../db.js';
 import { defaultStorage } from '../../storage/index.js';
@@ -42,8 +44,8 @@ app.use(express.json({ limit: '1mb' }));
 const isHigher = (req) => req.baseUrl === '/api/maths-higher' || req.originalUrl.startsWith('/api/maths-higher');
 const tierKey = (req) => (isHigher(req) ? 'maths-higher' : 'maths');
 const tierFns = (req) => isHigher(req)
-  ? { topics: higherTopics(), size: higherBankSize, questionsFor: higherQuestionsFor, papers: higherPaperList, buildPaper: buildHigherPaper, buildPractice: buildHigherPractice, buildAdhoc: buildHigherAdhoc, markAnswers: higherMarkAnswers, checkAnswer: higherCheckAnswer, questionById: higherQuestionById }
-  : { topics: TOPICS, size: bankSize, questionsFor, papers: paperList, buildPaper, buildPractice, buildAdhoc, markAnswers, checkAnswer, questionById: getQuestionById };
+  ? { topics: higherTopics(), size: higherBankSize, questionsFor: higherQuestionsFor, papers: higherPaperList, buildPaper: buildHigherPaper, buildPractice: buildHigherPractice, buildAdhoc: buildHigherAdhoc, markAnswers: higherMarkAnswers, checkAnswer: higherCheckAnswer, questionById: higherQuestionById, sanitize: sanitizeHigher }
+  : { topics: TOPICS, size: bankSize, questionsFor, papers: paperList, buildPaper, buildPractice, buildAdhoc, markAnswers, checkAnswer, questionById: getQuestionById, sanitize };
 
 attachPersonalRoutes(app, tierKey, defaultStorage);
 
@@ -378,6 +380,15 @@ app.post('/practice', asyncRoute(async (req, res) => {
   }
   res.json({ sessionId, topicId, questions });
 }));
+
+// One question without its answer, for a mistake-notebook retry. Marking
+// stays on the server: the retry posts to /check like any other question.
+app.get('/question/:qid', (req, res) => {
+  const fns = tierFns(req);
+  const question = fns.questionById(String(req.params.qid || ''));
+  if (!question) return res.status(404).json({ error: 'Question not found.' });
+  res.json({ question: fns.sanitize(question, { withHint: true }) });
+});
 
 app.post('/check', (req, res) => {
   const fns = tierFns(req);

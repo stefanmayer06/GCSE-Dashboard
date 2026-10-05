@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { invalidateResources, useResource } from './resource-cache.js';
+import { FoldPanel, RetryFlow, wideScreen } from './PracticeKit.jsx';
+import { AskPipButton } from './PipChat.jsx';
+import { AppHeader } from './AppShell.jsx';
 import {
   classifyMistake,
   dueMistakeRows,
@@ -15,9 +18,8 @@ import {
   PERSONAL_UPDATED_EVENT,
   saveCorrection,
   startPlanDayInState,
-  touchMistakeRows,
 } from './study-personal.js';
-import { buildWeekPlan, dateKey, fixupEnglishPlan, fixupTargets, movePlanDay, priorityTopics, readiness } from './study.js';
+import { buildWeekPlan, dateKey, fixupEnglishPlan, fixupTargets, priorityTopics, readiness } from './study.js';
 
 const defaultPreferences = { examDate: '', targetGrade: '', restDays: [], minutesPerDay: null };
 const planMinutesDefault = (subject) => (subject === 'english' ? 20 : 15);
@@ -58,16 +60,6 @@ function examMonthLabel(dateStr) {
   return Number.isFinite(at) ? new Date(at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : null;
 }
 
-function planHeadline(days, examDate) {
-  if (days == null) return 'Set your exam date';
-  if (days < 0) return 'Exam date passed';
-  if (days > 365) {
-    const month = examMonthLabel(examDate);
-    return month ? `Exams ${month}` : 'Exam date set';
-  }
-  return `${days} day${days === 1 ? '' : 's'} to go`;
-}
-
 // One return ping per local calendar day, deduplicated in localStorage
 // (see ANALYTICS.md: week_return feeds the retention model).
 function noteReturn(api, userId, subject) {
@@ -79,142 +71,49 @@ function noteReturn(api, userId, subject) {
   } catch { /* bookkeeping only */ }
 }
 
-/* ---------------- Onboarding: exam date, target, diagnostic ---------------- */
+/* ---------------- Plan, preferences and today's mission ---------------- */
 
-export function Onboarding({ personal, progress, preferences, updatePreferences, diagnosticUrl, foundation = false }) {
-  const [step, setStep] = useState(0);
-  const [dismissed, setDismissed] = useState(false);
-  if (dismissed || !personal) return null;
-  const existingStudy = progress && (progress.testsTaken > 0 || progress.practiceAnswered > 0);
-  if (preferences.examDate || existingStudy) return null;
-
-  const grades = foundation ? ['4', '5'] : ['4', '5', '6', '7', '8', '9'];
-  const steps = [
-    {
-      title: 'When are your exams?',
-      body: 'We’ll use your exam date to plan what to revise each week.',
-      control: (
-        <input
-          aria-label="Exam date"
-          type="date"
-          value={preferences.examDate}
-          onChange={(e) => updatePreferences({ examDate: e.target.value })}
-        />
-      ),
-      canNext: Boolean(preferences.examDate),
-    },
-    {
-      title: 'What grade are you aiming for?',
-      body: 'This helps us choose the right topics for you. You can change it later.',
-      control: (
-        <div className="chip-row">
-          {grades.map((grade) => (
-            <button
-              key={grade}
-              type="button"
-              className={`suggest-chip source ${preferences.targetGrade === grade ? 'on' : ''}`}
-              onClick={() => updatePreferences({ targetGrade: grade })}
-            >
-              Grade {grade}
-            </button>
-          ))}
-        </div>
-      ),
-      canNext: true,
-      canSkip: true,
-    },
-    {
-      title: 'Take the 10-question diagnostic',
-      body: 'It takes about 10 minutes and helps us choose what you should revise first.',
-      control: null,
-      canNext: false,
-    },
-  ];
-  const current = steps[step];
-
-  return (
-    <section className="panel onboarding-card" aria-label="Set up your revision">
-      <div className="eyebrow">Getting started · {step + 1} of {steps.length}</div>
-      <h2>{current.title}</h2>
-      <p className="sub">{current.body}</p>
-      {current.control && <div className="onboarding-control">{current.control}</div>}
-      <div className="study-actions" role="group" aria-label={`Setup step ${step + 1} of ${steps.length}`}>
-        {step > 0 && <button type="button" className="btn" onClick={() => setStep(step - 1)}>Back</button>}
-        {step === 1 && <button type="button" className="btn" onClick={() => setStep(step + 1)}>Skip for now</button>}
-        {current.canNext && step < steps.length - 1 && (
-          <button type="button" className="btn btn-primary" onClick={() => setStep(step + 1)}>Continue →</button>
-        )}
-        {step === steps.length - 1 && (
-          <>
-            <Link
-              className="btn btn-primary"
-              to={diagnosticUrl}
-              onClick={() => { setDismissed(true); api.track?.('onboarding_complete', { withExamDate: Boolean(preferences.examDate), targetGrade: preferences.targetGrade || null }); }}
-            >Start my diagnostic →</Link>
-            <button type="button" className="btn" onClick={() => setDismissed(true)}>I&apos;ll do it later</button>
-          </>
-        )}
-      </div>
-      <p className="sub small">Your choices are saved to your account. You can take the diagnostic later from Practice.</p>
-    </section>
-  );
-}
-
-/* ---------------- Dashboard: mission, readiness, plan, notebook ---------------- */
-
-export function StudyDashboard({ userId, subject, topics, progress, diagnosticUrl, foundation = false, api }) {
-  const { fetched, personal, loadError, refresh: refreshPersonal, setOverride } = usePersonal(userId, subject, api);
+// Shared by Today (week strip + today's task) and Me (exam date, rest days,
+// minutes a day). A fresh Monday-to-Sunday plan is built the first time the
+// saved plan has no row for today (new account or Monday rollover).
+export function useStudyPlan({ userId, subject, api, topics = [], progress = null }) {
+  const { fetched, personal, loadError, refresh, setOverride } = usePersonal(userId, subject, api);
   const [saveError, setSaveError] = useState('');
-  const [moveFrom, setMoveFrom] = useState(null);
-  const error = [loadError && `Could not load your saved study data: ${loadError}`, saveError].filter(Boolean).join(' ');
-  const evidence = readiness(progress);
   const preferences = personal?.preferences ?? defaultPreferences;
-  const priority = priorityTopics(topics, progress);
+  const plan = personal?.plan ?? null;
+  const error = [loadError && `Could not load your saved study data: ${loadError}`, saveError].filter(Boolean).join(' ');
 
   useEffect(() => {
     const onPersonalUpdated = (event) => {
-      if (event.detail?.userId === userId && event.detail?.subject === subject) refreshPersonal();
+      if (event.detail?.userId === userId && event.detail?.subject === subject) refresh();
     };
-    noteReturn(api, userId, subject);
+    if (userId) noteReturn(api, userId, subject);
     window.addEventListener(PERSONAL_UPDATED_EVENT, onPersonalUpdated);
     return () => window.removeEventListener(PERSONAL_UPDATED_EVENT, onPersonalUpdated);
-  }, [api, userId, subject, refreshPersonal]);
-
-  useEffect(() => {
-    if (!personal || !topics.length) return;
-    // The plan covers Monday to Sunday; a fresh week is built the first time
-    // the saved plan has no row for today (new account or Monday rollover).
-    if (personal.plan?.days.some((day) => day.date === dateKey())) return;
-    persistPlan(buildWeekPlan(priority, subject, undefined, [], preferences));
-    // Seed a first plan once topics are available; the plan stays stable for the whole day.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [personal, topics.length, foundation]);
-
-  const plan = personal?.plan ?? null;
-  const today = dateKey();
-  const todayDay = plan?.days.find((day) => day.date === today) || null;
-  const isRestDay = todayDay?.rest === true;
-  const mission = todayDay && todayDay.status === 'todo' && !todayDay.rest ? todayDay : null;
-  const todayDone = todayDay && todayDay.status === 'done' ? todayDay : null;
-  const doneCount = plan?.days.filter((day) => day.status === 'done').length || 0;
-  const days = preferences.examDate ? Math.ceil((new Date(`${preferences.examDate}T12:00:00`) - new Date()) / 86400000) : null;
-  const mistakes = personal?.mistakes ?? [];
-  const dueCount = dueMistakeRows(mistakes).length;
-  const masteredWeek = masteredSince(mistakes).length;
-
-  function updatePreferences(patch) {
-    const next = { ...preferences, ...patch };
-    setOverride((current) => ({ ...(current ?? fetched), preferences: next }));
-    api.savePreferences(next)
-      .then(() => refreshPersonal())
-      .catch((cause) => setSaveError(`Preferences could not be saved: ${cause.message}`));
-  }
+  }, [api, userId, subject, refresh]);
 
   function persistPlan(next) {
     setOverride((current) => ({ ...(current ?? fetched), plan: next }));
     api.savePlan(next)
-      .then(() => refreshPersonal())
+      .then(() => refresh())
       .catch((cause) => setSaveError(`Plan could not be saved: ${cause.message}`));
+  }
+
+  useEffect(() => {
+    if (!personal || !topics.length) return;
+    if (personal.plan?.days.some((day) => day.date === dateKey())) return;
+    persistPlan(buildWeekPlan(priorityTopics(topics, progress), subject, undefined, [], preferences));
+    // Seed once topics are available; the plan stays stable for the whole day.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personal, topics.length]);
+
+  function updatePreferences(patch) {
+    const next = { ...preferences, ...patch };
+    setOverride((current) => ({ ...(current ?? fetched), preferences: next }));
+    setSaveError('');
+    return api.savePreferences(next)
+      .then(() => refresh())
+      .catch((cause) => setSaveError(`Preferences could not be saved: ${cause.message}`));
   }
 
   function startMission(date, topicId) {
@@ -225,105 +124,11 @@ export function StudyDashboard({ userId, subject, topics, progress, diagnosticUr
     }
   }
 
-  return (
-    <>
-      <Onboarding
-        personal={personal}
-        progress={progress}
-        preferences={preferences}
-        updatePreferences={updatePreferences}
-        diagnosticUrl={diagnosticUrl}
-        foundation={foundation}
-      />
-      <section className="study-grid" aria-label="Revision planner">
-        <div className={`panel mission-card${todayDone ? ' mission-done' : ''}`}>
-          <div className="eyebrow">Today&apos;s revision</div>
-          <h2>{isRestDay && !todayDone ? 'Rest day' : mission ? mission.task : todayDone ? `✓ ${todayDone.task} done` : doneCount === 7 ? 'You’re done for the week' : 'Choose what to revise'}</h2>
-          <p className="sub">{isRestDay && !todayDone ? 'Today is a planned rest day. You can reread one saved note or take the day off.' : mission ? (mission.topicId ? `Spend ${mission.minutes} minutes on the lesson, then try the short practice.` : mission.task === 'Mistake retry' ? 'Retry the questions due today, then you’re done.' : 'Choose a short set of questions from Practice.') : todayDone ? (todayDone.result ? `You scored ${todayDone.result.percent}% (${todayDone.result.correctMarks}/${todayDone.result.totalMarks} marks)${todayDone.result.xpEarned != null ? ` and earned ${todayDone.result.xpEarned} XP` : ''}. Come back tomorrow for your next task.` : 'Come back tomorrow for your next task.') : doneCount === 7 ? 'You’ve finished this week’s plan. The next one starts on Monday.' : 'Choose today’s task from the plan below.'}</p>
-          <div className="study-actions">
-            {mission?.topicId && <Link className="btn btn-primary" to={`/learn/${mission.topicId}`} onClick={() => startMission(mission.date, mission.topicId)}>Start today&apos;s revision</Link>}
-            {mission && !mission.topicId && <Link className="btn btn-primary" to={mission.task === 'Mistake retry' ? '/notebook' : '/practice'}>Open {mission.task}</Link>}
-            {!isRestDay && <FixUpButton subject={subject} api={api} topics={topics} progress={progress} personal={personal} />}
-            <Link className="btn" to={diagnosticUrl}>Fast diagnostic · 10 questions</Link>
-          </div>
-        </div>
-        <div className="panel readiness-card">
-          <div className="eyebrow">Readiness score</div>
-          <div className="readiness-number">{evidence.ready ? `${evidence.score}%` : 'More answers needed'}</div>
-          <p className="sub">{evidence.ready ? `Based on ${evidence.answered} marked answers across ${evidence.topics} topics.` : `Answer 20 questions across 3 topics to see your score. So far, you’ve answered ${evidence.answered} across ${evidence.topics} topics.`}</p>
-          {progress?.streakFreezes > 0 && (
-            <p className="sub small freeze-note">
-              You have {progress.streakFreezes} streak freeze{progress.streakFreezes === 1 ? '' : 's'}. One freeze protects your {progress?.streak ?? 0}-day streak if you miss a day.
-            </p>
-          )}
-        </div>
-        <div className="panel plan-card">
-          <div className="plan-head"><div><div className="eyebrow">Exam plan</div><h2>{planHeadline(days, preferences.examDate)}</h2></div><input aria-label="Exam date" type="date" value={preferences.examDate} onChange={(e) => updatePreferences({ examDate: e.target.value })} /></div>
-          <div className="plan-flex">
-            <div className="plan-rest" role="group" aria-label="Rest days each week">
-              <span className="adhoc-label">Rest days</span>
-              <div className="chip-row">
-                {WEEKDAYS.map((label, index) => {
-                  const on = (preferences.restDays || []).includes(index);
-                  return (
-                    <button
-                      key={index}
-                      type="button"
-                      className={`suggest-chip source${on ? ' on' : ''}`}
-                      aria-pressed={on}
-                      title={['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index]}
-                      onClick={() => {
-                        const current = preferences.restDays || [];
-                        const next = on ? current.filter((d) => d !== index) : [...current, index].sort((a, b) => a - b);
-                        updatePreferences({ restDays: next });
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <label className="plan-minutes">
-              <span className="adhoc-label">Minutes a day</span>
-              <span className="minutes-stepper">
-                <button type="button" className="btn small" aria-label="Fewer minutes per day" onClick={() => updatePreferences({ minutesPerDay: Math.max(5, (preferences.minutesPerDay ?? planMinutesDefault(subject)) - 5) })}>−</button>
-                <strong aria-live="polite">{preferences.minutesPerDay ?? planMinutesDefault(subject)} min</strong>
-                <button type="button" className="btn small" aria-label="More minutes per day" onClick={() => updatePreferences({ minutesPerDay: Math.min(120, (preferences.minutesPerDay ?? planMinutesDefault(subject)) + 5) })}>+</button>
-              </span>
-            </label>
-          </div>
-          <div className="week-plan">{!personal ? <p className="empty">Loading your plan…</p> : plan?.days.length ? plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < today; const canStart = !done && !past && day.topicId && day.date === today; const locked = !done && !canStart && !past; const rest = day.rest === true; const moveable = !done && !past && !rest && day.date !== today; if (rest) return (<span key={day.date} className={past ? 'past' : 'rest-day'} title="Planned rest — recovery is part of the plan"><b>{day.label}</b><span>Rest day</span>{past ? <small>Rested</small> : <small>Recovery</small>}</span>); if (moveFrom && moveable && moveFrom !== day.date) return (<button key={day.date} type="button" className="move-target" onClick={() => { const next = movePlanDay(plan, moveFrom, day.date, today); setMoveFrom(null); if (next) persistPlan(next); }}><b>{day.label}</b><span>{day.task}</span><small>Move here</small></button>); return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done" title={day.result ? `Done: ${day.result.percent}% · ${day.result.correctMarks}/${day.result.totalMarks} marks` : undefined}><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : canStart ? <Link key={day.date} to={`/learn/${day.topicId}`} onClick={() => startMission(day.date, day.topicId)} title="Today's mission"><b>{day.label}</b><span>{day.task}</span><small>Start ★</small></Link> : <span key={day.date} className={past ? 'past' : 'locked'} title={past ? 'That day has passed — the trail pauses, it never punishes' : 'Completes when a new day starts'}><b>{day.label}</b><span>{day.task}</span>{past ? <small>Paused</small> : locked ? <small>Locked</small> : null}{moveable && (moveFrom === day.date ? <button type="button" className="link link-button" onClick={() => setMoveFrom(null)}>Cancel move</button> : <button type="button" className="link link-button" onClick={() => setMoveFrom(day.date)}>Move</button>)}</span>); }) : <p className="empty">Complete a lesson to build your 7-day plan.</p>}</div>
-          {plan?.days?.length ? (
-            <div className="week-track" role="img" aria-label={`${doneCount} of 7 days done this week`}>
-              {plan.days.map((day) => (
-                <i key={day.date} className={day.status === 'done' ? 'done' : day.date === today ? 'today' : ''} />
-              ))}
-            </div>
-          ) : null}
-          {error && <p className="plan-note error" role="alert">{error}</p>}
-          <p className="plan-note">You’ve completed {doneCount} of 7 days this week. Your next plan starts on Monday.</p>
-        </div>
-      </section>
-      <section className="evidence-strip" aria-label="Mistake notebook progress">
-        <Link to="/notebook" className={`evidence-chip ${dueCount ? 'due' : ''}`}>
-          <b>{dueCount}</b>
-          <span>{dueCount === 1 ? 'mistake due for retry' : 'mistakes due for retry'}</span>
-        </Link>
-        <Link to="/notebook" className="evidence-chip mastered">
-          <b>{masteredWeek}</b>
-          <span>mastered in the last 7 days</span>
-        </Link>
-        <Link to="/summary" className="evidence-chip">
-          <b>{days == null || days < 0 ? '—' : days > 365 ? (examMonthLabel(preferences.examDate) || '—') : days}</b>
-          <span>{days != null && days > 0 && days <= 365 ? 'days until your exam' : days != null && days > 365 ? 'your exam month' : 'days until your exam'}</span>
-        </Link>
-      </section>
-    </>
-  );
+  return { personal, preferences, plan, error, updatePreferences, persistPlan, startMission, refresh };
 }
 
-/* ---------------- Fix-Up 5 + memory checks ---------------- */
+export const PLAN_WEEKDAYS = WEEKDAYS;
+export { planMinutesDefault, examMonthLabel, usePersonal };
 
 export function readFixupPayload(subject) {
   try {
@@ -533,10 +338,18 @@ function ClassificationChips({ row, onClassify }) {
   );
 }
 
-export function Notebook({ userId, subject, api }) {
+// A long due list shows its first few rows; the Retry button takes them all.
+const DUE_PREVIEW = 5;
+
+export function Notebook({ userId, subject, api, renderQuestion = null }) {
   const { fetched, personal, loadError, setOverride } = usePersonal(userId, subject, api);
   const [saveError, setSaveError] = useState('');
   const [open, setOpen] = useState({});
+  const [params, setParams] = useSearchParams();
+  // A snapshot of the due rows, taken when retries start, so grading one
+  // does not reshuffle the queue mid-flow.
+  const [retrying, setRetrying] = useState(null);
+  const [showAllDue, setShowAllDue] = useState(false);
   const now = Date.now();
   const error = [loadError && `Could not load the notebook: ${loadError}`, saveError].filter(Boolean).join(' ');
 
@@ -546,6 +359,7 @@ export function Notebook({ userId, subject, api }) {
   const dueIds = new Set(dueMistakeRows(active, now).map((row) => row.id));
   const dueRows = active.filter((row) => dueIds.has(row.id));
   const upcoming = active.filter((row) => !dueIds.has(row.id));
+  const mastered = rows.filter((row) => row.mastered);
   const masteredWeek = masteredSince(rows, 7 * DAY, now);
   const mix = errorTypeCounts(rows);
   const topReason = Object.entries(mix).sort((a, b) => b[1] - a[1])[0];
@@ -583,6 +397,28 @@ export function Notebook({ userId, subject, api }) {
     save(markWarmupDone(rows, row.id));
   }
 
+  // /notebook?retry=1 (from Today or Practice) opens straight into retries.
+  useEffect(() => {
+    if (params.get('retry') !== '1' || !personal || retrying) return;
+    if (dueRows.length) setRetrying(dueRows);
+    const next = new URLSearchParams(params);
+    next.delete('retry');
+    setParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params, personal]);
+
+  if (retrying) {
+    return (
+      <RetryFlow
+        rows={retrying}
+        api={api}
+        renderQuestion={renderQuestion}
+        onGrade={(row, grade) => reviewed(row, grade)}
+        onExit={() => setRetrying(null)}
+      />
+    );
+  }
+
   const renderRow = (row, isDue) => {
     const expanded = open[row.id];
     const dueDate = row.dueDates?.[row.reviewIndex ?? 0];
@@ -609,6 +445,11 @@ export function Notebook({ userId, subject, api }) {
             <div className="study-actions">
               {row.topicId && <Link className="btn btn-primary" to={`/learn/${row.topicId}`}>{row.warmupCount ? 'Micro-practice again' : 'Warm-up micro-practice'}</Link>}
               {row.topicId && <button type="button" className="btn" onClick={() => warmupDone(row)}>Warm-up done</button>}
+              <AskPipButton
+                context={{ kind: 'mistake', label: row.topicName, question: row.prompt, answer: row.answer == null ? null : String(row.answer), wrong: true }}
+                label="Ask Pip about this"
+                className="btn"
+              />
             </div>
             <p className="sub small">
               {row.warmupCount
@@ -622,19 +463,26 @@ export function Notebook({ userId, subject, api }) {
   };
 
   return (
-    <div className="page">
+    <div className="page notebook-page">
+      <AppHeader />
+      <Link to="/practice" className="back-link"><span aria-hidden="true">←</span> Practice</Link>
       <header className="page-head">
         <div>
           <h1>Mistake notebook</h1>
-          <p className="sub">Questions you miss are saved here. Add what went wrong, write your correction and try them again when they’re due.</p>
+          <p className="sub">Questions you miss are saved here. They come back after 1, 3, 7 and 21 days until you have them for good.</p>
         </div>
+        {dueRows.length ? (
+          <button type="button" className="btn btn-go" onClick={() => setRetrying(dueRows)}>
+            Retry {dueRows.length} due
+          </button>
+        ) : null}
       </header>
       {error && <p className="plan-note error" role="alert">{error}</p>}
       <section className="stat-row">
         <div className={`stat-card${dueRows.length ? ' warn' : ''}`}><div className="stat-num">{dueRows.length}</div><div className="stat-label">Due for retry</div></div>
         <div className="stat-card"><div className="stat-num">{upcoming.length}</div><div className="stat-label">Scheduled</div></div>
         <div className={`stat-card${masteredWeek.length ? ' good' : ''}`}><div className="stat-num">{masteredWeek.length}</div><div className="stat-label">Mastered this week</div></div>
-        <div className="stat-card"><div className="stat-num">{rows.filter((row) => row.mastered).length}</div><div className="stat-label">Mastered all-time</div></div>
+        <div className="stat-card"><div className="stat-num">{mastered.length}</div><div className="stat-label">Mastered all-time</div></div>
       </section>
       {topReasonLabel && (
         <p className="sub notebook-insight">The reason you choose most often is <b>{topReasonLabel}</b>. {ERROR_TYPES.find((type) => type.id === topReason[0])?.hint}</p>
@@ -647,7 +495,12 @@ export function Notebook({ userId, subject, api }) {
               <div className="study-actions fixup-row">
                 <FixUpButton subject={subject} api={api} topics={[]} progress={null} personal={{ mistakes: rows }} />
               </div>
-              {dueRows.map((row) => renderRow(row, true))}
+              {(showAllDue ? dueRows : dueRows.slice(0, DUE_PREVIEW)).map((row) => renderRow(row, true))}
+              {!showAllDue && dueRows.length > DUE_PREVIEW ? (
+                <button type="button" className="btn btn-block notebook-more" onClick={() => setShowAllDue(true)}>
+                  Show all {dueRows.length} due
+                </button>
+              ) : null}
             </>
           )
             : (
@@ -660,15 +513,13 @@ export function Notebook({ userId, subject, api }) {
       </section>
       <MemRiCard userId={userId} subject={subject} api={api} />
       {upcoming.length > 0 && (
-        <section className="panel notebook-list">
-          <h2>Coming up</h2>
+        <FoldPanel title="Coming up" count={upcoming.length} defaultOpen={wideScreen()} className="notebook-list">
           {upcoming.map((row) => renderRow(row, false))}
-        </section>
+        </FoldPanel>
       )}
-      {rows.some((row) => row.mastered) && (
-        <section className="panel notebook-list">
-          <h2>Mastered</h2>
-          {rows.filter((row) => row.mastered).slice(0, 12).map((row) => (
+      {mastered.length > 0 && (
+        <FoldPanel title="Mastered" count={mastered.length} className="notebook-list">
+          {mastered.slice(0, 12).map((row) => (
             <article key={row.id} className="notebook-row mastered">
               <div className="notebook-main">
                 <span className="due-chip done">✓ Mastered</span>
@@ -680,7 +531,7 @@ export function Notebook({ userId, subject, api }) {
               </div>
             </article>
           ))}
-        </section>
+        </FoldPanel>
       )}
     </div>
   );
@@ -749,6 +600,7 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
 
   return (
     <div className="page weekly-summary">
+      <Link to="/me" className="back-link no-print"><span aria-hidden="true">←</span> Me</Link>
       <header className="page-head">
         <div>
           <div className="eyebrow">Your week in review</div>
@@ -770,7 +622,7 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
       </section>
       <section className="panel">
         <h2>This week&apos;s exam plan</h2>
-        {plan?.days.length ? <div className="week-plan">{plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < dateKey(); return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done"><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%{day.result.xpEarned != null ? ` · +${day.result.xpEarned} XP` : ''}</small> : null}</Link> : <span key={day.date} className={past ? 'past' : 'locked'}><b>{day.label}</b><span>{day.task}</span></span>); })}</div> : <p className="empty">Open the dashboard to build your 7-day plan.</p>}
+        {plan?.days.length ? <div className="week-plan">{plan.days.map((day) => { const done = day.status === 'done'; const past = !done && day.date < dateKey(); return (done ? <Link key={day.date} to={day.topicId ? `/learn/${day.topicId}` : '/practice'} className="done"><b>✓ {day.label}</b><span>{day.task}</span>{day.result ? <small>{day.result.percent}%</small> : null}</Link> : <span key={day.date} className={past ? 'past' : 'locked'}><b>{day.label}</b><span>{day.task}</span></span>); })}</div> : <p className="empty">Open Today to build your 7-day plan.</p>}
           <p className="sub">You completed {donePlan.length} of 7 planned days this week.</p>
       </section>
       <section className="panel">
@@ -809,7 +661,7 @@ export function WeeklySummary({ userId, subject, progress, api, username }) {
       </section>
       <section className="panel">
         <h2>What to do next</h2>
-        <p>Check today’s plan on the dashboard and retry any questions that are due.</p>
+        <p>Check today’s task on Today and retry any questions that are due.</p>
         <p className="sub">This summary is based on your marked work.</p>
         <div className="evidence-signature no-print" aria-hidden="true">
           <span>Print or save this page as a PDF to share it with a teacher or parent.</span>

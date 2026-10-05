@@ -119,7 +119,7 @@ export default function GraphicsLab({ subject = 'maths' }) {
         <div className="lab-row">
           <Stars count={0} /><Stars count={1} /><Stars count={2} /><Stars count={3} />
           <ProgressRing value={64} label="64 percent" />
-          <span className="lab-night"><HudChip icon="flame" tone="flame" value={4} label="days" /><HudChip icon="gem" tone="gem" value={320} label="XP" /><HudChip icon="bolt" tone="bolt" value={3} label="lvl" /></span>
+          <span className="lab-night"><HudChip icon="flame" tone="flame" value={4} label="days" /><HudChip icon="gem" tone="gem" value={32} label="stars" /><HudChip icon="bolt" tone="bolt" value={3} label="due" /></span>
           {Object.keys(STRANDS).slice(0, 3).map((strand) => <StrandBadge key={strand} strand={strand} size={44} />)}
         </div>
         <SegmentBar total={6} done={3} current={3} />

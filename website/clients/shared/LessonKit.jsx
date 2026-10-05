@@ -1,22 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import Emblem from './circuit/Emblem.jsx';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from './circuit/Icon.jsx';
 import Pip from './circuit/Pip.jsx';
+import Critter from './circuit/Critter.jsx';
 import { Stars } from './circuit/bits.jsx';
 import { hueVar, starsFor, strandInfo } from './circuit/palette.js';
 import { masteryStage } from './next-step.js';
+import { ERROR_TYPES } from './study-personal.js';
+import { useFocusMode } from './AppShell.jsx';
+import { CreatureGains, nameOf, useCreatures } from './creatures.jsx';
+import { AskPipButton } from './PipChat.jsx';
 import ExplainerPlayer from './explainer/Player.jsx';
 import { autoScript } from './explainer/autoscript.js';
 
-// Lesson kit — the Brilliant-style lesson page shared by Maths + English.
-// A lesson is four stages on one scrolling page:
-//   01 Watch    interactive explainer (authored script or auto talk-through)
-//   02 Learn    the notes as stepped cards (predict-then-reveal examples)
-//   03 Practise the subject's quick practice (rendered by the page)
-//   04 Master   stars + emblem layers from marked evidence, what next
-// Stage completion is session-only UI state (never stored); stars and
-// emblem layers come from server topic accuracy.
+// Lesson kit, shared by Maths and English. A lesson is four steps, shown
+// one at a time in focus mode (no tab bar or rail):
+//   1 Watch    interactive explainer (authored script or auto talk-through)
+//   2 Learn    the notes as stepped cards (predict-then-reveal examples)
+//   3 Practise the subject's quick practice, one question at a time
+//   4 Master   stars from marked evidence, what next, sources
+// The step lives in the URL hash (#watch, #learn, #practise, #master) so
+// the back button walks back through the lesson. Step completion is
+// session-only UI state; stars come from server topic accuracy.
 
 export const STAGES = [
   { id: 'watch', label: 'Watch', icon: 'play' },
@@ -25,68 +30,129 @@ export const STAGES = [
   { id: 'master', label: 'Master', icon: 'trophy' },
 ];
 
-export function LessonHeader({ topic, strand, eyebrow, backTo = '/learn', backLabel = 'All topics', sub, children, stagesDone = {} }) {
-  const stage = masteryStage(topic.accuracy, topic.answered ?? (topic.accuracy != null ? 1 : 0));
-  const stars = starsFor(topic.accuracy, topic.answered ?? (topic.accuracy != null ? 5 : 0));
+function scrollToTop() {
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const behavior = reduced ? 'auto' : 'instant';
+  document.getElementById('main-content')?.scrollTo({ top: 0, behavior });
+  window.scrollTo({ top: 0, behavior });
+}
+
+// stages: [{ id, title, sub, content, hideNav }] in STAGES order.
+export function LessonFlow({
+  topic,
+  strand,
+  eyebrow,
+  sub,
+  backTo = '/learn',
+  backLabel = 'All topics',
+  completed = false,
+  stages,
+  stagesDone = {},
+  pipContext = null,
+}) {
+  useFocusMode(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const headingRef = useRef(null);
+  const ids = stages.map((stage) => stage.id);
+  const requested = location.hash.replace(/^#(stage-)?/, '');
+  const current = ids.includes(requested) ? requested : ids[0];
+  const index = ids.indexOf(current);
+  const stage = stages[index];
+  const prev = stages[index - 1] || null;
+  const next = stages[index + 1] || null;
+  const answered = topic.answered ?? (topic.accuracy != null ? 5 : 0);
+  const stars = starsFor(topic.accuracy, answered);
+  const mastery = masteryStage(topic.accuracy, answered);
   const info = strandInfo(strand);
-  const done = STAGES.filter((item) => stagesDone[item.id]).length;
+  const firstRender = useRef(true);
+
+  const go = useCallback((id) => {
+    navigate({ hash: `#${id}` });
+  }, [navigate]);
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    scrollToTop();
+    headingRef.current?.focus({ preventScroll: true });
+  }, [current]);
+
+  const labelFor = (id) => STAGES.find((item) => item.id === id)?.label || id;
+
   return (
-    <>
-      <div className="lesson-hud" style={{ '--strand': hueVar(info.hue) }}>
-        <Link to={backTo} className="lesson-back" aria-label={backLabel}>
-          <Icon name="chevronLeft" size={22} />
+    <div className="lesson-flow" style={{ '--strand': hueVar(info.hue) }}>
+      <div className="lesson-bar">
+        <Link to={backTo} className="lesson-close" aria-label={`Close lesson. Back to ${backLabel.toLowerCase()}`}>
+          <Icon name="close" size={22} strokeWidth={2.4} />
         </Link>
-        <div className="lesson-hud-title">
-          <span className="lesson-hud-eyebrow">{eyebrow}</span>
-          <span className="lesson-hud-name">{topic.name}</span>
-        </div>
-        <div className="lesson-hud-progress" role="progressbar" aria-label="Lesson stages complete" aria-valuemin={0} aria-valuemax={STAGES.length} aria-valuenow={done}>
-          <span style={{ width: `${(done / STAGES.length) * 100}%` }} />
-        </div>
-        <Stars count={stars} size={16} />
+        <ol className="lesson-steps" aria-label="Lesson steps">
+          {stages.map((item, position) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                className={`lesson-step${item.id === current ? ' current' : ''}${stagesDone[item.id] ? ' done' : ''}`}
+                aria-current={item.id === current ? 'step' : undefined}
+                aria-label={`Step ${position + 1}: ${labelFor(item.id)}${stagesDone[item.id] ? ', done' : ''}`}
+                onClick={() => go(item.id)}
+              >
+                <span className="lesson-step-bar" aria-hidden="true" />
+                <span className="lesson-step-label" aria-hidden="true">{labelFor(item.id)}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+        <AskPipButton iconOnly context={pipContext} className="btn lesson-pip" />
       </div>
 
-      <Link to={backTo} className="back-link">← {backLabel}</Link>
-      <header className="page-head lesson-head" style={{ '--strand': hueVar(info.hue) }}>
+      <header className="page-head lesson-head">
         <div className="lesson-head-copy">
           <p className="eyebrow lesson-eyebrow"><span className="strand-pip" aria-hidden="true" />{eyebrow}</p>
           <h1>{topic.name}</h1>
           <p className="sub">{sub}</p>
-          {children}
+          {completed ? <div className="lesson-stamp topic-complete-stamp">Lesson completed</div> : null}
         </div>
-        <div className="lesson-head-emblem">
-          <Emblem topicId={topic.id} strand={strand} stage={stage.id} size={132} title={`${topic.name} emblem: ${stage.text}`} />
-          <span className={`v3-stage ${stage.id}`}>{stage.text}</span>
+        <div className="lesson-head-stars" aria-label={`${stars} of 3 stars. ${mastery.text}`}>
+          <Stars count={stars} size={22} label={false} />
+          <span className={`v3-stage ${mastery.id}`}>{mastery.text}</span>
         </div>
       </header>
-      <nav className="stage-rail" aria-label="Lesson stages">
-        {STAGES.map((item, index) => (
-          <a key={item.id} href={`#stage-${item.id}`} className={`stage-chip${stagesDone[item.id] ? ' done' : ''}`}>
-            <span className="stage-chip-n" aria-hidden="true">{stagesDone[item.id] ? <Icon name="check" size={16} strokeWidth={3} /> : `0${index + 1}`}</span>
-            <span>{item.label}</span>
-          </a>
-        ))}
-      </nav>
-    </>
-  );
-}
 
-export function StageSection({ id, index, title, sub, children, className = '' }) {
-  return (
-    <section className={`lesson-stage stage-${id} ${className}`.trim()} id={`stage-${id}`} aria-labelledby={`stage-${id}-title`}>
-      <div className="lesson-stage-head">
-        <span className="lesson-stage-n" aria-hidden="true">0{index}</span>
-        <div>
-          <h2 id={`stage-${id}-title`}>{title}</h2>
-          {sub ? <p className="sub">{sub}</p> : null}
+      <section className={`lesson-stage stage-${stage.id}`} id={`stage-${stage.id}`} aria-labelledby={`stage-${stage.id}-title`}>
+        <div className="lesson-stage-head">
+          <span className="lesson-stage-n" aria-hidden="true">{index + 1}</span>
+          <div>
+            <p className="lesson-step-count">Step {index + 1} of {stages.length}</p>
+            <h2 id={`stage-${stage.id}-title`} ref={headingRef} tabIndex={-1}>{stage.title}</h2>
+            {stage.sub ? <p className="sub">{stage.sub}</p> : null}
+          </div>
         </div>
-      </div>
-      {children}
-    </section>
+        {typeof stage.content === 'function' ? stage.content({ go, next }) : stage.content}
+      </section>
+
+      {stage.hideNav ? null : (
+        <nav className="lesson-stage-nav" aria-label="Lesson navigation">
+          {prev ? (
+            <button type="button" className="btn" onClick={() => go(prev.id)}>
+              <Icon name="chevronLeft" size={18} /> {labelFor(prev.id)}
+            </button>
+          ) : <span />}
+          {next ? (
+            <button type="button" className="btn btn-go" onClick={() => go(next.id)}>
+              Next: {next.title} <Icon name="arrowRight" size={18} />
+            </button>
+          ) : (
+            <Link className="btn btn-go" to={backTo}>Finish lesson <Icon name="check" size={18} strokeWidth={2.6} /></Link>
+          )}
+        </nav>
+      )}
+    </div>
   );
 }
 
-export function LessonExplainer({ topic, subject, authored = null, onDone }) {
+export function LessonExplainer({ topic, subject, authored = null, onDone, onNext }) {
   const script = useMemo(() => authored || autoScript(topic, { subject }), [authored, topic, subject]);
   if (!script) return null;
   return (
@@ -95,7 +161,7 @@ export function LessonExplainer({ topic, subject, authored = null, onDone }) {
       onComplete={() => onDone?.()}
       onContinue={() => {
         onDone?.();
-        document.getElementById('stage-learn')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        onNext?.();
       }}
       continueLabel="On to the notes"
     />
@@ -111,7 +177,7 @@ function ExampleCard({ note, index, english }) {
     <div className={`example-card${open ? ' open' : ''}`}>
       <div className="note-card-tag"><Icon name="pen" size={16} /> {english ? 'Example' : 'Worked example'}</div>
       <div className="example-q">{english ? <><b>Example</b> — {note.q}</> : <>Worked example: {note.q}</>}</div>
-      <div className="example-a" hidden={!open}>{note.a}</div>
+      <div className="example-a" id={`ex-${index}`} hidden={!open}>{note.a}</div>
       {!open ? (
         <div className="example-try">
           <Pip mood="think" size={36} />
@@ -191,7 +257,123 @@ export function ComboMeter({ streak = 0 }) {
   );
 }
 
-export function MasteryPanel({ topic, strand, nextTopic = null, learnBase = '/learn', result = null }) {
+// ---------- One-question-at-a-time practice ----------
+
+// Before the round: what it is and which creature it feeds.
+export function QuizStart({ count, title, detail, busy = false, error = '', onStart }) {
+  const { byId } = useCreatures();
+  const quill = byId.quill;
+  return (
+    <div className="quiz-start">
+      {quill ? (
+        <span className="quiz-start-art" aria-hidden="true">
+          <Critter id={quill.id} tier={quill.tier} progress={quill.toNext} size={88} />
+        </span>
+      ) : null}
+      <div className="quiz-start-copy">
+        <h3>{title}</h3>
+        <p className="sub">{detail}</p>
+        {quill ? <p className="quiz-start-feeds">Every marked answer feeds {nameOf(quill)}.</p> : null}
+      </div>
+      {error ? <div className="error-banner" role="alert">{error}</div> : null}
+      <button type="button" className="btn btn-go btn-block" onClick={onStart} disabled={busy}>
+        {busy ? 'Loading…' : `Start ${count} questions`}
+      </button>
+    </div>
+  );
+}
+
+// "Question 2 of 5" with a dot per question: right, wrong, current.
+export function QuizProgress({ total, index, results = [], combo = 0 }) {
+  return (
+    <div className="quiz-progress">
+      <span className="quiz-progress-count">Question {Math.min(index + 1, total)} of {total}</span>
+      <ol className="quiz-dots" aria-hidden="true">
+        {Array.from({ length: total }, (_, i) => (
+          <li key={i} className={results[i] === true ? 'right' : results[i] === false ? 'wrong' : i === index ? 'current' : ''} />
+        ))}
+      </ol>
+      <ComboMeter streak={combo} />
+    </div>
+  );
+}
+
+// Tag why an answer went wrong; the tag travels with the notebook row so
+// the retry can target the cause.
+export function WhyChips({ value = null, onChange, types = ['knowledge', 'method', 'misread', 'arithmetic'] }) {
+  return (
+    <div className="why-chips" role="group" aria-label="What went wrong?">
+      <span className="why-chips-label">What went wrong?</span>
+      <div className="chip-row">
+        {ERROR_TYPES.filter((type) => types.includes(type.id)).map((type) => (
+          <button
+            key={type.id}
+            type="button"
+            title={type.hint}
+            aria-pressed={value === type.id}
+            className={`suggest-chip${value === type.id ? ' on' : ''}`}
+            onClick={() => onChange(value === type.id ? null : type.id)}
+          >
+            {type.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// After a marked answer: the verdict, then one button on. Focus moves to
+// that button so keyboard learners can keep going with Enter.
+export function QuizFeedback({ tone = 'right', title, children, nextLabel, onNext, busy = false, extra = null }) {
+  const nextRef = useRef(null);
+  useEffect(() => {
+    nextRef.current?.focus({ preventScroll: true });
+    nextRef.current?.scrollIntoView?.({ block: 'nearest' });
+  }, []);
+  return (
+    <div className={`quiz-feedback ${tone}`}>
+      <p className="quiz-feedback-title" role="status">
+        <span className="quiz-feedback-mark" aria-hidden="true"><Icon name={tone === 'right' ? 'check' : tone === 'wrong' ? 'close' : 'pen'} size={18} strokeWidth={3} /></span>
+        {title}
+      </p>
+      {children}
+      <div className="quiz-feedback-actions">
+        {extra}
+        <button ref={nextRef} type="button" className="btn btn-go" onClick={onNext} disabled={busy}>
+          {busy ? 'Scoring…' : nextLabel} {busy ? null : <Icon name="arrowRight" size={18} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// After the round: the score and what it fed.
+// With `right` and `questions` the headline counts questions ("3 of 5 right")
+// and the marks sit underneath, so a 5-question round never reads as "3/9".
+// Inside a lesson the step bar already carries the way on, so the card offers
+// another round as a quiet button and leaves the go colour to "Next".
+export function QuizDone({ correct, total, right = null, questions = null, before = null, after = null, error = '', againLabel = 'Another 5', againQuiet = false, onAgain, onNext = null, nextLabel = 'Next: Master it' }) {
+  const counted = right != null && questions != null;
+  return (
+    <div className="quiz-done">
+      <p className="eyebrow">Round complete</p>
+      <h3>{counted ? `${right} of ${questions} right` : `You scored ${correct}/${total} marks`}</h3>
+      {counted && total !== questions ? <p className="quiz-done-marks">{correct}/{total} marks</p> : null}
+      <CreatureGains before={before} after={after} title="What this round fed" dark />
+      {error ? <div className="error-banner" role="alert">{error}</div> : null}
+      <div className="quiz-done-actions">
+        <button type="button" className={againQuiet ? 'btn' : 'btn btn-go'} onClick={onAgain}>{againLabel}</button>
+        {onNext ? <button type="button" className="btn" onClick={onNext}>{nextLabel}</button> : null}
+      </div>
+    </div>
+  );
+}
+
+// ---------- Master ----------
+
+export function MasteryPanel({ topic, nextTopic = null, learnBase = '/learn', result = null }) {
+  const { byId } = useCreatures();
+  const prismo = byId.prismo || null;
   const answered = topic.answered ?? (topic.accuracy != null ? 5 : 0);
   const stage = masteryStage(topic.accuracy, answered);
   const stars = starsFor(topic.accuracy, answered);
@@ -202,17 +384,17 @@ export function MasteryPanel({ topic, strand, nextTopic = null, learnBase = '/le
   ];
   return (
     <div className="mastery-card">
-      <div className="mastery-card-emblem">
-        <Emblem topicId={topic.id} strand={strand} stage={stage.id} size={112} spin={stage.id === 'mastered'} />
+      <div className="mastery-card-stars">
+        <Stars count={stars} size={34} />
+        <span className={`v3-stage ${stage.id}`}>{stage.text}</span>
       </div>
       <div className="mastery-card-copy">
-        <p className="eyebrow">Your {topic.name} emblem</p>
-        <h3>{stage.id === 'new' ? 'Blueprint — not built yet' : `${stage.text} · layer ${Math.min(4, ['learning', 'developing', 'secure', 'mastered'].indexOf(stage.id) + 1)} of 4`}</h3>
-        <Stars count={stars} size={26} />
+        <p className="eyebrow">Your {topic.name} stars</p>
+        <h3>{stars === 3 ? 'All three stars' : stars === 0 ? 'No stars yet' : `${stars} of 3 stars`}</h3>
         <p className="sub">
           {topic.accuracy != null
-            ? `Built from your marked answers: ${topic.accuracy}% accuracy so far.`
-            : 'Answer practice questions to start building it. Every layer is earned from marked work.'}
+            ? `Earned from your marked answers: ${topic.accuracy}% accuracy so far.`
+            : 'Answer practice questions to earn your first star. Every star comes from marked work.'}
           {result ? ` Last round: ${result.correct}/${result.total}.` : ''}
         </p>
         <ul className="star-targets">
@@ -223,6 +405,12 @@ export function MasteryPanel({ topic, strand, nextTopic = null, learnBase = '/le
             </li>
           ))}
         </ul>
+        {prismo ? (
+          <Link className="mastery-prismo" to="/creatures?open=prismo">
+            <Critter id="prismo" tier={prismo.tier} progress={prismo.toNext} size={44} />
+            <span>Three-star topics grow <b>{nameOf(prismo)}</b> · {prismo.value} so far</span>
+          </Link>
+        ) : null}
       </div>
       {nextTopic ? (
         <Link className="next-topic" to={`${learnBase}/${nextTopic.id}`}>
@@ -250,20 +438,33 @@ export function ResourceGrid({ resources = [] }) {
   );
 }
 
-export function TutorPromo({ text }) {
+// "Stuck? Ask Pip" with the lesson as context. Opens over the lesson.
+export function PipPromo({ text, context = null }) {
   return (
     <div className="tutor-promo">
       <Pip mood="happy" size={72} bob />
       <div>
-        <h3>Stuck? Ask Pip, the AI tutor</h3>
+        <h3>Stuck? Ask Pip</h3>
         <p className="sub">{text}</p>
       </div>
-      <Link className="btn btn-primary" to="/chat">Open AI tutor →</Link>
+      <AskPipButton context={context} label="Ask Pip" className="btn btn-primary" mood="happy" />
     </div>
   );
 }
 
-// Session-only stage progress for the lesson HUD.
+export function EditorialNote({ spec, reviewed, reviewer, reportUrl }) {
+  return (
+    <p className="editorial-note" aria-label="Editorial metadata">
+      <span>{spec}</span>
+      <span aria-hidden="true">·</span>
+      <span>Reviewed {reviewed ? new Date(reviewed).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : 'recently'} by {reviewer || 'the Study Desk content team'}</span>
+      <span aria-hidden="true">·</span>
+      <a href={reportUrl || '/support.html'}>Report an issue</a>
+    </p>
+  );
+}
+
+// Session-only step progress for the lesson bar.
 export function useStages(topicId) {
   const [done, setDone] = useState({});
   useEffect(() => setDone({}), [topicId]);

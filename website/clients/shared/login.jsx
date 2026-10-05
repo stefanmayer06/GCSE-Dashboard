@@ -139,8 +139,8 @@ export default function LoginScreen({ subjectName, tag, letter, authApi, onSigne
             : authDriver === 'supabase'
               ? 'Use your email to keep one secure account across every Study Desk subject.'
             : isSignup
-              ? 'Make a local account to keep your progress and papers on this device.'
-              : 'Your progress and papers are stored locally and follow this account.'}
+              ? 'One account keeps your progress in every Study Desk subject.'
+              : 'Welcome back. One account covers every Study Desk subject.'}
         </p>
         {error && (
           <div className="login-error" role="alert">{error}</div>

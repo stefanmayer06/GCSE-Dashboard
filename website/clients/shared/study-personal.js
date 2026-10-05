@@ -322,6 +322,34 @@ export function mistakeRowsFromResult(result, subject, sessionSeed, answers = {}
   });
 }
 
+// Misses from a mixed round go to the notebook too, so every wrong answer
+// comes back for a retry. Questions that already have an open notebook row
+// are skipped (targeted retry rounds would otherwise duplicate them).
+export async function recordRoundMistakes(api, subject, roundId, result, { questions = [], answers = {}, feedback = {}, errorTypes = {} } = {}) {
+  const byId = new Map(questions.map((question) => [String(question.id), question]));
+  const review = (Array.isArray(result?.perQ) ? result.perQ : Array.isArray(result?.perQuestion) ? result.perQuestion : []).map((row) => {
+    const question = byId.get(String(row?.qid));
+    const checked = feedback[row?.qid];
+    return {
+      ...row,
+      ...(row?.text == null && question?.text ? { text: question.text } : {}),
+      ...(row?.topic == null && question?.topic ? { topic: question.topic } : {}),
+      ...(row?.topicId == null && question?.topicId ? { topicId: question.topicId } : {}),
+      ...(row?.solution == null && Array.isArray(checked?.solution) ? { solution: checked.solution } : {}),
+    };
+  });
+  const built = mistakeRowsFromResult({ perQ: review }, subject, `round-${roundId}`, answers)
+    .map((row) => (ERROR_TYPE_IDS.includes(errorTypes?.[row.qid]) ? { ...row, errorType: errorTypes[row.qid] } : row));
+  if (!built.length) return 0;
+  const personal = await api.personal();
+  const open = new Set((personal?.mistakes ?? []).filter((row) => !row.mastered).map((row) => String(row.qid)));
+  const fresh = built.filter((row) => !open.has(String(row.qid)));
+  if (!fresh.length) return 0;
+  await api.saveMistakes(mergeMistakeRows(personal?.mistakes ?? [], fresh));
+  invalidateResources('personal:');
+  return fresh.length;
+}
+
 export function startPlanDayInState(plan, date, topicId) {
   if (!plan || !Array.isArray(plan.days)) return null;
   return { ...plan, intent: { date, ...(topicId ? { topicId } : {}) } };
@@ -343,7 +371,9 @@ export function completePlanDayInState(plan, topicId, outcome, today = dateKey()
 
 // Persists a finished lesson: marks the started mission done with its score and
 // captures any incorrect rows into the account notebook. Idempotent by row id.
-export async function recordLessonResult(api, userId, subject, topicId, topicName, result, answers = {}) {
+// errorTypes: { [qid]: 'method' | ... } tags chosen on the feedback screen
+// ("What went wrong?"); they ride along on the new notebook rows.
+export async function recordLessonResult(api, userId, subject, topicId, topicName, result, answers = {}, { errorTypes = {} } = {}) {
   const personal = await api.personal();
   const outcome = missionOutcome(result);
   const nextPlan = completePlanDayInState(personal.plan, topicId, outcome);
@@ -354,7 +384,8 @@ export async function recordLessonResult(api, userId, subject, topicId, topicNam
       ...(row.topic == null && topicName ? { topic: topicName } : {}),
     })),
   };
-  const built = mistakeRowsFromResult(enriched, subject, `lesson-${topicId}`, answers);
+  const built = mistakeRowsFromResult(enriched, subject, `lesson-${topicId}`, answers)
+    .map((row) => (ERROR_TYPE_IDS.includes(errorTypes?.[row.qid]) ? { ...row, errorType: errorTypes[row.qid] } : row));
   if (nextPlan) {
     try {
       await api.savePlan(nextPlan);

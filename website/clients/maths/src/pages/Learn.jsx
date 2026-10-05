@@ -15,8 +15,8 @@ export default function Learn({ userId }) {
       {data ? (
         <CourseMap
           groups={groups}
-          title={higherTier ? 'Higher Maths map' : 'Foundation Maths map'}
-          sub={`Every AQA ${higherTier ? 'Higher' : 'Foundation'} topic as a level: watch, learn, practise, then replay to build its emblem and earn all three stars.`}
+          title="Learn"
+          sub={`Every AQA ${higherTier ? 'Higher' : 'Foundation'} topic, unit by unit. Each lesson is watch, learn, practise, and replays earn all three stars.`}
           recommendedId={recommendTile(groups)}
           bossLabel="Sit a timed paper"
         />

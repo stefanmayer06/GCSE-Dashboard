@@ -24,6 +24,13 @@ const api = context.request;
 const username = `designdemo${Date.now()}`;
 const signup = await api.post(`${BASE}/api/auth/signup`, { data: { username, password: 'design-demo-pass-1' } });
 if (!signup.ok()) throw new Error(`Signup failed (${signup.status()}). Is the local server running with the JSON driver?`);
+// Skip the first-visit welcome (exam date, first egg) so Today shows its
+// everyday screen in every subject.
+await context.addInitScript((name) => {
+  for (const subject of ['maths', 'maths-higher', 'english']) {
+    try { localStorage.setItem(`gcse-welcome:${subject}:${encodeURIComponent(name)}`, '1'); } catch {}
+  }
+}, username);
 
 // Seed a few practice rounds. Answers come from /check so some land right
 // and some wrong, which gives a realistic spread of mastery.
@@ -64,11 +71,11 @@ async function shot(name, url, { width = 1280, height = 800, theme = 'light', sc
 await shot('landing', '/');
 await shot('home-light', '/maths/');
 await shot('home-dark', '/maths/', { theme: 'dark' });
-await shot('map', '/maths/learn', { scroll: 330 });
+await shot('map', '/maths/learn');
 await shot('lesson', '/maths/learn/fractions');
-await shot('notes', '/maths/learn/fractions', { scroll: 1000 });
+await shot('notes', '/maths/learn/fractions#learn', { scroll: 200 });
 await shot('explainer', '/maths/learn/fractions', {
-  scroll: 470,
+  scroll: 260,
   prepare: async (p) => {
     const player = p.locator('.xp-player');
     await player.getByRole('button', { name: /Watch/ }).click();
@@ -79,17 +86,29 @@ await shot('explainer', '/maths/learn/fractions', {
   },
 });
 await shot('english-explainer', '/english/learn/language', {
-  scroll: 430,
+  scroll: 260,
   prepare: async (p) => {
     const player = p.locator('.xp-player');
     await player.getByRole('button', { name: /Watch/ }).click();
     await p.waitForSelector('.xp-check', { timeout: 20000 });
   },
 });
+// Before the exam shot: Practice resumes an unfinished paper.
+await shot('mobile-practice', '/maths/practice', { width: 390, height: 844 });
 await shot('exam', '/maths/practice?paper=1&type=short');
 await shot('english-exam', '/english/practice?paper=1&type=short', { theme: 'dark' });
 await shot('mobile-home', '/maths-higher/', { width: 390, height: 844 });
-await shot('mobile-map', '/english/learn', { width: 390, height: 844, scroll: 520 });
+await shot('mobile-map', '/english/learn', { width: 390, height: 844 });
+await shot('mobile-question', '/maths/learn/fractions#practise', {
+  width: 390,
+  height: 844,
+  prepare: async (p) => {
+    await p.getByRole('button', { name: /^Start \d+ questions$/ }).click();
+    await p.locator('.quiz-flow .quiz-q').waitFor();
+  },
+});
+await shot('mobile-creatures', '/maths/creatures', { width: 390, height: 844 });
+await shot('mobile-pip', '/maths/chat', { width: 390, height: 844 });
 
 // Last: signing out for the login screen ends the demo session.
 await shot('login', '/english/', {

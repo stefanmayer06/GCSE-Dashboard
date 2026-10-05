@@ -500,7 +500,7 @@ export function createSupabaseStorage(options = {}) {
   async function profileForUser(user) {
     const { data, error } = await service
       .from('profiles')
-      .select('id, username, role, legacy_user_id')
+      .select('id, username, role')
       .eq('id', user.id)
       .maybeSingle();
     if (error) throw supabaseStorageError(error);
@@ -510,7 +510,6 @@ export function createSupabaseStorage(options = {}) {
       username: data.username,
       email: user.email || null,
       role: data.role,
-      legacyUserId: data.legacy_user_id,
       oauth: user.app_metadata?.provider && user.app_metadata.provider !== 'email',
     };
   }
@@ -552,54 +551,9 @@ export function createSupabaseStorage(options = {}) {
     return result.data;
   }
 
-  async function lookupLegacyUserForClaim(username) {
-    return rpc('lookup_legacy_user_for_claim', {
-      p_username: requiredString(username, 'username'),
-    });
-  }
-
-  async function startLegacyClaim(legacyUserId, email, tokenHash, expiresAt) {
-    return rpc('start_account_claim', {
-      p_legacy_user_id: requiredString(legacyUserId, 'legacyUserId'),
-      p_email: requiredString(email, 'email'),
-      p_token_hash: requiredString(tokenHash, 'tokenHash'),
-      p_expires_at: isoDate(expiresAt, 'expiresAt'),
-    });
-  }
-
-  async function createAuthUser(email, password, username) {
-    const result = await service.auth.admin.createUser({
-      email: requiredString(email, 'email'),
-      password: String(password),
-      email_confirm: false,
-      user_metadata: { username: requiredString(username, 'username') },
-    });
-    if (result.error || !result.data.user) {
-      throw supabaseStorageError(result.error, 'Could not create Supabase account');
-    }
-    return result.data.user;
-  }
-
-  async function completeLegacyClaim(tokenHash, targetUserId) {
-    return rpc('complete_account_claim', {
-      p_token_hash: requiredString(tokenHash, 'tokenHash'),
-      p_target_user_id: requiredString(targetUserId, 'targetUserId'),
-    });
-  }
-
   async function deleteAuthUser(userId) {
     const result = await service.auth.admin.deleteUser(requiredString(userId, 'userId'));
-    if (result.error) throw supabaseStorageError(result.error, 'Could not roll back Supabase account');
-  }
-
-  async function resendSignup(email, redirectTo = null) {
-    const result = await auth.auth.resend({
-      type: 'signup',
-      email: requiredString(email, 'email'),
-      ...(redirectTo ? { options: { emailRedirectTo: redirectTo } } : {}),
-    });
-    if (result.error) throw supabaseStorageError(result.error, 'Could not send the confirmation email');
-    return result.data;
+    if (result.error) throw supabaseStorageError(result.error, 'Could not delete Supabase account');
   }
 
   async function getUserById(userId) {
@@ -619,7 +573,7 @@ export function createSupabaseStorage(options = {}) {
   }
 
   async function listUsers() {
-    const { data, error } = await service.from('profiles').select('id, username, role, legacy_user_id');
+    const { data, error } = await service.from('profiles').select('id, username, role');
     if (error) throw supabaseStorageError(error);
     return data || [];
   }
@@ -926,18 +880,12 @@ export function createSupabaseStorage(options = {}) {
     signIn,
     signUp,
     signInWithOAuth,
-    lookupLegacyUserForClaim,
-    startLegacyClaim,
-    createAuthUser,
-    completeLegacyClaim,
     deleteAuthUser,
-    resendSignup,
     getUserById,
     getUserByUsername,
     listUsers,
     getUserByOAuthIdentity: (...args) => unsupported('getUserByOAuthIdentity', ...args),
     createUser: (...args) => unsupported('createUser', ...args),
-    upsertMigrationUser: (...args) => unsupported('upsertMigrationUser', ...args),
     putAuthSession: (...args) => unsupported('putAuthSession', ...args),
     getAuthSession: (...args) => unsupported('getAuthSession', ...args),
     deleteAuthSession: (...args) => unsupported('deleteAuthSession', ...args),

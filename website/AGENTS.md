@@ -97,7 +97,6 @@ Every request to `/api/maths/*`, `/api/maths-higher/*` and `/api/english/*` requ
 - `POST /api/auth/signup` creates a new local account (3-32 character username, 8+ character password) and signs it in.
 - `GET /api/auth/me` returns the signed-in user.
 - `POST /api/auth/logout` ends the session.
-- `POST /api/auth/claim` verifies a legacy scrypt password, creates a Supabase Auth email account and copies compact progress once during migration.
 - `GET /api/auth/config` reports whether OAuth is configured.
 
 The local `admin` account (username `admin`, password `admin`) is seeded automatically on first boot when `users.json` does not already contain it. In production, `ADMIN_PASSWORD` must be set before the missing admin account can be seeded. It is always recreated if missing. Passwords are stored as `scrypt` hashes, never in plain text. Never use the local default password in production.
@@ -108,7 +107,7 @@ the sign-in screens show "Continue with <provider>" and the server runs the auth
 A provider identity maps to a username (email or preferred_username), created on first sign-in.
 
 On the Supabase driver (required on Vercel), the sign-in screen uses email/password and bearer JWTs. Supabase Auth
-accounts are separate from the legacy custom accounts; old auth sessions are not migrated. Legacy accounts move over through the one-time claim flow.
+accounts are separate from the local JSON-driver accounts; there is no account migration between them.
 
 ## Data And Progress
 
@@ -157,9 +156,6 @@ durable too: every marked paper is written to `paper_attempts` (question-level
 responses included, most recent 50 per user and subject, 1 year review window)
 and can be listed through `GET /personal/attempts`. Tutor chat remains a
 non-durable domain; clients may retain it only as a disposable cache.
-Legacy users and compact progress are staged in the private
-`migration_private` schema, and custom scrypt hashes are never imported into
-`auth.users`.
 
 ## Mistake-To-Mastery Loop And Product Events
 
@@ -186,7 +182,7 @@ Features should strengthen that trail, not replace it.
   (`FOUNDATION_AUDIT.md`, `HIGHER_AUDIT.md`, `ENGLISH_AUDIT.md`) document what
   is verified.
 
-Supabase Auth accounts are created through the one-time `POST /api/auth/claim` flow, which verifies the legacy password, requires an email and new password, and copies only compact subject aggregates.
+Supabase Auth accounts are created only through sign-up (`POST /api/auth/signup` or the Supabase client). The one-time legacy account move was retired; do not reintroduce a claim route or the `migration_private` staging schema.
 
 Active paper, practice and adhoc sessions are persisted through the configured
 storage driver. Supabase deployments can resume them across serverless

@@ -1,14 +1,15 @@
 begin;
 
-select plan(66);
+select plan(67);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'subject_progress', 'subject_progress table exists');
 select has_table('public', 'study_sessions', 'study_sessions table exists');
-select has_table('migration_private', 'legacy_users', 'legacy user staging table exists');
-select has_table('migration_private', 'legacy_subject_progress', 'legacy progress staging table exists');
-select has_table('migration_private', 'account_claims', 'one-time account claim table exists');
-select has_table('migration_private', 'migration_runs', 'migration audit table exists');
+select hasnt_schema('migration_private', 'legacy account staging schema is gone');
+select hasnt_column('public', 'profiles', 'legacy_user_id', 'profiles no longer link to legacy accounts');
+select hasnt_function('public', 'lookup_legacy_user_for_claim', 'legacy claim lookup RPC is gone');
+select hasnt_function('public', 'start_account_claim', 'legacy claim start RPC is gone');
+select hasnt_function('public', 'complete_account_claim', 'legacy claim completion RPC is gone');
 select hasnt_column('public', 'subject_progress', 'history', 'progress history is not persisted');
 select hasnt_column('public', 'subject_progress', 'chat', 'tutor chat is not persisted');
 

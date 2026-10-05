@@ -71,6 +71,7 @@
 .login-field { display: grid; gap: 6px; color: var(--c-ink); font-size: 0.85rem; font-weight: 800; }
 .login-field input { width: 100%; min-height: 50px; padding: 10px 14px; border-radius: var(--r-sm); font-size: 1rem; font-weight: 600; }
 .login-passwrap { position: relative; display: block; }
+.login-field .login-passwrap { margin: 0; }
 .login-passwrap input { padding-right: 76px; }
 .login-show { position: absolute; top: 50%; right: 8px; min-height: 34px; padding: 4px 12px; border: 0; border-radius: var(--r-pill); background: var(--c-surface-3); color: var(--c-ink-2); font: inherit; font-size: 0.78rem; font-weight: 800; transform: translateY(-50%); cursor: pointer; }
 .login-submit {
@@ -96,15 +97,81 @@
 .login-trust { margin: 10px 0 0; color: var(--c-muted); font-size: 0.78rem; text-align: center; }
 .login-local { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; }
 
+/* Phones and narrow tablets: one screen. The night band takes whatever
+   height the form leaves over and the scene scales down inside it (it is
+   absolutely positioned, so it never adds height of its own); the form is
+   a bottom sheet laid over the band's lower edge. */
 @media (max-width: 860px) {
-  .login-screen { grid-template-columns: 1fr; }
-  .login-stage { min-height: 0; padding: 20px 20px 28px; }
-  .login-stage-art { min-height: 0; max-height: 200px; }
-  .login-stage-art .c-scene { max-width: 300px; }
+  .login-screen {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    background: var(--c-night);
+  }
+  .login-stage {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    min-height: 0;
+    padding: max(14px, env(safe-area-inset-top)) 16px 38px;
+  }
+  .login-stage-brand { font-size: 0.95rem; }
+  .login-stage-brand .emblem { width: 26px; height: 26px; }
+  .login-stage-art { position: relative; min-height: 0; container-type: size; }
+  .login-stage-art .c-scene {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.35));
+  }
+  /* A scene squeezed below ~80px reads as a smudge, not a picture. */
+  @container (max-height: 80px) {
+    .login-stage-art .c-scene { display: none; }
+  }
   .login-stage-points,
   .login-pip { display: none; }
-  .login-stage-line { font-size: 1.6rem; }
-  .login-card { margin-top: -20px; }
+  .login-stage-line { max-width: 22ch; font-size: clamp(1.25rem, 1rem + 1.6vw, 1.6rem); }
+
+  .login-card {
+    position: relative;
+    z-index: 1;
+    align-self: end;
+    width: 100%;
+    margin: -24px 0 0;
+    padding: 20px max(16px, calc((100% - 440px) / 2)) max(14px, env(safe-area-inset-bottom));
+    border-width: 1px 0 0;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    box-shadow: 0 -18px 40px -24px rgba(0, 0, 0, 0.6);
+  }
+  .login-brand { gap: 8px; margin-bottom: 8px; }
+  .login-letter { width: 26px; height: 26px; border-radius: 9px; box-shadow: 0 2px 0 var(--emblem-line); font-size: 0.85rem; }
+  .login-brand-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .login-card h1 { margin: 0 0 2px; font-size: 1.6rem; }
+  .login-sub { margin: 0 0 12px; font-size: 0.88rem; line-height: 1.4; }
+  .login-error { margin: 0 0 10px; padding: 8px 12px; }
+  .login-card form { gap: 10px; }
+  .login-field { margin: 0; gap: 4px; }
+  .login-field > span:first-child { margin: 0; }
+  .login-field input { min-height: 46px; }
+  .login-submit { min-height: 50px; margin-top: 4px; }
+  .login-oauth { min-height: 46px; margin-top: 8px; }
+  .login-switch { min-height: 40px; margin-top: 4px; }
+  .login-local,
+  .login-trust { margin-top: 2px; }
+  .login-trust { justify-content: center; }
+}
+
+/* Short phones (or a phone with the keyboard-height browser chrome showing):
+   drop the second reassurance line and let the tagline go first so the
+   submit button stays above the fold. */
+@media (max-width: 860px) and (max-height: 700px) {
+  .login-trust { display: none; }
+  .login-stage { gap: 8px; padding-bottom: 34px; }
+  .login-sub { display: none; }
+}
+@media (max-width: 860px) and (max-height: 560px) {
+  .login-stage-line { display: none; }
 }
 
 /* ---------- Practice hub ---------- */
